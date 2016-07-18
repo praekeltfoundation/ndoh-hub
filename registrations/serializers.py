@@ -31,8 +31,9 @@ class RegistrationSerializer(serializers.ModelSerializer):
         model = Registration
         read_only_fields = ('validated', 'created_by', 'updated_by',
                             'created_at', 'updated_at')
-        fields = ('id', 'stage', 'registrant_id', 'validated', 'data', 'source',
-                  'created_at', 'updated_at', 'created_by', 'updated_by')
+        fields = ('id', 'stage', 'registrant_id', 'validated', 'data',
+                  'source', 'created_at', 'updated_at', 'created_by',
+                  'updated_by')
 
 
 class HookSerializer(serializers.ModelSerializer):

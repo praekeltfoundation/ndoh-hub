@@ -297,7 +297,8 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         d = Registration.objects.last()
         self.assertEqual(d.source.name, 'test_source_adminuser')
         self.assertEqual(d.stage, 'prebirth')
-        self.assertEqual(d.registrant_id, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(d.registrant_id,
+                         "mother01-63e2-4acc-9b94-26663b9bc267")
         self.assertEqual(d.validated, False)
         self.assertEqual(d.data, {"test_key1": "test_value1"})
 
@@ -319,7 +320,8 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         d = Registration.objects.last()
         self.assertEqual(d.source.name, 'test_source_normaluser')
         self.assertEqual(d.stage, 'prebirth')
-        self.assertEqual(d.registrant_id, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(d.registrant_id,
+                         "mother01-63e2-4acc-9b94-26663b9bc267")
         self.assertEqual(d.validated, False)
         self.assertEqual(d.data, {"test_key1": "test_value1"})
 
@@ -342,7 +344,8 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         d = Registration.objects.last()
         self.assertEqual(d.source.name, 'test_source_adminuser')
         self.assertEqual(d.stage, 'prebirth')
-        self.assertEqual(d.registrant_id, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(d.registrant_id,
+                         "mother01-63e2-4acc-9b94-26663b9bc267")
         self.assertEqual(d.validated, False)  # Should ignore True post_data
         self.assertEqual(d.data, {"test_key1": "test_value1"})
 
