@@ -3,7 +3,7 @@ NDOH Registration and Change service for MomConnect and NurseConnect
 
 ## Registration validity requirements
 All registrations should have the following information:
-- contact (identity-store id)
+- identity (identity-store id)
 - registered_by (identity-store id)
 - language (this will also be stored to the identity)
 - message_type (this will also be stored to the identity)
