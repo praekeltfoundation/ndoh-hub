@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('stage', models.CharField(choices=[('prebirth', 'Mother is pregnant'), ('postbirth', 'Baby has been born'), ('loss', 'Baby loss')], max_length=30)),
-                ('mother_id', models.CharField(max_length=36)),
+                ('registrant_id', models.CharField(max_length=36)),
                 ('data', django.contrib.postgres.fields.jsonb.JSONField(blank=True, null=True)),
                 ('validated', models.BooleanField(default=False)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),

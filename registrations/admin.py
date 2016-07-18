@@ -4,10 +4,10 @@ from .models import Source, Registration, SubscriptionRequest
 
 class RegistrationAdmin(admin.ModelAdmin):
     list_display = [
-        "id", "stage", "validated", "mother_id", "source",
+        "id", "stage", "validated", "registrant_id", "source",
         "created_at", "updated_at", "created_by", "updated_by"]
     list_filter = ["source", "validated", "created_at"]
-    search_fields = ["mother_id", "to_addr"]
+    search_fields = ["registrant_id", "to_addr"]
 
 
 class SubscriptionRequestAdmin(admin.ModelAdmin):
