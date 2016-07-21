@@ -13,6 +13,7 @@ from rest_hooks.models import model_saved
 from .models import (Source, Registration,
                      registration_post_save)
 from .tasks import (
+    validate_registration,
     is_valid_date, is_valid_uuid, is_valid_lang, is_valid_msg_type,
     is_valid_msg_receiver, is_valid_loss_reason, is_valid_name,
     is_valid_id_type, is_valid_id_no)
@@ -354,8 +355,8 @@ class TestFieldValidation(AuthenticatedAPITestCase):
 
     def test_is_valid_date(self):
         # Setup
-        good_date = "19820315"
-        invalid_date = "19830229"
+        good_date = "1982-03-15"
+        invalid_date = "1983-02-29"
         bad_date = "1234"
         # Execute
         # Check
@@ -440,13 +441,24 @@ class TestFieldValidation(AuthenticatedAPITestCase):
         self.assertEqual(is_valid_id_no(invalid_id_no), False)
 
 
-# class TestRegistrationValidation(AuthenticatedAPITestCase):
+class TestRegistrationValidation(AuthenticatedAPITestCase):
 
-    # def test_validate_hw_prebirth_id(self):
-    #     # Setup
-    #     registration_data = {}
-    #     registration = Registration.objects.create(**registration_data)
-    #     # Execute
-    #     v = validate_registration.validate(registration)
-    #     # Check
-    #     self.assertEqual(v, True)
+    def test_validate_pmtct_1(self):
+        # Setup
+        registration_data = {
+            "stage": "prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "type": "pmtct",  # migrate database?
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "edd": "2016-11-30",
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        # Execute
+        v = validate_registration.validate(registration)
+        # Check
+        self.assertEqual(v, True)

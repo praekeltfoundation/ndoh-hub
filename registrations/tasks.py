@@ -16,7 +16,7 @@ logger = get_task_logger(__name__)
 
 def is_valid_date(date):
     try:
-        datetime.datetime.strptime(date, "%Y%m%d")
+        datetime.datetime.strptime(date, "%Y-%m-%d")
         return True
     except:
         return False
@@ -27,7 +27,19 @@ def is_valid_uuid(id):
 
 
 def is_valid_lang(lang):
-    return lang in ["eng_ZA"]
+    return lang in [
+        "zul_ZA",  # isiZulu
+        "xho_ZA",  # isiXhosa
+        "afr_ZA",  # Afrikaans
+        "eng_ZA",  # English
+        "nso_ZA",  # Sesotho sa Leboa / Pedi
+        "tsn_ZA",  # Setswana
+        "sot_ZA",  # Sesotho
+        "tso_ZA",  # Xitsonga
+        "ssw_ZA",  # siSwati
+        "ven_ZA",  # Tshivenda
+        "nbl_ZA",  # isiNdebele
+    ]
 
 
 def is_valid_msg_type(msg_type):
@@ -60,17 +72,61 @@ class ValidateRegistration(Task):
     """
     name = "ndoh_hub.registrations.tasks.validate_registration"
 
-    def check_field_values(self, fields, registration_data):
-        failures = []
-        for field in fields:
-            pass
-        return failures
-
     def validate(self, registration):
         """ Validates that all the required info is provided for a
-        prebirth registration.
+        registration.
         """
-        return True
+        validation_errors = []
+
+        # Check if registrant_id is a valid UUID
+        if not is_valid_uuid(registration.registrant_id):
+            validation_errors.append("Invalid UUID registrant_id")
+
+        # Check that required fields are provided and valid
+        data_fields = registration.data.keys()
+
+        if registration.data["type"] == "pmtct":
+            # language
+            if not "language" in data_fields:
+                validation_errors.append("Language is missing from data")
+            elif not is_valid_lang(registration.data["language"]):
+                validation_errors.append("Language not a valid option")
+
+            # mom_dob
+            if not "mom_dob" in data_fields:
+                validation_errors.append("Mother DOB missing")
+            elif not is_valid_date(registration.data["mom_dob"]):
+                validation_errors.append("Mother DOB invalid")
+
+            # stage & edd
+            if registration.stage == "prebirth":
+                if not "edd" in data_fields:
+                    validation_errors.append("Estimated Due Date missing")
+                elif not is_valid_date(registration.data["edd"]):
+                    validation_errors.append("Estimated Due Date invalid")
+            elif registration.stage == "postbirth":
+                # edd is not required in this instance, currently no other
+                # checks are required
+                pass
+            else:
+                validation_errors.append("Invalid PMTCT registration stage")
+
+        elif registration.data["type"] == "nurseconnect":
+            validation_errors.append("Nurseconnect not yet supported")
+
+        elif registration.data["type"] == "momconnect":
+            validation_errors.append("Momconnect not yet supported")
+
+        print('@@@@@@@@@@@@@@@@@@@', validation_errors)
+        # Evaluate if there were any problems, save and return
+        if len(validation_errors) == 0:
+            registration.validated = True
+            registration.save()
+            return True
+        else:
+            registration.data["invalid_fields"] = validation_errors
+            registration.save()
+            return False
 
     def create_subscriptionrequests(self, registration):
         """ Create SubscriptionRequest(s) based on the
