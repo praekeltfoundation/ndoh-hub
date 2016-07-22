@@ -143,7 +143,6 @@ class ValidateRegistration(Task):
         elif registration.reg_type == "loss_general":
             validation_errors.append("Loss general not yet supported")
 
-        print('@@@@@@@@@@@@@@@@@@@', validation_errors)
         # Evaluate if there were any problems, save and return
         if len(validation_errors) == 0:
             registration.validated = True
