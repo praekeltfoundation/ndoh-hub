@@ -172,7 +172,7 @@ CELERY_ROUTES = {
     'celery.backend_cleanup': {
         'queue': 'mediumpriority',
     },
-    'registrations.tasks.validate_registration': {
+    'registrations.tasks.validate_subscribe': {
         'queue': 'priority',
     },
     'registrations.tasks.DeliverHook': {

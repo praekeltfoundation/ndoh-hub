@@ -66,11 +66,11 @@ def is_valid_id_no(id_no):
     return isinstance(id_no, six.string_types)  # TODO proper id validation
 
 
-class ValidateRegistration(Task):
+class ValidateSubscribe(Task):
     """ Task to validate a registration model entry's registration
     data.
     """
-    name = "ndoh_hub.registrations.tasks.validate_registration"
+    name = "ndoh_hub.registrations.tasks.validate_subscribe"
 
     def check_lang(self, data_fields, registration):
         if "language" not in data_fields:
@@ -173,13 +173,13 @@ class ValidateRegistration(Task):
         validation_string = "Validation completed - "
         if reg_validates:
             validation_string += "Success"
-            self.create_subscriptionrequests(registration)
+            # self.create_subscriptionrequests(registration)
         else:
             validation_string += "Failure"
 
         return validation_string
 
-validate_registration = ValidateRegistration()
+validate_subscribe = ValidateSubscribe()
 
 
 class DeliverHook(Task):

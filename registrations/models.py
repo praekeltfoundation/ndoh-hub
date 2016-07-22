@@ -77,12 +77,12 @@ class Registration(models.Model):
 
 
 @receiver(post_save, sender=Registration)
-def registration_post_save(sender, instance, created, **kwargs):
+def psh_validate_subscribe(sender, instance, created, **kwargs):
     """ Post save hook to fire Registration validation task
     """
     if created:
-        from .tasks import validate_registration
-        validate_registration.apply_async(
+        from .tasks import validate_subscribe
+        validate_subscribe.apply_async(
             kwargs={"registration_id": str(instance.id)})
 
 

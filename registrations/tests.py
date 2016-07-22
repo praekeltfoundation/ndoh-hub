@@ -11,9 +11,9 @@ from rest_framework.authtoken.models import Token
 from rest_hooks.models import model_saved
 
 from .models import (Source, Registration,
-                     registration_post_save)
+                     psh_validate_subscribe)
 from .tasks import (
-    validate_registration,
+    validate_subscribe,
     is_valid_date, is_valid_uuid, is_valid_lang, is_valid_msg_type,
     is_valid_msg_receiver, is_valid_loss_reason, is_valid_name,
     is_valid_id_type, is_valid_id_no)
@@ -46,7 +46,7 @@ class AuthenticatedAPITestCase(APITestCase):
         assert has_listeners(), (
             "Registration model has no post_save listeners. Make sure"
             " helpers cleaned up properly in earlier tests.")
-        post_save.disconnect(receiver=registration_post_save,
+        post_save.disconnect(receiver=psh_validate_subscribe,
                              sender=Registration)
         post_save.disconnect(receiver=model_saved,
                              dispatch_uid='instance-saved-hook')
@@ -60,7 +60,7 @@ class AuthenticatedAPITestCase(APITestCase):
         assert not has_listeners(), (
             "Registration model still has post_save listeners. Make sure"
             " helpers removed them properly in earlier tests.")
-        post_save.connect(registration_post_save, sender=Registration)
+        post_save.connect(psh_validate_subscribe, sender=Registration)
 
     def make_source_adminuser(self):
         data = {
@@ -459,7 +459,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         }
         registration = Registration.objects.create(**registration_data)
         # Execute
-        v = validate_registration.validate(registration)
+        v = validate_subscribe.validate(registration)
         # Check
         self.assertEqual(v, True)
 
@@ -479,7 +479,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         }
         registration = Registration.objects.create(**registration_data)
         # Execute
-        v = validate_registration.validate(registration)
+        v = validate_subscribe.validate(registration)
         # Check
         self.assertEqual(v, False)
         registration = Registration.objects.get(id=registration.id)
@@ -500,7 +500,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         }
         registration = Registration.objects.create(**registration_data)
         # Execute
-        v = validate_registration.validate(registration)
+        v = validate_subscribe.validate(registration)
         # Check
         self.assertEqual(v, False)
         registration = Registration.objects.get(id=registration.id)
@@ -524,7 +524,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         }
         registration = Registration.objects.create(**registration_data)
         # Execute
-        v = validate_registration.validate(registration)
+        v = validate_subscribe.validate(registration)
         # Check
         self.assertEqual(v, True)
 
@@ -543,7 +543,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         }
         registration = Registration.objects.create(**registration_data)
         # Execute
-        v = validate_registration.validate(registration)
+        v = validate_subscribe.validate(registration)
         # Check
         self.assertEqual(v, False)
         registration = Registration.objects.get(id=registration.id)
@@ -563,7 +563,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         }
         registration = Registration.objects.create(**registration_data)
         # Execute
-        v = validate_registration.validate(registration)
+        v = validate_subscribe.validate(registration)
         # Check
         self.assertEqual(v, False)
         registration = Registration.objects.get(id=registration.id)
