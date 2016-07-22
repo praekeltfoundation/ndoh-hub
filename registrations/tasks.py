@@ -1,5 +1,4 @@
 import datetime
-import six  # for Python 2 and 3 string type compatibility
 import requests
 import json
 import uuid
@@ -40,30 +39,6 @@ def is_valid_lang(lang):
         "ven_ZA",  # Tshivenda
         "nbl_ZA",  # isiNdebele
     ]
-
-
-def is_valid_msg_type(msg_type):
-    return msg_type in ["text"]  # currently text only
-
-
-def is_valid_msg_receiver(msg_receiver):
-    return msg_receiver in ["mother_to_be"]
-
-
-def is_valid_loss_reason(loss_reason):
-    return loss_reason in ["miscarriage"]
-
-
-def is_valid_name(name):
-    return isinstance(name, six.string_types)  # TODO reject non-letters
-
-
-def is_valid_id_type(id_type):
-    return id_type in ["sa_id"]
-
-
-def is_valid_id_no(id_no):
-    return isinstance(id_no, six.string_types)  # TODO proper id validation
 
 
 class ValidateSubscribe(Task):
@@ -173,7 +148,7 @@ class ValidateSubscribe(Task):
         validation_string = "Validation completed - "
         if reg_validates:
             validation_string += "Success"
-            # self.create_subscriptionrequests(registration)
+            self.create_subscriptionrequests(registration)
         else:
             validation_string += "Failure"
 

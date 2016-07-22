@@ -1,6 +1,7 @@
 ﻿import json
 import uuid
 import datetime
+import responses
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -14,9 +15,8 @@ from .models import (Source, Registration,
                      psh_validate_subscribe)
 from .tasks import (
     validate_subscribe,
-    is_valid_date, is_valid_uuid, is_valid_lang, is_valid_msg_type,
-    is_valid_msg_receiver, is_valid_loss_reason, is_valid_name,
-    is_valid_id_type, is_valid_id_no)
+    is_valid_date, is_valid_uuid, is_valid_lang
+    )
 from ndoh_hub import utils
 
 
@@ -381,64 +381,6 @@ class TestFieldValidation(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(is_valid_lang(valid_lang), True)
         self.assertEqual(is_valid_lang(invalid_lang), False)
-
-    def test_is_valid_msg_type(self):
-        # Setup
-        valid_msg_type = "text"
-        invalid_msg_type = "voice"
-        # Execute
-        # Check
-        self.assertEqual(is_valid_msg_type(valid_msg_type), True)
-        self.assertEqual(is_valid_msg_type(invalid_msg_type), False)
-
-    def test_is_valid_msg_receiver(self):
-        # Setup
-        valid_msg_receiver = "mother_to_be"
-        invalid_msg_receiver = "mama"
-        # Execute
-        # Check
-        self.assertEqual(is_valid_msg_receiver(valid_msg_receiver), True)
-        self.assertEqual(is_valid_msg_receiver(invalid_msg_receiver), False)
-
-    def test_is_valid_loss_reason(self):
-        # Setup
-        valid_loss_reason = "miscarriage"
-        invalid_loss_reason = "other"
-        # Execute
-        # Check
-        self.assertEqual(is_valid_loss_reason(valid_loss_reason), True)
-        self.assertEqual(is_valid_loss_reason(invalid_loss_reason), False)
-
-    def test_is_valid_name(self):
-        # Setup
-        valid_name1 = "Namey"
-        valid_name2 = "Zoé"
-        valid_name3 = "1234"
-        invalid_name = 10375075
-        # Execute
-        # Check
-        self.assertEqual(is_valid_name(valid_name1), True)
-        self.assertEqual(is_valid_name(valid_name2), True)
-        self.assertEqual(is_valid_name(valid_name3), True)  # TODO reject
-        self.assertEqual(is_valid_name(invalid_name), False)
-
-    def test_is_valid_id_type(self):
-        # Setup
-        valid_id_type = "sa_id"
-        invalid_id_type = "ugandan_id"
-        # Execute
-        # Check
-        self.assertEqual(is_valid_id_type(valid_id_type), True)
-        self.assertEqual(is_valid_id_type(invalid_id_type), False)
-
-    def test_is_valid_id_no(self):
-        # Setup
-        valid_id_no = "12345"
-        invalid_id_no = 12345
-        # Execute
-        # Check
-        self.assertEqual(is_valid_id_no(valid_id_no), True)
-        self.assertEqual(is_valid_id_no(invalid_id_no), False)
 
 
 class TestRegistrationValidation(AuthenticatedAPITestCase):
