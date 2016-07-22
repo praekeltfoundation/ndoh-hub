@@ -9,15 +9,15 @@ def get_today():
     return datetime.datetime.today()
 
 
-def calc_pregnancy_week_lmp(today, lmp):
-    """ Calculate how far along the mother's prenancy is in weeks.
-    """
-    last_period_date = datetime.datetime.strptime(lmp, "%Y%m%d")
-    time_diff = today - last_period_date
-    preg_weeks = int(time_diff.days / 7)
-    # You can't be one week pregnant (smaller numbers will be rejected)
-    if preg_weeks == 1:
-        preg_weeks = 2
+def get_pregnancy_week(today, edd):
+    """ Calculate how far along the mother's prenancy is in weeks. """
+    due_date = datetime.strptime(edd, "%Y-%m-%d")
+    time_diff = due_date - today
+    time_diff_weeks = time_diff.days / 7
+    preg_weeks = 40 - time_diff_weeks
+    # You can't be less than two week pregnant
+    if preg_weeks <= 1:
+        preg_weeks = 2  # changed from JS's 'false' to achieve same result
     return preg_weeks
 
 
@@ -118,18 +118,16 @@ def deactivate_subscription(subscription):
     return patch_subscription(subscription, {"active": False})
 
 
-def get_messageset_short_name(recipient, stage, authority):
-    # Examples:
-    # prebirth.mother.hw_full
-    # prebirth.household.patient
+def get_messageset_short_name(reg_type, authority, weeks):
+    set_number = 1  # default set_number
 
-    # recipient should default to household if it's not mother
-    if recipient == "mother_to_be":
-        recipient = "mother"
-    else:
-        recipient = "household"
+    if "prebirth" in reg_type:
+        if 30 <= weeks <= 34:
+            set_number = 2
+        elif weeks >= 35:
+            set_number = 3
 
-    short_name = "%s.%s.%s" % (stage, recipient, authority)
+    short_name = "%s.%s.%s" % (reg_type, authority, set_number)
 
     return short_name
 

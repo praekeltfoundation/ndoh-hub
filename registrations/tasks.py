@@ -7,8 +7,8 @@ from django.conf import settings
 from celery.task import Task
 from celery.utils.log import get_task_logger
 
-from .models import Registration
-
+from ndoh_hub import utils
+from .models import Registration, SubscriptionRequest
 
 logger = get_task_logger(__name__)
 
@@ -132,8 +132,29 @@ class ValidateSubscribe(Task):
         """ Create SubscriptionRequest(s) based on the
         validated registration.
         """
-
         # Create subscription
+
+        weeks = 1  # default week number
+
+        # . calculate weeks along if prebirth
+        if "prebirth" in registration.reg_type:
+            weeks = utils.get_pregnancy_week(utils.get_today(),
+                                             registration.data["edd"])
+
+        # . determine messageset shortname
+        short_name = utils.get_messageset_short_name(
+            registration.reg_type, registration.source.authority, weeks)
+
+
+        subscription = {
+            "identity": registration.registrant_id,
+            "messageset": 1,
+            "next_sequence_number": 1,
+            "lang": registration.data["language"],
+            "schedule": 1
+        }
+        SubscriptionRequest.objects.create(**subscription)
+
         return "SubscriptionRequest created"
 
     def run(self, registration_id, **kwargs):

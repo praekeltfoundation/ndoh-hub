@@ -11,7 +11,7 @@ from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
 from rest_hooks.models import model_saved
 
-from .models import (Source, Registration,
+from .models import (Source, Registration, SubscriptionRequest,
                      psh_validate_subscribe)
 from .tasks import (
     validate_subscribe,
@@ -513,3 +513,38 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
             'Language is missing from data', 'Mother DOB missing',
             'Operator ID missing']
         )
+
+
+class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
+
+    @responses.activate
+    def test_src_pmtct_postbirth(self):
+        """ """
+        # Setup
+        # . setup pmtct_postbirth registration and set validated to true
+        registration_data = {
+            "reg_type": "pmtct_postbirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        registration.validated = True
+        registration.save()
+
+        # Execute
+        cs = validate_subscribe.create_subscriptionrequests(registration)
+
+        # Check
+        self.assertEqual(cs, "SubscriptionRequest created")
+
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 1)
+        self.assertEqual(sr.next_sequence_number, 1)
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 1)
