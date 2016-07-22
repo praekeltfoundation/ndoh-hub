@@ -36,26 +36,29 @@ class Registration(models.Model):
     """ A registation submitted via Vumi or other sources.
 
     After a registation has been created, a task will fire that
-    validates if the data provided is sufficient for the stage
+    validates if the data provided is sufficient for the type
     of pregnancy.
 
     Args:
-        stage (str): The stage of pregnancy of the mother
+        reg_type (str): The type of registration
         data (json): Registration info in json format
         validated (bool): True if the registation has been
             validated after creation
         source (object): Auto-completed field based on the Api key
     """
 
-    STAGE_CHOICES = (
-        ('prebirth', "Mother is pregnant"),
-        ('postbirth', "Baby has been born"),
-        ('loss', "Baby loss")
+    REG_TYPE_CHOICES = (
+        ('momconnect_prebirth', "MomConnect pregnancy registration"),
+        ('momconnect_postbirth', "MomConnect baby registration"),
+        ('nurseconnect', "Nurseconnect registration"),
+        ('pmtct_prebirth', "PMTCT pregnancy registration"),
+        ('pmtct_postbirth', "PMTCT baby registration"),
+        ('loss_general', "Loss general registration"),
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    stage = models.CharField(max_length=30, null=False, blank=False,
-                             choices=STAGE_CHOICES)
+    reg_type = models.CharField(max_length=30, null=False, blank=False,
+                                choices=REG_TYPE_CHOICES)
     registrant_id = models.CharField(max_length=36, null=False, blank=False)
     data = JSONField(null=True, blank=True)
     validated = models.BooleanField(default=False)
