@@ -72,6 +72,38 @@ class ValidateRegistration(Task):
     """
     name = "ndoh_hub.registrations.tasks.validate_registration"
 
+    def check_lang(self, data_fields, registration):
+        if "language" not in data_fields:
+            return ["Language is missing from data"]
+        elif not is_valid_lang(registration.data["language"]):
+            return ["Language not a valid option"]
+        else:
+            return []
+
+    def check_mom_dob(self, data_fields, registration):
+        if "mom_dob" not in data_fields:
+            return ["Mother DOB missing"]
+        elif not is_valid_date(registration.data["mom_dob"]):
+            return ["Mother DOB invalid"]
+        else:
+            return []
+
+    def check_edd(self, data_fields, registration):
+        if "edd" not in data_fields:
+            return ["Estimated Due Date missing"]
+        elif not is_valid_date(registration.data["edd"]):
+            return ["Estimated Due Date invalid"]
+        else:
+            return []
+
+    def check_operator_id(self, data_fields, registration):
+        if "operator_id" not in data_fields:
+            return ["Operator ID missing"]
+        elif not is_valid_uuid(registration.data["operator_id"]):
+            return ["Operator ID invalid"]
+        else:
+            return []
+
     def validate(self, registration):
         """ Validates that all the required info is provided for a
         registration.
@@ -80,42 +112,36 @@ class ValidateRegistration(Task):
 
         # Check if registrant_id is a valid UUID
         if not is_valid_uuid(registration.registrant_id):
-            validation_errors.append("Invalid UUID registrant_id")
+            validation_errors += ["Invalid UUID registrant_id"]
 
         # Check that required fields are provided and valid
         data_fields = registration.data.keys()
 
-        if registration.data["type"] == "pmtct":
-            # language
-            if not "language" in data_fields:
-                validation_errors.append("Language is missing from data")
-            elif not is_valid_lang(registration.data["language"]):
-                validation_errors.append("Language not a valid option")
+        if registration.reg_type == "pmtct_prebirth":
+            validation_errors += self.check_lang(data_fields, registration)
+            validation_errors += self.check_mom_dob(data_fields, registration)
+            validation_errors += self.check_edd(data_fields, registration)
+            validation_errors += self.check_operator_id(data_fields,
+                                                        registration)
 
-            # mom_dob
-            if not "mom_dob" in data_fields:
-                validation_errors.append("Mother DOB missing")
-            elif not is_valid_date(registration.data["mom_dob"]):
-                validation_errors.append("Mother DOB invalid")
+        elif registration.reg_type == "pmtct_postbirth":
+            validation_errors += self.check_lang(data_fields, registration)
+            validation_errors += self.check_mom_dob(data_fields, registration)
+            # birth date not currently required
+            validation_errors += self.check_operator_id(data_fields,
+                                                        registration)
 
-            # stage & edd
-            if registration.stage == "prebirth":
-                if not "edd" in data_fields:
-                    validation_errors.append("Estimated Due Date missing")
-                elif not is_valid_date(registration.data["edd"]):
-                    validation_errors.append("Estimated Due Date invalid")
-            elif registration.stage == "postbirth":
-                # edd is not required in this instance, currently no other
-                # checks are required
-                pass
-            else:
-                validation_errors.append("Invalid PMTCT registration stage")
-
-        elif registration.data["type"] == "nurseconnect":
+        elif registration.reg_type == "nurseconnect":
             validation_errors.append("Nurseconnect not yet supported")
 
-        elif registration.data["type"] == "momconnect":
-            validation_errors.append("Momconnect not yet supported")
+        elif registration.reg_type == "momconnect_prebirth":
+            validation_errors.append("Momconnect prebirth not yet supported")
+
+        elif registration.reg_type == "momconnect_postbirth":
+            validation_errors.append("Momconnect prebirth not yet supported")
+
+        elif registration.reg_type == "loss_general":
+            validation_errors.append("Loss general not yet supported")
 
         print('@@@@@@@@@@@@@@@@@@@', validation_errors)
         # Evaluate if there were any problems, save and return
