@@ -443,7 +443,8 @@ class TestFieldValidation(AuthenticatedAPITestCase):
 
 class TestRegistrationValidation(AuthenticatedAPITestCase):
 
-    def test_validate_pmtct_1(self):
+    def test_validate_pmtct_prebirth_good(self):
+        """ Good minimal data pmtct_prebirth test """
         # Setup
         registration_data = {
             "reg_type": "pmtct_prebirth",
@@ -454,6 +455,71 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 "language": "eng_ZA",
                 "mom_dob": "1999-01-27",
                 "edd": "2016-11-30",
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        # Execute
+        v = validate_registration.validate(registration)
+        # Check
+        self.assertEqual(v, True)
+
+    def test_validate_pmtct_prebirth_malformed_data(self):
+        """ Missing data pmtct_prebirth test """
+        # Setup
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01",
+                "language": "en",
+                "mom_dob": "199-01-27",
+                "edd": "201-11-30",
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        # Execute
+        v = validate_registration.validate(registration)
+        # Check
+        self.assertEqual(v, False)
+        registration = Registration.objects.get(id=registration.id)
+        self.assertEqual(registration.data["invalid_fields"], [
+            'Invalid UUID registrant_id', 'Language not a valid option',
+            'Mother DOB invalid', 'Estimated Due Date invalid',
+            'Operator ID invalid']
+        )
+
+    def test_validate_pmtct_prebirth_missing_data(self):
+        """ Missing data pmtct_prebirth test """
+        # Setup
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {},
+        }
+        registration = Registration.objects.create(**registration_data)
+        # Execute
+        v = validate_registration.validate(registration)
+        # Check
+        self.assertEqual(v, False)
+        registration = Registration.objects.get(id=registration.id)
+        self.assertEqual(registration.data["invalid_fields"], [
+            'Language is missing from data', 'Mother DOB missing',
+            'Estimated Due Date missing', 'Operator ID missing']
+        )
+
+    def test_validate_pmtct_postbirth_good(self):
+        """ Good minimal data pmtct_postbirth test """
+        # Setup
+        registration_data = {
+            "reg_type": "pmtct_postbirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
             },
         }
         registration = Registration.objects.create(**registration_data)
