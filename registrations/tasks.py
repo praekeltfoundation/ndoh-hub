@@ -145,13 +145,17 @@ class ValidateSubscribe(Task):
         short_name = utils.get_messageset_short_name(
             registration.reg_type, registration.source.authority, weeks)
 
+        # . determine sbm details
+        msgset_id, msgset_schedule, next_sequence_number =\
+            utils.get_messageset_schedule_sequence(
+                short_name, weeks)
 
         subscription = {
             "identity": registration.registrant_id,
-            "messageset": 1,
-            "next_sequence_number": 1,
+            "messageset": msgset_id,
+            "next_sequence_number": next_sequence_number,
             "lang": registration.data["language"],
-            "schedule": 1
+            "schedule": msgset_schedule
         }
         SubscriptionRequest.objects.create(**subscription)
 

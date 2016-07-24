@@ -21,7 +21,7 @@ from ndoh_hub import utils
 
 
 def override_get_today():
-    return datetime.datetime.strptime("20150817", "%Y%m%d")
+    return datetime.datetime.strptime("2016-01-01", "%Y-%m-%d")
 
 
 REG_FIELDS = {}
@@ -518,8 +518,164 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
 class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
 
     @responses.activate
-    def test_src_pmtct_postbirth(self):
-        """ """
+    def test_src_pmtct_prebirth_1(self):
+        """ Test a prebirth registration before 30 weeks """
+        # Setup
+        # . setup pmtct_prebirth registration and set validated to true
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "edd": "2016-05-01"  # 4 months from test date (2016-01-01)
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        registration.validated = True
+        registration.save()
+
+        # . setup get_messageset fixture response
+        query_string = '?short_name=pmtct_prebirth.hw_full.1'
+        responses.add(
+            responses.GET,
+            'http://sbm/api/v1/messageset/%s' % query_string,
+            json={
+                "count": 1,
+                "next": None,
+                "previous": None,
+                "results": [{
+                    "id": 11,
+                    "short_name": 'pmtct_prebirth.hw_full.1',
+                    "default_schedule": 101
+                }]
+            },
+            status=200, content_type='application/json',
+            match_querystring=True
+        )
+
+        # Execute
+        cs = validate_subscribe.create_subscriptionrequests(registration)
+
+        # Check
+        self.assertEqual(cs, "SubscriptionRequest created")
+
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 11)
+        self.assertEqual(sr.next_sequence_number, 1)
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 101)
+
+    @responses.activate
+    def test_src_pmtct_prebirth_2(self):
+        """ Test a prebirth registration 30 - 35 weeks """
+        # Setup
+        # . setup pmtct_prebirth registration and set validated to true
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "edd": "2016-02-20"  # ~7 weeks from test date (2016-01-01)
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        registration.validated = True
+        registration.save()
+
+        # . setup get_messageset fixture response
+        query_string = '?short_name=pmtct_prebirth.hw_full.2'
+        responses.add(
+            responses.GET,
+            'http://sbm/api/v1/messageset/%s' % query_string,
+            json={
+                "count": 1,
+                "next": None,
+                "previous": None,
+                "results": [{
+                    "id": 12,
+                    "short_name": 'pmtct_prebirth.hw_full.2',
+                    "default_schedule": 102
+                }]
+            },
+            status=200, content_type='application/json',
+            match_querystring=True
+        )
+
+        # Execute
+        cs = validate_subscribe.create_subscriptionrequests(registration)
+
+        # Check
+        self.assertEqual(cs, "SubscriptionRequest created")
+
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 12)
+        self.assertEqual(sr.next_sequence_number, 1)
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 102)
+
+    @responses.activate
+    def test_src_pmtct_prebirth_3(self):
+        """ Test a prebirth registration after 35 weeks """
+        # Setup
+        # . setup pmtct_prebirth registration and set validated to true
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "edd": "2016-01-11"  # 10 days from test date (2016-01-01)
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        registration.validated = True
+        registration.save()
+
+        # . setup get_messageset fixture response
+        query_string = '?short_name=pmtct_prebirth.hw_full.3'
+        responses.add(
+            responses.GET,
+            'http://sbm/api/v1/messageset/%s' % query_string,
+            json={
+                "count": 1,
+                "next": None,
+                "previous": None,
+                "results": [{
+                    "id": 13,
+                    "short_name": 'pmtct_prebirth.hw_full.3',
+                    "default_schedule": 103
+                }]
+            },
+            status=200, content_type='application/json',
+            match_querystring=True
+        )
+
+        # Execute
+        cs = validate_subscribe.create_subscriptionrequests(registration)
+
+        # Check
+        self.assertEqual(cs, "SubscriptionRequest created")
+
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 13)
+        self.assertEqual(sr.next_sequence_number, 1)
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 103)
+
+    @responses.activate
+    def test_src_pmtct_postbirth_1(self):
+        """ Test a postbirth registration """
         # Setup
         # . setup pmtct_postbirth registration and set validated to true
         registration_data = {
@@ -536,6 +692,25 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         registration.validated = True
         registration.save()
 
+        # . setup get_messageset fixture response
+        query_string = '?short_name=pmtct_postbirth.hw_full.1'
+        responses.add(
+            responses.GET,
+            'http://sbm/api/v1/messageset/%s' % query_string,
+            json={
+                "count": 1,
+                "next": None,
+                "previous": None,
+                "results": [{
+                    "id": 14,
+                    "short_name": 'pmtct_postbirth.hw_full.1',
+                    "default_schedule": 104
+                }]
+            },
+            status=200, content_type='application/json',
+            match_querystring=True
+        )
+
         # Execute
         cs = validate_subscribe.create_subscriptionrequests(registration)
 
@@ -544,7 +719,7 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
 
         sr = SubscriptionRequest.objects.last()
         self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
-        self.assertEqual(sr.messageset, 1)
+        self.assertEqual(sr.messageset, 14)
         self.assertEqual(sr.next_sequence_number, 1)
         self.assertEqual(sr.lang, "eng_ZA")
-        self.assertEqual(sr.schedule, 1)
+        self.assertEqual(sr.schedule, 104)
