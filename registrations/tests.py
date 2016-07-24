@@ -24,11 +24,6 @@ def override_get_today():
     return datetime.datetime.strptime("2016-01-01", "%Y-%m-%d")
 
 
-REG_FIELDS = {}
-
-REG_DATA = {}
-
-
 class APITestCase(TestCase):
 
     def setUp(self):
