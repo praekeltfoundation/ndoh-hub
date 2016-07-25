@@ -119,15 +119,15 @@ def deactivate_subscription(subscription):
 
 
 def get_messageset_short_name(reg_type, authority, weeks):
-    set_number = 1  # default set_number
+    batch_number = 1  # default batch_number
 
     if "prebirth" in reg_type:
         if 30 <= weeks <= 34:
-            set_number = 2
+            batch_number = 2
         elif weeks >= 35:
-            set_number = 3
+            batch_number = 3
 
-    short_name = "%s.%s.%s" % (reg_type, authority, set_number)
+    short_name = "%s.%s.%s" % (reg_type, authority, batch_number)
 
     return short_name
 
