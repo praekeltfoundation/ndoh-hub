@@ -1,6 +1,7 @@
 ﻿import json
 import uuid
 import datetime
+import responses
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -10,22 +11,17 @@ from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
 from rest_hooks.models import model_saved
 
-from .models import (Source, Registration,
-                     registration_post_save)
+from .models import (Source, Registration, SubscriptionRequest,
+                     psh_validate_subscribe)
 from .tasks import (
-    is_valid_date, is_valid_uuid, is_valid_lang, is_valid_msg_type,
-    is_valid_msg_receiver, is_valid_loss_reason, is_valid_name,
-    is_valid_id_type, is_valid_id_no)
+    validate_subscribe,
+    is_valid_date, is_valid_uuid, is_valid_lang
+    )
 from ndoh_hub import utils
 
 
 def override_get_today():
-    return datetime.datetime.strptime("20150817", "%Y%m%d")
-
-
-REG_FIELDS = {}
-
-REG_DATA = {}
+    return datetime.datetime.strptime("2016-01-01", "%Y-%m-%d")
 
 
 class APITestCase(TestCase):
@@ -45,7 +41,7 @@ class AuthenticatedAPITestCase(APITestCase):
         assert has_listeners(), (
             "Registration model has no post_save listeners. Make sure"
             " helpers cleaned up properly in earlier tests.")
-        post_save.disconnect(receiver=registration_post_save,
+        post_save.disconnect(receiver=psh_validate_subscribe,
                              sender=Registration)
         post_save.disconnect(receiver=model_saved,
                              dispatch_uid='instance-saved-hook')
@@ -59,7 +55,7 @@ class AuthenticatedAPITestCase(APITestCase):
         assert not has_listeners(), (
             "Registration model still has post_save listeners. Make sure"
             " helpers removed them properly in earlier tests.")
-        post_save.connect(registration_post_save, sender=Registration)
+        post_save.connect(psh_validate_subscribe, sender=Registration)
 
     def make_source_adminuser(self):
         data = {
@@ -79,7 +75,7 @@ class AuthenticatedAPITestCase(APITestCase):
 
     def make_registration_adminuser(self):
         data = {
-            "stage": "prebirth",
+            "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "data": {"test_adminuser_reg_key": "test_adminuser_reg_value"},
             "source": self.make_source_adminuser()
@@ -88,7 +84,7 @@ class AuthenticatedAPITestCase(APITestCase):
 
     def make_registration_normaluser(self):
         data = {
-            "stage": "prebirth",
+            "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "data": {"test_normaluser_reg_key": "test_normaluser_reg_value"},
             "source": self.make_source_normaluser()
@@ -283,7 +279,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         # Setup
         self.make_source_adminuser()
         post_data = {
-            "stage": "prebirth",
+            "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "data": {"test_key1": "test_value1"}
         }
@@ -296,7 +292,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
 
         d = Registration.objects.last()
         self.assertEqual(d.source.name, 'test_source_adminuser')
-        self.assertEqual(d.stage, 'prebirth')
+        self.assertEqual(d.reg_type, 'momconnect_prebirth')
         self.assertEqual(d.registrant_id,
                          "mother01-63e2-4acc-9b94-26663b9bc267")
         self.assertEqual(d.validated, False)
@@ -306,7 +302,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         # Setup
         self.make_source_normaluser()
         post_data = {
-            "stage": "prebirth",
+            "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "data": {"test_key1": "test_value1"}
         }
@@ -319,7 +315,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
 
         d = Registration.objects.last()
         self.assertEqual(d.source.name, 'test_source_normaluser')
-        self.assertEqual(d.stage, 'prebirth')
+        self.assertEqual(d.reg_type, 'momconnect_prebirth')
         self.assertEqual(d.registrant_id,
                          "mother01-63e2-4acc-9b94-26663b9bc267")
         self.assertEqual(d.validated, False)
@@ -329,7 +325,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         # Setup
         self.make_source_adminuser()
         post_data = {
-            "stage": "prebirth",
+            "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "data": {"test_key1": "test_value1"},
             "validated": True
@@ -343,7 +339,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
 
         d = Registration.objects.last()
         self.assertEqual(d.source.name, 'test_source_adminuser')
-        self.assertEqual(d.stage, 'prebirth')
+        self.assertEqual(d.reg_type, 'momconnect_prebirth')
         self.assertEqual(d.registrant_id,
                          "mother01-63e2-4acc-9b94-26663b9bc267")
         self.assertEqual(d.validated, False)  # Should ignore True post_data
@@ -354,8 +350,8 @@ class TestFieldValidation(AuthenticatedAPITestCase):
 
     def test_is_valid_date(self):
         # Setup
-        good_date = "19820315"
-        invalid_date = "19830229"
+        good_date = "1982-03-15"
+        invalid_date = "1983-02-29"
         bad_date = "1234"
         # Execute
         # Check
@@ -381,72 +377,441 @@ class TestFieldValidation(AuthenticatedAPITestCase):
         self.assertEqual(is_valid_lang(valid_lang), True)
         self.assertEqual(is_valid_lang(invalid_lang), False)
 
-    def test_is_valid_msg_type(self):
+
+class TestRegistrationValidation(AuthenticatedAPITestCase):
+
+    def test_validate_pmtct_prebirth_good(self):
+        """ Good minimal data pmtct_prebirth test """
         # Setup
-        valid_msg_type = "text"
-        invalid_msg_type = "voice"
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "edd": "2016-11-30",
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
         # Execute
+        v = validate_subscribe.validate(registration)
         # Check
-        self.assertEqual(is_valid_msg_type(valid_msg_type), True)
-        self.assertEqual(is_valid_msg_type(invalid_msg_type), False)
+        self.assertEqual(v, True)
 
-    def test_is_valid_msg_receiver(self):
+    def test_validate_pmtct_prebirth_malformed_data(self):
+        """ Malformed data pmtct_prebirth test """
         # Setup
-        valid_msg_receiver = "mother_to_be"
-        invalid_msg_receiver = "mama"
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01",
+                "language": "en",
+                "mom_dob": "199-01-27",
+                "edd": "201-11-30",
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
         # Execute
+        v = validate_subscribe.validate(registration)
         # Check
-        self.assertEqual(is_valid_msg_receiver(valid_msg_receiver), True)
-        self.assertEqual(is_valid_msg_receiver(invalid_msg_receiver), False)
+        self.assertEqual(v, False)
+        registration = Registration.objects.get(id=registration.id)
+        self.assertEqual(registration.data["invalid_fields"], [
+            'Invalid UUID registrant_id', 'Language not a valid option',
+            'Mother DOB invalid', 'Estimated Due Date invalid',
+            'Operator ID invalid']
+        )
 
-    def test_is_valid_loss_reason(self):
+    def test_validate_pmtct_prebirth_missing_data(self):
+        """ Missing data pmtct_prebirth test """
         # Setup
-        valid_loss_reason = "miscarriage"
-        invalid_loss_reason = "other"
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {},
+        }
+        registration = Registration.objects.create(**registration_data)
         # Execute
+        v = validate_subscribe.validate(registration)
         # Check
-        self.assertEqual(is_valid_loss_reason(valid_loss_reason), True)
-        self.assertEqual(is_valid_loss_reason(invalid_loss_reason), False)
+        self.assertEqual(v, False)
+        registration = Registration.objects.get(id=registration.id)
+        self.assertEqual(registration.data["invalid_fields"], [
+            'Language is missing from data', 'Mother DOB missing',
+            'Estimated Due Date missing', 'Operator ID missing']
+        )
 
-    def test_is_valid_name(self):
+    def test_validate_pmtct_postbirth_good(self):
+        """ Good minimal data pmtct_postbirth test """
         # Setup
-        valid_name1 = "Namey"
-        valid_name2 = "Zoé"
-        valid_name3 = "1234"
-        invalid_name = 10375075
+        registration_data = {
+            "reg_type": "pmtct_postbirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
         # Execute
+        v = validate_subscribe.validate(registration)
         # Check
-        self.assertEqual(is_valid_name(valid_name1), True)
-        self.assertEqual(is_valid_name(valid_name2), True)
-        self.assertEqual(is_valid_name(valid_name3), True)  # TODO reject
-        self.assertEqual(is_valid_name(invalid_name), False)
+        self.assertEqual(v, True)
 
-    def test_is_valid_id_type(self):
+    def test_validate_pmtct_postbirth_malformed_data(self):
+        """ Malformed data pmtct_postbirth test """
         # Setup
-        valid_id_type = "sa_id"
-        invalid_id_type = "ugandan_id"
+        registration_data = {
+            "reg_type": "pmtct_postbirth",
+            "registrant_id": "mother01",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01",
+                "language": "en",
+                "mom_dob": "199-01-27",
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
         # Execute
+        v = validate_subscribe.validate(registration)
         # Check
-        self.assertEqual(is_valid_id_type(valid_id_type), True)
-        self.assertEqual(is_valid_id_type(invalid_id_type), False)
+        self.assertEqual(v, False)
+        registration = Registration.objects.get(id=registration.id)
+        self.assertEqual(registration.data["invalid_fields"], [
+            'Invalid UUID registrant_id', 'Language not a valid option',
+            'Mother DOB invalid', 'Operator ID invalid']
+        )
 
-    def test_is_valid_id_no(self):
+    def test_validate_pmtct_postbirth_missing_data(self):
+        """ Missing data pmtct_postbirth test """
         # Setup
-        valid_id_no = "12345"
-        invalid_id_no = 12345
+        registration_data = {
+            "reg_type": "pmtct_postbirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {},
+        }
+        registration = Registration.objects.create(**registration_data)
         # Execute
+        v = validate_subscribe.validate(registration)
         # Check
-        self.assertEqual(is_valid_id_no(valid_id_no), True)
-        self.assertEqual(is_valid_id_no(invalid_id_no), False)
+        self.assertEqual(v, False)
+        registration = Registration.objects.get(id=registration.id)
+        self.assertEqual(registration.data["invalid_fields"], [
+            'Language is missing from data', 'Mother DOB missing',
+            'Operator ID missing']
+        )
 
 
-# class TestRegistrationValidation(AuthenticatedAPITestCase):
+class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
 
-    # def test_validate_hw_prebirth_id(self):
-    #     # Setup
-    #     registration_data = {}
-    #     registration = Registration.objects.create(**registration_data)
-    #     # Execute
-    #     v = validate_registration.validate(registration)
-    #     # Check
-    #     self.assertEqual(v, True)
+    @responses.activate
+    def test_src_pmtct_prebirth_1(self):
+        """ Test a prebirth registration before 30 weeks """
+        # Setup
+        # . setup pmtct_prebirth registration and set validated to true
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "edd": "2016-05-01"  # 4 months from test date (2016-01-01)
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        registration.validated = True
+        registration.save()
+
+        # . setup get_messageset fixture response
+        query_string = '?short_name=pmtct_prebirth.hw_full.1'
+        responses.add(
+            responses.GET,
+            'http://sbm/api/v1/messageset/%s' % query_string,
+            json={
+                "count": 1,
+                "next": None,
+                "previous": None,
+                "results": [{
+                    "id": 11,
+                    "short_name": 'pmtct_prebirth.hw_full.1',
+                    "default_schedule": 101
+                }]
+            },
+            status=200, content_type='application/json',
+            match_querystring=True
+        )
+
+        # Execute
+        cs = validate_subscribe.create_subscriptionrequests(registration)
+
+        # Check
+        self.assertEqual(cs, "SubscriptionRequest created")
+
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 11)
+        self.assertEqual(sr.next_sequence_number, 1)
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 101)
+
+    @responses.activate
+    def test_src_pmtct_prebirth_2(self):
+        """ Test a prebirth registration 30 - 35 weeks """
+        # Setup
+        # . setup pmtct_prebirth registration and set validated to true
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "edd": "2016-02-20"  # ~7 weeks from test date (2016-01-01)
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        registration.validated = True
+        registration.save()
+
+        # . setup get_messageset fixture response
+        query_string = '?short_name=pmtct_prebirth.hw_full.2'
+        responses.add(
+            responses.GET,
+            'http://sbm/api/v1/messageset/%s' % query_string,
+            json={
+                "count": 1,
+                "next": None,
+                "previous": None,
+                "results": [{
+                    "id": 12,
+                    "short_name": 'pmtct_prebirth.hw_full.2',
+                    "default_schedule": 102
+                }]
+            },
+            status=200, content_type='application/json',
+            match_querystring=True
+        )
+
+        # Execute
+        cs = validate_subscribe.create_subscriptionrequests(registration)
+
+        # Check
+        self.assertEqual(cs, "SubscriptionRequest created")
+
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 12)
+        self.assertEqual(sr.next_sequence_number, 1)
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 102)
+
+    @responses.activate
+    def test_src_pmtct_prebirth_3(self):
+        """ Test a prebirth registration after 35 weeks """
+        # Setup
+        # . setup pmtct_prebirth registration and set validated to true
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "edd": "2016-01-11"  # 10 days from test date (2016-01-01)
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        registration.validated = True
+        registration.save()
+
+        # . setup get_messageset fixture response
+        query_string = '?short_name=pmtct_prebirth.hw_full.3'
+        responses.add(
+            responses.GET,
+            'http://sbm/api/v1/messageset/%s' % query_string,
+            json={
+                "count": 1,
+                "next": None,
+                "previous": None,
+                "results": [{
+                    "id": 13,
+                    "short_name": 'pmtct_prebirth.hw_full.3',
+                    "default_schedule": 103
+                }]
+            },
+            status=200, content_type='application/json',
+            match_querystring=True
+        )
+
+        # Execute
+        cs = validate_subscribe.create_subscriptionrequests(registration)
+
+        # Check
+        self.assertEqual(cs, "SubscriptionRequest created")
+
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 13)
+        self.assertEqual(sr.next_sequence_number, 1)
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 103)
+
+    @responses.activate
+    def test_src_pmtct_postbirth_1(self):
+        """ Test a postbirth registration """
+        # Setup
+        # . setup pmtct_postbirth registration and set validated to true
+        registration_data = {
+            "reg_type": "pmtct_postbirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        registration.validated = True
+        registration.save()
+
+        # . setup get_messageset fixture response
+        query_string = '?short_name=pmtct_postbirth.hw_full.1'
+        responses.add(
+            responses.GET,
+            'http://sbm/api/v1/messageset/%s' % query_string,
+            json={
+                "count": 1,
+                "next": None,
+                "previous": None,
+                "results": [{
+                    "id": 14,
+                    "short_name": 'pmtct_postbirth.hw_full.1',
+                    "default_schedule": 104
+                }]
+            },
+            status=200, content_type='application/json',
+            match_querystring=True
+        )
+
+        # Execute
+        cs = validate_subscribe.create_subscriptionrequests(registration)
+
+        # Check
+        self.assertEqual(cs, "SubscriptionRequest created")
+
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 14)
+        self.assertEqual(sr.next_sequence_number, 1)
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 104)
+
+
+class TestRegistrationCreation(AuthenticatedAPITestCase):
+
+    @responses.activate
+    def test_registration_process_good(self):
+        """ Test a full registration process with good data """
+        # Setup
+        # . reactivate post-save hook
+        post_save.connect(psh_validate_subscribe, sender=Registration)
+
+        # . setup pmtct_prebirth registration
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "edd": "2016-05-01"  # 4 months from test date (2016-01-01)
+            },
+        }
+
+        # . setup get_messageset fixture response
+        query_string = '?short_name=pmtct_prebirth.hw_full.1'
+        responses.add(
+            responses.GET,
+            'http://sbm/api/v1/messageset/%s' % query_string,
+            json={
+                "count": 1,
+                "next": None,
+                "previous": None,
+                "results": [{
+                    "id": 11,
+                    "short_name": 'pmtct_prebirth.hw_full.1',
+                    "default_schedule": 101
+                }]
+            },
+            status=200, content_type='application/json',
+            match_querystring=True
+        )
+
+        # Execute
+        registration = Registration.objects.create(**registration_data)
+
+        # Check
+        # . check registration validated
+        registration.refresh_from_db()
+        self.assertEqual(registration.validated, True)
+
+        # . check subscriptionrequest object
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 11)
+        self.assertEqual(sr.next_sequence_number, 1)
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 101)
+
+        # Teardown
+        post_save.disconnect(psh_validate_subscribe, sender=Registration)
+
+    @responses.activate
+    def test_registration_process_bad(self):
+        """ Test a full registration process with bad data """
+        # Setup
+        # . reactivate post-save hook
+        post_save.connect(psh_validate_subscribe, sender=Registration)
+
+        # . setup pmtct_prebirth registration
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27"
+                # edd is missing
+            },
+        }
+
+        # Execute
+        registration = Registration.objects.create(**registration_data)
+
+        # Check
+        # . check registration failed to validate
+        registration.refresh_from_db()
+        self.assertEqual(registration.validated, False)
+        self.assertEqual(registration.data["invalid_fields"],
+                         ['Estimated Due Date missing'])
+
+        # . check no subscriptionrequest objects were created
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+
+        # Teardown
+        post_save.disconnect(psh_validate_subscribe, sender=Registration)

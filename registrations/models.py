@@ -36,26 +36,29 @@ class Registration(models.Model):
     """ A registation submitted via Vumi or other sources.
 
     After a registation has been created, a task will fire that
-    validates if the data provided is sufficient for the stage
+    validates if the data provided is sufficient for the type
     of pregnancy.
 
     Args:
-        stage (str): The stage of pregnancy of the mother
+        reg_type (str): The type of registration
         data (json): Registration info in json format
         validated (bool): True if the registation has been
             validated after creation
         source (object): Auto-completed field based on the Api key
     """
 
-    STAGE_CHOICES = (
-        ('prebirth', "Mother is pregnant"),
-        ('postbirth', "Baby has been born"),
-        ('loss', "Baby loss")
+    REG_TYPE_CHOICES = (
+        ('momconnect_prebirth', "MomConnect pregnancy registration"),
+        ('momconnect_postbirth', "MomConnect baby registration"),
+        ('nurseconnect', "Nurseconnect registration"),
+        ('pmtct_prebirth', "PMTCT pregnancy registration"),
+        ('pmtct_postbirth', "PMTCT baby registration"),
+        ('loss_general', "Loss general registration"),
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    stage = models.CharField(max_length=30, null=False, blank=False,
-                             choices=STAGE_CHOICES)
+    reg_type = models.CharField(max_length=30, null=False, blank=False,
+                                choices=REG_TYPE_CHOICES)
     registrant_id = models.CharField(max_length=36, null=False, blank=False)
     data = JSONField(null=True, blank=True)
     validated = models.BooleanField(default=False)
@@ -74,12 +77,12 @@ class Registration(models.Model):
 
 
 @receiver(post_save, sender=Registration)
-def registration_post_save(sender, instance, created, **kwargs):
+def psh_validate_subscribe(sender, instance, created, **kwargs):
     """ Post save hook to fire Registration validation task
     """
     if created:
-        from .tasks import validate_registration
-        validate_registration.apply_async(
+        from .tasks import validate_subscribe
+        validate_subscribe.apply_async(
             kwargs={"registration_id": str(instance.id)})
 
 
@@ -91,7 +94,7 @@ class SubscriptionRequest(models.Model):
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    contact = models.CharField(max_length=36, null=False, blank=False)
+    identity = models.CharField(max_length=36, null=False, blank=False)
     messageset = models.IntegerField(null=False, blank=False)
     next_sequence_number = models.IntegerField(default=1, null=False,
                                                blank=False)
@@ -109,7 +112,7 @@ class SubscriptionRequest(models.Model):
             'hook': hook.dict(),
             'data': {
                 'id': str(self.id),
-                'contact': self.contact,
+                'identity': self.identity,
                 'messageset': self.messageset,
                 'next_sequence_number': self.next_sequence_number,
                 'lang': self.lang,
