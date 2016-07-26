@@ -24,6 +24,124 @@ def override_get_today():
     return datetime.datetime.strptime("2016-01-01", "%Y-%m-%d")
 
 
+def mock_get_messageset(short_name):
+    messageset_id = {
+        "pmtct_prebirth.hw_full.1": 11,
+        "pmtct_prebirth.hw_full.2": 12,
+        "pmtct_prebirth.hw_full.3": 13,
+    }[short_name]
+
+    default_schedule = {
+        "pmtct_prebirth.hw_full.1": 101,
+        "pmtct_prebirth.hw_full.2": 102,
+        "pmtct_prebirth.hw_full.3": 103,
+    }[short_name]
+
+    responses.add(
+        responses.GET,
+        'http://sbm/api/v1/messageset/?short_name=%s' % short_name,
+        json={
+            "count": 1,
+            "next": None,
+            "previous": None,
+            "results": [{
+                "id": messageset_id,
+                "short_name": short_name,
+                "default_schedule": default_schedule
+            }]
+        },
+        status=200, content_type='application/json',
+        match_querystring=True
+    )
+    return default_schedule
+
+
+def mock_get_schedule(schedule_id):
+    day_of_week = {
+        101: "1",
+        102: "1,3",
+        103: "1,3,5",
+    }[schedule_id]
+
+    responses.add(
+        responses.GET,
+        'http://sbm/api/v1/schedule/%s/' % schedule_id,
+        json={"id": schedule_id, "day_of_week": day_of_week},
+        status=200, content_type='application/json',
+    )
+
+
+class TestUtils(TestCase):
+
+    def test_get_pregnancy_week(self):
+        t = override_get_today()
+
+        # Test around 40 weeks
+        self.assertEqual(utils.get_pregnancy_week(t, "2015-12-18"), 42)
+        self.assertEqual(utils.get_pregnancy_week(t, "2015-12-19"), 41)
+        self.assertEqual(utils.get_pregnancy_week(t, "2015-12-25"), 41)
+
+        # . week 40 is very long due to int() usage
+        self.assertEqual(utils.get_pregnancy_week(t, "2015-12-26"), 40)
+        self.assertEqual(utils.get_pregnancy_week(t, "2015-12-31"), 40)
+        self.assertEqual(utils.get_pregnancy_week(t, "2016-01-01"), 40)
+        self.assertEqual(utils.get_pregnancy_week(t, "2016-01-07"), 40)
+
+        self.assertEqual(utils.get_pregnancy_week(t, "2016-01-08"), 39)
+        self.assertEqual(utils.get_pregnancy_week(t, "2016-01-14"), 39)
+        self.assertEqual(utils.get_pregnancy_week(t, "2016-01-15"), 38)
+
+        # Test around first weeks
+        self.assertEqual(utils.get_pregnancy_week(t, "2016-09-22"), 3)
+        self.assertEqual(utils.get_pregnancy_week(t, "2016-09-23"), 2)
+        # . never less than 2
+        self.assertEqual(utils.get_pregnancy_week(t, "2100-01-01"), 2)
+
+    def test_get_messageset_short_name(self):
+        # any reg_type non-prebirth
+        self.assertEqual(
+            utils.get_messageset_short_name("reg_type", "authority", 9000),
+            "reg_type.authority.1")
+
+        # week -1000 prebirth
+        self.assertEqual(
+            utils.get_messageset_short_name("prebirth", "authority", -1000),
+            "prebirth.authority.1")
+        # week 1 prebirth
+        self.assertEqual(
+            utils.get_messageset_short_name("prebirth", "authority", 1),
+            "prebirth.authority.1")
+        # week 29 prebirth
+        self.assertEqual(
+            utils.get_messageset_short_name("prebirth", "authority", 29),
+            "prebirth.authority.1")
+        # week 30 prebirth
+        self.assertEqual(
+            utils.get_messageset_short_name("prebirth", "authority", 30),
+            "prebirth.authority.2")
+        # week 34 prebirth
+        self.assertEqual(
+            utils.get_messageset_short_name("prebirth", "authority", 34),
+            "prebirth.authority.2")
+        # week 35 prebirth
+        self.assertEqual(
+            utils.get_messageset_short_name("prebirth", "authority", 35),
+            "prebirth.authority.3")
+        # week 1000 prebirth
+        self.assertEqual(
+            utils.get_messageset_short_name("prebirth", "authority", 1000),
+            "prebirth.authority.3")
+
+    @responses.activate
+    def test_get_messageset_schedule_sequence(self):
+        # Setup fixture responses
+        schedule_id = mock_get_messageset("pmtct_prebirth.hw_full.1")
+        mock_get_schedule(schedule_id)
+        # Check
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "pmtct_prebirth.hw_full.1", 23), (11, 101, 17))
+
+
 class APITestCase(TestCase):
 
     def setUp(self):
@@ -532,32 +650,9 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         registration.validated = True
         registration.save()
 
-        # . setup get_messageset fixture response
-        query_string = '?short_name=pmtct_prebirth.hw_full.1'
-        responses.add(
-            responses.GET,
-            'http://sbm/api/v1/messageset/%s' % query_string,
-            json={
-                "count": 1,
-                "next": None,
-                "previous": None,
-                "results": [{
-                    "id": 11,
-                    "short_name": 'pmtct_prebirth.hw_full.1',
-                    "default_schedule": 101
-                }]
-            },
-            status=200, content_type='application/json',
-            match_querystring=True
-        )
-
-        # . setup get_schedule fixture response
-        responses.add(
-            responses.GET,
-            'http://sbm/api/v1/schedule/101/',
-            json={"id": 1, "day_of_week": "1"},
-            status=200, content_type='application/json',
-        )
+        # . setup fixture responses
+        schedule_id = mock_get_messageset("pmtct_prebirth.hw_full.1")
+        mock_get_schedule(schedule_id)
 
         # Execute
         cs = validate_subscribe.create_subscriptionrequests(registration)
@@ -592,32 +687,9 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         registration.validated = True
         registration.save()
 
-        # . setup get_messageset fixture response
-        query_string = '?short_name=pmtct_prebirth.hw_full.2'
-        responses.add(
-            responses.GET,
-            'http://sbm/api/v1/messageset/%s' % query_string,
-            json={
-                "count": 1,
-                "next": None,
-                "previous": None,
-                "results": [{
-                    "id": 12,
-                    "short_name": 'pmtct_prebirth.hw_full.2',
-                    "default_schedule": 102
-                }]
-            },
-            status=200, content_type='application/json',
-            match_querystring=True
-        )
-
-        # . setup get_schedule fixture response
-        responses.add(
-            responses.GET,
-            'http://sbm/api/v1/schedule/102/',
-            json={"id": 2, "day_of_week": "1,3"},
-            status=200, content_type='application/json',
-        )
+        # . setup fixture responses
+        schedule_id = mock_get_messageset("pmtct_prebirth.hw_full.2")
+        mock_get_schedule(schedule_id)
 
         # Execute
         cs = validate_subscribe.create_subscriptionrequests(registration)
@@ -652,32 +724,9 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         registration.validated = True
         registration.save()
 
-        # . setup get_messageset fixture response
-        query_string = '?short_name=pmtct_prebirth.hw_full.3'
-        responses.add(
-            responses.GET,
-            'http://sbm/api/v1/messageset/%s' % query_string,
-            json={
-                "count": 1,
-                "next": None,
-                "previous": None,
-                "results": [{
-                    "id": 13,
-                    "short_name": 'pmtct_prebirth.hw_full.3',
-                    "default_schedule": 103
-                }]
-            },
-            status=200, content_type='application/json',
-            match_querystring=True
-        )
-
-        # . setup get_schedule fixture response
-        responses.add(
-            responses.GET,
-            'http://sbm/api/v1/schedule/103/',
-            json={"id": 3, "day_of_week": "1,3,5"},
-            status=200, content_type='application/json',
-        )
+        # . setup fixture responses
+        schedule_id = mock_get_messageset("pmtct_prebirth.hw_full.3")
+        mock_get_schedule(schedule_id)
 
         # Execute
         cs = validate_subscribe.create_subscriptionrequests(registration)
