@@ -13,12 +13,12 @@ def get_pregnancy_week(today, edd):
     """ Calculate how far along the mother's prenancy is in weeks. """
     due_date = datetime.datetime.strptime(edd, "%Y-%m-%d")
     time_diff = due_date - today
-    time_diff_weeks = time_diff.days / 7
+    time_diff_weeks = int(time_diff.days / 7)
     preg_weeks = 40 - time_diff_weeks
     # You can't be less than two week pregnant
     if preg_weeks <= 1:
         preg_weeks = 2  # changed from JS's 'false' to achieve same result
-    return int(preg_weeks)
+    return preg_weeks
 
 
 def get_identity(identity):
