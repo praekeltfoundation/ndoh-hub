@@ -141,7 +141,6 @@ class ValidateSubscribe(Task):
             weeks = utils.get_pregnancy_week(utils.get_today(),
                                              registration.data["edd"])
 
-        print("@@@@@@@@@@@@@@@@@@@@@", weeks)
         # . determine messageset shortname
         short_name = utils.get_messageset_short_name(
             registration.reg_type, registration.source.authority, weeks)
