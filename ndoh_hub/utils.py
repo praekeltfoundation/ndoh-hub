@@ -18,7 +18,7 @@ def get_pregnancy_week(today, edd):
     # You can't be less than two week pregnant
     if preg_weeks <= 1:
         preg_weeks = 2  # changed from JS's 'false' to achieve same result
-    return preg_weeks
+    return int(preg_weeks)
 
 
 def get_identity(identity):
@@ -135,9 +135,29 @@ def get_messageset_short_name(reg_type, authority, weeks):
 def get_messageset_schedule_sequence(short_name, weeks):
     # get messageset
     messageset = get_messageset(short_name)
+    print('##########################', short_name)
+
+    # get schedule
+    schedule = get_schedule(messageset["default_schedule"])
+    # get schedule days of week: comma-seperated str e.g. '1,3' for Mon & Wed
+    days_of_week = schedule["day_of_week"]
+    # determine how many times a week messages are sent e.g. 2 for '1,3'
+    msgs_per_week = len(days_of_week.split(','))
+
+    next_sequence_number = 1  # default to 1
 
     # calculate next_sequence_number
-    next_sequence_number = 1  # to be expanded with momconnect migration
+    if short_name == 'pmtct_prebirth.hw_full.1':
+        if weeks >= 7:
+            next_sequence_number = (weeks - 6) * msgs_per_week
+
+    if short_name == 'pmtct_prebirth.hw_full.2':
+        if weeks >= 31:
+            next_sequence_number = (weeks - 30) * msgs_per_week
+
+    if short_name == 'pmtct_prebirth.hw_full.3':
+        if weeks >= 35:
+            next_sequence_number = (weeks - 34) * msgs_per_week
 
     return (messageset["id"], messageset["default_schedule"],
             next_sequence_number)
