@@ -762,7 +762,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "language": "eng_ZA",
                 "mom_dob": "1999-01-27",
-                "edd": "2016-05-01"  # 4 months from test date (2016-01-01)
+                "edd": "2016-05-01"  # in week 22 of pregnancy
             },
         }
 
@@ -785,6 +785,14 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             match_querystring=True
         )
 
+        # . setup get_schedule fixture response
+        responses.add(
+            responses.GET,
+            'http://sbm/api/v1/schedule/101/',
+            json={"id": 1, "day_of_week": "1"},
+            status=200, content_type='application/json',
+        )
+
         # Execute
         registration = Registration.objects.create(**registration_data)
 
@@ -797,7 +805,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         sr = SubscriptionRequest.objects.last()
         self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
         self.assertEqual(sr.messageset, 11)
-        self.assertEqual(sr.next_sequence_number, 1)
+        self.assertEqual(sr.next_sequence_number, 16)  # (22 - 6) * 1
         self.assertEqual(sr.lang, "eng_ZA")
         self.assertEqual(sr.schedule, 101)
 

@@ -135,14 +135,15 @@ def get_messageset_short_name(reg_type, authority, weeks):
 def get_messageset_schedule_sequence(short_name, weeks):
     # get messageset
     messageset = get_messageset(short_name)
-    print('##########################', short_name)
 
-    # get schedule
-    schedule = get_schedule(messageset["default_schedule"])
-    # get schedule days of week: comma-seperated str e.g. '1,3' for Mon & Wed
-    days_of_week = schedule["day_of_week"]
-    # determine how many times a week messages are sent e.g. 2 for '1,3'
-    msgs_per_week = len(days_of_week.split(','))
+    # TODO 4: handle postbirth
+    if "prebirth" in short_name:
+        # get schedule
+        schedule = get_schedule(messageset["default_schedule"])
+        # get schedule days of week: comma-seperated str e.g. '1,3' for Mon&Wed
+        days_of_week = schedule["day_of_week"]
+        # determine how many times a week messages are sent e.g. 2 for '1,3'
+        msgs_per_week = len(days_of_week.split(','))
 
     next_sequence_number = 1  # default to 1
 
