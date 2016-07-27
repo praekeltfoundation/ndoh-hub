@@ -57,6 +57,7 @@ INSTALLED_APPS = (
     'rest_hooks',
     # us
     'registrations',
+    'changes'
 
 )
 
@@ -165,6 +166,7 @@ CELERY_ALWAYS_EAGER = False
 # Tell Celery where to find the tasks
 CELERY_IMPORTS = (
     'registrations.tasks',
+    'changes.tasks',
 )
 
 CELERY_CREATE_MISSING_QUEUES = True
@@ -173,6 +175,9 @@ CELERY_ROUTES = {
         'queue': 'mediumpriority',
     },
     'registrations.tasks.validate_subscribe': {
+        'queue': 'priority',
+    },
+    'changes.tasks.implement_action': {
         'queue': 'priority',
     },
     'registrations.tasks.DeliverHook': {
