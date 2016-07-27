@@ -149,9 +149,7 @@ def get_messageset_short_name(reg_type, authority, weeks):
 def get_messageset_schedule_sequence(short_name, weeks):
     # get messageset
     messageset = get_messageset(short_name)
-    print(weeks)
 
-    # TODO 4: handle postbirth
     if "prebirth" in short_name:
         # get schedule
         schedule = get_schedule(messageset["default_schedule"])
