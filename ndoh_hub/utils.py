@@ -23,6 +23,14 @@ def get_pregnancy_week(today, edd):
     return preg_weeks
 
 
+def get_baby_age(today, baby_dob):
+    """ Calculate the baby's age in weeks """
+    birth_date = datetime.datetime.strptime(baby_dob, "%Y-%m-%d")
+    time_diff = today - birth_date
+    baby_age_weeks = int(round(time_diff.days // 7))
+    return baby_age_weeks
+
+
 def get_identity(identity):
     url = "%s/%s/%s/" % (settings.IDENTITY_STORE_URL, "identities", identity)
     headers = {'Authorization': 'Token %s' % settings.IDENTITY_STORE_TOKEN,

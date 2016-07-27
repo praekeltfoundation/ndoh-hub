@@ -92,6 +92,18 @@ class TestUtils(TestCase):
         # . never less than 2
         self.assertEqual(utils.get_pregnancy_week(t, "2100-01-01"), 2)
 
+    def test_get_baby_age(self):
+        t = override_get_today()
+
+        # Test baby birth date that is in the future - should never happen
+        # TODO: raise exception?
+        self.assertEqual(utils.get_baby_age(t, "2016-01-02"), -1)
+        # Test same day
+        self.assertEqual(utils.get_baby_age(t, "2016-01-01"), 0)
+        # Test first week transition
+        self.assertEqual(utils.get_baby_age(t, "2015-12-26"), 0)
+        self.assertEqual(utils.get_baby_age(t, "2015-12-25"), 1)
+
     def test_get_messageset_short_name(self):
         # any reg_type non-prebirth
         self.assertEqual(
