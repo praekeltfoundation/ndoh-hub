@@ -864,6 +864,43 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         self.assertEqual(sr.lang, "eng_ZA")
         self.assertEqual(sr.schedule, 104)
 
+    @responses.activate
+    def test_src_pmtct_postbirth_2(self):
+        """ Test a postbirth registration """
+        # Setup
+        # . setup pmtct_postbirth registration and set validated to true
+        registration_data = {
+            "reg_type": "pmtct_postbirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_normaluser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "baby_dob": "2015-12-01"
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        registration.validated = True
+        registration.save()
+
+        # setup fixture responses
+        schedule_id = mock_get_messageset("pmtct_postbirth.patient.2")
+        mock_get_schedule(schedule_id)
+
+        # Execute
+        cs = validate_subscribe.create_subscriptionrequests(registration)
+
+        # Check
+        self.assertEqual(cs, "SubscriptionRequest created")
+
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 15)
+        self.assertEqual(sr.next_sequence_number, 3)
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 105)
+
 
 class TestRegistrationCreation(AuthenticatedAPITestCase):
 
