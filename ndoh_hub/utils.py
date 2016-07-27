@@ -15,7 +15,7 @@ def get_pregnancy_week(today, edd):
     """ Calculate how far along the mother's prenancy is in weeks. """
     due_date = datetime.datetime.strptime(edd, "%Y-%m-%d")
     time_diff = due_date - today
-    time_diff_weeks = int(time_diff.days / 7)
+    time_diff_weeks = int(round(time_diff.days // 7))
     preg_weeks = 40 - time_diff_weeks
     # You can't be less than two week pregnant
     if preg_weeks <= 1:

@@ -77,16 +77,11 @@ class TestUtils(TestCase):
         t = override_get_today()
 
         # Test around 40 weeks
-        self.assertEqual(utils.get_pregnancy_week(t, "2015-12-18"), 42)
-        self.assertEqual(utils.get_pregnancy_week(t, "2015-12-19"), 41)
+        self.assertEqual(utils.get_pregnancy_week(t, "2015-12-19"), 42)
         self.assertEqual(utils.get_pregnancy_week(t, "2015-12-25"), 41)
-
-        # . week 40 is very long due to int() usage
-        self.assertEqual(utils.get_pregnancy_week(t, "2015-12-26"), 40)
-        self.assertEqual(utils.get_pregnancy_week(t, "2015-12-31"), 40)
+        self.assertEqual(utils.get_pregnancy_week(t, "2015-12-31"), 41)
         self.assertEqual(utils.get_pregnancy_week(t, "2016-01-01"), 40)
         self.assertEqual(utils.get_pregnancy_week(t, "2016-01-07"), 40)
-
         self.assertEqual(utils.get_pregnancy_week(t, "2016-01-08"), 39)
         self.assertEqual(utils.get_pregnancy_week(t, "2016-01-14"), 39)
         self.assertEqual(utils.get_pregnancy_week(t, "2016-01-15"), 38)
