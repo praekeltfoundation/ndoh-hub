@@ -26,15 +26,19 @@ def override_get_today():
 
 def mock_get_messageset(short_name):
     messageset_id = {
-        "pmtct_prebirth.hw_full.1": 11,
-        "pmtct_prebirth.hw_full.2": 12,
-        "pmtct_prebirth.hw_full.3": 13,
+        "pmtct_prebirth.patient.1": 11,
+        "pmtct_prebirth.patient.2": 12,
+        "pmtct_prebirth.patient.3": 13,
+        "pmtct_postbirth.patient.1": 14,
+        "pmtct_postbirth.patient.2": 15,
     }[short_name]
 
     default_schedule = {
-        "pmtct_prebirth.hw_full.1": 101,
-        "pmtct_prebirth.hw_full.2": 102,
-        "pmtct_prebirth.hw_full.3": 103,
+        "pmtct_prebirth.patient.1": 101,
+        "pmtct_prebirth.patient.2": 102,
+        "pmtct_prebirth.patient.3": 103,
+        "pmtct_postbirth.patient.1": 104,
+        "pmtct_postbirth.patient.2": 105,
     }[short_name]
 
     responses.add(
@@ -61,6 +65,8 @@ def mock_get_schedule(schedule_id):
         101: "1",
         102: "1,3",
         103: "1,3,5",
+        104: "1,4",
+        105: "1",
     }[schedule_id]
 
     responses.add(
@@ -96,7 +102,6 @@ class TestUtils(TestCase):
         t = override_get_today()
 
         # Test baby birth date that is in the future - should never happen
-        # TODO: raise exception?
         self.assertEqual(utils.get_baby_age(t, "2016-01-02"), -1)
         # Test same day
         self.assertEqual(utils.get_baby_age(t, "2016-01-01"), 0)
@@ -105,48 +110,119 @@ class TestUtils(TestCase):
         self.assertEqual(utils.get_baby_age(t, "2015-12-25"), 1)
 
     def test_get_messageset_short_name(self):
-        # any reg_type non-prebirth
+        # any reg_type non-prebirth and non-postbirth
         self.assertEqual(
             utils.get_messageset_short_name("reg_type", "authority", 9000),
             "reg_type.authority.1")
 
+        # pmtct prebirth testing
         # week -1000 prebirth
-        self.assertEqual(
-            utils.get_messageset_short_name("prebirth", "authority", -1000),
-            "prebirth.authority.1")
+        self.assertEqual(utils.get_messageset_short_name(
+            "pmtct_prebirth", "authority", -1000),
+            "pmtct_prebirth.authority.1")
         # week 1 prebirth
-        self.assertEqual(
-            utils.get_messageset_short_name("prebirth", "authority", 1),
-            "prebirth.authority.1")
+        self.assertEqual(utils.get_messageset_short_name(
+            "pmtct_prebirth", "authority", 1),
+            "pmtct_prebirth.authority.1")
         # week 29 prebirth
-        self.assertEqual(
-            utils.get_messageset_short_name("prebirth", "authority", 29),
-            "prebirth.authority.1")
+        self.assertEqual(utils.get_messageset_short_name(
+            "pmtct_prebirth", "authority", 29),
+            "pmtct_prebirth.authority.1")
         # week 30 prebirth
-        self.assertEqual(
-            utils.get_messageset_short_name("prebirth", "authority", 30),
-            "prebirth.authority.2")
+        self.assertEqual(utils.get_messageset_short_name(
+            "pmtct_prebirth", "authority", 30),
+            "pmtct_prebirth.authority.2")
         # week 34 prebirth
-        self.assertEqual(
-            utils.get_messageset_short_name("prebirth", "authority", 34),
-            "prebirth.authority.2")
+        self.assertEqual(utils.get_messageset_short_name(
+            "pmtct_prebirth", "authority", 34),
+            "pmtct_prebirth.authority.2")
         # week 35 prebirth
-        self.assertEqual(
-            utils.get_messageset_short_name("prebirth", "authority", 35),
-            "prebirth.authority.3")
+        self.assertEqual(utils.get_messageset_short_name(
+            "pmtct_prebirth", "authority", 35),
+            "pmtct_prebirth.authority.3")
         # week 1000 prebirth
-        self.assertEqual(
-            utils.get_messageset_short_name("prebirth", "authority", 1000),
-            "prebirth.authority.3")
+        self.assertEqual(utils.get_messageset_short_name(
+            "pmtct_prebirth", "authority", 1000),
+            "pmtct_prebirth.authority.3")
+
+        # pmtct postbirth testing
+        # week -1000 postbirth
+        self.assertEqual(utils.get_messageset_short_name(
+            "pmtct_postbirth", "authority", -1000),
+            "pmtct_postbirth.authority.1")
+        # week 0 postbirth
+        self.assertEqual(utils.get_messageset_short_name(
+            "pmtct_postbirth", "authority", 0),
+            "pmtct_postbirth.authority.1")
+        # week 1 postbirth
+        self.assertEqual(utils.get_messageset_short_name(
+            "pmtct_postbirth", "authority", 1),
+            "pmtct_postbirth.authority.1")
+        # week 2 postbirth
+        self.assertEqual(utils.get_messageset_short_name(
+            "pmtct_postbirth", "authority", 2),
+            "pmtct_postbirth.authority.2")
+        # week 1000 postbirth
+        self.assertEqual(utils.get_messageset_short_name(
+            "pmtct_postbirth", "authority", 1000),
+            "pmtct_postbirth.authority.2")
 
     @responses.activate
     def test_get_messageset_schedule_sequence(self):
-        # Setup fixture responses
-        schedule_id = mock_get_messageset("pmtct_prebirth.hw_full.1")
+        # Setup all fixture responses
+        schedule_id = mock_get_messageset("pmtct_prebirth.patient.1")
         mock_get_schedule(schedule_id)
-        # Check
+        schedule_id = mock_get_messageset("pmtct_prebirth.patient.2")
+        mock_get_schedule(schedule_id)
+        schedule_id = mock_get_messageset("pmtct_prebirth.patient.3")
+        mock_get_schedule(schedule_id)
+        schedule_id = mock_get_messageset("pmtct_postbirth.patient.1")
+        mock_get_schedule(schedule_id)
+        schedule_id = mock_get_messageset("pmtct_postbirth.patient.2")
+        mock_get_schedule(schedule_id)
+
+        # Check prebirth
+        # . batch 1
         self.assertEqual(utils.get_messageset_schedule_sequence(
-            "pmtct_prebirth.hw_full.1", 23), (11, 101, 17))
+            "pmtct_prebirth.patient.1", 2), (11, 101, 1))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "pmtct_prebirth.patient.1", 7), (11, 101, 1))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "pmtct_prebirth.patient.1", 8), (11, 101, 2))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "pmtct_prebirth.patient.1", 29), (11, 101, 23))
+        # . batch 2
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "pmtct_prebirth.patient.2", 30), (12, 102, 1))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "pmtct_prebirth.patient.2", 31), (12, 102, 2))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "pmtct_prebirth.patient.2", 32), (12, 102, 4))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "pmtct_prebirth.patient.2", 34), (12, 102, 8))
+        # . batch 3
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "pmtct_prebirth.patient.3", 35), (13, 103, 1))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "pmtct_prebirth.patient.3", 36), (13, 103, 3))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "pmtct_prebirth.patient.3", 37), (13, 103, 6))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "pmtct_prebirth.patient.3", 41), (13, 103, 18))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "pmtct_prebirth.patient.3", 42), (13, 103, 20))
+
+        # Check postbirth
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "pmtct_postbirth.patient.1", 0), (14, 104, 1))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "pmtct_postbirth.patient.1", 1), (14, 104, 3))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "pmtct_postbirth.patient.2", 2), (15, 105, 1))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "pmtct_postbirth.patient.2", 3), (15, 105, 2))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "pmtct_postbirth.patient.2", 4), (15, 105, 3))
 
 
 class APITestCase(TestCase):
@@ -582,6 +658,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "language": "eng_ZA",
                 "mom_dob": "1999-01-27",
+                "baby_dob": "2016-01-01"
             },
         }
         registration = Registration.objects.create(**registration_data)
@@ -601,6 +678,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 "operator_id": "mother01",
                 "language": "en",
                 "mom_dob": "199-01-27",
+                "baby_dob": "2016-01-09"
             },
         }
         registration = Registration.objects.create(**registration_data)
@@ -611,7 +689,8 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         registration = Registration.objects.get(id=registration.id)
         self.assertEqual(registration.data["invalid_fields"], [
             'Invalid UUID registrant_id', 'Language not a valid option',
-            'Mother DOB invalid', 'Operator ID invalid']
+            'Mother DOB invalid', 'Baby Date of Birth cannot be in the future',
+            'Operator ID invalid']
         )
 
     def test_validate_pmtct_postbirth_missing_data(self):
@@ -631,7 +710,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         registration = Registration.objects.get(id=registration.id)
         self.assertEqual(registration.data["invalid_fields"], [
             'Language is missing from data', 'Mother DOB missing',
-            'Operator ID missing']
+            'Baby Date of Birth missing', 'Operator ID missing']
         )
 
 
@@ -645,7 +724,7 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         registration_data = {
             "reg_type": "pmtct_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "source": self.make_source_adminuser(),
+            "source": self.make_source_normaluser(),
             "data": {
                 "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "language": "eng_ZA",
@@ -658,7 +737,7 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         registration.save()
 
         # . setup fixture responses
-        schedule_id = mock_get_messageset("pmtct_prebirth.hw_full.1")
+        schedule_id = mock_get_messageset("pmtct_prebirth.patient.1")
         mock_get_schedule(schedule_id)
 
         # Execute
@@ -682,7 +761,7 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         registration_data = {
             "reg_type": "pmtct_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "source": self.make_source_adminuser(),
+            "source": self.make_source_normaluser(),
             "data": {
                 "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "language": "eng_ZA",
@@ -695,7 +774,7 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         registration.save()
 
         # . setup fixture responses
-        schedule_id = mock_get_messageset("pmtct_prebirth.hw_full.2")
+        schedule_id = mock_get_messageset("pmtct_prebirth.patient.2")
         mock_get_schedule(schedule_id)
 
         # Execute
@@ -719,7 +798,7 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         registration_data = {
             "reg_type": "pmtct_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "source": self.make_source_adminuser(),
+            "source": self.make_source_normaluser(),
             "data": {
                 "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "language": "eng_ZA",
@@ -732,7 +811,7 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         registration.save()
 
         # . setup fixture responses
-        schedule_id = mock_get_messageset("pmtct_prebirth.hw_full.3")
+        schedule_id = mock_get_messageset("pmtct_prebirth.patient.3")
         mock_get_schedule(schedule_id)
 
         # Execute
@@ -744,7 +823,7 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         sr = SubscriptionRequest.objects.last()
         self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
         self.assertEqual(sr.messageset, 13)
-        self.assertEqual(sr.next_sequence_number, 15)  # (39 - 34) * 3
+        self.assertEqual(sr.next_sequence_number, 12)  # (39 - 35) * 3
         self.assertEqual(sr.lang, "eng_ZA")
         self.assertEqual(sr.schedule, 103)
 
@@ -756,35 +835,21 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         registration_data = {
             "reg_type": "pmtct_postbirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "source": self.make_source_adminuser(),
+            "source": self.make_source_normaluser(),
             "data": {
                 "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "language": "eng_ZA",
                 "mom_dob": "1999-01-27",
+                "baby_dob": "2016-01-01"
             },
         }
         registration = Registration.objects.create(**registration_data)
         registration.validated = True
         registration.save()
 
-        # . setup get_messageset fixture response
-        query_string = '?short_name=pmtct_postbirth.hw_full.1'
-        responses.add(
-            responses.GET,
-            'http://sbm/api/v1/messageset/%s' % query_string,
-            json={
-                "count": 1,
-                "next": None,
-                "previous": None,
-                "results": [{
-                    "id": 14,
-                    "short_name": 'pmtct_postbirth.hw_full.1',
-                    "default_schedule": 104
-                }]
-            },
-            status=200, content_type='application/json',
-            match_querystring=True
-        )
+        # setup fixture responses
+        schedule_id = mock_get_messageset("pmtct_postbirth.patient.1")
+        mock_get_schedule(schedule_id)
 
         # Execute
         cs = validate_subscribe.create_subscriptionrequests(registration)
@@ -813,7 +878,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         registration_data = {
             "reg_type": "pmtct_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "source": self.make_source_adminuser(),
+            "source": self.make_source_normaluser(),
             "data": {
                 "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "language": "eng_ZA",
@@ -823,7 +888,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         }
 
         # . setup get_messageset fixture response
-        query_string = '?short_name=pmtct_prebirth.hw_full.1'
+        query_string = '?short_name=pmtct_prebirth.patient.1'
         responses.add(
             responses.GET,
             'http://sbm/api/v1/messageset/%s' % query_string,
@@ -833,7 +898,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "previous": None,
                 "results": [{
                     "id": 11,
-                    "short_name": 'pmtct_prebirth.hw_full.1',
+                    "short_name": 'pmtct_prebirth.patient.1',
                     "default_schedule": 101
                 }]
             },
@@ -879,7 +944,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         registration_data = {
             "reg_type": "pmtct_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "source": self.make_source_adminuser(),
+            "source": self.make_source_normaluser(),
             "data": {
                 "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "language": "eng_ZA",

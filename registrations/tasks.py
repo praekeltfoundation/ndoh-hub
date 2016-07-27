@@ -71,6 +71,17 @@ class ValidateSubscribe(Task):
         else:
             return []
 
+    def check_baby_dob(self, data_fields, registration):
+        if "baby_dob" not in data_fields:
+            return ["Baby Date of Birth missing"]
+        elif not is_valid_date(registration.data["baby_dob"]):
+            return ["Baby Date of Birth invalid"]
+        elif utils.get_baby_age(utils.get_today(),
+                                registration.data["baby_dob"]) < 0:
+            return ["Baby Date of Birth cannot be in the future"]
+        else:
+            return []
+
     def check_operator_id(self, data_fields, registration):
         if "operator_id" not in data_fields:
             return ["Operator ID missing"]
@@ -102,7 +113,7 @@ class ValidateSubscribe(Task):
         elif registration.reg_type == "pmtct_postbirth":
             validation_errors += self.check_lang(data_fields, registration)
             validation_errors += self.check_mom_dob(data_fields, registration)
-            # birth date not currently required
+            validation_errors += self.check_baby_dob(data_fields, registration)
             validation_errors += self.check_operator_id(data_fields,
                                                         registration)
 
@@ -140,6 +151,10 @@ class ValidateSubscribe(Task):
         if "prebirth" in registration.reg_type:
             weeks = utils.get_pregnancy_week(utils.get_today(),
                                              registration.data["edd"])
+
+        if "postbirth" in registration.reg_type:
+            weeks = utils.get_baby_age(utils.get_today(),
+                                       registration.data["baby_dob"])
 
         # . determine messageset shortname
         short_name = utils.get_messageset_short_name(

@@ -137,6 +137,10 @@ def get_messageset_short_name(reg_type, authority, weeks):
         elif weeks >= 35:
             batch_number = 3
 
+    if "postbirth" in reg_type:
+        if weeks > 1:
+            batch_number = 2
+
     short_name = "%s.%s.%s" % (reg_type, authority, batch_number)
 
     return short_name
@@ -145,6 +149,7 @@ def get_messageset_short_name(reg_type, authority, weeks):
 def get_messageset_schedule_sequence(short_name, weeks):
     # get messageset
     messageset = get_messageset(short_name)
+    print(weeks)
 
     # TODO 4: handle postbirth
     if "prebirth" in short_name:
@@ -158,17 +163,29 @@ def get_messageset_schedule_sequence(short_name, weeks):
     next_sequence_number = 1  # default to 1
 
     # calculate next_sequence_number
-    if short_name == 'pmtct_prebirth.hw_full.1':
+    if short_name == 'pmtct_prebirth.patient.1':
         if weeks >= 7:
             next_sequence_number = (weeks - 6) * msgs_per_week
 
-    if short_name == 'pmtct_prebirth.hw_full.2':
+    elif short_name == 'pmtct_prebirth.patient.2':
         if weeks >= 31:
             next_sequence_number = (weeks - 30) * msgs_per_week
 
-    if short_name == 'pmtct_prebirth.hw_full.3':
-        if weeks >= 35:
-            next_sequence_number = (weeks - 34) * msgs_per_week
+    elif short_name == 'pmtct_prebirth.patient.3':
+        if 36 <= weeks <= 41:
+            next_sequence_number = (weeks - 35) * msgs_per_week
+        if weeks >= 42:
+            next_sequence_number = 20  # last message in set
+
+    elif short_name == 'pmtct_postbirth.patient.1':
+        if weeks == 1:
+            next_sequence_number = 3
+
+    elif short_name == 'pmtct_postbirth.patient.2':
+        if weeks <= 50:
+            next_sequence_number = weeks - 1
+        else:
+            next_sequence_number = 50  # last message in set
 
     return (messageset["id"], messageset["default_schedule"],
             next_sequence_number)
