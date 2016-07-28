@@ -10,49 +10,19 @@ class ImplementAction(Task):
     """
     name = "ndoh_hub.changes.tasks.implement_action"
 
-    def change_baby(self, change):
-        # Get current subscriptions
-        subscriptions = utils.get_subscriptions(change.registrant_id)
-        # Deactivate subscriptions
-        for subscription in subscriptions:
-            utils.deactivate_subscription(subscription)
-        # Get mother's identity
-        mother = utils.get_identity(change.registrant_id)
-        # Get mother's registration
-        registration = Registration.objects.get(
-            registrant_id=change.registrant_id)
-
-        short_name = utils.get_messageset_short_name(
-            registration.data["msg_receiver"],
-            'postbirth',
-            registration.source.authority)
-
-        msgset_id, msgset_schedule, next_sequence_number =\
-            utils.get_messageset_schedule_sequence(short_name, 0)
-
-        # Make new subscription request object
-        mother_sub = {
-            "identity": registration.registrant_id,
-            "messageset": msgset_id,
-            "next_sequence_number": next_sequence_number,
-            "lang": mother["details"]["preferred_language"],
-            "schedule": msgset_schedule
-        }
-        SubscriptionRequest.objects.create(**mother_sub)
-
-        return "Change baby completed"
-
-    def change_loss(self, change):
+    def pmtct_loss_switch(self, change):
+        """ The rest of the action required (deactivating momconnect
+        subscription, subscribing to loss messages) is currently done in the
+        old system via the ndoh-jsbox ussd_pmtct app, we're only deactivating
+        her subscriptions here.
+        """
         # Get current subscriptions
         subscriptions = utils.get_subscriptions(change.registrant_id)
         # Deactivate subscriptions
         for subscription in subscriptions:
             utils.deactivate_subscription(subscription)
 
-        # The rest of the action required is currently done in the old system,
-        # we're only deactivating her subscriptions here
-
-        return "Change loss completed"
+        return "PMTCT switch to loss completed"
 
     def change_language(self, change):
         # Get current subscriptions
@@ -80,10 +50,10 @@ class ImplementAction(Task):
         change = Change.objects.get(id=change_id)
 
         result = {
-            'change_baby': self.change_baby,
-            'change_loss': self.change_loss,
-            'change_language': self.change_language,
-            'unsubscribe': self.unsubscribe,
+            'pmtct_loss_switch': self.pmtct_loss_switch,
+            # 'change_baby': self.change_baby,
+            # 'change_language': self.change_language,
+            # 'unsubscribe': self.unsubscribe,
         }.get(change.action, None)(change)
         return result
 
