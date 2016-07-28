@@ -430,7 +430,7 @@ class TestPmtctLossSwitch(AuthenticatedAPITestCase):
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "action": "pmtct_loss_optout",
             "data": {
-                "reason": "miscarriage"
+                "reason": "stillbirth"
             },
             "source": self.make_source_normaluser()
         }
@@ -448,3 +448,33 @@ class TestPmtctLossSwitch(AuthenticatedAPITestCase):
 
         # Check
         self.assertEqual(result.get(), "PMTCT optout due to loss completed")
+
+    @responses.activate
+    def test_pmtct_nonloss_optout(self):
+        # Setup
+        # make registration
+        self.make_registration_pmtct_prebirth()
+        # make change object
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "pmtct_nonloss_optout",
+            "data": {
+                "reason": "other"
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+
+        # . mock get subscription request
+        active_subscription_ids = mock_get_active_subscriptions(
+            change_data["registrant_id"])
+
+        # . mock deactivate active subscriptions
+        mock_deactivate_subscriptions(active_subscription_ids)
+
+        # Execute
+        result = implement_action.apply_async(args=[change.id])
+
+        # Check
+        self.assertEqual(result.get(),
+                         "PMTCT optout not due to loss completed")
