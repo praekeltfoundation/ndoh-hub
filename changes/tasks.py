@@ -12,7 +12,7 @@ class ImplementAction(Task):
 
     def pmtct_loss_switch(self, change):
         """ The rest of the action required (deactivating momconnect
-        subscription, subscribing to loss messages) is currently done in the
+        subscription, subscribing to loss messages) is currently done on the
         old system via the ndoh-jsbox ussd_pmtct app, we're only deactivating
         her subscriptions here.
         """
@@ -23,6 +23,20 @@ class ImplementAction(Task):
             utils.deactivate_subscription(subscription)
 
         return "PMTCT switch to loss completed"
+
+    def pmtct_loss_optout(self, change):
+        """ The rest of the action required (opting out the identity on the
+        identity store, opting out the vumi contact, deactivating the old
+        system subscriptions) is currently done on via the ndoh-jsbox
+        ussd_pmtct app, we're only deactivating her subscriptions here.
+        """
+        # Get current subscriptions
+        subscriptions = utils.get_subscriptions(change.registrant_id)
+        # Deactivate subscriptions
+        for subscription in subscriptions:
+            utils.deactivate_subscription(subscription)
+
+        return "PMTCT optout due to loss completed"
 
     def change_language(self, change):
         # Get current subscriptions
@@ -51,7 +65,7 @@ class ImplementAction(Task):
 
         result = {
             'pmtct_loss_switch': self.pmtct_loss_switch,
-            # 'change_baby': self.change_baby,
+            'pmtct_loss_optout': self.pmtct_loss_optout,
             # 'change_language': self.change_language,
             # 'unsubscribe': self.unsubscribe,
         }.get(change.action, None)(change)
