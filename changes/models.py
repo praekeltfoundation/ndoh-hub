@@ -22,9 +22,9 @@ class Change(models.Model):
     """
 
     ACTION_CHOICES = (
-        ('loss_switch', "Change to loss messaging"),
-        ('loss_optout', "Optout due to loss"),
-        ('nonloss_optout', "Optout not due to loss")
+        ('pmtct_loss_switch', "Change to loss messaging via pmtct app"),
+        ('pmtct_loss_optout', "Optout due to loss via pmtct app"),
+        ('pmtct_nonloss_optout', "Optout not due to loss via pmtct app")
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
