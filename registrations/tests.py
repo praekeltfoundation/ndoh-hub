@@ -524,7 +524,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
 
     def test_create_registration_set_readonly_field(self):
         # Setup
-        self.make_source_adminuser()
+        self.make_source_normaluser()
         post_data = {
             "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
@@ -532,14 +532,14 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
             "validated": True
         }
         # Execute
-        response = self.adminclient.post('/api/v1/registration/',
-                                         json.dumps(post_data),
-                                         content_type='application/json')
+        response = self.normalclient.post('/api/v1/registration/',
+                                          json.dumps(post_data),
+                                          content_type='application/json')
         # Check
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         d = Registration.objects.last()
-        self.assertEqual(d.source.name, 'test_source_adminuser')
+        self.assertEqual(d.source.name, 'test_source_normaluser')
         self.assertEqual(d.reg_type, 'momconnect_prebirth')
         self.assertEqual(d.registrant_id,
                          "mother01-63e2-4acc-9b94-26663b9bc267")
@@ -587,7 +587,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         registration_data = {
             "reg_type": "pmtct_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "source": self.make_source_adminuser(),
+            "source": self.make_source_normaluser(),
             "data": {
                 "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "language": "eng_ZA",
@@ -607,7 +607,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         registration_data = {
             "reg_type": "pmtct_prebirth",
             "registrant_id": "mother01",
-            "source": self.make_source_adminuser(),
+            "source": self.make_source_normaluser(),
             "data": {
                 "operator_id": "mother01",
                 "language": "en",
@@ -633,7 +633,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         registration_data = {
             "reg_type": "pmtct_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "source": self.make_source_adminuser(),
+            "source": self.make_source_normaluser(),
             "data": {},
         }
         registration = Registration.objects.create(**registration_data)
@@ -653,7 +653,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         registration_data = {
             "reg_type": "pmtct_postbirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "source": self.make_source_adminuser(),
+            "source": self.make_source_normaluser(),
             "data": {
                 "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "language": "eng_ZA",
@@ -673,7 +673,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         registration_data = {
             "reg_type": "pmtct_postbirth",
             "registrant_id": "mother01",
-            "source": self.make_source_adminuser(),
+            "source": self.make_source_normaluser(),
             "data": {
                 "operator_id": "mother01",
                 "language": "en",
@@ -699,7 +699,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         registration_data = {
             "reg_type": "pmtct_postbirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "source": self.make_source_adminuser(),
+            "source": self.make_source_normaluser(),
             "data": {},
         }
         registration = Registration.objects.create(**registration_data)
