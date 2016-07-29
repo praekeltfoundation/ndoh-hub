@@ -4,7 +4,7 @@ from .models import Source, Registration, SubscriptionRequest
 
 class RegistrationAdmin(admin.ModelAdmin):
     list_display = [
-        "id", "stage", "validated", "registrant_id", "source",
+        "id", "reg_type", "validated", "registrant_id", "source",
         "created_at", "updated_at", "created_by", "updated_by"]
     list_filter = ["source", "validated", "created_at"]
     search_fields = ["registrant_id", "to_addr"]
