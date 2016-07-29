@@ -55,4 +55,3 @@ def psh_implement_action(sender, instance, created, **kwargs):
         from .tasks import implement_action
         implement_action.apply_async(
             kwargs={"change_id": str(instance.id)})
-        pass
