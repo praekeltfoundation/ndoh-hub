@@ -37,13 +37,35 @@ def mock_get_active_subscriptions(registrant_id):
                     "id": subscription_id_1,
                     "identity": registrant_id,
                     "active": True,
-                    "lang": "eng_ZA"
+                    "completed": False,
+                    "lang": "eng_ZA",
+                    "url": "http://sbm/api/v1/subscriptions/%s" % (
+                        subscription_id_1),
+                    "messageset": 1,
+                    "next_sequence_number": 1,
+                    "schedule": 1,
+                    "process_status": 0,
+                    "version": 1,
+                    "metadata": {},
+                    "created_at": "2015-07-10T06:13:29.693272Z",
+                    "updated_at": "2015-07-10T06:13:29.693272Z"
                 },
                 {
                     "id": subscription_id_2,
                     "identity": registrant_id,
                     "active": True,
-                    "lang": "eng_ZA"
+                    "completed": False,
+                    "lang": "eng_ZA",
+                    "url": "http://sbm/api/v1/subscriptions/%s" % (
+                        subscription_id_2),
+                    "messageset": 2,
+                    "next_sequence_number": 2,
+                    "schedule": 2,
+                    "process_status": 0,
+                    "version": 1,
+                    "metadata": {},
+                    "created_at": "2015-07-10T06:13:29.693272Z",
+                    "updated_at": "2015-07-10T06:13:29.693272Z"
                 }
             ],
         },
