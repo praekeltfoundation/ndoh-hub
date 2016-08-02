@@ -93,8 +93,8 @@ def get_schedule(schedule_id):
     return r.json()
 
 
-def get_subscriptions(identity):
-    """ Gets the first active subscription found for an identity
+def get_active_subscriptions(identity):
+    """ Gets the active subscriptions for an identity
     """
     url = "%s/%s/" % (settings.STAGE_BASED_MESSAGING_URL, "subscriptions")
     params = {'id': identity, 'active': True}
