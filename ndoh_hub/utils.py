@@ -69,7 +69,19 @@ def patch_identity(identity, data):
     return r.json()
 
 
-def get_messageset(short_name):
+def get_messageset_by_id(messageset_id):
+    url = "%s/%s/%s/" % (settings.STAGE_BASED_MESSAGING_URL, "messageset",
+                         messageset_id)
+    headers = {
+        'Authorization': 'Token %s' % settings.STAGE_BASED_MESSAGING_TOKEN,
+        'Content-Type': 'application/json'
+    }
+    r = requests.get(url, headers=headers)
+    r.raise_for_status()
+    return r.json()
+
+
+def get_messageset_by_shortname(short_name):
     url = "%s/%s/" % (settings.STAGE_BASED_MESSAGING_URL, "messageset")
     params = {'short_name': short_name}
     headers = {
@@ -148,7 +160,7 @@ def get_messageset_short_name(reg_type, authority, weeks):
 
 def get_messageset_schedule_sequence(short_name, weeks):
     # get messageset
-    messageset = get_messageset(short_name)
+    messageset = get_messageset_by_shortname(short_name)
 
     if "prebirth" in short_name:
         # get schedule
