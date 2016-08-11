@@ -22,6 +22,7 @@ class Change(models.Model):
     """
 
     ACTION_CHOICES = (
+        ('baby_switch', "Change from pregnancy to baby messaging"),
         ('pmtct_loss_switch', "Change to loss messaging via pmtct app"),
         ('pmtct_loss_optout', "Optout due to loss via pmtct app"),
         ('pmtct_nonloss_optout', "Optout not due to loss via pmtct app")
