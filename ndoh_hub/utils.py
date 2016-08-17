@@ -12,6 +12,13 @@ def get_today():
     return datetime.datetime.today()
 
 
+def get_mom_age(today, mom_dob):
+    """ Calculate the mother's age in years """
+    born = datetime.datetime.strptime(mom_dob, "%Y-%m-%d")
+    return today.year - born.year - (
+        (today.month, today.day) < (born.month, born.day))
+
+
 def get_pregnancy_week(today, edd):
     """ Calculate how far along the mother's prenancy is in weeks. """
     due_date = datetime.datetime.strptime(edd, "%Y-%m-%d")
@@ -216,6 +223,53 @@ def post_message(payload):
 
 
 # Mocks used in testing
+def mock_get_identity_by_id(identity_id):
+    identity = {
+        "id": identity_id,
+        "version": 1,
+        "details": {
+            "foo": "bar"
+        },
+        "communicate_through": None,
+        "operator": None,
+        "created_at": "2016-03-31T09:28:29.506591Z",
+        "created_by": None,
+        "updated_at": "2016-08-17T09:44:31.812532Z",
+        "updated_by": 1
+    }
+
+    responses.add(
+        responses.GET,
+        'http://is/api/v1/identities/%s/' % identity_id,
+        json=identity,
+        status=200, content_type='application/json'
+    )
+
+
+def mock_patch_identity(identity_id):
+    patched_identity = {
+        "id": identity_id,
+        "version": 1,
+        "details": {
+            "foo": "bar",
+            "risk": "high"
+        },
+        "communicate_through": None,
+        "operator": None,
+        "created_at": "2016-03-31T09:28:29.506591Z",
+        "created_by": None,
+        "updated_at": "2016-08-17T09:44:31.812532Z",
+        "updated_by": 1
+    }
+
+    responses.add(
+        responses.PATCH,
+        'http://is/api/v1/identities/%s/' % identity_id,
+        json=patched_identity,
+        status=200, content_type='application/json'
+    )
+
+
 def mock_get_messageset_by_shortname(short_name):
     messageset_id = {
         "pmtct_prebirth.patient.1": 11,

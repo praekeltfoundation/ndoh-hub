@@ -15,7 +15,7 @@ from .models import (Source, Registration, SubscriptionRequest,
                      psh_validate_subscribe)
 from .tasks import (
     validate_subscribe,
-    is_valid_date, is_valid_uuid, is_valid_lang
+    is_valid_date, is_valid_uuid, is_valid_lang, get_risk_status
     )
 from ndoh_hub import utils
 
@@ -25,6 +25,12 @@ def override_get_today():
 
 
 class TestUtils(TestCase):
+
+    def test_get_mom_age(self):
+        t = override_get_today()
+
+        self.assertEqual(utils.get_mom_age(t, "1998-01-01"), 18)
+        self.assertEqual(utils.get_mom_age(t, "1998-01-02"), 17)
 
     def test_get_pregnancy_week(self):
         t = override_get_today()
@@ -499,7 +505,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         self.assertEqual(d.data, {"test_key1": "test_value1"})
 
 
-class TestFieldValidation(AuthenticatedAPITestCase):
+class TestRegistrationHelpers(AuthenticatedAPITestCase):
 
     def test_is_valid_date(self):
         # Setup
@@ -529,6 +535,20 @@ class TestFieldValidation(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(is_valid_lang(valid_lang), True)
         self.assertEqual(is_valid_lang(invalid_lang), False)
+
+    def test_get_risk_status(self):
+        # prebirth, over 18, less than 20 weeks pregnant
+        self.assertEqual(
+            get_risk_status("prebirth", "1998-01-01", "2016-09-22"), "normal")
+        # postbirth, over 18, less than 20 weeks pregnant
+        self.assertEqual(
+            get_risk_status("postbirth", "1998-01-02", "2016-09-22"), "high")
+        # prebirth, under 18, less than 20 weeks pregnant
+        self.assertEqual(
+            get_risk_status("prebirth", "1998-01-06", "2016-09-22"), "high")
+        # prebirth, over 18, more than 20 weeks pregnant
+        self.assertEqual(
+            get_risk_status("prebirth", "1998-01-05", "2016-01-22"), "high")
 
 
 class TestRegistrationValidation(AuthenticatedAPITestCase):
@@ -865,13 +885,14 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
     def test_registration_process_good(self):
         """ Test a full registration process with good data """
         # Setup
+        registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
         # . reactivate post-save hook
         post_save.connect(psh_validate_subscribe, sender=Registration)
 
         # . setup pmtct_prebirth registration
         registration_data = {
             "reg_type": "pmtct_prebirth",
-            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "registrant_id": registrant_uuid,
             "source": self.make_source_normaluser(),
             "data": {
                 "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
@@ -881,32 +902,12 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             },
         }
 
-        # . setup get_messageset fixture response
-        query_string = '?short_name=pmtct_prebirth.patient.1'
-        responses.add(
-            responses.GET,
-            'http://sbm/api/v1/messageset/%s' % query_string,
-            json={
-                "count": 1,
-                "next": None,
-                "previous": None,
-                "results": [{
-                    "id": 11,
-                    "short_name": 'pmtct_prebirth.patient.1',
-                    "default_schedule": 111
-                }]
-            },
-            status=200, content_type='application/json',
-            match_querystring=True
-        )
-
-        # . setup get_schedule fixture response
-        responses.add(
-            responses.GET,
-            'http://sbm/api/v1/schedule/111/',
-            json={"id": 1, "day_of_week": "1"},
-            status=200, content_type='application/json',
-        )
+        # . setup fixture responses
+        schedule_id = utils.mock_get_messageset_by_shortname(
+            "pmtct_prebirth.patient.1")
+        utils.mock_get_schedule(schedule_id)
+        utils.mock_get_identity_by_id(registrant_uuid)
+        utils.mock_patch_identity(registrant_uuid)
 
         # Execute
         registration = Registration.objects.create(**registration_data)

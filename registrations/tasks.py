@@ -41,6 +41,27 @@ def is_valid_lang(lang):
     ]
 
 
+def get_risk_status(reg_type, mom_dob, edd):
+    """ Determine the risk level of the mother """
+
+    # high risk if postbirth registration
+    if "postbirth" in reg_type:
+        return "high"
+
+    # high risk if age < 18
+    age = utils.get_mom_age(utils.get_today(), mom_dob)
+    if age < 18:
+        return "high"
+
+    # high risk if registering after 20 weeks pregnant
+    weeks = utils.get_pregnancy_week(utils.get_today(), edd)
+    if weeks >= 20:
+        return "high"
+
+    # otherwise normal risk
+    return "normal"
+
+
 class ValidateSubscribe(Task):
     """ Task to validate a registration model entry's registration
     data.
@@ -176,6 +197,22 @@ class ValidateSubscribe(Task):
 
         return "SubscriptionRequest created"
 
+    def set_risk_status(self, registration):
+        """ Determine the risk status of the mother and save it to her identity
+        """
+        risk = get_risk_status(registration.reg_type,
+                               registration.data["mom_dob"],
+                               registration.data["edd"])
+        identity = utils.get_identity(registration.registrant_id)
+        details = identity["details"]
+
+        if "pmtct" in details:
+            details["pmtct"]["risk_status"] = risk
+        else:
+            details["pmtct"] = {"risk_status": risk}
+
+        utils.patch_identity(registration.registrant_id, {"details": details})
+
     def run(self, registration_id, **kwargs):
         """ Sets the registration's validated field to True if
         validation is successful.
@@ -189,6 +226,7 @@ class ValidateSubscribe(Task):
         if reg_validates:
             validation_string += "Success"
             self.create_subscriptionrequests(registration)
+            self.set_risk_status(registration)
         else:
             validation_string += "Failure"
 
