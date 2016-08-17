@@ -278,6 +278,19 @@ def mock_get_messageset_by_shortname(short_name):
         "pmtct_postbirth.patient.1": 14,
         "pmtct_postbirth.patient.2": 15,
         "momconnect_prebirth.hw_full.1": 21,
+        "momconnect_prebirth.hw_full.2": 22,
+        "momconnect_prebirth.hw_full.3": 23,
+        "momconnect_prebirth.hw_full.4": 24,
+        "momconnect_prebirth.hw_full.5": 25,
+        "momconnect_prebirth.hw_full.6": 26,
+        "momconnect_postbirth.hw_full.1": 31,
+        "momconnect_postbirth.hw_full.2": 32,
+        "momconnect_prebirth.patient.1": 41,
+        "momconnect_prebirth.hw_partial.1": 42,
+        "loss_miscarriage.patient.1": 51,
+        "loss_stillbirth.patient.1": 52,
+        "loss_babydeath.patient.1": 53,
+        "nurseconnect.hw_full.1": 61
     }[short_name]
 
     default_schedule = {
@@ -286,7 +299,20 @@ def mock_get_messageset_by_shortname(short_name):
         "pmtct_prebirth.patient.3": 113,
         "pmtct_postbirth.patient.1": 114,
         "pmtct_postbirth.patient.2": 115,
-        "momconnect_prebirth.hw_full.1": 121
+        "momconnect_prebirth.hw_full.1": 121,
+        "momconnect_prebirth.hw_full.2": 122,
+        "momconnect_prebirth.hw_full.3": 123,
+        "momconnect_prebirth.hw_full.4": 124,
+        "momconnect_prebirth.hw_full.5": 125,
+        "momconnect_prebirth.hw_full.6": 126,
+        "momconnect_postbirth.hw_full.1": 131,
+        "momconnect_postbirth.hw_full.2": 132,
+        "momconnect_prebirth.patient.1": 141,
+        "momconnect_prebirth.hw_partial.1": 142,
+        "loss_miscarriage.patient.1": 151,
+        "loss_stillbirth.patient.1": 152,
+        "loss_babydeath.patient.1": 153,
+        "nurseconnect.hw_full.1": 161
     }[short_name]
 
     responses.add(
@@ -316,6 +342,19 @@ def mock_get_messageset_by_id(messageset_id):
         14: "pmtct_postbirth.patient.1",
         15: "pmtct_postbirth.patient.2",
         21: "momconnect_prebirth.hw_full.1",
+        22: "momconnect_prebirth.hw_full.2",
+        23: "momconnect_prebirth.hw_full.3",
+        24: "momconnect_prebirth.hw_full.4",
+        25: "momconnect_prebirth.hw_full.5",
+        26: "momconnect_prebirth.hw_full.6",
+        31: "momconnect_postbirth.hw_full.1",
+        32: "momconnect_postbirth.hw_full.2",
+        41: "momconnect_prebirth.patient.1",
+        42: "momconnect_prebirth.hw_partial.1",
+        51: "loss_miscarriage.patient.1",
+        52: "loss_stillbirth.patient.1",
+        53: "loss_babydeath.patient.1",
+        61: "nurseconnect.hw_full.1"
     }[messageset_id]
 
     default_schedule = {
@@ -325,6 +364,19 @@ def mock_get_messageset_by_id(messageset_id):
         "pmtct_postbirth.patient.1": 114,
         "pmtct_postbirth.patient.2": 115,
         "momconnect_prebirth.hw_full.1": 121,
+        "momconnect_prebirth.hw_full.2": 122,
+        "momconnect_prebirth.hw_full.3": 123,
+        "momconnect_prebirth.hw_full.4": 124,
+        "momconnect_prebirth.hw_full.5": 125,
+        "momconnect_prebirth.hw_full.6": 126,
+        "momconnect_postbirth.hw_full.1": 131,
+        "momconnect_postbirth.hw_full.2": 132,
+        "momconnect_prebirth.patient.1": 141,
+        "momconnect_prebirth.hw_partial.1": 142,
+        "loss_miscarriage.patient.1": 151,
+        "loss_stillbirth.patient.1": 152,
+        "loss_babydeath.patient.1": 153,
+        "nurseconnect.hw_full.1": 161
     }[short_name]
 
     responses.add(
@@ -346,11 +398,24 @@ def mock_get_messageset_by_id(messageset_id):
 def mock_get_schedule(schedule_id):
     day_of_week = {
         111: "1",
-        112: "1,3",
+        112: "1,4",
         113: "1,3,5",
         114: "1,4",
         115: "1",
-        121: "1,4"
+        121: "1,4",
+        122: "1,3,5",
+        123: "1,3,5",
+        124: "1,2,3,4",
+        125: "1,2,3,4,5",
+        126: "1,2,3,4,5,6,7",
+        131: "1,4",
+        132: "1",
+        141: "1,4",
+        142: "1,4",
+        151: "1,4",
+        152: "1,4",
+        153: "1,4",
+        161: "1,3,5"
     }[schedule_id]
 
     responses.add(
