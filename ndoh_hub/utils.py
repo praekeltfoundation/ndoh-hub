@@ -14,11 +14,9 @@ def get_today():
 
 def get_mom_age(today, mom_dob):
     """ Calculate the mother's age in years """
-    birth_date = datetime.datetime.strptime(mom_dob, "%Y-%m-%d")
-    time_diff = today - birth_date
-    # timedelta limitation - approximate year to 365 days
-    mom_age = int(round(time_diff.days // 365))
-    return mom_age
+    born = datetime.datetime.strptime(mom_dob, "%Y-%m-%d")
+    return today.year - born.year - (
+        (today.month, today.day) < (born.month, born.day))
 
 
 def get_pregnancy_week(today, edd):

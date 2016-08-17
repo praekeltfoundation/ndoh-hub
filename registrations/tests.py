@@ -29,8 +29,8 @@ class TestUtils(TestCase):
     def test_get_mom_age(self):
         t = override_get_today()
 
-        self.assertEqual(utils.get_mom_age(t, "1998-01-05"), 18)
-        self.assertEqual(utils.get_mom_age(t, "1998-01-06"), 17)
+        self.assertEqual(utils.get_mom_age(t, "1998-01-01"), 18)
+        self.assertEqual(utils.get_mom_age(t, "1998-01-02"), 17)
 
     def test_get_pregnancy_week(self):
         t = override_get_today()
@@ -539,10 +539,10 @@ class TestRegistrationHelpers(AuthenticatedAPITestCase):
     def test_get_risk_status(self):
         # prebirth, over 18, less than 20 weeks pregnant
         self.assertEqual(
-            get_risk_status("prebirth", "1998-01-05", "2016-09-22"), "normal")
+            get_risk_status("prebirth", "1998-01-01", "2016-09-22"), "normal")
         # postbirth, over 18, less than 20 weeks pregnant
         self.assertEqual(
-            get_risk_status("postbirth", "1998-01-05", "2016-09-22"), "high")
+            get_risk_status("postbirth", "1998-01-02", "2016-09-22"), "high")
         # prebirth, under 18, less than 20 weeks pregnant
         self.assertEqual(
             get_risk_status("prebirth", "1998-01-06", "2016-09-22"), "high")
