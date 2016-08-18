@@ -365,8 +365,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
             change_data["registrant_id"])
 
         # . mock get messageset by id
-        utils.mock_get_messageset_by_id(11)
-        utils.mock_get_messageset_by_id(21)
+        utils.mock_get_messageset(11)
+        utils.mock_get_messageset(21)
 
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions(active_subscription_ids)

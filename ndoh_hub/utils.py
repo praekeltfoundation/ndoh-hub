@@ -6,6 +6,13 @@ import json
 import responses
 
 from django.conf import settings
+from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
+
+
+sbm_client = StageBasedMessagingApiClient(
+    api_url=settings.STAGE_BASED_MESSAGING_URL,
+    auth_token=settings.STAGE_BASED_MESSAGING_TOKEN
+)
 
 
 def get_today():
@@ -39,30 +46,6 @@ def get_baby_age(today, baby_dob):
     return baby_age_weeks
 
 
-def get_identity(identity):
-    url = "%s/%s/%s/" % (settings.IDENTITY_STORE_URL, "identities", identity)
-    headers = {'Authorization': 'Token %s' % settings.IDENTITY_STORE_TOKEN,
-               'Content-Type': 'application/json'}
-    r = requests.get(url, headers=headers)
-    return r.json()
-
-
-def get_identity_address(identity):
-    url = "%s/%s/%s/addresses/msisdn" % (settings.IDENTITY_STORE_URL,
-                                         "identities", identity)
-    params = {"default": True}
-    headers = {'Authorization': 'Token %s' % (
-        settings.IDENTITY_STORE_TOKEN, ),
-        'Content-Type': 'application/json'}
-    r = requests.get(url, params=params, headers=headers)
-    r.raise_for_status()
-    result = r.json()
-    if len(result["results"]) > 0:
-        return result["results"][0]
-    else:
-        return None
-
-
 def patch_identity(identity, data):
     """ Patches the given identity with the data provided
     """
@@ -77,7 +60,7 @@ def patch_identity(identity, data):
     return r.json()
 
 
-def get_messageset_by_id(messageset_id):
+def get_messageset(messageset_id):
     url = "%s/%s/%s/" % (settings.STAGE_BASED_MESSAGING_URL, "messageset",
                          messageset_id)
     headers = {
@@ -87,18 +70,6 @@ def get_messageset_by_id(messageset_id):
     r = requests.get(url, headers=headers)
     r.raise_for_status()
     return r.json()
-
-
-def get_messageset_by_shortname(short_name):
-    url = "%s/%s/" % (settings.STAGE_BASED_MESSAGING_URL, "messageset")
-    params = {'short_name': short_name}
-    headers = {
-        'Authorization': 'Token %s' % settings.STAGE_BASED_MESSAGING_TOKEN,
-        'Content-Type': 'application/json'
-    }
-    r = requests.get(url, params=params, headers=headers)
-    r.raise_for_status()
-    return r.json()["results"][0]  # messagesets should be unique, return 1st
 
 
 def get_schedule(schedule_id):
@@ -113,25 +84,22 @@ def get_schedule(schedule_id):
     return r.json()
 
 
-def get_active_subscriptions(identity):
-    """ Gets the active subscriptions for an identity
-    """
+def get_subscriptions(params):
     url = "%s/%s/" % (settings.STAGE_BASED_MESSAGING_URL, "subscriptions")
-    params = {'id': identity, 'active': True}
     headers = {
         'Authorization': 'Token %s' % settings.STAGE_BASED_MESSAGING_TOKEN,
         'Content-Type': 'application/json'
     }
     r = requests.get(url, params=params, headers=headers)
     r.raise_for_status()
-    return r.json()["results"]
+    return r.json()
 
 
-def patch_subscription(subscription, data):
+def patch_subscription(subscription_id, data):
     """ Patches the given subscription with the data provided
     """
     url = "%s/%s/%s/" % (settings.STAGE_BASED_MESSAGING_URL,
-                         "subscriptions", subscription["id"])
+                         "subscriptions", subscription_id)
     data = data
     headers = {
         'Authorization': 'Token %s' % settings.STAGE_BASED_MESSAGING_TOKEN,
@@ -140,12 +108,6 @@ def patch_subscription(subscription, data):
     r = requests.patch(url, data=json.dumps(data), headers=headers)
     r.raise_for_status()
     return r.json()
-
-
-def deactivate_subscription(subscription):
-    """ Sets a subscription deactive via a Patch request
-    """
-    return patch_subscription(subscription, {"active": False})
 
 
 def get_messageset_short_name(reg_type, authority, weeks):
@@ -168,7 +130,8 @@ def get_messageset_short_name(reg_type, authority, weeks):
 
 def get_messageset_schedule_sequence(short_name, weeks):
     # get messageset
-    messageset = get_messageset_by_shortname(short_name)
+    messageset = sbm_client.get_messagesets(
+        {"short_name": short_name})["results"][0]
 
     if "prebirth" in short_name:
         # get schedule
@@ -334,7 +297,7 @@ def mock_get_messageset_by_shortname(short_name):
     return default_schedule
 
 
-def mock_get_messageset_by_id(messageset_id):
+def mock_get_messageset(messageset_id):
     short_name = {
         11: "pmtct_prebirth.patient.1",
         12: "pmtct_prebirth.patient.2",
