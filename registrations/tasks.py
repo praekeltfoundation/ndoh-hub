@@ -6,11 +6,19 @@ import uuid
 from django.conf import settings
 from celery.task import Task
 from celery.utils.log import get_task_logger
+from seed_services_client.identity_store import IdentityStoreApiClient
+from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
 
 from ndoh_hub import utils
 from .models import Registration, SubscriptionRequest
 
 logger = get_task_logger(__name__)
+
+
+is_client = IdentityStoreApiClient(
+    api_url=settings.IDENTITY_STORE_URL,
+    auth_token=settings.IDENTITY_STORE_TOKEN
+)
 
 
 def is_valid_date(date):
@@ -203,7 +211,7 @@ class ValidateSubscribe(Task):
         risk = get_risk_status(registration.reg_type,
                                registration.data["mom_dob"],
                                registration.data["edd"])
-        identity = utils.get_identity(registration.registrant_id)
+        identity = is_client.get_identity(registration.registrant_id)
         details = identity["details"]
 
         if "pmtct" in details:
@@ -211,7 +219,8 @@ class ValidateSubscribe(Task):
         else:
             details["pmtct"] = {"risk_status": risk}
 
-        utils.patch_identity(registration.registrant_id, {"details": details})
+        is_client.update_identity(
+            registration.registrant_id, {"details": details})
 
     def run(self, registration_id, **kwargs):
         """ Sets the registration's validated field to True if
