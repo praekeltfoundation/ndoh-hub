@@ -1,8 +1,6 @@
 from __future__ import division
 
 import datetime
-import requests
-import json
 import responses
 
 from django.conf import settings
@@ -46,68 +44,68 @@ def get_baby_age(today, baby_dob):
     return baby_age_weeks
 
 
-def patch_identity(identity, data):
-    """ Patches the given identity with the data provided
-    """
-    url = "%s/%s/%s/" % (settings.IDENTITY_STORE_URL, "identities", identity)
-    data = data
-    headers = {
-        'Authorization': 'Token %s' % settings.IDENTITY_STORE_TOKEN,
-        'Content-Type': 'application/json'
-    }
-    r = requests.patch(url, data=json.dumps(data), headers=headers)
-    r.raise_for_status()
-    return r.json()
+# def patch_identity(identity, data):
+#     """ Patches the given identity with the data provided
+#     """
+#     url = "%s/%s/%s/" % (settings.IDENTITY_STORE_URL, "identities", identity)
+#     data = data
+#     headers = {
+#         'Authorization': 'Token %s' % settings.IDENTITY_STORE_TOKEN,
+#         'Content-Type': 'application/json'
+#     }
+#     r = requests.patch(url, data=json.dumps(data), headers=headers)
+#     r.raise_for_status()
+#     return r.json()
 
 
-def get_messageset(messageset_id):
-    url = "%s/%s/%s/" % (settings.STAGE_BASED_MESSAGING_URL, "messageset",
-                         messageset_id)
-    headers = {
-        'Authorization': 'Token %s' % settings.STAGE_BASED_MESSAGING_TOKEN,
-        'Content-Type': 'application/json'
-    }
-    r = requests.get(url, headers=headers)
-    r.raise_for_status()
-    return r.json()
+# def get_messageset(messageset_id):
+#     url = "%s/%s/%s/" % (settings.STAGE_BASED_MESSAGING_URL, "messageset",
+#                          messageset_id)
+#     headers = {
+#         'Authorization': 'Token %s' % settings.STAGE_BASED_MESSAGING_TOKEN,
+#         'Content-Type': 'application/json'
+#     }
+#     r = requests.get(url, headers=headers)
+#     r.raise_for_status()
+#     return r.json()
 
 
-def get_schedule(schedule_id):
-    url = "%s/%s/%s/" % (settings.STAGE_BASED_MESSAGING_URL,
-                         "schedule", schedule_id)
-    headers = {
-        'Authorization': 'Token %s' % settings.STAGE_BASED_MESSAGING_TOKEN,
-        'Content-Type': 'application/json'
-    }
-    r = requests.get(url, headers=headers)
-    r.raise_for_status()
-    return r.json()
+# def get_schedule(schedule_id):
+#     url = "%s/%s/%s/" % (settings.STAGE_BASED_MESSAGING_URL,
+#                          "schedule", schedule_id)
+#     headers = {
+#         'Authorization': 'Token %s' % settings.STAGE_BASED_MESSAGING_TOKEN,
+#         'Content-Type': 'application/json'
+#     }
+#     r = requests.get(url, headers=headers)
+#     r.raise_for_status()
+#     return r.json()
 
 
-def get_subscriptions(params):
-    url = "%s/%s/" % (settings.STAGE_BASED_MESSAGING_URL, "subscriptions")
-    headers = {
-        'Authorization': 'Token %s' % settings.STAGE_BASED_MESSAGING_TOKEN,
-        'Content-Type': 'application/json'
-    }
-    r = requests.get(url, params=params, headers=headers)
-    r.raise_for_status()
-    return r.json()
+# def get_subscriptions(params):
+#     url = "%s/%s/" % (settings.STAGE_BASED_MESSAGING_URL, "subscriptions")
+#     headers = {
+#         'Authorization': 'Token %s' % settings.STAGE_BASED_MESSAGING_TOKEN,
+#         'Content-Type': 'application/json'
+#     }
+#     r = requests.get(url, params=params, headers=headers)
+#     r.raise_for_status()
+#     return r.json()
 
 
-def patch_subscription(subscription_id, data):
-    """ Patches the given subscription with the data provided
-    """
-    url = "%s/%s/%s/" % (settings.STAGE_BASED_MESSAGING_URL,
-                         "subscriptions", subscription_id)
-    data = data
-    headers = {
-        'Authorization': 'Token %s' % settings.STAGE_BASED_MESSAGING_TOKEN,
-        'Content-Type': 'application/json'
-    }
-    r = requests.patch(url, data=json.dumps(data), headers=headers)
-    r.raise_for_status()
-    return r.json()
+# def patch_subscription(subscription_id, data):
+#     """ Patches the given subscription with the data provided
+#     """
+#     url = "%s/%s/%s/" % (settings.STAGE_BASED_MESSAGING_URL,
+#                          "subscriptions", subscription_id)
+#     data = data
+#     headers = {
+#         'Authorization': 'Token %s' % settings.STAGE_BASED_MESSAGING_TOKEN,
+#         'Content-Type': 'application/json'
+#     }
+#     r = requests.patch(url, data=json.dumps(data), headers=headers)
+#     r.raise_for_status()
+#     return r.json()
 
 
 def get_messageset_short_name(reg_type, authority, weeks):
@@ -135,7 +133,7 @@ def get_messageset_schedule_sequence(short_name, weeks):
 
     if "prebirth" in short_name:
         # get schedule
-        schedule = get_schedule(messageset["default_schedule"])
+        schedule = sbm_client.get_schedule(messageset["default_schedule"])
         # get schedule days of week: comma-seperated str e.g. '1,3' for Mon&Wed
         days_of_week = schedule["day_of_week"]
         # determine how many times a week messages are sent e.g. 2 for '1,3'
@@ -170,19 +168,6 @@ def get_messageset_schedule_sequence(short_name, weeks):
 
     return (messageset["id"], messageset["default_schedule"],
             next_sequence_number)
-
-
-def post_message(payload):
-    result = requests.post(
-        url="%s/outbound/" % settings.MESSAGE_SENDER_URL,
-        data=json.dumps(payload),
-        headers={
-            'Content-Type': 'application/json',
-            'Authorization': 'Token %s' % settings.MESSAGE_SENDER_TOKEN
-        }
-    )
-    result.raise_for_status()
-    return result.json()
 
 
 # Mocks used in testing

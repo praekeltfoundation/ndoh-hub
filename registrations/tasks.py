@@ -219,7 +219,8 @@ class ValidateSubscribe(Task):
         else:
             details["pmtct"] = {"risk_status": risk}
 
-        utils.patch_identity(registration.registrant_id, {"details": details})
+        is_client.update_identity(
+            registration.registrant_id, {"details": details})
 
     def run(self, registration_id, **kwargs):
         """ Sets the registration's validated field to True if

@@ -1,9 +1,16 @@
 from celery.task import Task
+from django.conf import settings
+from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
 
 from ndoh_hub import utils
 from .models import Change
-
 from registrations.models import SubscriptionRequest
+
+
+sbm_client = StageBasedMessagingApiClient(
+    api_url=settings.STAGE_BASED_MESSAGING_URL,
+    auth_token=settings.STAGE_BASED_MESSAGING_TOKEN
+)
 
 
 class ImplementAction(Task):
@@ -17,7 +24,7 @@ class ImplementAction(Task):
         change her momconnect subscription.
         """
         # Get current subscriptions
-        active_subs = utils.get_subscriptions(
+        active_subs = sbm_client.get_subscriptions(
             {'id': change.registrant_id, 'active': True}
         )["results"]
         # Determine if the mother has an active pmtct subscription and
@@ -26,12 +33,12 @@ class ImplementAction(Task):
 
         for active_sub in active_subs:
             # get the messageset and check if it is pmtct
-            messageset = utils.get_messageset(active_sub["messageset"])
+            messageset = sbm_client.get_messageset(active_sub["messageset"])
             if "pmtct" in messageset["short_name"]:
                 has_active_pmtct_sub = True
                 lang = active_sub["lang"]
 
-            utils.patch_subscription(active_sub["id"], {"active": False})
+            sbm_client.update_subscription(active_sub["id"], {"active": False})
 
         if has_active_pmtct_sub:
             # create a postbirth pmtct subscriptionrequest
@@ -65,12 +72,12 @@ class ImplementAction(Task):
         the subscriptions here.
         """
         # Get current subscriptions
-        active_subs = utils.get_subscriptions(
+        active_subs = sbm_client.get_subscriptions(
             {'id': change.registrant_id, 'active': True}
         )["results"]
         # Deactivate subscriptions
         for active_sub in active_subs:
-            utils.patch_subscription(active_sub["id"], {"active": False})
+            sbm_client.update_subscription(active_sub["id"], {"active": False})
 
         return "PMTCT switch to loss completed"
 
@@ -81,12 +88,12 @@ class ImplementAction(Task):
         app, we're only deactivating the subscriptions here.
         """
         # Get current subscriptions
-        active_subs = utils.get_subscriptions(
+        active_subs = sbm_client.get_subscriptions(
             {'id': change.registrant_id, 'active': True}
         )["results"]
         # Deactivate subscriptions
         for active_sub in active_subs:
-            utils.patch_subscription(active_sub["id"], {"active": False})
+            sbm_client.update_subscription(active_sub["id"], {"active": False})
 
         return "PMTCT optout due to loss completed"
 
@@ -97,12 +104,12 @@ class ImplementAction(Task):
         app, we're only deactivating the subscriptions here.
         """
         # Get current subscriptions
-        active_subs = utils.get_subscriptions(
+        active_subs = sbm_client.get_subscriptions(
             {'id': change.registrant_id, 'active': True}
         )["results"]
         # Deactivate subscriptions
         for active_sub in active_subs:
-            utils.patch_subscription(active_sub["id"], {"active": False})
+            sbm_client.update_subscription(active_sub["id"], {"active": False})
 
         return "PMTCT optout not due to loss completed"
 
