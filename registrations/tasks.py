@@ -231,7 +231,7 @@ class ValidateSubscribe(Task):
             "identity": registration.registrant_id,
             "messageset": msgset_id,
             "next_sequence_number": next_sequence_number,
-            "lang": registration.data["language"],
+            "lang": "eng_ZA",  # NurseConnect is currently only in english
             "schedule": msgset_schedule
         }
         SubscriptionRequest.objects.create(**subscription)
