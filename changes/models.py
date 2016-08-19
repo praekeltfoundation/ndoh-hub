@@ -52,10 +52,10 @@ class Change(models.Model):
 
 
 @receiver(post_save, sender=Change)
-def psh_implement_action(sender, instance, created, **kwargs):
+def psh_validate_implement(sender, instance, created, **kwargs):
     """ Post save hook to fire Change validation task
     """
     if created:
-        from .tasks import implement_action
-        implement_action.apply_async(
+        from .tasks import validate_implement
+        validate_implement.apply_async(
             kwargs={"change_id": str(instance.id)})

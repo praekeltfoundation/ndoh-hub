@@ -13,10 +13,10 @@ sbm_client = StageBasedMessagingApiClient(
 )
 
 
-class ImplementAction(Task):
+class ValidateImplement(Task):
     """ Task to apply a Change action.
     """
-    name = "ndoh_hub.changes.tasks.implement_action"
+    name = "ndoh_hub.changes.tasks.validate_implement"
 
     def baby_switch(self, change):
         """ This should be applied when a mother has her baby. Currently it
@@ -161,4 +161,4 @@ class ImplementAction(Task):
         }.get(change.action, None)(change)
         return result
 
-implement_action = ImplementAction()
+validate_implement = ValidateImplement()

@@ -14,8 +14,8 @@ from rest_hooks.models import model_saved
 from ndoh_hub import utils
 from registrations.models import (Source, Registration,
                                   psh_validate_subscribe)
-from .models import Change, psh_implement_action
-from .tasks import implement_action
+from .models import Change, psh_validate_implement
+from .tasks import validate_implement
 
 
 def override_get_today():
@@ -141,7 +141,7 @@ class AuthenticatedAPITestCase(APITestCase):
         assert has_listeners(), (
             "Change model has no post_save listeners. Make sure"
             " helpers cleaned up properly in earlier tests.")
-        post_save.disconnect(receiver=psh_implement_action,
+        post_save.disconnect(receiver=psh_validate_implement,
                              sender=Change)
         post_save.disconnect(receiver=model_saved,
                              dispatch_uid='instance-saved-hook')
@@ -155,7 +155,7 @@ class AuthenticatedAPITestCase(APITestCase):
         assert not has_listeners(), (
             "Change model still has post_save listeners. Make sure"
             " helpers removed them properly in earlier tests.")
-        post_save.connect(psh_implement_action, sender=Change)
+        post_save.connect(psh_validate_implement, sender=Change)
 
     def _replace_post_save_hooks_registration(self):
         def has_listeners():
@@ -430,7 +430,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         utils.mock_get_schedule(schedule_id)
 
         # Execute
-        result = implement_action.apply_async(args=[change.id])
+        result = validate_implement.apply_async(args=[change.id])
 
         # Check
         self.assertEqual(result.get(), "Switch to baby completed")
@@ -460,7 +460,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         mock_deactivate_subscriptions(active_subscription_ids)
 
         # Execute
-        result = implement_action.apply_async(args=[change.id])
+        result = validate_implement.apply_async(args=[change.id])
 
         # Check
         self.assertEqual(result.get(), "PMTCT switch to loss completed")
@@ -489,7 +489,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         mock_deactivate_subscriptions(active_subscription_ids)
 
         # Execute
-        result = implement_action.apply_async(args=[change.id])
+        result = validate_implement.apply_async(args=[change.id])
 
         # Check
         self.assertEqual(result.get(), "PMTCT optout due to loss completed")
@@ -518,7 +518,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         mock_deactivate_subscriptions(active_subscription_ids)
 
         # Execute
-        result = implement_action.apply_async(args=[change.id])
+        result = validate_implement.apply_async(args=[change.id])
 
         # Check
         self.assertEqual(result.get(),
@@ -541,7 +541,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         change = Change.objects.create(**change_data)
 
         # Execute
-        result = implement_action.apply_async(args=[change.id])
+        result = validate_implement.apply_async(args=[change.id])
 
         # Check
         self.assertEqual(result.get(), "NurseConnect detail updated")
@@ -564,7 +564,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         change = Change.objects.create(**change_data)
 
         # Execute
-        result = implement_action.apply_async(args=[change.id])
+        result = validate_implement.apply_async(args=[change.id])
 
         # Check
         self.assertEqual(result.get(), "NurseConnect msisdn changed")
@@ -596,7 +596,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         mock_deactivate_subscriptions(active_subscription_ids)
 
         # Execute
-        result = implement_action.apply_async(args=[change.id])
+        result = validate_implement.apply_async(args=[change.id])
 
         # Check
         self.assertEqual(result.get(),
