@@ -121,6 +121,11 @@ class TestUtils(TestCase):
             "pmtct_postbirth", "authority", 1000),
             "pmtct_postbirth.authority.2")
 
+        # nurseconnect testing
+        self.assertEqual(utils.get_messageset_short_name(
+            "nurseconnect", "authority", 500),
+            "nurseconnect.authority.1")
+
     @responses.activate
     def test_get_messageset_schedule_sequence(self):
         # Setup all fixture responses
@@ -139,8 +144,11 @@ class TestUtils(TestCase):
         schedule_id = utils.mock_get_messageset_by_shortname(
             "pmtct_postbirth.patient.2")
         utils.mock_get_schedule(schedule_id)
+        schedule_id = utils.mock_get_messageset_by_shortname(
+            "nurseconnect.hw_full.1")
+        utils.mock_get_schedule(schedule_id)
 
-        # Check prebirth
+        # Check pmtct prebirth
         # . batch 1
         self.assertEqual(utils.get_messageset_schedule_sequence(
             "pmtct_prebirth.patient.1", 2), (11, 111, 1))
@@ -171,7 +179,7 @@ class TestUtils(TestCase):
         self.assertEqual(utils.get_messageset_schedule_sequence(
             "pmtct_prebirth.patient.3", 42), (13, 113, 20))
 
-        # Check postbirth
+        # Check pmtct postbirth
         self.assertEqual(utils.get_messageset_schedule_sequence(
             "pmtct_postbirth.patient.1", 0), (14, 114, 1))
         self.assertEqual(utils.get_messageset_schedule_sequence(
@@ -182,6 +190,10 @@ class TestUtils(TestCase):
             "pmtct_postbirth.patient.2", 3), (15, 115, 2))
         self.assertEqual(utils.get_messageset_schedule_sequence(
             "pmtct_postbirth.patient.2", 4), (15, 115, 3))
+
+        # Check nurseconnect
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "nurseconnect.hw_full.1", 500), (61, 161, 1))
 
 
 class APITestCase(TestCase):
