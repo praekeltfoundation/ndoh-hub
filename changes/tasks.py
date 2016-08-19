@@ -125,6 +125,26 @@ class ImplementAction(Task):
         """
         return "NurseConnect msisdn changed"
 
+    def nurse_optout(self, change):
+        """ The rest of the action required (opting out the identity on the
+        identity store) is currently done via the ndoh-jsbox ussd_nurse
+        app, we're only deactivating the subscriptions here. Note this only
+        deactivates the NurseConnect subscription.
+        """
+        # Get nurseconnect messageset
+        messageset = sbm_client.get_messagesets(
+            {"short_name": "nurseconnect.hw_full.1"})["results"][0]
+        # Get current subscriptions
+        active_subs = sbm_client.get_subscriptions({
+            'id': change.registrant_id, 'active': True,
+            'messageset': messageset["id"]}
+        )["results"]
+        # Deactivate subscriptions
+        for active_sub in active_subs:
+            sbm_client.update_subscription(active_sub["id"], {"active": False})
+
+        return "Nurse optout completed"
+
     def run(self, change_id, **kwargs):
         """ Implements the appropriate action
         """
@@ -137,6 +157,7 @@ class ImplementAction(Task):
             'pmtct_nonloss_optout': self.pmtct_nonloss_optout,
             'nurse_update_detail': self.nurse_update_detail,
             'nurse_change_msisdn': self.nurse_change_msisdn,
+            'nurse_optout': self.nurse_optout,
         }.get(change.action, None)(change)
         return result
 
