@@ -204,6 +204,20 @@ class AuthenticatedAPITestCase(APITestCase):
         }
         return Registration.objects.create(**registration_data)
 
+    def make_registration_nurseconnect(self):
+        registration_data = {
+            "reg_type": "nurseconnect",
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "msisdn_registrant": "+27821112222",
+                "msisdn_device": "+27821112222",
+                "faccode": "123456",
+            },
+        }
+        return Registration.objects.create(**registration_data)
+
     def setUp(self):
         super(AuthenticatedAPITestCase, self).setUp()
         self._replace_post_save_hooks_change()
@@ -472,3 +486,25 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(result.get(),
                          "PMTCT optout not due to loss completed")
+
+    @responses.activate
+    def test_nurse_update_detail(self):
+        # Setup
+        # make registration
+        self.make_registration_nurseconnect()
+        # make change object
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_update_detail",
+            "data": {
+                "faccode": "234567"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+
+        # Execute
+        result = implement_action.apply_async(args=[change.id])
+
+        # Check
+        self.assertEqual(result.get(), "NurseConnect detail updated")
