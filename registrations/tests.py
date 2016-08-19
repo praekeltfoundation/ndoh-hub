@@ -456,6 +456,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
                          "mother01-63e2-4acc-9b94-26663b9bc267")
         self.assertEqual(d.validated, False)
         self.assertEqual(d.data, {"test_key1": "test_value1"})
+        self.assertEqual(d.created_by, self.adminuser)
 
     def test_create_registration_normaluser(self):
         # Setup
@@ -479,6 +480,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
                          "mother01-63e2-4acc-9b94-26663b9bc267")
         self.assertEqual(d.validated, False)
         self.assertEqual(d.data, {"test_key1": "test_value1"})
+        self.assertEqual(d.created_by, self.normaluser)
 
     def test_create_registration_set_readonly_field(self):
         # Setup
