@@ -119,6 +119,12 @@ class ImplementAction(Task):
         """
         return "NurseConnect detail updated"
 
+    def nurse_change_msisdn(self, change):
+        """ This currently does nothing, but in a seperate issue this will
+        handle sending the information update to Jembi
+        """
+        return "NurseConnect msisdn changed"
+
     def run(self, change_id, **kwargs):
         """ Implements the appropriate action
         """
@@ -130,6 +136,7 @@ class ImplementAction(Task):
             'pmtct_loss_optout': self.pmtct_loss_optout,
             'pmtct_nonloss_optout': self.pmtct_nonloss_optout,
             'nurse_update_detail': self.nurse_update_detail,
+            'nurse_change_msisdn': self.nurse_change_msisdn,
         }.get(change.action, None)(change)
         return result
 

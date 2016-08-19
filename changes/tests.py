@@ -508,3 +508,26 @@ class TestChangeActions(AuthenticatedAPITestCase):
 
         # Check
         self.assertEqual(result.get(), "NurseConnect detail updated")
+
+    @responses.activate
+    def test_nurse_change_msisdn(self):
+        # Setup
+        # make registration
+        self.make_registration_nurseconnect()
+        # make change object
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_change_msisdn",
+            "data": {
+                "msisdn_old": "+27821112222",
+                "msisdn_new": "+27821113333",
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+
+        # Execute
+        result = implement_action.apply_async(args=[change.id])
+
+        # Check
+        self.assertEqual(result.get(), "NurseConnect msisdn changed")
