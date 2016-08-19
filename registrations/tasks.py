@@ -1,4 +1,3 @@
-import datetime
 import requests
 import json
 import uuid
@@ -19,39 +18,6 @@ is_client = IdentityStoreApiClient(
     api_url=settings.IDENTITY_STORE_URL,
     auth_token=settings.IDENTITY_STORE_TOKEN
 )
-
-
-def is_valid_date(date):
-    try:
-        datetime.datetime.strptime(date, "%Y-%m-%d")
-        return True
-    except:
-        return False
-
-
-def is_valid_uuid(id):
-    return len(id) == 36 and id[14] == '4' and id[19] in ['a', 'b', '8', '9']
-
-
-def is_valid_lang(lang):
-    return lang in [
-        "zul_ZA",  # isiZulu
-        "xho_ZA",  # isiXhosa
-        "afr_ZA",  # Afrikaans
-        "eng_ZA",  # English
-        "nso_ZA",  # Sesotho sa Leboa / Pedi
-        "tsn_ZA",  # Setswana
-        "sot_ZA",  # Sesotho
-        "tso_ZA",  # Xitsonga
-        "ssw_ZA",  # siSwati
-        "ven_ZA",  # Tshivenda
-        "nbl_ZA",  # isiNdebele
-    ]
-
-
-def is_valid_msisdn(msisdn):
-    """ A very basic msisdn validation check """
-    return msisdn[0] == '+' and len(msisdn) == 12
 
 
 def get_risk_status(reg_type, mom_dob, edd):
@@ -84,7 +50,7 @@ class ValidateSubscribe(Task):
     def check_lang(self, data_fields, registration):
         if "language" not in data_fields:
             return ["Language is missing from data"]
-        elif not is_valid_lang(registration.data["language"]):
+        elif not utils.is_valid_lang(registration.data["language"]):
             return ["Language not a valid option"]
         else:
             return []
@@ -92,7 +58,7 @@ class ValidateSubscribe(Task):
     def check_mom_dob(self, data_fields, registration):
         if "mom_dob" not in data_fields:
             return ["Mother DOB missing"]
-        elif not is_valid_date(registration.data["mom_dob"]):
+        elif not utils.is_valid_date(registration.data["mom_dob"]):
             return ["Mother DOB invalid"]
         else:
             return []
@@ -100,7 +66,7 @@ class ValidateSubscribe(Task):
     def check_edd(self, data_fields, registration):
         if "edd" not in data_fields:
             return ["Estimated Due Date missing"]
-        elif not is_valid_date(registration.data["edd"]):
+        elif not utils.is_valid_date(registration.data["edd"]):
             return ["Estimated Due Date invalid"]
         else:
             return []
@@ -108,7 +74,7 @@ class ValidateSubscribe(Task):
     def check_baby_dob(self, data_fields, registration):
         if "baby_dob" not in data_fields:
             return ["Baby Date of Birth missing"]
-        elif not is_valid_date(registration.data["baby_dob"]):
+        elif not utils.is_valid_date(registration.data["baby_dob"]):
             return ["Baby Date of Birth invalid"]
         elif utils.get_baby_age(utils.get_today(),
                                 registration.data["baby_dob"]) < 0:
@@ -119,7 +85,7 @@ class ValidateSubscribe(Task):
     def check_operator_id(self, data_fields, registration):
         if "operator_id" not in data_fields:
             return ["Operator ID missing"]
-        elif not is_valid_uuid(registration.data["operator_id"]):
+        elif not utils.is_valid_uuid(registration.data["operator_id"]):
             return ["Operator ID invalid"]
         else:
             return []
@@ -127,7 +93,7 @@ class ValidateSubscribe(Task):
     def check_msisdn_registrant(self, data_fields, registration):
         if "msisdn_registrant" not in data_fields:
             return ["Msisdn of Registrant missing"]
-        elif not is_valid_msisdn(registration.data["msisdn_registrant"]):
+        elif not utils.is_valid_msisdn(registration.data["msisdn_registrant"]):
             return ["Msisdn of Registrant invalid"]
         else:
             return []
@@ -135,7 +101,7 @@ class ValidateSubscribe(Task):
     def check_msisdn_device(self, data_fields, registration):
         if "msisdn_device" not in data_fields:
             return ["Msisdn of device missing"]
-        elif not is_valid_msisdn(registration.data["msisdn_device"]):
+        elif not utils.is_valid_msisdn(registration.data["msisdn_device"]):
             return ["Msisdn of device invalid"]
         else:
             return []
@@ -153,7 +119,7 @@ class ValidateSubscribe(Task):
         validation_errors = []
 
         # Check if registrant_id is a valid UUID
-        if not is_valid_uuid(registration.registrant_id):
+        if not utils.is_valid_uuid(registration.registrant_id):
             validation_errors += ["Invalid UUID registrant_id"]
 
         # Check that required fields are provided and valid

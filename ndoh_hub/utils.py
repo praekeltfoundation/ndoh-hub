@@ -13,6 +13,39 @@ sbm_client = StageBasedMessagingApiClient(
 )
 
 
+def is_valid_uuid(id):
+    return len(id) == 36 and id[14] == '4' and id[19] in ['a', 'b', '8', '9']
+
+
+def is_valid_date(date):
+    try:
+        datetime.datetime.strptime(date, "%Y-%m-%d")
+        return True
+    except:
+        return False
+
+
+def is_valid_lang(lang):
+    return lang in [
+        "zul_ZA",  # isiZulu
+        "xho_ZA",  # isiXhosa
+        "afr_ZA",  # Afrikaans
+        "eng_ZA",  # English
+        "nso_ZA",  # Sesotho sa Leboa / Pedi
+        "tsn_ZA",  # Setswana
+        "sot_ZA",  # Sesotho
+        "tso_ZA",  # Xitsonga
+        "ssw_ZA",  # siSwati
+        "ven_ZA",  # Tshivenda
+        "nbl_ZA",  # isiNdebele
+    ]
+
+
+def is_valid_msisdn(msisdn):
+    """ A very basic msisdn validation check """
+    return msisdn[0] == '+' and len(msisdn) == 12
+
+
 def get_today():
     return datetime.datetime.today()
 

@@ -13,11 +13,7 @@ from rest_hooks.models import model_saved
 
 from .models import (Source, Registration, SubscriptionRequest,
                      psh_validate_subscribe)
-from .tasks import (
-    validate_subscribe,
-    is_valid_date, is_valid_uuid, is_valid_lang, is_valid_msisdn,
-    get_risk_status
-)
+from .tasks import validate_subscribe, get_risk_status
 from ndoh_hub import utils
 
 
@@ -26,6 +22,40 @@ def override_get_today():
 
 
 class TestUtils(TestCase):
+
+    def test_is_valid_date(self):
+        # Setup
+        good_date = "1982-03-15"
+        invalid_date = "1983-02-29"
+        bad_date = "1234"
+        # Execute
+        # Check
+        self.assertEqual(utils.is_valid_date(good_date), True)
+        self.assertEqual(utils.is_valid_date(invalid_date), False)
+        self.assertEqual(utils.is_valid_date(bad_date), False)
+
+    def test_is_valid_uuid(self):
+        # Setup
+        valid_uuid = str(uuid.uuid4())
+        invalid_uuid = "f9bfa2d7-5b62-4011-8eac-76bca34781a"
+        # Execute
+        # Check
+        self.assertEqual(utils.is_valid_uuid(valid_uuid), True)
+        self.assertEqual(utils.is_valid_uuid(invalid_uuid), False)
+
+    def test_is_valid_lang(self):
+        # Setup
+        valid_lang = "eng_ZA"
+        invalid_lang = "south african"
+        # Execute
+        # Check
+        self.assertEqual(utils.is_valid_lang(valid_lang), True)
+        self.assertEqual(utils.is_valid_lang(invalid_lang), False)
+
+    def test_is_valid_msisdn(self):
+        self.assertEqual(utils.is_valid_msisdn("+27821112222"), True)
+        self.assertEqual(utils.is_valid_msisdn("+2782111222"), False)
+        self.assertEqual(utils.is_valid_msisdn("0821112222"), False)
 
     def test_get_mom_age(self):
         t = override_get_today()
@@ -674,40 +704,6 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
 
 
 class TestRegistrationHelpers(AuthenticatedAPITestCase):
-
-    def test_is_valid_date(self):
-        # Setup
-        good_date = "1982-03-15"
-        invalid_date = "1983-02-29"
-        bad_date = "1234"
-        # Execute
-        # Check
-        self.assertEqual(is_valid_date(good_date), True)
-        self.assertEqual(is_valid_date(invalid_date), False)
-        self.assertEqual(is_valid_date(bad_date), False)
-
-    def test_is_valid_uuid(self):
-        # Setup
-        valid_uuid = str(uuid.uuid4())
-        invalid_uuid = "f9bfa2d7-5b62-4011-8eac-76bca34781a"
-        # Execute
-        # Check
-        self.assertEqual(is_valid_uuid(valid_uuid), True)
-        self.assertEqual(is_valid_uuid(invalid_uuid), False)
-
-    def test_is_valid_lang(self):
-        # Setup
-        valid_lang = "eng_ZA"
-        invalid_lang = "south african"
-        # Execute
-        # Check
-        self.assertEqual(is_valid_lang(valid_lang), True)
-        self.assertEqual(is_valid_lang(invalid_lang), False)
-
-    def test_is_valid_msisdn(self):
-        self.assertEqual(is_valid_msisdn("+27821112222"), True)
-        self.assertEqual(is_valid_msisdn("+2782111222"), False)
-        self.assertEqual(is_valid_msisdn("0821112222"), False)
 
     def test_get_risk_status(self):
         # prebirth, over 18, less than 20 weeks pregnant
