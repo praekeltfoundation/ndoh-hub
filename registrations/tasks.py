@@ -11,8 +11,6 @@ from seed_services_client.stage_based_messaging import StageBasedMessagingApiCli
 from ndoh_hub import utils
 from .models import Registration, SubscriptionRequest
 
-logger = get_task_logger(__name__)
-
 
 is_client = IdentityStoreApiClient(
     api_url=settings.IDENTITY_STORE_URL,
@@ -46,6 +44,7 @@ class ValidateSubscribe(Task):
     data.
     """
     name = "ndoh_hub.registrations.tasks.validate_subscribe"
+    l = get_task_logger(__name__)
 
     def check_lang(self, data_fields, registration):
         if "language" not in data_fields:
@@ -116,6 +115,8 @@ class ValidateSubscribe(Task):
         """ Validates that all the required info is provided for a
         registration.
         """
+        self.l.info("Starting registration validation")
+
         validation_errors = []
 
         # Check if registrant_id is a valid UUID
@@ -159,20 +160,27 @@ class ValidateSubscribe(Task):
 
         # Evaluate if there were any problems, save and return
         if len(validation_errors) == 0:
+            self.l.info("Registration validated successfully - updating "
+                        "registration object")
             registration.validated = True
             registration.save()
+            self.l.info("Registration object updated.")
             return True
         else:
+            self.l.info("Registration validation failed - updating "
+                        "registration object")
             registration.data["invalid_fields"] = validation_errors
             registration.save()
+            self.l.info("Registration object updated.")
             return False
 
     def create_subscriptionrequests(self, registration):
         """ Create SubscriptionRequest(s) based on the
         validated registration.
         """
-        # Create subscription
+        self.l.info("Starting subscriptionrequest creation")
 
+        self.l.info("Calculating weeks")
         weeks = 1  # default week number
 
         # . calculate weeks along if prebirth
@@ -185,10 +193,12 @@ class ValidateSubscribe(Task):
                                        registration.data["baby_dob"])
 
         # . determine messageset shortname
+        self.l.info("Determining messageset shortname")
         short_name = utils.get_messageset_short_name(
             registration.reg_type, registration.source.authority, weeks)
 
         # . determine sbm details
+        self.l.info("Determining SBM details")
         msgset_id, msgset_schedule, next_sequence_number =\
             utils.get_messageset_schedule_sequence(
                 short_name, weeks)
@@ -200,16 +210,20 @@ class ValidateSubscribe(Task):
             "lang": "eng_ZA",  # NurseConnect is currently only in english
             "schedule": msgset_schedule
         }
+        self.l.info("Creating SubscriptionRequest object")
         SubscriptionRequest.objects.create(**subscription)
+        self.l.info("SubscriptionRequest created")
 
         return "SubscriptionRequest created"
 
     def set_risk_status(self, registration):
         """ Determine the risk status of the mother and save it to her identity
         """
+        self.l.info("Calculating risk level")
         risk = get_risk_status(registration.reg_type,
                                registration.data["mom_dob"],
                                registration.data["edd"])
+        self.l.info("Reading the identity")
         identity = is_client.get_identity(registration.registrant_id)
         details = identity["details"]
 
@@ -218,27 +232,32 @@ class ValidateSubscribe(Task):
         else:
             details["pmtct"] = {"risk_status": risk}
 
+        self.l.info("Saving risk level to the identity")
         is_client.update_identity(
             registration.registrant_id, {"details": details})
+
+        self.l.info("Identity updated with risk level")
+        return risk
 
     def run(self, registration_id, **kwargs):
         """ Sets the registration's validated field to True if
         validation is successful.
         """
-        l = self.get_logger(**kwargs)
-        l.info("Looking up the registration")
+        self.l = self.get_logger(**kwargs)
+        self.l.info("Looking up the registration")
         registration = Registration.objects.get(id=registration_id)
+
         reg_validates = self.validate(registration)
 
-        validation_string = "Validation completed - "
         if reg_validates:
-            validation_string += "Success"
             self.create_subscriptionrequests(registration)
             self.set_risk_status(registration)
+            self.l.info("Task executed successfully")
+            return True
         else:
-            validation_string += "Failure"
+            self.l.info("Task terminated due to validation issues")
+            return False
 
-        return validation_string
 
 validate_subscribe = ValidateSubscribe()
 
