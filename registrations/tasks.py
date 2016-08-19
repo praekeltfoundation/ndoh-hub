@@ -49,6 +49,11 @@ def is_valid_lang(lang):
     ]
 
 
+def is_valid_msisdn(msisdn):
+    """ A very basic msisdn validation check """
+    return msisdn[0] == '+' and len(msisdn) == 12
+
+
 def get_risk_status(reg_type, mom_dob, edd):
     """ Determine the risk level of the mother """
 
@@ -119,6 +124,28 @@ class ValidateSubscribe(Task):
         else:
             return []
 
+    def check_msisdn_registrant(self, data_fields, registration):
+        if "msisdn_registrant" not in data_fields:
+            return ["Msisdn of Registrant missing"]
+        elif not is_valid_msisdn(registration.data["msisdn_registrant"]):
+            return ["Msisdn of Registrant invalid"]
+        else:
+            return []
+
+    def check_msisdn_device(self, data_fields, registration):
+        if "msisdn_device" not in data_fields:
+            return ["Msisdn of device missing"]
+        elif not is_valid_msisdn(registration.data["msisdn_device"]):
+            return ["Msisdn of device invalid"]
+        else:
+            return []
+
+    def check_faccode(self, data_fields, registration):
+        if "faccode" not in data_fields:
+            return ["Facility (clinic) code missing"]
+        else:
+            return []
+
     def validate(self, registration):
         """ Validates that all the required info is provided for a
         registration.
@@ -136,18 +163,24 @@ class ValidateSubscribe(Task):
             validation_errors += self.check_lang(data_fields, registration)
             validation_errors += self.check_mom_dob(data_fields, registration)
             validation_errors += self.check_edd(data_fields, registration)
-            validation_errors += self.check_operator_id(data_fields,
-                                                        registration)
+            validation_errors += self.check_operator_id(
+                data_fields, registration)
 
         elif registration.reg_type == "pmtct_postbirth":
             validation_errors += self.check_lang(data_fields, registration)
             validation_errors += self.check_mom_dob(data_fields, registration)
             validation_errors += self.check_baby_dob(data_fields, registration)
-            validation_errors += self.check_operator_id(data_fields,
-                                                        registration)
+            validation_errors += self.check_operator_id(
+                data_fields, registration)
 
         elif registration.reg_type == "nurseconnect":
-            validation_errors.append("Nurseconnect not yet supported")
+            validation_errors += self.check_faccode(data_fields, registration)
+            validation_errors += self.check_operator_id(
+                data_fields, registration)
+            validation_errors += self.check_msisdn_registrant(
+                data_fields, registration)
+            validation_errors += self.check_msisdn_device(
+                data_fields, registration)
 
         elif registration.reg_type == "momconnect_prebirth":
             validation_errors.append("Momconnect prebirth not yet supported")

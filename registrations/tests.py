@@ -15,8 +15,9 @@ from .models import (Source, Registration, SubscriptionRequest,
                      psh_validate_subscribe)
 from .tasks import (
     validate_subscribe,
-    is_valid_date, is_valid_uuid, is_valid_lang, get_risk_status
-    )
+    is_valid_date, is_valid_uuid, is_valid_lang, is_valid_msisdn,
+    get_risk_status
+)
 from ndoh_hub import utils
 
 
@@ -536,6 +537,11 @@ class TestRegistrationHelpers(AuthenticatedAPITestCase):
         self.assertEqual(is_valid_lang(valid_lang), True)
         self.assertEqual(is_valid_lang(invalid_lang), False)
 
+    def test_is_valid_msisdn(self):
+        self.assertEqual(is_valid_msisdn("+27821112222"), True)
+        self.assertEqual(is_valid_msisdn("+2782111222"), False)
+        self.assertEqual(is_valid_msisdn("0821112222"), False)
+
     def test_get_risk_status(self):
         # prebirth, over 18, less than 20 weeks pregnant
         self.assertEqual(
@@ -683,6 +689,71 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         self.assertEqual(registration.data["invalid_fields"], [
             'Language is missing from data', 'Mother DOB missing',
             'Baby Date of Birth missing', 'Operator ID missing']
+        )
+
+    def test_validate_nurseconnect_good(self):
+        """ Good minimal data nurseconnect test """
+        # Setup
+        registration_data = {
+            "reg_type": "nurseconnect",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_normaluser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "msisdn_registrant": "+27821112222",
+                "msisdn_device": "+27821112222",
+                "faccode": "123456",
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        # Execute
+        v = validate_subscribe.validate(registration)
+        # Check
+        self.assertEqual(v, True)
+
+    def test_validate_nurseconnect_malformed_data(self):
+        """ Malformed data nurseconnect test """
+        # Setup
+        registration_data = {
+            "reg_type": "nurseconnect",
+            "registrant_id": "mother01",
+            "source": self.make_source_normaluser(),
+            "data": {
+                "operator_id": "mother01",
+                "msisdn_registrant": "+2782111222",
+                "msisdn_device": "+2782111222",
+                "faccode": "123456",
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        # Execute
+        v = validate_subscribe.validate(registration)
+        # Check
+        self.assertEqual(v, False)
+        registration = Registration.objects.get(id=registration.id)
+        self.assertEqual(registration.data["invalid_fields"], [
+            'Invalid UUID registrant_id', 'Operator ID invalid',
+            'Msisdn of Registrant invalid', 'Msisdn of device invalid']
+        )
+
+    def test_validate_nurseconnect_missing_data(self):
+        """ Missing data nurseconnect test """
+        # Setup
+        registration_data = {
+            "reg_type": "nurseconnect",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_normaluser(),
+            "data": {},
+        }
+        registration = Registration.objects.create(**registration_data)
+        # Execute
+        v = validate_subscribe.validate(registration)
+        # Check
+        self.assertEqual(v, False)
+        registration = Registration.objects.get(id=registration.id)
+        self.assertEqual(registration.data["invalid_fields"], [
+            'Facility (clinic) code missing', 'Operator ID missing',
+            'Msisdn of Registrant missing', 'Msisdn of device missing']
         )
 
 
