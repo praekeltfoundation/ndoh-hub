@@ -12,7 +12,7 @@ from rest_framework.authtoken.models import Token
 from rest_hooks.models import model_saved
 
 from ndoh_hub import utils
-from registrations.models import (Source, Registration,
+from registrations.models import (Source, Registration, SubscriptionRequest,
                                   psh_validate_subscribe)
 from .models import Change, psh_validate_implement
 from .tasks import validate_implement
@@ -410,6 +410,7 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         # Execute
         c = validate_implement.validate(change)
         # Check
+        change.refresh_from_db()
         self.assertEqual(c, True)
         self.assertEqual(change.validated, True)
 
@@ -426,6 +427,7 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         # Execute
         c = validate_implement.validate(change)
         # Check
+        change.refresh_from_db()
         self.assertEqual(c, False)
         self.assertEqual(change.validated, False)
         self.assertEqual(change.data["invalid_fields"], [
@@ -449,6 +451,7 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         # Execute
         c = validate_implement.validate(change)
         # Check
+        change.refresh_from_db()
         self.assertEqual(c, True)
         self.assertEqual(change.validated, True)
 
@@ -469,6 +472,7 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         # Execute
         c = validate_implement.validate(change)
         # Check
+        change.refresh_from_db()
         self.assertEqual(c, False)
         self.assertEqual(change.validated, False)
         self.assertEqual(change.data["invalid_fields"], [
@@ -485,6 +489,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # Setup
         # make registration
         self.make_registration_pmtct_prebirth()
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
@@ -514,14 +520,19 @@ class TestChangeActions(AuthenticatedAPITestCase):
         result = validate_implement.apply_async(args=[change.id])
 
         # Check
-        self.assertEqual(result.get(), "Switch to baby completed")
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 1)
 
     @responses.activate
     def test_pmtct_loss_switch(self):
         # Setup
         # make registration
         self.make_registration_pmtct_prebirth()
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
@@ -544,13 +555,19 @@ class TestChangeActions(AuthenticatedAPITestCase):
         result = validate_implement.apply_async(args=[change.id])
 
         # Check
-        self.assertEqual(result.get(), "PMTCT switch to loss completed")
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
 
     @responses.activate
     def test_pmtct_loss_optout(self):
         # Setup
         # make registration
         self.make_registration_pmtct_prebirth()
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
@@ -573,13 +590,19 @@ class TestChangeActions(AuthenticatedAPITestCase):
         result = validate_implement.apply_async(args=[change.id])
 
         # Check
-        self.assertEqual(result.get(), "PMTCT optout due to loss completed")
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
 
     @responses.activate
     def test_pmtct_nonloss_optout(self):
         # Setup
         # make registration
         self.make_registration_pmtct_prebirth()
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
@@ -602,14 +625,19 @@ class TestChangeActions(AuthenticatedAPITestCase):
         result = validate_implement.apply_async(args=[change.id])
 
         # Check
-        self.assertEqual(result.get(),
-                         "PMTCT optout not due to loss completed")
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
 
     @responses.activate
     def test_nurse_update_detail(self):
         # Setup
         # make registration
         self.make_registration_nurseconnect()
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
             "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
@@ -625,13 +653,18 @@ class TestChangeActions(AuthenticatedAPITestCase):
         result = validate_implement.apply_async(args=[change.id])
 
         # Check
-        self.assertEqual(result.get(), "NurseConnect detail updated")
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
 
     @responses.activate
     def test_nurse_change_msisdn(self):
         # Setup
         # make registration
         self.make_registration_nurseconnect()
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
             "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
@@ -648,13 +681,19 @@ class TestChangeActions(AuthenticatedAPITestCase):
         result = validate_implement.apply_async(args=[change.id])
 
         # Check
-        self.assertEqual(result.get(), "NurseConnect msisdn changed")
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
 
     @responses.activate
     def test_nurse_optout(self):
         # Setup
         # make registration
         self.make_registration_nurseconnect()
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
             "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
@@ -680,5 +719,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         result = validate_implement.apply_async(args=[change.id])
 
         # Check
-        self.assertEqual(result.get(),
-                         "Nurse optout completed")
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)

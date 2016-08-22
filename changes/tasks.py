@@ -204,9 +204,7 @@ class ValidateImplement(Task):
         change = Change.objects.get(id=change_id)
         change_validates = self.validate(change)
 
-        validation_string = "Validation completed - "
         if change_validates:
-            validation_string += "Success"
             {
                 'baby_switch': self.baby_switch,
                 'pmtct_loss_switch': self.pmtct_loss_switch,
@@ -216,9 +214,8 @@ class ValidateImplement(Task):
                 'nurse_change_msisdn': self.nurse_change_msisdn,
                 'nurse_optout': self.nurse_optout,
             }.get(change.action, None)(change)
+            return True
         else:
-            validation_string += "Failure"
-
-        return validation_string
+            return False
 
 validate_implement = ValidateImplement()
