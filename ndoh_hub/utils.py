@@ -41,6 +41,7 @@ def is_valid_lang(lang):
     ]
 
 
+# TODO 15: Improve validation functions
 def is_valid_msisdn(msisdn):
     """ A very basic msisdn validation check """
     return msisdn[0] == '+' and len(msisdn) == 12
