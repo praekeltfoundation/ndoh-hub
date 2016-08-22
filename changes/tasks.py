@@ -165,6 +165,67 @@ class ValidateImplement(Task):
         else:
             return []
 
+    def check_nurse_update_detail(self, data_fields, change):
+        if len(data_fields) == 0:
+            return ["No details to update"]
+
+        elif "faccode" in data_fields:
+            if len(data_fields) != 1:
+                return ["Only one detail update can be submitted per Change"]
+            elif not utils.is_valid_faccode(change.data["faccode"]):
+                return ["Faccode invalid"]
+            else:
+                return []
+
+        elif "sanc_no" in data_fields:
+            if len(data_fields) != 1:
+                return ["Only one detail update can be submitted per Change"]
+            elif not utils.is_valid_sanc_no(change.data["sanc_no"]):
+                return ["sanc_no invalid"]
+            else:
+                return []
+
+        elif "persal_no" in data_fields:
+            if len(data_fields) != 1:
+                return ["Only one detail update can be submitted per Change"]
+            elif not utils.is_valid_persal_no(change.data["persal_no"]):
+                return ["persal_no invalid"]
+            else:
+                return []
+
+        elif "id_type" in data_fields and not (
+          change.data["id_type"] in ["passport", "sa_id"]):
+            return ["ID type should be passport or sa_id"]
+
+        elif "id_type" in data_fields and change.data["id_type"] == "sa_id":
+            if len(data_fields) != 3 or set(data_fields) != set(
+              ["id_type", "sa_id_no", "dob"]):
+                return ["SA ID update requires fields id_type, sa_id_no, dob"]
+            elif not utils.is_valid_date(change.data["dob"]):
+                return ["Date of birth is invalid"]
+            elif not utils.is_valid_sa_id_no(change.data["sa_id_no"]):
+                return ["SA ID number is invalid"]
+            else:
+                return []
+
+        elif "id_type" in data_fields and change.data["id_type"] == "passport":
+            if len(data_fields) != 4 or set(data_fields) != set(
+              ["id_type", "passport_no", "passport_origin", "dob"]):
+                return ["Passport update requires fields id_type, passport_no,"
+                        " passport_origin, dob"]
+            elif not utils.is_valid_date(change.data["dob"]):
+                return ["Date of birth is invalid"]
+            elif not utils.is_valid_passport_no(change.data["passport_no"]):
+                return ["Passport number is invalid"]
+            elif not utils.is_valid_passport_origin(
+              change.data["passport_origin"]):
+                return ["Passport origin is invalid"]
+            else:
+                return []
+
+        else:
+            return ["Could not parse detail update request"]
+
     # Validate
     def validate(self, change):
         """ Validates that all the required info is provided for a
@@ -185,6 +246,10 @@ class ValidateImplement(Task):
 
         elif change.action == 'pmtct_nonloss_optout':
             validation_errors += self.check_pmtct_nonloss_optout_reason(
+                data_fields, change)
+
+        elif change.action == 'nurse_update_detail':
+            validation_errors += self.check_nurse_update_detail(
                 data_fields, change)
 
         # Evaluate if there were any problems, save and return

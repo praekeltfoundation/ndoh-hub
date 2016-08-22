@@ -46,6 +46,37 @@ def is_valid_msisdn(msisdn):
     return msisdn[0] == '+' and len(msisdn) == 12
 
 
+def is_valid_faccode(faccode):
+    """ A very basic faccode validation check """
+    return len(faccode) >= 1
+
+
+def is_valid_sanc_no(sanc_no):
+    """ A very basic sanc_no validation check """
+    return len(sanc_no) >= 1
+
+
+def is_valid_persal_no(persal_no):
+    """ A very basic persal_no validation check """
+    return len(persal_no) >= 1
+
+
+def is_valid_sa_id_no(sa_id_no):
+    """ A very basic sa_id_no validation check """
+    return len(sa_id_no) == 13
+
+
+def is_valid_passport_no(passport_no):
+    """ A very basic passport_no validation check """
+    return len(passport_no) >= 1
+
+
+def is_valid_passport_origin(passport_origin):
+    """ A passport_origin validation check """
+    valid_origins = ["na", "bw", "mz", "sz", "ls", "cu", "other"]
+    return passport_origin in valid_origins
+
+
 def get_today():
     return datetime.datetime.today()
 

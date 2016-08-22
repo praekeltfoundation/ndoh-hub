@@ -502,8 +502,7 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         )
 
     def test_validate_pmtct_nonloss_optouts_good(self):
-        """ Good data nonloss optout
-        """
+        """ Good data nonloss optout """
         # Setup
         change_data = {
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
@@ -566,6 +565,195 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         self.assertEqual(change.data["invalid_fields"], [
             'Optout reason is missing']
         )
+
+    def test_validate_nurse_update_faccode_good(self):
+        """ Good data faccode update """
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_update_detail",
+            "data": {
+                "faccode": "234567"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_validate_nurse_update_faccode_and_sanc(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_update_detail",
+            "data": {
+                "faccode": "234567",
+                "sanc_no": "1234"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Only one detail update can be submitted per Change'])
+
+    def test_validate_nurse_update_faccode_malformed(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001",
+            "action": "nurse_update_detail",
+            "data": {
+                "faccode": "",
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Invalid UUID registrant_id', 'Faccode invalid'])
+
+    # skip sanc_no and persal_no update tests as similar to faccode update
+
+    def test_validate_nurse_update_sa_id_good(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_update_detail",
+            "data": {
+                "id_type": "sa_id",
+                "sa_id_no": "5101025009086",
+                "dob": "1951-01-02"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_validate_nurse_update_id_type_invalid(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_update_detail",
+            "data": {
+                "id_type": "dob",
+                "dob": "1951-01-02"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'ID type should be passport or sa_id'])
+
+    def test_validate_nurse_update_sa_id_field_wrong(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_update_detail",
+            "data": {
+                "id_type": "sa_id",
+                "passport_no": "12345",
+                "dob": "1951-01-02"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'SA ID update requires fields id_type, sa_id_no, dob'])
+
+    def test_validate_nurse_update_passport_good(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_update_detail",
+            "data": {
+                "id_type": "passport",
+                "passport_no": "12345",
+                "passport_origin": "na",
+                "dob": "1951-01-02"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_validate_nurse_update_passport_field_missing(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_update_detail",
+            "data": {
+                "id_type": "passport",
+                "passport_no": "12345",
+                "passport_origin": "na"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Passport update requires fields id_type, passport_no, '
+            'passport_origin, dob'])
+
+    def test_validate_nurse_update_arbitrary(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_update_detail",
+            "data": {
+                "foo": "bar"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Could not parse detail update request'])
 
 
 class TestChangeActions(AuthenticatedAPITestCase):
