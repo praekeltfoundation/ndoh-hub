@@ -18,6 +18,7 @@ class ValidateImplement(Task):
     """
     name = "ndoh_hub.changes.tasks.validate_implement"
 
+    # Action implementation
     def baby_switch(self, change):
         """ This should be applied when a mother has her baby. Currently it
         only changes the pmtct subscription, but in the future it will also
@@ -145,20 +146,79 @@ class ValidateImplement(Task):
 
         return "Nurse optout completed"
 
+    # Validation checks
+    def check_pmtct_loss_optout_reason(self, data_fields, change):
+        loss_reasons = ["miscarriage", "stillbirth", "babyloss"]
+        if "reason" not in data_fields:
+            return ["Optout reason is missing from data"]
+        elif change.data["reason"] not in loss_reasons:
+            return ["Not a valid loss reason"]
+        else:
+            return []
+
+    def check_pmtct_nonloss_optout_reason(self, data_fields, change):
+        nonloss_reasons = ["not_hiv_pos", "not_useful", "other", "unknown"]
+        if "reason" not in data_fields:
+            return ["Optout reason is missing from data"]
+        elif change.data["reason"] not in nonloss_reasons:
+            return ["Not a valid nonloss reason"]
+        else:
+            return []
+
+    # Validate
+    def validate(self, change):
+        """ Validates that all the required info is provided for a
+        change.
+        """
+        validation_errors = []
+
+        # Check if registrant_id is a valid UUID
+        if not utils.is_valid_uuid(change.registrant_id):
+            validation_errors += ["Invalid UUID registrant_id"]
+
+        # Check that required fields are provided and valid
+        data_fields = change.data.keys()
+
+        if 'pmtct_loss' in change.action:
+            validation_errors += self.check_pmtct_loss_optout_reason(
+                data_fields, change)
+
+        elif change.action == 'pmtct_nonloss_optout':
+            validation_errors += self.check_pmtct_nonloss_optout_reason(
+                data_fields, change)
+
+        # Evaluate if there were any problems, save and return
+        if len(validation_errors) == 0:
+            change.validated = True
+            change.save()
+            return True
+        else:
+            change.data["invalid_fields"] = validation_errors
+            change.save()
+            return False
+
+    # Run
     def run(self, change_id, **kwargs):
         """ Implements the appropriate action
         """
         change = Change.objects.get(id=change_id)
+        change_validates = self.validate(change)
 
-        result = {
-            'baby_switch': self.baby_switch,
-            'pmtct_loss_switch': self.pmtct_loss_switch,
-            'pmtct_loss_optout': self.pmtct_loss_optout,
-            'pmtct_nonloss_optout': self.pmtct_nonloss_optout,
-            'nurse_update_detail': self.nurse_update_detail,
-            'nurse_change_msisdn': self.nurse_change_msisdn,
-            'nurse_optout': self.nurse_optout,
-        }.get(change.action, None)(change)
-        return result
+        validation_string = "Validation completed - "
+        if change_validates:
+            validation_string += "Success"
+            {
+                'baby_switch': self.baby_switch,
+                'pmtct_loss_switch': self.pmtct_loss_switch,
+                'pmtct_loss_optout': self.pmtct_loss_optout,
+                'pmtct_nonloss_optout': self.pmtct_nonloss_optout,
+                'nurse_update_detail': self.nurse_update_detail,
+                'nurse_change_msisdn': self.nurse_change_msisdn,
+                'nurse_optout': self.nurse_optout,
+            }.get(change.action, None)(change)
+        else:
+            validation_string += "Failure"
+
+        return validation_string
 
 validate_implement = ValidateImplement()
