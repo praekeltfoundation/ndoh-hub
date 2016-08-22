@@ -398,7 +398,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 class TestChangeValidation(AuthenticatedAPITestCase):
 
     def test_validate_baby_switch_good(self):
-        """ Good minimal data baby_switch test """
+        """ Good data baby_switch test """
         # Setup
         change_data = {
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
@@ -477,6 +477,94 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, False)
         self.assertEqual(change.data["invalid_fields"], [
             'Invalid UUID registrant_id', 'Not a valid loss reason']
+        )
+
+    def test_validate_pmtct_loss_optouts_missing_data(self):
+        """ Loss optout data blobs are essentially identical between different
+        forms of loss optout for pmtct, so just test one missing one.
+        """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "pmtct_loss_switch",
+            "data": {},
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Optout reason is missing']
+        )
+
+    def test_validate_pmtct_nonloss_optouts_good(self):
+        """ Good data nonloss optout
+        """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "pmtct_nonloss_optout",
+            "data": {
+                "reason": "not_hiv_pos"
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_validate_pmtct_nonloss_optouts_malformed_data(self):
+        """ Loss optout data blobs are essentially identical between different
+        forms of loss optout for pmtct, so just test one malformed one.
+        """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01",
+            "action": "pmtct_nonloss_optout",
+            "data": {
+                "reason": "miscarriage"
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Invalid UUID registrant_id', 'Not a valid nonloss reason']
+        )
+
+    def test_validate_pmtct_nonloss_optouts_missing_data(self):
+        """ Loss optout data blobs are essentially identical between different
+        forms of loss optout for pmtct, so just test one missing one.
+        """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "pmtct_loss_switch",
+            "data": {},
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Optout reason is missing']
         )
 
 

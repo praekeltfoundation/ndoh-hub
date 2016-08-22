@@ -150,7 +150,7 @@ class ValidateImplement(Task):
     def check_pmtct_loss_optout_reason(self, data_fields, change):
         loss_reasons = ["miscarriage", "stillbirth", "babyloss"]
         if "reason" not in data_fields:
-            return ["Optout reason is missing from data"]
+            return ["Optout reason is missing"]
         elif change.data["reason"] not in loss_reasons:
             return ["Not a valid loss reason"]
         else:
@@ -159,7 +159,7 @@ class ValidateImplement(Task):
     def check_pmtct_nonloss_optout_reason(self, data_fields, change):
         nonloss_reasons = ["not_hiv_pos", "not_useful", "other", "unknown"]
         if "reason" not in data_fields:
-            return ["Optout reason is missing from data"]
+            return ["Optout reason is missing"]
         elif change.data["reason"] not in nonloss_reasons:
             return ["Not a valid nonloss reason"]
         else:
