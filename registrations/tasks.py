@@ -174,12 +174,15 @@ class ValidateSubscribe(Task):
                 data_fields, registration)
 
         elif registration.reg_type == "nurseconnect":
-            validation_errors += self.check_faccode(data_fields, registration)
+            validation_errors += self.check_faccode(
+                data_fields, registration)
             validation_errors += self.check_operator_id(
                 data_fields, registration)
             validation_errors += self.check_msisdn_registrant(
                 data_fields, registration)
             validation_errors += self.check_msisdn_device(
+                data_fields, registration)
+            validation_errors += self.check_lang(
                 data_fields, registration)
 
         elif registration.reg_type == "momconnect_prebirth":
@@ -231,7 +234,7 @@ class ValidateSubscribe(Task):
             "identity": registration.registrant_id,
             "messageset": msgset_id,
             "next_sequence_number": next_sequence_number,
-            "lang": "eng_ZA",  # NurseConnect is currently only in english
+            "lang": registration.data["language"],
             "schedule": msgset_schedule
         }
         SubscriptionRequest.objects.create(**subscription)
