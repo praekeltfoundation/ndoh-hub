@@ -745,7 +745,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         registration = Registration.objects.get(id=registration.id)
         self.assertEqual(registration.data["invalid_fields"], [
             'Invalid UUID registrant_id', 'Operator ID invalid',
-            'Msisdn of Registrant invalid', 'Msisdn of device invalid']
+            'MSISDN of Registrant invalid', 'MSISDN of device invalid']
         )
 
     def test_validate_nurseconnect_missing_data(self):
@@ -765,7 +765,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         registration = Registration.objects.get(id=registration.id)
         self.assertEqual(registration.data["invalid_fields"], [
             'Facility (clinic) code missing', 'Operator ID missing',
-            'Msisdn of Registrant missing', 'Msisdn of device missing']
+            'MSISDN of Registrant missing', 'MSISDN of device missing']
         )
 
 

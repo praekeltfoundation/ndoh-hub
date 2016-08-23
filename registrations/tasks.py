@@ -126,17 +126,17 @@ class ValidateSubscribe(Task):
 
     def check_msisdn_registrant(self, data_fields, registration):
         if "msisdn_registrant" not in data_fields:
-            return ["Msisdn of Registrant missing"]
+            return ["MSISDN of Registrant missing"]
         elif not is_valid_msisdn(registration.data["msisdn_registrant"]):
-            return ["Msisdn of Registrant invalid"]
+            return ["MSISDN of Registrant invalid"]
         else:
             return []
 
     def check_msisdn_device(self, data_fields, registration):
         if "msisdn_device" not in data_fields:
-            return ["Msisdn of device missing"]
+            return ["MSISDN of device missing"]
         elif not is_valid_msisdn(registration.data["msisdn_device"]):
-            return ["Msisdn of device invalid"]
+            return ["MSISDN of device invalid"]
         else:
             return []
 
