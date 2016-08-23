@@ -18,7 +18,7 @@ from .tasks import (
     is_valid_date, is_valid_uuid, is_valid_lang, is_valid_msisdn,
     get_risk_status
 )
-from ndoh_hub import utils
+from ndoh_hub import utils, utils_tests
 
 
 def override_get_today():
@@ -129,24 +129,24 @@ class TestUtils(TestCase):
     @responses.activate
     def test_get_messageset_schedule_sequence(self):
         # Setup all fixture responses
-        schedule_id = utils.mock_get_messageset_by_shortname(
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "pmtct_prebirth.patient.1")
-        utils.mock_get_schedule(schedule_id)
-        schedule_id = utils.mock_get_messageset_by_shortname(
+        utils_tests.mock_get_schedule(schedule_id)
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "pmtct_prebirth.patient.2")
-        utils.mock_get_schedule(schedule_id)
-        schedule_id = utils.mock_get_messageset_by_shortname(
+        utils_tests.mock_get_schedule(schedule_id)
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "pmtct_prebirth.patient.3")
-        utils.mock_get_schedule(schedule_id)
-        schedule_id = utils.mock_get_messageset_by_shortname(
+        utils_tests.mock_get_schedule(schedule_id)
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "pmtct_postbirth.patient.1")
-        utils.mock_get_schedule(schedule_id)
-        schedule_id = utils.mock_get_messageset_by_shortname(
+        utils_tests.mock_get_schedule(schedule_id)
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "pmtct_postbirth.patient.2")
-        utils.mock_get_schedule(schedule_id)
-        schedule_id = utils.mock_get_messageset_by_shortname(
+        utils_tests.mock_get_schedule(schedule_id)
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "nurseconnect.hw_full.1")
-        utils.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_schedule(schedule_id)
 
         # Check pmtct prebirth
         # . batch 1
@@ -951,9 +951,9 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         registration.save()
 
         # . setup fixture responses
-        schedule_id = utils.mock_get_messageset_by_shortname(
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "pmtct_prebirth.patient.1")
-        utils.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_schedule(schedule_id)
 
         # Execute
         cs = validate_subscribe.create_subscriptionrequests(registration)
@@ -989,9 +989,9 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         registration.save()
 
         # . setup fixture responses
-        schedule_id = utils.mock_get_messageset_by_shortname(
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "pmtct_prebirth.patient.2")
-        utils.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_schedule(schedule_id)
 
         # Execute
         cs = validate_subscribe.create_subscriptionrequests(registration)
@@ -1027,9 +1027,9 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         registration.save()
 
         # . setup fixture responses
-        schedule_id = utils.mock_get_messageset_by_shortname(
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "pmtct_prebirth.patient.3")
-        utils.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_schedule(schedule_id)
 
         # Execute
         cs = validate_subscribe.create_subscriptionrequests(registration)
@@ -1065,9 +1065,9 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         registration.save()
 
         # setup fixture responses
-        schedule_id = utils.mock_get_messageset_by_shortname(
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "pmtct_postbirth.patient.1")
-        utils.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_schedule(schedule_id)
 
         # Execute
         cs = validate_subscribe.create_subscriptionrequests(registration)
@@ -1103,9 +1103,9 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         registration.save()
 
         # setup fixture responses
-        schedule_id = utils.mock_get_messageset_by_shortname(
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "pmtct_postbirth.patient.2")
-        utils.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_schedule(schedule_id)
 
         # Execute
         cs = validate_subscribe.create_subscriptionrequests(registration)
@@ -1142,9 +1142,9 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         registration.save()
 
         # setup fixture responses
-        schedule_id = utils.mock_get_messageset_by_shortname(
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "nurseconnect.hw_full.1")
-        utils.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_schedule(schedule_id)
 
         # Execute
         cs = validate_subscribe.create_subscriptionrequests(registration)
@@ -1184,11 +1184,11 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         }
 
         # . setup fixture responses
-        schedule_id = utils.mock_get_messageset_by_shortname(
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "pmtct_prebirth.patient.1")
-        utils.mock_get_schedule(schedule_id)
-        utils.mock_get_identity_by_id(registrant_uuid)
-        utils.mock_patch_identity(registrant_uuid)
+        utils_tests.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_identity_by_id(registrant_uuid)
+        utils_tests.mock_patch_identity(registrant_uuid)
 
         # Execute
         registration = Registration.objects.create(**registration_data)

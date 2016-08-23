@@ -11,7 +11,7 @@ from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
 from rest_hooks.models import model_saved
 
-from ndoh_hub import utils
+from ndoh_hub import utils, utils_tests
 from registrations.models import (Source, Registration,
                                   psh_validate_subscribe)
 from .models import Change, psh_implement_action
@@ -367,16 +367,16 @@ class TestChangeActions(AuthenticatedAPITestCase):
             change_data["registrant_id"])
 
         # . mock get messageset by id
-        utils.mock_get_messageset(11)
-        utils.mock_get_messageset(21)
+        utils_tests.mock_get_messageset(11)
+        utils_tests.mock_get_messageset(21)
 
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions(active_subscription_ids)
 
         # . mock get messageset by shortname
-        schedule_id = utils.mock_get_messageset_by_shortname(
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "pmtct_postbirth.patient.1")
-        utils.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_schedule(schedule_id)
 
         # Execute
         result = implement_action.apply_async(args=[change.id])
