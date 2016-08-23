@@ -46,6 +46,7 @@ class ValidateSubscribe(Task):
     name = "ndoh_hub.registrations.tasks.validate_subscribe"
     l = get_task_logger(__name__)
 
+    # Validation checks
     def check_lang(self, data_fields, registration):
         if "language" not in data_fields:
             return ["Language is missing from data"]
@@ -111,6 +112,7 @@ class ValidateSubscribe(Task):
         else:
             return []
 
+    # Validate
     def validate(self, registration):
         """ Validates that all the required info is provided for a
         registration.
@@ -177,6 +179,7 @@ class ValidateSubscribe(Task):
             self.l.info("Registration object updated.")
             return False
 
+    # Create SubscriptionRequest
     def create_subscriptionrequests(self, registration):
         """ Create SubscriptionRequest(s) based on the
         validated registration.
@@ -219,6 +222,7 @@ class ValidateSubscribe(Task):
 
         return "SubscriptionRequest created"
 
+    # Set risk status
     def set_risk_status(self, registration):
         """ Determine the risk status of the mother and save it to her identity
         """
@@ -242,6 +246,7 @@ class ValidateSubscribe(Task):
         self.l.info("Identity updated with risk level")
         return risk
 
+    # Run
     def run(self, registration_id, **kwargs):
         """ Sets the registration's validated field to True if
         validation is successful.

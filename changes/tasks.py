@@ -1,4 +1,5 @@
 from celery.task import Task
+from celery.utils.log import get_task_logger
 from django.conf import settings
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
 
@@ -17,6 +18,7 @@ class ValidateImplement(Task):
     """ Task to apply a Change action.
     """
     name = "ndoh_hub.changes.tasks.validate_implement"
+    l = get_task_logger(__name__)
 
     # Action implementation
     def baby_switch(self, change):
@@ -24,12 +26,15 @@ class ValidateImplement(Task):
         only changes the pmtct subscription, but in the future it will also
         change her momconnect subscription.
         """
-        # Get current subscriptions
+        self.l.info("Starting switch to baby")
+
+        self.l.info("Retrieving active subscriptions")
         active_subs = sbm_client.get_subscriptions(
             {'id': change.registrant_id, 'active': True}
         )["results"]
         # Determine if the mother has an active pmtct subscription and
         # deactivate active subscriptions
+        self.l.info("Evaluating active subscriptions")
         has_active_pmtct_sub = False
 
         for active_sub in active_subs:
@@ -39,16 +44,19 @@ class ValidateImplement(Task):
                 has_active_pmtct_sub = True
                 lang = active_sub["lang"]
 
+            self.l.info("Deactivating active pmtct subscriptions")
             sbm_client.update_subscription(active_sub["id"], {"active": False})
 
         if has_active_pmtct_sub:
-            # create a postbirth pmtct subscriptionrequest
+            self.l.info("Creating postbirth pmtct subscriptionrequest")
 
+            self.l.info("Determining messageset shortname")
             # . determine messageset shortname
             short_name = utils.get_messageset_short_name(
                 "pmtct_postbirth", "patient", 0)
 
             # . determine sbm details
+            self.l.info("Determining SBM details")
             msgset_id, msgset_schedule, next_sequence_number =\
                 utils.get_messageset_schedule_sequence(
                     short_name, 0)
@@ -60,7 +68,9 @@ class ValidateImplement(Task):
                 "lang": lang,
                 "schedule": msgset_schedule
             }
+            self.l.info("Creating SubscriptionRequest object")
             SubscriptionRequest.objects.create(**subscription)
+            self.l.info("SubscriptionRequest created")
 
         # Future: create a postbirth momconnect subscriptionrequest
 
@@ -72,13 +82,18 @@ class ValidateImplement(Task):
         old system via the ndoh-jsbox ussd_pmtct app, we're only deactivating
         the subscriptions here.
         """
-        # Get current subscriptions
+        self.l.info("Starting switch to loss")
+
+        self.l.info("Retrieving active subscriptions")
         active_subs = sbm_client.get_subscriptions(
             {'id': change.registrant_id, 'active': True}
         )["results"]
-        # Deactivate subscriptions
+
+        self.l.info("Deactivating active subscriptions")
         for active_sub in active_subs:
             sbm_client.update_subscription(active_sub["id"], {"active": False})
+
+        self.l.info("PMTCT switch to loss completed")
 
         return "PMTCT switch to loss completed"
 
@@ -88,13 +103,18 @@ class ValidateImplement(Task):
         system subscriptions) is currently done via the ndoh-jsbox ussd_pmtct
         app, we're only deactivating the subscriptions here.
         """
-        # Get current subscriptions
+        self.l.info("Starting switch to loss")
+
+        self.l.info("Retrieving active subscriptions")
         active_subs = sbm_client.get_subscriptions(
             {'id': change.registrant_id, 'active': True}
         )["results"]
-        # Deactivate subscriptions
+
+        self.l.info("Deactivating active subscriptions")
         for active_sub in active_subs:
             sbm_client.update_subscription(active_sub["id"], {"active": False})
+
+        self.l.info("PMTCT optout due to loss completed")
 
         return "PMTCT optout due to loss completed"
 
@@ -104,13 +124,18 @@ class ValidateImplement(Task):
         system subscriptions) is currently done via the ndoh-jsbox ussd_pmtct
         app, we're only deactivating the subscriptions here.
         """
-        # Get current subscriptions
+        self.l.info("Starting switch to loss")
+
+        self.l.info("Retrieving active subscriptions")
         active_subs = sbm_client.get_subscriptions(
             {'id': change.registrant_id, 'active': True}
         )["results"]
-        # Deactivate subscriptions
+
+        self.l.info("Deactivating active subscriptions")
         for active_sub in active_subs:
             sbm_client.update_subscription(active_sub["id"], {"active": False})
+
+        self.l.info("PMTCT optout due to loss completed")
 
         return "PMTCT optout not due to loss completed"
 
@@ -118,12 +143,20 @@ class ValidateImplement(Task):
         """ This currently does nothing, but in a seperate issue this will
         handle sending the information update to Jembi
         """
+        self.l.info("Starting nurseconnect detail update")
+
+        self.l.info("Completed nurseconnect detail update")
+
         return "NurseConnect detail updated"
 
     def nurse_change_msisdn(self, change):
         """ This currently does nothing, but in a seperate issue this will
         handle sending the information update to Jembi
         """
+        self.l.info("Starting nurseconnect msisdn change")
+
+        self.l.info("Completed nurseconnect msisdn change")
+
         return "NurseConnect msisdn changed"
 
     def nurse_optout(self, change):
@@ -132,17 +165,23 @@ class ValidateImplement(Task):
         app, we're only deactivating the subscriptions here. Note this only
         deactivates the NurseConnect subscription.
         """
-        # Get nurseconnect messageset
+        self.l.info("Starting switch to loss")
+
+        self.l.info("Retrieving nurseconnect messageset id")
         messageset = sbm_client.get_messagesets(
             {"short_name": "nurseconnect.hw_full.1"})["results"][0]
-        # Get current subscriptions
+
+        self.l.info("Retrieving active subscriptions")
         active_subs = sbm_client.get_subscriptions({
             'id': change.registrant_id, 'active': True,
             'messageset': messageset["id"]}
         )["results"]
-        # Deactivate subscriptions
+
+        self.l.info("Deactivating active subscriptions")
         for active_sub in active_subs:
             sbm_client.update_subscription(active_sub["id"], {"active": False})
+
+        self.l.info("NurseConnect optout completed")
 
         return "Nurse optout completed"
 
@@ -256,6 +295,8 @@ class ValidateImplement(Task):
         """ Validates that all the required info is provided for a
         change.
         """
+        self.l.info("Starting change validation")
+
         validation_errors = []
 
         # Check if registrant_id is a valid UUID
@@ -287,10 +328,13 @@ class ValidateImplement(Task):
 
         # Evaluate if there were any problems, save and return
         if len(validation_errors) == 0:
+            self.l.info("Change validated successfully - updating change "
+                        "object")
             change.validated = True
             change.save()
             return True
         else:
+            self.l.info("Change validation failed - updating change object")
             change.data["invalid_fields"] = validation_errors
             change.save()
             return False
@@ -299,6 +343,8 @@ class ValidateImplement(Task):
     def run(self, change_id, **kwargs):
         """ Implements the appropriate action
         """
+        self.l = self.get_logger(**kwargs)
+        self.l.info("Looking up the change")
         change = Change.objects.get(id=change_id)
         change_validates = self.validate(change)
 
@@ -312,8 +358,10 @@ class ValidateImplement(Task):
                 'nurse_change_msisdn': self.nurse_change_msisdn,
                 'nurse_optout': self.nurse_optout,
             }.get(change.action, None)(change)
+            self.l.info("Task executed successfully")
             return True
         else:
+            self.l.info("Task terminated due to validation issues")
             return False
 
 validate_implement = ValidateImplement()
