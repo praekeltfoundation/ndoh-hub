@@ -241,6 +241,16 @@ class ValidateImplement(Task):
         else:
             return []
 
+    def check_nurse_optout(self, data_fields, change):
+        valid_reasons = ["job_change", "number_owner_change", "not_useful",
+                         "other", "unknown"]
+        if "reason" not in data_fields:
+            return ["Optout reason is missing"]
+        elif change.data["reason"] not in valid_reasons:
+            return ["Not a valid optout reason"]
+        else:
+            return []
+
     # Validate
     def validate(self, change):
         """ Validates that all the required info is provided for a
@@ -269,6 +279,10 @@ class ValidateImplement(Task):
 
         elif change.action == 'nurse_change_msisdn':
             validation_errors += self.check_nurse_change_msisdn(
+                data_fields, change)
+
+        elif change.action == 'nurse_optout':
+            validation_errors += self.check_nurse_optout(
                 data_fields, change)
 
         # Evaluate if there were any problems, save and return

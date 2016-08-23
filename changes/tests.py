@@ -797,6 +797,49 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         self.assertEqual(change.data["invalid_fields"], [
             'Device msisdn should be the same as new or old msisdn'])
 
+    def test_validate_nurse_optout_good(self):
+        """ Good data nonloss optout """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_optout",
+            "data": {
+                "reason": "job_change"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_validate_nurse_optout_malformed_data(self):
+        """ Loss optout data blobs are essentially identical between different
+        forms of loss optout for pmtct, so just test one malformed one.
+        """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01",
+            "action": "nurse_optout",
+            "data": {
+                "reason": "bored"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Invalid UUID registrant_id', 'Not a valid optout reason']
+        )
+
 
 class TestChangeActions(AuthenticatedAPITestCase):
 
@@ -990,6 +1033,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             "data": {
                 "msisdn_old": "+27821112222",
                 "msisdn_new": "+27821113333",
+                "msisdn_device": "+27821113333",
             },
             "source": self.make_source_adminuser()
         }
