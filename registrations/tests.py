@@ -866,6 +866,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 "msisdn_registrant": "+27821112222",
                 "msisdn_device": "+27821112222",
                 "faccode": "123456",
+                "language": "eng_ZA"
             },
         }
         registration = Registration.objects.create(**registration_data)
@@ -886,6 +887,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 "msisdn_registrant": "+2782111222",
                 "msisdn_device": "+2782111222",
                 "faccode": "123456",
+                "language": "en"
             },
         }
         registration = Registration.objects.create(**registration_data)
@@ -896,7 +898,8 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         registration = Registration.objects.get(id=registration.id)
         self.assertEqual(registration.data["invalid_fields"], [
             'Invalid UUID registrant_id', 'Operator ID invalid',
-            'Msisdn of Registrant invalid', 'Msisdn of device invalid']
+            'MSISDN of Registrant invalid', 'MSISDN of device invalid',
+            'Language not a valid option']
         )
 
     def test_validate_nurseconnect_missing_data(self):
@@ -916,7 +919,8 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         registration = Registration.objects.get(id=registration.id)
         self.assertEqual(registration.data["invalid_fields"], [
             'Facility (clinic) code missing', 'Operator ID missing',
-            'Msisdn of Registrant missing', 'Msisdn of device missing']
+            'MSISDN of Registrant missing', 'MSISDN of device missing',
+            'Language is missing from data']
         )
 
 
@@ -1126,6 +1130,7 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
                 "msisdn_registrant": "+27821112222",
                 "msisdn_device": "+27821112222",
                 "faccode": "123456",
+                "language": "eng_ZA"
             },
         }
         registration = Registration.objects.create(**registration_data)

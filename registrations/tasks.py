@@ -91,17 +91,17 @@ class ValidateSubscribe(Task):
 
     def check_msisdn_registrant(self, data_fields, registration):
         if "msisdn_registrant" not in data_fields:
-            return ["Msisdn of Registrant missing"]
+            return ["MSISDN of Registrant missing"]
         elif not utils.is_valid_msisdn(registration.data["msisdn_registrant"]):
-            return ["Msisdn of Registrant invalid"]
+            return ["MSISDN of Registrant invalid"]
         else:
             return []
 
     def check_msisdn_device(self, data_fields, registration):
         if "msisdn_device" not in data_fields:
-            return ["Msisdn of device missing"]
+            return ["MSISDN of device missing"]
         elif not utils.is_valid_msisdn(registration.data["msisdn_device"]):
-            return ["Msisdn of device invalid"]
+            return ["MSISDN of device invalid"]
         else:
             return []
 
@@ -141,12 +141,15 @@ class ValidateSubscribe(Task):
                 data_fields, registration)
 
         elif registration.reg_type == "nurseconnect":
-            validation_errors += self.check_faccode(data_fields, registration)
+            validation_errors += self.check_faccode(
+                data_fields, registration)
             validation_errors += self.check_operator_id(
                 data_fields, registration)
             validation_errors += self.check_msisdn_registrant(
                 data_fields, registration)
             validation_errors += self.check_msisdn_device(
+                data_fields, registration)
+            validation_errors += self.check_lang(
                 data_fields, registration)
 
         elif registration.reg_type == "momconnect_prebirth":
@@ -207,7 +210,7 @@ class ValidateSubscribe(Task):
             "identity": registration.registrant_id,
             "messageset": msgset_id,
             "next_sequence_number": next_sequence_number,
-            "lang": "eng_ZA",  # NurseConnect is currently only in english
+            "lang": registration.data["language"],
             "schedule": msgset_schedule
         }
         self.l.info("Creating SubscriptionRequest object")
