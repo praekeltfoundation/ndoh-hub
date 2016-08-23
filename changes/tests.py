@@ -626,7 +626,7 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         self.assertEqual(change.data["invalid_fields"], [
             'Invalid UUID registrant_id', 'Faccode invalid'])
 
-    # skip sanc_no and persal_no update tests as similar to faccode update
+    # skip sanc_no and persal_no update tests - similar to faccode update
 
     def test_validate_nurse_update_sa_id_good(self):
         # Setup
@@ -754,6 +754,48 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, False)
         self.assertEqual(change.data["invalid_fields"], [
             'Could not parse detail update request'])
+
+    def test_validate_nurse_change_msisdn_good(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_change_msisdn",
+            "data": {
+                "msisdn_old": "+27820001001",
+                "msisdn_new": "+27820001002",
+                "msisdn_device": "+27820001001",
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_validate_nurse_change_msisdn_malformed(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_change_msisdn",
+            "data": {
+                "msisdn_old": "+27820001001",
+                "msisdn_new": "+27820001002",
+                "msisdn_device": "+27820001003",
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Device msisdn should be the same as new or old msisdn'])
 
 
 class TestChangeActions(AuthenticatedAPITestCase):

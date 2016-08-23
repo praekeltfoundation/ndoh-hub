@@ -226,6 +226,21 @@ class ValidateImplement(Task):
         else:
             return ["Could not parse detail update request"]
 
+    def check_nurse_change_msisdn(self, data_fields, change):
+        if len(data_fields) != 3 or set(data_fields) != set(
+          ["msisdn_old", "msisdn_new", "msisdn_device"]):
+            return ["SA ID update requires fields msisdn_old, msisdn_new, "
+                    "msisdn_device"]
+        elif not utils.is_valid_msisdn(change.data["msisdn_old"]):
+            return ["Invalid old msisdn"]
+        elif not utils.is_valid_msisdn(change.data["msisdn_new"]):
+            return ["Invalid old msisdn"]
+        elif not (change.data["msisdn_device"] == change.data["msisdn_new"] or
+                  change.data["msisdn_device"] == change.data["msisdn_old"]):
+            return ["Device msisdn should be the same as new or old msisdn"]
+        else:
+            return []
+
     # Validate
     def validate(self, change):
         """ Validates that all the required info is provided for a
@@ -250,6 +265,10 @@ class ValidateImplement(Task):
 
         elif change.action == 'nurse_update_detail':
             validation_errors += self.check_nurse_update_detail(
+                data_fields, change)
+
+        elif change.action == 'nurse_change_msisdn':
+            validation_errors += self.check_nurse_change_msisdn(
                 data_fields, change)
 
         # Evaluate if there were any problems, save and return
