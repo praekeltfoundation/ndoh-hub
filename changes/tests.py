@@ -284,6 +284,7 @@ class TestChangeAPI(AuthenticatedAPITestCase):
         self.assertEqual(d.action, 'pmtct_loss_switch')
         self.assertEqual(d.validated, False)
         self.assertEqual(d.data, {"test_key1": "test_value1"})
+        self.assertEqual(d.created_by, self.adminuser)
 
     def test_create_change_normaluser(self):
         # Setup
@@ -305,6 +306,7 @@ class TestChangeAPI(AuthenticatedAPITestCase):
         self.assertEqual(d.action, 'pmtct_loss_switch')
         self.assertEqual(d.validated, False)
         self.assertEqual(d.data, {"test_key1": "test_value1"})
+        self.assertEqual(d.created_by, self.normaluser)
 
     def test_create_change_set_readonly_field(self):
         # Setup
