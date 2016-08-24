@@ -12,10 +12,10 @@ from rest_framework.authtoken.models import Token
 from rest_hooks.models import model_saved
 
 from ndoh_hub import utils, utils_tests
-from registrations.models import (Source, Registration,
+from .models import Change, psh_validate_implement
+from .tasks import validate_implement
+from registrations.models import (Source, Registration, SubscriptionRequest,
                                   psh_validate_subscribe)
-from .models import Change, psh_implement_action
-from .tasks import implement_action
 
 
 def override_get_today():
@@ -76,6 +76,43 @@ def mock_get_active_subscriptions(registrant_id):
     return [subscription_id_1, subscription_id_2]
 
 
+def mock_get_active_nurseconnect_subscriptions(registrant_id):
+    subscription_id = "subscription1-4bf1-8779-c47b428e89d0"
+    responses.add(
+        responses.GET,
+        'http://sbm/api/v1/subscriptions/?active=True&messageset=61&id=%s' % (
+            registrant_id),
+        json={
+            "count": 1,
+            "next": None,
+            "previous": None,
+            "results": [
+                {   # nurseconnect.hw_full.1 subscription
+                    "id": subscription_id,
+                    "identity": registrant_id,
+                    "active": True,
+                    "completed": False,
+                    "lang": "eng_ZA",
+                    "url": "http://sbm/api/v1/subscriptions/%s" % (
+                        subscription_id),
+                    "messageset": 61,
+                    "next_sequence_number": 11,
+                    "schedule": 161,
+                    "process_status": 0,
+                    "version": 1,
+                    "metadata": {},
+                    "created_at": "2015-07-10T06:13:29.693272Z",
+                    "updated_at": "2015-07-10T06:13:29.693272Z"
+                }
+            ]
+        },
+        status=200, content_type='application/json',
+        match_querystring=True
+    )
+
+    return [subscription_id]
+
+
 def mock_deactivate_subscriptions(subscription_ids):
     for subscription_id in subscription_ids:
         responses.add(
@@ -104,7 +141,7 @@ class AuthenticatedAPITestCase(APITestCase):
         assert has_listeners(), (
             "Change model has no post_save listeners. Make sure"
             " helpers cleaned up properly in earlier tests.")
-        post_save.disconnect(receiver=psh_implement_action,
+        post_save.disconnect(receiver=psh_validate_implement,
                              sender=Change)
         post_save.disconnect(receiver=model_saved,
                              dispatch_uid='instance-saved-hook')
@@ -118,7 +155,7 @@ class AuthenticatedAPITestCase(APITestCase):
         assert not has_listeners(), (
             "Change model still has post_save listeners. Make sure"
             " helpers removed them properly in earlier tests.")
-        post_save.connect(psh_implement_action, sender=Change)
+        post_save.connect(psh_validate_implement, sender=Change)
 
     def _replace_post_save_hooks_registration(self):
         def has_listeners():
@@ -200,6 +237,20 @@ class AuthenticatedAPITestCase(APITestCase):
                 "language": "eng_ZA",
                 "mom_dob": "1999-01-27",
                 "baby_dob": "2016-01-01"
+            },
+        }
+        return Registration.objects.create(**registration_data)
+
+    def make_registration_nurseconnect(self):
+        registration_data = {
+            "reg_type": "nurseconnect",
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "msisdn_registrant": "+27821112222",
+                "msisdn_device": "+27821112222",
+                "faccode": "123456",
             },
         }
         return Registration.objects.create(**registration_data)
@@ -344,6 +395,452 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         self.assertEqual(d.data["mom_dob"], "1999-01-27")
 
 
+class TestChangeValidation(AuthenticatedAPITestCase):
+
+    def test_validate_baby_switch_good(self):
+        """ Good data baby_switch test """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "baby_switch",
+            "data": {},
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_validate_baby_switch_malformed_data(self):
+        """ Malformed data baby_switch test """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01",
+            "action": "baby_switch",
+            "data": {},
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Invalid UUID registrant_id']
+        )
+
+    def test_validate_pmtct_loss_optouts_good(self):
+        """ Loss optout data blobs are essentially identical between different
+        forms of loss optout for pmtct, so just test one good one.
+        """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "pmtct_loss_switch",
+            "data": {
+                "reason": "miscarriage"
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_validate_pmtct_loss_optouts_malformed_data(self):
+        """ Loss optout data blobs are essentially identical between different
+        forms of loss optout for pmtct, so just test one malformed one.
+        """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01",
+            "action": "pmtct_loss_switch",
+            "data": {
+                "reason": "not a reason we accept"
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Invalid UUID registrant_id', 'Not a valid loss reason']
+        )
+
+    def test_validate_pmtct_loss_optouts_missing_data(self):
+        """ Loss optout data blobs are essentially identical between different
+        forms of loss optout for pmtct, so just test one missing one.
+        """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "pmtct_loss_switch",
+            "data": {},
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Optout reason is missing']
+        )
+
+    def test_validate_pmtct_nonloss_optouts_good(self):
+        """ Good data nonloss optout """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "pmtct_nonloss_optout",
+            "data": {
+                "reason": "not_hiv_pos"
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_validate_pmtct_nonloss_optouts_malformed_data(self):
+        """ Loss optout data blobs are essentially identical between different
+        forms of loss optout for pmtct, so just test one malformed one.
+        """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01",
+            "action": "pmtct_nonloss_optout",
+            "data": {
+                "reason": "miscarriage"
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Invalid UUID registrant_id', 'Not a valid nonloss reason']
+        )
+
+    def test_validate_pmtct_nonloss_optouts_missing_data(self):
+        """ Loss optout data blobs are essentially identical between different
+        forms of loss optout for pmtct, so just test one missing one.
+        """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "pmtct_loss_switch",
+            "data": {},
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Optout reason is missing']
+        )
+
+    def test_validate_nurse_update_faccode_good(self):
+        """ Good data faccode update """
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_update_detail",
+            "data": {
+                "faccode": "234567"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_validate_nurse_update_faccode_and_sanc(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_update_detail",
+            "data": {
+                "faccode": "234567",
+                "sanc_no": "1234"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Only one detail update can be submitted per Change'])
+
+    def test_validate_nurse_update_faccode_malformed(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001",
+            "action": "nurse_update_detail",
+            "data": {
+                "faccode": "",
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Invalid UUID registrant_id', 'Faccode invalid'])
+
+    # skip sanc_no and persal_no update tests - similar to faccode update
+
+    def test_validate_nurse_update_sa_id_good(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_update_detail",
+            "data": {
+                "id_type": "sa_id",
+                "sa_id_no": "5101025009086",
+                "dob": "1951-01-02"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_validate_nurse_update_id_type_invalid(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_update_detail",
+            "data": {
+                "id_type": "dob",
+                "dob": "1951-01-02"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'ID type should be passport or sa_id'])
+
+    def test_validate_nurse_update_sa_id_field_wrong(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_update_detail",
+            "data": {
+                "id_type": "sa_id",
+                "passport_no": "12345",
+                "dob": "1951-01-02"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'SA ID update requires fields id_type, sa_id_no, dob'])
+
+    def test_validate_nurse_update_passport_good(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_update_detail",
+            "data": {
+                "id_type": "passport",
+                "passport_no": "12345",
+                "passport_origin": "na",
+                "dob": "1951-01-02"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_validate_nurse_update_passport_field_missing(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_update_detail",
+            "data": {
+                "id_type": "passport",
+                "passport_no": "12345",
+                "passport_origin": "na"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Passport update requires fields id_type, passport_no, '
+            'passport_origin, dob'])
+
+    def test_validate_nurse_update_arbitrary(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_update_detail",
+            "data": {
+                "foo": "bar"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Could not parse detail update request'])
+
+    def test_validate_nurse_change_msisdn_good(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_change_msisdn",
+            "data": {
+                "msisdn_old": "+27820001001",
+                "msisdn_new": "+27820001002",
+                "msisdn_device": "+27820001001",
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_validate_nurse_change_msisdn_malformed(self):
+        # Setup
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_change_msisdn",
+            "data": {
+                "msisdn_old": "+27820001001",
+                "msisdn_new": "+27820001002",
+                "msisdn_device": "+27820001003",
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Device msisdn should be the same as new or old msisdn'])
+
+    def test_validate_nurse_optout_good(self):
+        """ Good data nonloss optout """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_optout",
+            "data": {
+                "reason": "job_change"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_validate_nurse_optout_malformed_data(self):
+        """ Loss optout data blobs are essentially identical between different
+        forms of loss optout for pmtct, so just test one malformed one.
+        """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01",
+            "action": "nurse_optout",
+            "data": {
+                "reason": "bored"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Invalid UUID registrant_id', 'Not a valid optout reason']
+        )
+
+
 class TestChangeActions(AuthenticatedAPITestCase):
 
     @responses.activate
@@ -353,6 +850,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # Setup
         # make registration
         self.make_registration_pmtct_prebirth()
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
@@ -379,17 +878,22 @@ class TestChangeActions(AuthenticatedAPITestCase):
         utils_tests.mock_get_schedule(schedule_id)
 
         # Execute
-        result = implement_action.apply_async(args=[change.id])
+        result = validate_implement.apply_async(args=[change.id])
 
         # Check
-        self.assertEqual(result.get(), "Switch to baby completed")
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 1)
 
     @responses.activate
     def test_pmtct_loss_switch(self):
         # Setup
         # make registration
         self.make_registration_pmtct_prebirth()
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
@@ -409,16 +913,22 @@ class TestChangeActions(AuthenticatedAPITestCase):
         mock_deactivate_subscriptions(active_subscription_ids)
 
         # Execute
-        result = implement_action.apply_async(args=[change.id])
+        result = validate_implement.apply_async(args=[change.id])
 
         # Check
-        self.assertEqual(result.get(), "PMTCT switch to loss completed")
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
 
     @responses.activate
     def test_pmtct_loss_optout(self):
         # Setup
         # make registration
         self.make_registration_pmtct_prebirth()
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
@@ -438,16 +948,22 @@ class TestChangeActions(AuthenticatedAPITestCase):
         mock_deactivate_subscriptions(active_subscription_ids)
 
         # Execute
-        result = implement_action.apply_async(args=[change.id])
+        result = validate_implement.apply_async(args=[change.id])
 
         # Check
-        self.assertEqual(result.get(), "PMTCT optout due to loss completed")
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
 
     @responses.activate
     def test_pmtct_nonloss_optout(self):
         # Setup
         # make registration
         self.make_registration_pmtct_prebirth()
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
@@ -467,8 +983,106 @@ class TestChangeActions(AuthenticatedAPITestCase):
         mock_deactivate_subscriptions(active_subscription_ids)
 
         # Execute
-        result = implement_action.apply_async(args=[change.id])
+        result = validate_implement.apply_async(args=[change.id])
 
         # Check
-        self.assertEqual(result.get(),
-                         "PMTCT optout not due to loss completed")
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+
+    @responses.activate
+    def test_nurse_update_detail(self):
+        # Setup
+        # make registration
+        self.make_registration_nurseconnect()
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        # make change object
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_update_detail",
+            "data": {
+                "faccode": "234567"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+
+        # Execute
+        result = validate_implement.apply_async(args=[change.id])
+
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+
+    @responses.activate
+    def test_nurse_change_msisdn(self):
+        # Setup
+        # make registration
+        self.make_registration_nurseconnect()
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        # make change object
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_change_msisdn",
+            "data": {
+                "msisdn_old": "+27821112222",
+                "msisdn_new": "+27821113333",
+                "msisdn_device": "+27821113333",
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+
+        # Execute
+        result = validate_implement.apply_async(args=[change.id])
+
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+
+    @responses.activate
+    def test_nurse_optout(self):
+        # Setup
+        # make registration
+        self.make_registration_nurseconnect()
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        # make change object
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_optout",
+            "data": {
+                "reason": "job_change"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+
+        # mock get messageset by shortname
+        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+
+        # . mock get nurseconnect subscription request
+        active_subscription_ids = mock_get_active_nurseconnect_subscriptions(
+            change_data["registrant_id"])
+
+        # . mock deactivate active subscriptions
+        mock_deactivate_subscriptions(active_subscription_ids)
+
+        # Execute
+        result = validate_implement.apply_async(args=[change.id])
+
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)

@@ -1,4 +1,3 @@
-import datetime
 import requests
 import json
 import uuid
@@ -12,46 +11,11 @@ from seed_services_client.stage_based_messaging import StageBasedMessagingApiCli
 from ndoh_hub import utils
 from .models import Registration, SubscriptionRequest
 
-logger = get_task_logger(__name__)
-
 
 is_client = IdentityStoreApiClient(
     api_url=settings.IDENTITY_STORE_URL,
     auth_token=settings.IDENTITY_STORE_TOKEN
 )
-
-
-def is_valid_date(date):
-    try:
-        datetime.datetime.strptime(date, "%Y-%m-%d")
-        return True
-    except:
-        return False
-
-
-def is_valid_uuid(id):
-    return len(id) == 36 and id[14] == '4' and id[19] in ['a', 'b', '8', '9']
-
-
-def is_valid_lang(lang):
-    return lang in [
-        "zul_ZA",  # isiZulu
-        "xho_ZA",  # isiXhosa
-        "afr_ZA",  # Afrikaans
-        "eng_ZA",  # English
-        "nso_ZA",  # Sesotho sa Leboa / Pedi
-        "tsn_ZA",  # Setswana
-        "sot_ZA",  # Sesotho
-        "tso_ZA",  # Xitsonga
-        "ssw_ZA",  # siSwati
-        "ven_ZA",  # Tshivenda
-        "nbl_ZA",  # isiNdebele
-    ]
-
-
-def is_valid_msisdn(msisdn):
-    """ A very basic msisdn validation check """
-    return msisdn[0] == '+' and len(msisdn) == 12
 
 
 def get_risk_status(reg_type, mom_dob, edd):
@@ -80,11 +44,13 @@ class ValidateSubscribe(Task):
     data.
     """
     name = "ndoh_hub.registrations.tasks.validate_subscribe"
+    l = get_task_logger(__name__)
 
+    # Validation checks
     def check_lang(self, data_fields, registration):
         if "language" not in data_fields:
             return ["Language is missing from data"]
-        elif not is_valid_lang(registration.data["language"]):
+        elif not utils.is_valid_lang(registration.data["language"]):
             return ["Language not a valid option"]
         else:
             return []
@@ -92,7 +58,7 @@ class ValidateSubscribe(Task):
     def check_mom_dob(self, data_fields, registration):
         if "mom_dob" not in data_fields:
             return ["Mother DOB missing"]
-        elif not is_valid_date(registration.data["mom_dob"]):
+        elif not utils.is_valid_date(registration.data["mom_dob"]):
             return ["Mother DOB invalid"]
         else:
             return []
@@ -100,7 +66,7 @@ class ValidateSubscribe(Task):
     def check_edd(self, data_fields, registration):
         if "edd" not in data_fields:
             return ["Estimated Due Date missing"]
-        elif not is_valid_date(registration.data["edd"]):
+        elif not utils.is_valid_date(registration.data["edd"]):
             return ["Estimated Due Date invalid"]
         else:
             return []
@@ -108,7 +74,7 @@ class ValidateSubscribe(Task):
     def check_baby_dob(self, data_fields, registration):
         if "baby_dob" not in data_fields:
             return ["Baby Date of Birth missing"]
-        elif not is_valid_date(registration.data["baby_dob"]):
+        elif not utils.is_valid_date(registration.data["baby_dob"]):
             return ["Baby Date of Birth invalid"]
         elif utils.get_baby_age(utils.get_today(),
                                 registration.data["baby_dob"]) < 0:
@@ -119,7 +85,7 @@ class ValidateSubscribe(Task):
     def check_operator_id(self, data_fields, registration):
         if "operator_id" not in data_fields:
             return ["Operator ID missing"]
-        elif not is_valid_uuid(registration.data["operator_id"]):
+        elif not utils.is_valid_uuid(registration.data["operator_id"]):
             return ["Operator ID invalid"]
         else:
             return []
@@ -127,7 +93,7 @@ class ValidateSubscribe(Task):
     def check_msisdn_registrant(self, data_fields, registration):
         if "msisdn_registrant" not in data_fields:
             return ["MSISDN of Registrant missing"]
-        elif not is_valid_msisdn(registration.data["msisdn_registrant"]):
+        elif not utils.is_valid_msisdn(registration.data["msisdn_registrant"]):
             return ["MSISDN of Registrant invalid"]
         else:
             return []
@@ -135,7 +101,7 @@ class ValidateSubscribe(Task):
     def check_msisdn_device(self, data_fields, registration):
         if "msisdn_device" not in data_fields:
             return ["MSISDN of device missing"]
-        elif not is_valid_msisdn(registration.data["msisdn_device"]):
+        elif not utils.is_valid_msisdn(registration.data["msisdn_device"]):
             return ["MSISDN of device invalid"]
         else:
             return []
@@ -146,14 +112,17 @@ class ValidateSubscribe(Task):
         else:
             return []
 
+    # Validate
     def validate(self, registration):
         """ Validates that all the required info is provided for a
         registration.
         """
+        self.l.info("Starting registration validation")
+
         validation_errors = []
 
         # Check if registrant_id is a valid UUID
-        if not is_valid_uuid(registration.registrant_id):
+        if not utils.is_valid_uuid(registration.registrant_id):
             validation_errors += ["Invalid UUID registrant_id"]
 
         # Check that required fields are provided and valid
@@ -196,20 +165,28 @@ class ValidateSubscribe(Task):
 
         # Evaluate if there were any problems, save and return
         if len(validation_errors) == 0:
+            self.l.info("Registration validated successfully - updating "
+                        "registration object")
             registration.validated = True
             registration.save()
+            self.l.info("Registration object updated.")
             return True
         else:
+            self.l.info("Registration validation failed - updating "
+                        "registration object")
             registration.data["invalid_fields"] = validation_errors
             registration.save()
+            self.l.info("Registration object updated.")
             return False
 
+    # Create SubscriptionRequest
     def create_subscriptionrequests(self, registration):
         """ Create SubscriptionRequest(s) based on the
         validated registration.
         """
-        # Create subscription
+        self.l.info("Starting subscriptionrequest creation")
 
+        self.l.info("Calculating weeks")
         weeks = 1  # default week number
 
         # . calculate weeks along if prebirth
@@ -222,10 +199,12 @@ class ValidateSubscribe(Task):
                                        registration.data["baby_dob"])
 
         # . determine messageset shortname
+        self.l.info("Determining messageset shortname")
         short_name = utils.get_messageset_short_name(
             registration.reg_type, registration.source.authority, weeks)
 
         # . determine sbm details
+        self.l.info("Determining SBM details")
         msgset_id, msgset_schedule, next_sequence_number =\
             utils.get_messageset_schedule_sequence(
                 short_name, weeks)
@@ -237,16 +216,21 @@ class ValidateSubscribe(Task):
             "lang": registration.data["language"],
             "schedule": msgset_schedule
         }
+        self.l.info("Creating SubscriptionRequest object")
         SubscriptionRequest.objects.create(**subscription)
+        self.l.info("SubscriptionRequest created")
 
         return "SubscriptionRequest created"
 
+    # Set risk status
     def set_risk_status(self, registration):
         """ Determine the risk status of the mother and save it to her identity
         """
+        self.l.info("Calculating risk level")
         risk = get_risk_status(registration.reg_type,
                                registration.data["mom_dob"],
                                registration.data["edd"])
+        self.l.info("Reading the identity")
         identity = is_client.get_identity(registration.registrant_id)
         details = identity["details"]
 
@@ -255,27 +239,33 @@ class ValidateSubscribe(Task):
         else:
             details["pmtct"] = {"risk_status": risk}
 
+        self.l.info("Saving risk level to the identity")
         is_client.update_identity(
             registration.registrant_id, {"details": details})
 
+        self.l.info("Identity updated with risk level")
+        return risk
+
+    # Run
     def run(self, registration_id, **kwargs):
         """ Sets the registration's validated field to True if
         validation is successful.
         """
-        l = self.get_logger(**kwargs)
-        l.info("Looking up the registration")
+        self.l = self.get_logger(**kwargs)
+        self.l.info("Looking up the registration")
         registration = Registration.objects.get(id=registration_id)
+
         reg_validates = self.validate(registration)
 
-        validation_string = "Validation completed - "
         if reg_validates:
-            validation_string += "Success"
             self.create_subscriptionrequests(registration)
             self.set_risk_status(registration)
+            self.l.info("Task executed successfully")
+            return True
         else:
-            validation_string += "Failure"
+            self.l.info("Task terminated due to validation issues")
+            return False
 
-        return validation_string
 
 validate_subscribe = ValidateSubscribe()
 

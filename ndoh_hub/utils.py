@@ -12,6 +12,71 @@ sbm_client = StageBasedMessagingApiClient(
 )
 
 
+def is_valid_uuid(id):
+    return len(id) == 36 and id[14] == '4' and id[19] in ['a', 'b', '8', '9']
+
+
+def is_valid_date(date):
+    try:
+        datetime.datetime.strptime(date, "%Y-%m-%d")
+        return True
+    except:
+        return False
+
+
+def is_valid_lang(lang):
+    return lang in [
+        "zul_ZA",  # isiZulu
+        "xho_ZA",  # isiXhosa
+        "afr_ZA",  # Afrikaans
+        "eng_ZA",  # English
+        "nso_ZA",  # Sesotho sa Leboa / Pedi
+        "tsn_ZA",  # Setswana
+        "sot_ZA",  # Sesotho
+        "tso_ZA",  # Xitsonga
+        "ssw_ZA",  # siSwati
+        "ven_ZA",  # Tshivenda
+        "nbl_ZA",  # isiNdebele
+    ]
+
+
+# TODO 15: Improve validation functions
+def is_valid_msisdn(msisdn):
+    """ A very basic msisdn validation check """
+    return msisdn[0] == '+' and len(msisdn) == 12
+
+
+def is_valid_faccode(faccode):
+    """ A very basic faccode validation check """
+    return len(faccode) >= 1
+
+
+def is_valid_sanc_no(sanc_no):
+    """ A very basic sanc_no validation check """
+    return len(sanc_no) >= 1
+
+
+def is_valid_persal_no(persal_no):
+    """ A very basic persal_no validation check """
+    return len(persal_no) >= 1
+
+
+def is_valid_sa_id_no(sa_id_no):
+    """ A very basic sa_id_no validation check """
+    return len(sa_id_no) == 13
+
+
+def is_valid_passport_no(passport_no):
+    """ A very basic passport_no validation check """
+    return len(passport_no) >= 1
+
+
+def is_valid_passport_origin(passport_origin):
+    """ A passport_origin validation check """
+    valid_origins = ["na", "bw", "mz", "sz", "ls", "cu", "other"]
+    return passport_origin in valid_origins
+
+
 def get_today():
     return datetime.datetime.today()
 

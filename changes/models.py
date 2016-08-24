@@ -25,7 +25,10 @@ class Change(models.Model):
         ('baby_switch', "Change from pregnancy to baby messaging"),
         ('pmtct_loss_switch', "Change to loss messaging via pmtct app"),
         ('pmtct_loss_optout', "Optout due to loss via pmtct app"),
-        ('pmtct_nonloss_optout', "Optout not due to loss via pmtct app")
+        ('pmtct_nonloss_optout', "Optout not due to loss via pmtct app"),
+        ('nurse_update_detail', "Update nurseconnect detail"),
+        ('nurse_change_msisdn', "Change nurseconnect msisdn"),
+        ('nurse_optout', "Optout from nurseconnect")
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -49,10 +52,10 @@ class Change(models.Model):
 
 
 @receiver(post_save, sender=Change)
-def psh_implement_action(sender, instance, created, **kwargs):
+def psh_validate_implement(sender, instance, created, **kwargs):
     """ Post save hook to fire Change validation task
     """
     if created:
-        from .tasks import implement_action
-        implement_action.apply_async(
+        from .tasks import validate_implement
+        validate_implement.apply_async(
             kwargs={"change_id": str(instance.id)})
