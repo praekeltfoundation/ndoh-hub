@@ -11,11 +11,11 @@ from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
 from rest_hooks.models import model_saved
 
-from ndoh_hub import utils
-from registrations.models import (Source, Registration, SubscriptionRequest,
-                                  psh_validate_subscribe)
+from ndoh_hub import utils, utils_tests
 from .models import Change, psh_validate_implement
 from .tasks import validate_implement
+from registrations.models import (Source, Registration, SubscriptionRequest,
+                                  psh_validate_subscribe)
 
 
 def override_get_today():
@@ -866,16 +866,16 @@ class TestChangeActions(AuthenticatedAPITestCase):
             change_data["registrant_id"])
 
         # . mock get messageset by id
-        utils.mock_get_messageset(11)
-        utils.mock_get_messageset(21)
+        utils_tests.mock_get_messageset(11)
+        utils_tests.mock_get_messageset(21)
 
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions(active_subscription_ids)
 
         # . mock get messageset by shortname
-        schedule_id = utils.mock_get_messageset_by_shortname(
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "pmtct_postbirth.patient.1")
-        utils.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_schedule(schedule_id)
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
@@ -1068,7 +1068,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         change = Change.objects.create(**change_data)
 
         # mock get messageset by shortname
-        utils.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
 
         # . mock get nurseconnect subscription request
         active_subscription_ids = mock_get_active_nurseconnect_subscriptions(
