@@ -109,6 +109,16 @@ class ValidateSubscribe(Task):
     def check_faccode(self, data_fields, registration):
         if "faccode" not in data_fields:
             return ["Facility (clinic) code missing"]
+        elif not utils.is_valid_faccode(registration.data["faccode"]):
+            return ["Facility code invalid"]
+        else:
+            return []
+
+    def check_consent(self, data_fields, registration):
+        if "consent" not in data_fields:
+            return ["Consent is missing"]
+        elif registration.data["consent"] is not True:
+            return ["Cannot continue without consent"]
         else:
             return []
 
@@ -125,6 +135,15 @@ class ValidateSubscribe(Task):
             return ["Passport number missing"]
         elif not utils.is_valid_passport_no(registration.data["passport_no"]):
             return ["Passport number invalid"]
+        else:
+            return []
+
+    def check_passport_origin(self, data_fields, registration):
+        if "passport_origin" not in data_fields:
+            return ["Passport origin missing"]
+        elif not utils.is_valid_passport_origin(
+          registration.data["passport_origin"]):
+            return ["Passport origin invalid"]
         else:
             return []
 
@@ -200,6 +219,8 @@ class ValidateSubscribe(Task):
             validation_errors += self.check_edd(
                 data_fields, registration)
             validation_errors += self.check_faccode(
+                data_fields, registration)
+            validation_errors += self.check_consent(
                 data_fields, registration)
             validation_errors += self.check_id(
                 data_fields, registration)

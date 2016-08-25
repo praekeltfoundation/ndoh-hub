@@ -267,6 +267,14 @@ class AuthenticatedAPITestCase(APITestCase):
         }
         return Source.objects.create(**data)
 
+    def make_source_partialuser(self):
+        data = {
+            "name": "test_source_partialuser",
+            "authority": "hw_partial",
+            "user": User.objects.get(username='testpartialuser')
+        }
+        return Source.objects.create(**data)
+
     def make_source_normaluser(self):
         data = {
             "name": "test_source_normaluser",
@@ -761,7 +769,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         v = validate_subscribe.validate(registration)
         # Check
         self.assertEqual(v, False)
-        registration = Registration.objects.get(id=registration.id)
+        registration.refresh_from_db()
         self.assertEqual(registration.data["invalid_fields"], [
             'Invalid UUID registrant_id', 'Language not a valid option',
             'Mother DOB invalid', 'Estimated Due Date invalid',
@@ -782,7 +790,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         v = validate_subscribe.validate(registration)
         # Check
         self.assertEqual(v, False)
-        registration = Registration.objects.get(id=registration.id)
+        registration.refresh_from_db()
         self.assertEqual(registration.data["invalid_fields"], [
             'Language is missing from data', 'Mother DOB missing',
             'Estimated Due Date missing', 'Operator ID missing']
@@ -827,7 +835,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         v = validate_subscribe.validate(registration)
         # Check
         self.assertEqual(v, False)
-        registration = Registration.objects.get(id=registration.id)
+        registration.refresh_from_db()
         self.assertEqual(registration.data["invalid_fields"], [
             'Invalid UUID registrant_id', 'Language not a valid option',
             'Mother DOB invalid', 'Baby Date of Birth cannot be in the future',
@@ -848,7 +856,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         v = validate_subscribe.validate(registration)
         # Check
         self.assertEqual(v, False)
-        registration = Registration.objects.get(id=registration.id)
+        registration.refresh_from_db()
         self.assertEqual(registration.data["invalid_fields"], [
             'Language is missing from data', 'Mother DOB missing',
             'Baby Date of Birth missing', 'Operator ID missing']
@@ -895,7 +903,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         v = validate_subscribe.validate(registration)
         # Check
         self.assertEqual(v, False)
-        registration = Registration.objects.get(id=registration.id)
+        registration.refresh_from_db()
         self.assertEqual(registration.data["invalid_fields"], [
             'Invalid UUID registrant_id', 'Operator ID invalid',
             'MSISDN of Registrant invalid', 'MSISDN of device invalid',
@@ -916,7 +924,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         v = validate_subscribe.validate(registration)
         # Check
         self.assertEqual(v, False)
-        registration = Registration.objects.get(id=registration.id)
+        registration.refresh_from_db()
         self.assertEqual(registration.data["invalid_fields"], [
             'Facility (clinic) code missing', 'Operator ID missing',
             'MSISDN of Registrant missing', 'MSISDN of device missing',
@@ -924,7 +932,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         )
 
     def test_validate_momconnect_prebirth_good(self):
-        """ Good minimal data momconnect_prebirth clinic test """
+        """ Good data momconnect_prebirth clinic test """
         # Setup
         registration_data = {
             "reg_type": "momconnect_prebirth",
@@ -948,6 +956,113 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         v = validate_subscribe.validate(registration)
         # Check
         self.assertEqual(v, True)
+
+    def test_validate_momconnect_prebirth_malformed_data_1(self):
+        """ clinic momconnect_prebirth sa_id reg """
+        # Setup
+        registration_data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01",
+                "msisdn_registrant": "+27821113",
+                "msisdn_device": "+27821113",
+                "id_type": "sa_id",
+                "sa_id_no": "810801",
+                "mom_dob": "1982",
+                "language": "eng",
+                "edd": "2016",
+                "faccode": "",
+                "consent": None
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        # Execute
+        v = validate_subscribe.validate(registration)
+        # Check
+        self.assertEqual(v, False)
+        registration.refresh_from_db()
+        self.assertEqual(registration.data["invalid_fields"], [
+            "Invalid UUID registrant_id",
+            "Operator ID invalid",
+            "MSISDN of Registrant invalid",
+            "MSISDN of device invalid",
+            "Language not a valid option",
+            "Estimated Due Date invalid",
+            "Facility code invalid",
+            "Cannot continue without consent",
+            "SA ID number invalid",
+            "Mother DOB invalid"
+            ]
+        )
+
+    def test_validate_momconnect_prebirth_malformed_data_2(self):
+        """ chw momconnect_prebirth passport reg """
+        # Setup
+        registration_data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01",
+                "msisdn_registrant": "+27821113",
+                "msisdn_device": "+27821113",
+                "id_type": "passport",
+                "passport_origin": "uruguay",
+                "language": "eng",
+                "edd": "2016",
+                "faccode": "",
+                "consent": None
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        # Execute
+        v = validate_subscribe.validate(registration)
+        # Check
+        self.assertEqual(v, False)
+        registration.refresh_from_db()
+        self.assertEqual(registration.data["invalid_fields"], [
+            "Invalid UUID registrant_id",
+            "Operator ID invalid",
+            "MSISDN of Registrant invalid",
+            "MSISDN of device invalid",
+            "Language not a valid option",
+            "Estimated Due Date invalid",
+            "Facility code invalid",
+            "Cannot continue without consent",
+            "Passport number missing",
+            "Passport origin invalid"
+            ]
+        )
+
+    def test_validate_momconnect_prebirth_missing(self):
+        """ data blob missing """
+        # Setup
+        registration_data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01",
+            "source": self.make_source_adminuser(),
+            "data": {},
+        }
+        registration = Registration.objects.create(**registration_data)
+        # Execute
+        v = validate_subscribe.validate(registration)
+        # Check
+        self.assertEqual(v, False)
+        registration.refresh_from_db()
+        self.assertEqual(registration.data["invalid_fields"], [
+            "Invalid UUID registrant_id",
+            "Operator ID missing",
+            "MSISDN of Registrant missing",
+            "MSISDN of device missing",
+            "Language is missing from data",
+            "Estimated Due Date missing",
+            "Facility (clinic) code missing",
+            "Consent is missing",
+            "ID type missing"
+            ]
+        )
 
 
 class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
