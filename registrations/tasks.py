@@ -266,16 +266,24 @@ class ValidateSubscribe(Task):
             weeks = utils.get_baby_age(utils.get_today(),
                                        registration.data["baby_dob"])
 
+        print("WEEKS: ", weeks)
+
         # . determine messageset shortname
         self.l.info("Determining messageset shortname")
         short_name = utils.get_messageset_short_name(
             registration.reg_type, registration.source.authority, weeks)
+
+        print("SHORT_NAME: ", short_name)
 
         # . determine sbm details
         self.l.info("Determining SBM details")
         msgset_id, msgset_schedule, next_sequence_number =\
             utils.get_messageset_schedule_sequence(
                 short_name, weeks)
+
+        print("MSGSET_ID: ", msgset_id)
+        print("MSGSET_SCHEDULE: ", msgset_schedule)
+        print("NEXT_SEQUENCE_NUMBER: ", next_sequence_number)
 
         subscription = {
             "identity": registration.registrant_id,

@@ -111,15 +111,29 @@ def get_baby_age(today, baby_dob):
 def get_messageset_short_name(reg_type, authority, weeks):
     batch_number = 1  # default batch_number
 
-    if "prebirth" in reg_type:
+    if reg_type == "pmtct_prebirth":
         if 30 <= weeks <= 34:
             batch_number = 2
         elif weeks >= 35:
             batch_number = 3
 
-    if "postbirth" in reg_type:
+    elif reg_type == "pmtct_postbirth":
         if weeks > 1:
             batch_number = 2
+
+    elif reg_type == "momconnect_prebirth" and authority == "hw_full":
+        if weeks <= 30:
+            batch_number = 1
+        elif weeks <= 35:
+            batch_number = 2
+        elif weeks <= 36:
+            batch_number = 3
+        elif weeks <= 37:
+            batch_number = 4
+        elif weeks <= 38:
+            batch_number = 5
+        else:
+            batch_number = 6
 
     short_name = "%s.%s.%s" % (reg_type, authority, batch_number)
 
@@ -165,6 +179,18 @@ def get_messageset_schedule_sequence(short_name, weeks):
             next_sequence_number = weeks - 1
         else:
             next_sequence_number = 50  # last message in set
+
+    # nurseconnect always starts at 1
+
+    elif short_name == 'momconnect_prebirth.hw_full.1':
+        if weeks >= 5:
+            next_sequence_number = ((weeks - 4) * msgs_per_week) - 1
+
+    elif short_name == 'momconnect_prebirth.hw_full.2':
+        if weeks >= 32:
+            next_sequence_number = ((weeks - 30) * msgs_per_week) - 2
+
+    # other momconnect_prebirth sets start at 1
 
     return (messageset["id"], messageset["default_schedule"],
             next_sequence_number)
