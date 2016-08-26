@@ -290,6 +290,24 @@ class ValidateImplement(Task):
         else:
             return []
 
+    def check_momconnect_loss_optout_reason(self, data_fields, change):
+        loss_reasons = ["miscarriage", "stillbirth", "babyloss"]
+        if "reason" not in data_fields:
+            return ["Optout reason is missing"]
+        elif change.data["reason"] not in loss_reasons:
+            return ["Not a valid loss reason"]
+        else:
+            return []
+
+    def check_momconnect_nonloss_optout_reason(self, data_fields, change):
+        nonloss_reasons = ["not_useful", "other", "unknown"]
+        if "reason" not in data_fields:
+            return ["Optout reason is missing"]
+        elif change.data["reason"] not in nonloss_reasons:
+            return ["Not a valid nonloss reason"]
+        else:
+            return []
+
     # Validate
     def validate(self, change):
         """ Validates that all the required info is provided for a
@@ -324,6 +342,14 @@ class ValidateImplement(Task):
 
         elif change.action == 'nurse_optout':
             validation_errors += self.check_nurse_optout(
+                data_fields, change)
+
+        elif 'momconnect_loss' in change.action:
+            validation_errors += self.check_momconnect_loss_optout_reason(
+                data_fields, change)
+
+        elif change.action == 'momconnect_nonloss_optout':
+            validation_errors += self.check_momconnect_nonloss_optout_reason(
                 data_fields, change)
 
         # Evaluate if there were any problems, save and return

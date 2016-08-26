@@ -840,6 +840,138 @@ class TestChangeValidation(AuthenticatedAPITestCase):
             'Invalid UUID registrant_id', 'Not a valid optout reason']
         )
 
+    def test_validate_momconnect_loss_optouts_good(self):
+        """ Loss optout data blobs are essentially identical between different
+        forms of loss optout for momconnect, so just test one good one.
+        """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "momconnect_loss_switch",
+            "data": {
+                "reason": "miscarriage"
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_validate_momconnect_loss_optouts_malformed_data(self):
+        """ Loss optout data blobs are essentially identical between different
+        forms of loss optout for momconnect, so just test one malformed one.
+        """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01",
+            "action": "momconnect_loss_switch",
+            "data": {
+                "reason": "not a reason we accept"
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Invalid UUID registrant_id', 'Not a valid loss reason']
+        )
+
+    def test_validate_momconnect_loss_optouts_missing_data(self):
+        """ Loss optout data blobs are essentially identical between different
+        forms of loss optout for momconnect, so just test one missing one.
+        """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "momconnect_loss_switch",
+            "data": {},
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Optout reason is missing']
+        )
+
+    def test_validate_momconnect_nonloss_optouts_good(self):
+        """ Good data nonloss optout """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "momconnect_nonloss_optout",
+            "data": {
+                "reason": "unknown"
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_validate_momconnect_nonloss_optouts_malformed_data(self):
+        """ Loss optout data blobs are essentially identical between different
+        forms of loss optout for momconnect, so just test one malformed one.
+        """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01",
+            "action": "momconnect_nonloss_optout",
+            "data": {
+                "reason": "miscarriage"
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Invalid UUID registrant_id', 'Not a valid nonloss reason']
+        )
+
+    def test_validate_momconnect_nonloss_optouts_missing_data(self):
+        """ Loss optout data blobs are essentially identical between different
+        forms of loss optout for momconnect, so just test one missing one.
+        """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "momconnect_loss_switch",
+            "data": {},
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, False)
+        self.assertEqual(change.validated, False)
+        self.assertEqual(change.data["invalid_fields"], [
+            'Optout reason is missing']
+        )
+
 
 class TestChangeActions(AuthenticatedAPITestCase):
 
