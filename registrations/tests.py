@@ -156,9 +156,52 @@ class TestUtils(TestCase):
             "nurseconnect", "authority", 500),
             "nurseconnect.authority.1")
 
+        # momconnect prebirth testing
+        self.assertEqual(utils.get_messageset_short_name(
+            "momconnect_prebirth", "hw_full", -1000),
+            "momconnect_prebirth.hw_full.1")
+        self.assertEqual(utils.get_messageset_short_name(
+            "momconnect_prebirth", "hw_full", 0),
+            "momconnect_prebirth.hw_full.1")
+        self.assertEqual(utils.get_messageset_short_name(
+            "momconnect_prebirth", "hw_full", 30),
+            "momconnect_prebirth.hw_full.1")
+        self.assertEqual(utils.get_messageset_short_name(
+            "momconnect_prebirth", "hw_full", 31),
+            "momconnect_prebirth.hw_full.2")
+        self.assertEqual(utils.get_messageset_short_name(
+            "momconnect_prebirth", "hw_full", 35),
+            "momconnect_prebirth.hw_full.2")
+        self.assertEqual(utils.get_messageset_short_name(
+            "momconnect_prebirth", "hw_full", 36),
+            "momconnect_prebirth.hw_full.3")
+        self.assertEqual(utils.get_messageset_short_name(
+            "momconnect_prebirth", "hw_full", 37),
+            "momconnect_prebirth.hw_full.4")
+        self.assertEqual(utils.get_messageset_short_name(
+            "momconnect_prebirth", "hw_full", 38),
+            "momconnect_prebirth.hw_full.5")
+        self.assertEqual(utils.get_messageset_short_name(
+            "momconnect_prebirth", "hw_full", 39),
+            "momconnect_prebirth.hw_full.6")
+        self.assertEqual(utils.get_messageset_short_name(
+            "momconnect_prebirth", "hw_full", 1000),
+            "momconnect_prebirth.hw_full.6")
+
+        self.assertEqual(utils.get_messageset_short_name(
+            "momconnect_prebirth", "authority", -1000),
+            "momconnect_prebirth.authority.1")
+        self.assertEqual(utils.get_messageset_short_name(
+            "momconnect_prebirth", "authority", 35),
+            "momconnect_prebirth.authority.1")
+        self.assertEqual(utils.get_messageset_short_name(
+            "momconnect_prebirth", "authority", 1000),
+            "momconnect_prebirth.authority.1")
+
     @responses.activate
     def test_get_messageset_schedule_sequence(self):
         # Setup all fixture responses
+        # . pmtct
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "pmtct_prebirth.patient.1")
         utils_tests.mock_get_schedule(schedule_id)
@@ -174,8 +217,36 @@ class TestUtils(TestCase):
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "pmtct_postbirth.patient.2")
         utils_tests.mock_get_schedule(schedule_id)
+
+        # . nurseconnect
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "nurseconnect.hw_full.1")
+        utils_tests.mock_get_schedule(schedule_id)
+
+        # . momconnect
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_prebirth.hw_full.1")
+        utils_tests.mock_get_schedule(schedule_id)
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_prebirth.hw_full.2")
+        utils_tests.mock_get_schedule(schedule_id)
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_prebirth.hw_full.3")
+        utils_tests.mock_get_schedule(schedule_id)
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_prebirth.hw_full.4")
+        utils_tests.mock_get_schedule(schedule_id)
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_prebirth.hw_full.5")
+        utils_tests.mock_get_schedule(schedule_id)
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_prebirth.hw_full.6")
+        utils_tests.mock_get_schedule(schedule_id)
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_prebirth.hw_partial.1")
+        utils_tests.mock_get_schedule(schedule_id)
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_prebirth.patient.1")
         utils_tests.mock_get_schedule(schedule_id)
 
         # Check pmtct prebirth
@@ -225,12 +296,57 @@ class TestUtils(TestCase):
         self.assertEqual(utils.get_messageset_schedule_sequence(
             "nurseconnect.hw_full.1", 500), (61, 161, 1))
 
+        # Check momconnect prebirth
+        # . clinic
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "momconnect_prebirth.hw_full.1", 0), (21, 121, 1))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "momconnect_prebirth.hw_full.1", 5), (21, 121, 1))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "momconnect_prebirth.hw_full.1", 6), (21, 121, 3))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "momconnect_prebirth.hw_full.1", 30), (21, 121, 51))
+
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "momconnect_prebirth.hw_full.2", 31), (22, 122, 1))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "momconnect_prebirth.hw_full.2", 32), (22, 122, 4))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "momconnect_prebirth.hw_full.2", 35), (22, 122, 13))
+
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "momconnect_prebirth.hw_full.3", 36), (23, 123, 1))
+
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "momconnect_prebirth.hw_full.4", 37), (24, 124, 1))
+
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "momconnect_prebirth.hw_full.5", 38), (25, 125, 1))
+
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "momconnect_prebirth.hw_full.6", 39), (26, 126, 1))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "momconnect_prebirth.hw_full.6", 42), (26, 126, 1))
+
+        # . public
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "momconnect_prebirth.patient.1", 0), (41, 141, 1))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "momconnect_prebirth.patient.1", 40), (41, 141, 1))
+
+        # . chw
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "momconnect_prebirth.hw_partial.1", 0), (42, 142, 1))
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "momconnect_prebirth.hw_partial.1", 40), (42, 142, 1))
+
 
 class APITestCase(TestCase):
 
     def setUp(self):
         self.adminclient = APIClient()
         self.normalclient = APIClient()
+        self.partialclient = APIClient()
         self.otherclient = APIClient()
         utils.get_today = override_get_today
 
@@ -358,6 +474,18 @@ class AuthenticatedAPITestCase(APITestCase):
         self.admintoken = admintoken.key
         self.adminclient.credentials(
             HTTP_AUTHORIZATION='Token ' + self.admintoken)
+
+        # Partial User setup
+        self.partialusername = 'testpartialuser'
+        self.partialpassword = 'testpartialpass'
+        self.partialuser = User.objects.create_user(
+            self.partialusername,
+            'testpartialuser@example.com',
+            self.partialpassword)
+        partialtoken = Token.objects.create(user=self.partialuser)
+        self.partialtoken = partialtoken.key
+        self.partialclient.credentials(
+            HTTP_AUTHORIZATION='Token ' + self.partialtoken)
 
     def tearDown(self):
         self._restore_post_save_hooks()
@@ -1295,6 +1423,174 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         self.assertEqual(sr.next_sequence_number, 1)
         self.assertEqual(sr.lang, "eng_ZA")
         self.assertEqual(sr.schedule, 161)
+
+    @responses.activate
+    def test_src_momconnect_prebirth_clinic_1(self):
+        """ Test a clinic prebirth registration before 30 weeks """
+        # Setup
+        # . setup momconnect_prebirth self registration, set validated to true
+        registration_data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "msisdn_registrant": "+27821113333",
+                "msisdn_device": "+27821113333",
+                "id_type": "sa_id",
+                "sa_id_no": "8108015001051",
+                "dob": "1982-08-01",
+                "language": "eng_ZA",
+                "edd": "2016-05-01",  # in week 23 of pregnancy
+                "faccode": "123456",
+                "consent": True
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        registration.validated = True
+        registration.save()
+
+        # . setup fixture responses
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_prebirth.hw_full.1")
+        utils_tests.mock_get_schedule(schedule_id)
+
+        # Execute
+        cs = validate_subscribe.create_subscriptionrequests(registration)
+
+        # Check
+        self.assertEqual(cs, "SubscriptionRequest created")
+
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 21)
+        self.assertEqual(sr.next_sequence_number, 37)  # ((23 - 4) * 2) - 1
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 121)
+
+    @responses.activate
+    def test_src_momconnect_prebirth_clinic_2(self):
+        """ Test a clinic prebirth registration after 30 weeks """
+        # Setup
+        # . setup momconnect_prebirth other registration, set validated to true
+        registration_data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+                "msisdn_registrant": "+27821113333",
+                "msisdn_device": "+27821114444",
+                "id_type": "passport",
+                "passport_no": "ZA1234",
+                "passport_origin": "bw",
+                "language": "eng_ZA",
+                "edd": "2016-03-01",  # in week 32 of pregnancy
+                "faccode": "123456",
+                "consent": True
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        registration.validated = True
+        registration.save()
+
+        # . setup fixture responses
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_prebirth.hw_full.2")
+        utils_tests.mock_get_schedule(schedule_id)
+
+        # Execute
+        cs = validate_subscribe.create_subscriptionrequests(registration)
+
+        # Check
+        self.assertEqual(cs, "SubscriptionRequest created")
+
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 22)
+        self.assertEqual(sr.next_sequence_number, 4)  # ((32 - 30) * 3) - 2
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 122)
+
+    @responses.activate
+    def test_src_momconnect_prebirth_public(self):
+        """ Test a public prebirth registration """
+        # Setup
+        # . setup momconnect_prebirth self registration, set validated to true
+        registration_data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_normaluser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "msisdn_registrant": "+27821113333",
+                "msisdn_device": "+27821113333",
+                "language": "eng_ZA",
+                "consent": True
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        registration.validated = True
+        registration.save()
+
+        # . setup fixture responses
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_prebirth.patient.1")
+        utils_tests.mock_get_schedule(schedule_id)
+
+        # Execute
+        cs = validate_subscribe.create_subscriptionrequests(registration)
+
+        # Check
+        self.assertEqual(cs, "SubscriptionRequest created")
+
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 41)
+        self.assertEqual(sr.next_sequence_number, 1)
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 141)
+
+    @responses.activate
+    def test_src_momconnect_prebirth_chw(self):
+        """ Test a chw prebirth registration """
+        # Setup
+        # . setup momconnect_prebirth other registration, set validated to true
+        registration_data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_partialuser(),
+            "data": {
+                "operator_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+                "msisdn_registrant": "+27821113333",
+                "msisdn_device": "+27821114444",
+                "id_type": "none",
+                "mom_dob": "",
+                "language": "eng_ZA",
+                "consent": True
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        registration.validated = True
+        registration.save()
+
+        # . setup fixture responses
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_prebirth.hw_partial.1")
+        utils_tests.mock_get_schedule(schedule_id)
+
+        # Execute
+        cs = validate_subscribe.create_subscriptionrequests(registration)
+
+        # Check
+        self.assertEqual(cs, "SubscriptionRequest created")
+
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 42)
+        self.assertEqual(sr.next_sequence_number, 1)
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 142)
 
 
 class TestRegistrationCreation(AuthenticatedAPITestCase):
