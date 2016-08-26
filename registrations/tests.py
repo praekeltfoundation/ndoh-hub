@@ -1296,50 +1296,6 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         self.assertEqual(sr.lang, "eng_ZA")
         self.assertEqual(sr.schedule, 161)
 
-    @responses.activate
-    def test_src_momconnect_prebirth_1(self):
-        """ Test a clinic prebirth registration before 30 weeks """
-        # Setup
-        # . setup momconnect_prebirth self registration, set validated to true
-        registration_data = {
-            "reg_type": "momconnect_prebirth",
-            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "source": self.make_source_adminuser(),
-            "data": {
-                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-                "msisdn_registrant": "+27821113333",
-                "msisdn_device": "+27821113333",
-                "id_type": "sa_id",
-                "sa_id_no": "8108015001051",
-                "dob": "1982-08-01",
-                "language": "eng_ZA",
-                "edd": "2016-05-01",  # in week 23 of pregnancy
-                "faccode": "123456",
-                "consent": True
-            },
-        }
-        registration = Registration.objects.create(**registration_data)
-        registration.validated = True
-        registration.save()
-
-        # . setup fixture responses
-        schedule_id = utils_tests.mock_get_messageset_by_shortname(
-            "momconnect_prebirth.hw_full.1")
-        utils_tests.mock_get_schedule(schedule_id)
-
-        # Execute
-        cs = validate_subscribe.create_subscriptionrequests(registration)
-
-        # Check
-        self.assertEqual(cs, "SubscriptionRequest created")
-
-        sr = SubscriptionRequest.objects.last()
-        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
-        self.assertEqual(sr.messageset, 21)
-        self.assertEqual(sr.next_sequence_number, 34)  # (23 - 6) * 2
-        self.assertEqual(sr.lang, "eng_ZA")
-        self.assertEqual(sr.schedule, 121)
-
 
 class TestRegistrationCreation(AuthenticatedAPITestCase):
 
