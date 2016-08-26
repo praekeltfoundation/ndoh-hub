@@ -58,18 +58,17 @@ NDOH Registration and Change service for MomConnect and NurseConnect
 
             // if id_type == sa_id, then
             "sa_id_no": "8108015001051",
-            "dob": "1982-08-01"
+            "mom_dob": "1982-08-01"
             // if id_type == passport, then
             "passport_no": "abc1234",
             "passport_origin": "bw",
             // if id_type == none, then
-            "dob": "1982-08-03",
+            "mom_dob": "1982-08-03",
 
             "language": "eng_ZA",  // currently always eng_ZA for nurseconnect
             "edd": "2016-01-01",  // estimated due date
             "faccode": "123456",  // facility/clinic code
             "consent": true,  // or null
-            "authority": "hw_full"
         }
     }
 
@@ -85,16 +84,15 @@ NDOH Registration and Change service for MomConnect and NurseConnect
 
             // if id_type == sa_id, then
             "sa_id_no": "8108015001051",
-            "dob": "1982-08-01"
+            "mom_dob": "1982-08-01"
             // if id_type == passport, then
             "passport_no": "abc1234",
             "passport_origin": "bw",
             // if id_type == none, then
-            "dob": "1982-08-03",
+            "mom_dob": "1982-08-03",
 
             "language": "eng_ZA",  // currently always eng_ZA for nurseconnect
             "consent": true,  // or null
-            "authority": "hw_partial"
         }
     }
 
@@ -108,7 +106,6 @@ NDOH Registration and Change service for MomConnect and NurseConnect
             "msisdn_device": "+27821235555",  // device msisdn
             "language": "eng_ZA",  // currently always eng_ZA for nurseconnect
             "consent": true,  // or null
-            "authority": "patient"
         }
     }
 
