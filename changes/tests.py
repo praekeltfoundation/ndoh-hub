@@ -973,7 +973,6 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         )
 
 
-
 class TestChangeActions(AuthenticatedAPITestCase):
 
     @responses.activate
