@@ -149,7 +149,6 @@ NDOH Registration and Change service for MomConnect and NurseConnect
         "data": {}
     }
 
-
 // NURSECONNECT
 
     // nurseconnect change detail: faccode
@@ -224,3 +223,31 @@ NDOH Registration and Change service for MomConnect and NurseConnect
         }
     }
 
+// MOMCONNECT
+
+    // momconnect optout loss (no loss messages)
+    data: {
+        "registrant_id": "cb245673-aa41-4302-ac47-10000000001",
+        "action": "momconnect_loss_optout",
+        "data": {
+            "reason": "miscarriage"
+        }
+    }
+
+    // momconnect optout nonloss
+    data: {
+        "registrant_id": "cb245673-aa41-4302-ac47-00000000001",
+        "action": "momconnect_nonloss_optout",
+        "data": {
+            "reason": "unknown"
+        }
+    }
+
+    // momconnect switch to loss messages
+    data: {
+        "registrant_id": "cb245673-aa41-4302-ac47-10000000001",
+        "action": "momconnect_loss_switch",
+        "data": {
+            "reason": "miscarriage"
+        }
+    }
