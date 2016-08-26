@@ -28,7 +28,12 @@ class Change(models.Model):
         ('pmtct_nonloss_optout', "Optout not due to loss via pmtct app"),
         ('nurse_update_detail', "Update nurseconnect detail"),
         ('nurse_change_msisdn', "Change nurseconnect msisdn"),
-        ('nurse_optout', "Optout from nurseconnect")
+        ('nurse_optout', "Optout from nurseconnect"),
+        ('momconnect_loss_switch',
+            "Change to loss messaging via momconnect app"),
+        ('momconnect_loss_optout', "Optout due to loss via momconnect app"),
+        ('momconnect_nonloss_optout',
+            "Optout not due to loss via momconnect app"),
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
