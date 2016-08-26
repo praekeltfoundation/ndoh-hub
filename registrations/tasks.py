@@ -257,33 +257,30 @@ class ValidateSubscribe(Task):
         self.l.info("Calculating weeks")
         weeks = 1  # default week number
 
-        # . calculate weeks along if prebirth
-        if "prebirth" in registration.reg_type:
+        # . calculate weeks along
+        if (registration.reg_type == "momconnect_prebirth" and
+           registration.source.authority not in ["hw_partial", "patient"]):
             weeks = utils.get_pregnancy_week(utils.get_today(),
                                              registration.data["edd"])
 
-        if "postbirth" in registration.reg_type:
+        elif registration.reg_type == "pmtct_prebirth":
+            weeks = utils.get_pregnancy_week(utils.get_today(),
+                                             registration.data["edd"])
+
+        elif registration.reg_type == "pmtct_postbirth":
             weeks = utils.get_baby_age(utils.get_today(),
                                        registration.data["baby_dob"])
-
-        print("WEEKS: ", weeks)
 
         # . determine messageset shortname
         self.l.info("Determining messageset shortname")
         short_name = utils.get_messageset_short_name(
             registration.reg_type, registration.source.authority, weeks)
 
-        print("SHORT_NAME: ", short_name)
-
         # . determine sbm details
         self.l.info("Determining SBM details")
         msgset_id, msgset_schedule, next_sequence_number =\
             utils.get_messageset_schedule_sequence(
                 short_name, weeks)
-
-        print("MSGSET_ID: ", msgset_id)
-        print("MSGSET_SCHEDULE: ", msgset_schedule)
-        print("NEXT_SEQUENCE_NUMBER: ", next_sequence_number)
 
         subscription = {
             "identity": registration.registrant_id,
