@@ -32,6 +32,7 @@ class ValidateImplement(Task):
         active_subs = sbm_client.get_subscriptions(
             {'id': change.registrant_id, 'active': True}
         )["results"]
+
         # Determine if the mother has an active pmtct subscription and
         # deactivate active subscriptions
         self.l.info("Evaluating active subscriptions")
@@ -254,9 +255,24 @@ class ValidateImplement(Task):
         return "MomConnect optout due to loss completed"
 
     def momconnect_nonloss_optout(self, change):
+        """ The rest of the action required (opting out the identity on the
+        identity store) is currently done via the ndoh-jsbox ussd_optout
+        app, we're only deactivating the subscriptions here.
         """
-        """
-        return
+        self.l.info("Starting MomConnect non-loss optout")
+
+        self.l.info("Retrieving active subscriptions")
+        active_subs = sbm_client.get_subscriptions(
+            {'id': change.registrant_id, 'active': True}
+        )["results"]
+
+        self.l.info("Deactivating active subscriptions")
+        for active_sub in active_subs:
+            sbm_client.update_subscription(active_sub["id"], {"active": False})
+
+        self.l.info("MomConnect optout due to non-loss completed")
+
+        return "MomConnect optout due to non-loss completed"
 
     # Validation checks
     def check_pmtct_loss_optout_reason(self, data_fields, change):
