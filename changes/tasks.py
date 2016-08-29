@@ -171,7 +171,7 @@ class ValidateImplement(Task):
         messageset = sbm_client.get_messagesets(
             {"short_name": "nurseconnect.hw_full.1"})["results"][0]
 
-        self.l.info("Retrieving active subscriptions")
+        self.l.info("Retrieving active nurseconnect subscriptions")
         active_subs = sbm_client.get_subscriptions({
             'id': change.registrant_id, 'active': True,
             'messageset': messageset["id"]}
@@ -184,6 +184,64 @@ class ValidateImplement(Task):
         self.l.info("NurseConnect optout completed")
 
         return "Nurse optout completed"
+
+    def momconnect_loss_switch(self, change):
+        """ Deactivate any active momconnect & pmtct subscriptions, then
+        subscribe them to loss messages.
+        """
+        self.l.info("Starting switch to loss")
+
+        self.l.info("Retrieving active subscriptions")
+        active_subs = sbm_client.get_subscriptions(
+            {'id': change.registrant_id, 'active': True}
+        )["results"]
+
+        if (len(active_subs) == 0):
+            self.l.info("No active subscriptions - aborting")
+            return "Momconnect switch to loss aborted"
+
+        else:
+            self.l.info("Deactivating active subscriptions")
+            for active_sub in active_subs:
+                sbm_client.update_subscription(
+                    active_sub["id"], {"active": False})
+                lang = active_sub["lang"]
+
+            self.l.info("Starting loss subscription creation")
+
+            self.l.info("Determining messageset shortname")
+            short_name = utils.get_messageset_short_name(
+                "loss_%s" % change.data["reason"], "patient", 0)
+
+            # . determine sbm details
+            self.l.info("Determining SBM details")
+            msgset_id, msgset_schedule, next_sequence_number =\
+                utils.get_messageset_schedule_sequence(
+                    short_name, 0)
+
+            subscription = {
+                "identity": change.registrant_id,
+                "messageset": msgset_id,
+                "next_sequence_number": next_sequence_number,
+                "lang": lang,
+                "schedule": msgset_schedule
+            }
+            self.l.info("Creating SubscriptionRequest object")
+            SubscriptionRequest.objects.create(**subscription)
+            self.l.info("SubscriptionRequest created")
+
+            self.l.info("PMTCT switch to loss completed")
+            return "PMTCT switch to loss completed"
+
+    def momconnect_loss_optout(self, change):
+        """
+        """
+        return
+
+    def momconnect_nonloss_optout(self, change):
+        """
+        """
+        return
 
     # Validation checks
     def check_pmtct_loss_optout_reason(self, data_fields, change):
@@ -383,6 +441,9 @@ class ValidateImplement(Task):
                 'nurse_update_detail': self.nurse_update_detail,
                 'nurse_change_msisdn': self.nurse_change_msisdn,
                 'nurse_optout': self.nurse_optout,
+                'momconnect_loss_switch': self.momconnect_loss_switch,
+                'momconnect_loss_optout': self.momconnect_loss_optout,
+                'momconnect_nonloss_optout': self.momconnect_nonloss_optout,
             }.get(change.action, None)(change)
             self.l.info("Task executed successfully")
             return True

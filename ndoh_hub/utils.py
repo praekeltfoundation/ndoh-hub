@@ -192,5 +192,7 @@ def get_messageset_schedule_sequence(short_name, weeks):
 
     # other momconnect_prebirth sets start at 1
 
+    # loss subscriptions always start at 1
+
     return (messageset["id"], messageset["default_schedule"],
             next_sequence_number)
