@@ -103,7 +103,7 @@ class ValidateImplement(Task):
         system subscriptions) is currently done via the ndoh-jsbox ussd_pmtct
         app, we're only deactivating the subscriptions here.
         """
-        self.l.info("Starting switch to loss")
+        self.l.info("Starting PMTCT loss optout")
 
         self.l.info("Retrieving active subscriptions")
         active_subs = sbm_client.get_subscriptions(
@@ -124,7 +124,7 @@ class ValidateImplement(Task):
         system subscriptions) is currently done via the ndoh-jsbox ussd_pmtct
         app, we're only deactivating the subscriptions here.
         """
-        self.l.info("Starting switch to loss")
+        self.l.info("Starting non-loss optout")
 
         self.l.info("Retrieving active subscriptions")
         active_subs = sbm_client.get_subscriptions(
@@ -135,9 +135,9 @@ class ValidateImplement(Task):
         for active_sub in active_subs:
             sbm_client.update_subscription(active_sub["id"], {"active": False})
 
-        self.l.info("PMTCT optout due to loss completed")
+        self.l.info("PMTCT optout due to non-loss reason completed")
 
-        return "PMTCT optout not due to loss completed"
+        return "PMTCT optout not due to non-loss reason completed"
 
     def nurse_update_detail(self, change):
         """ This currently does nothing, but in a seperate issue this will
@@ -234,9 +234,24 @@ class ValidateImplement(Task):
             return "PMTCT switch to loss completed"
 
     def momconnect_loss_optout(self, change):
+        """ The rest of the action required (opting out the identity on the
+        identity store) is currently done via the ndoh-jsbox ussd_optout
+        app, we're only deactivating the subscriptions here.
         """
-        """
-        return
+        self.l.info("Starting MomConnect loss optout")
+
+        self.l.info("Retrieving active subscriptions")
+        active_subs = sbm_client.get_subscriptions(
+            {'id': change.registrant_id, 'active': True}
+        )["results"]
+
+        self.l.info("Deactivating active subscriptions")
+        for active_sub in active_subs:
+            sbm_client.update_subscription(active_sub["id"], {"active": False})
+
+        self.l.info("MomConnect optout due to loss completed")
+
+        return "MomConnect optout due to loss completed"
 
     def momconnect_nonloss_optout(self, change):
         """

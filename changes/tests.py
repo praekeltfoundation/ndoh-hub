@@ -1359,3 +1359,39 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 2)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+
+    @responses.activate
+    def test_momconnect_loss_optout(self):
+        # Setup
+        # make registration
+        self.make_registration_momconnect_prebirth()
+        self.make_registration_pmtct_prebirth()
+        self.assertEqual(Registration.objects.all().count(), 2)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        # make change object
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "momconnect_loss_optout",
+            "data": {
+                "reason": "stillbirth"
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+
+        # . mock get subscription request
+        active_subscription_ids = mock_get_active_subscriptions(
+            change_data["registrant_id"])
+
+        # . mock deactivate active subscriptions
+        mock_deactivate_subscriptions(active_subscription_ids)
+
+        # Execute
+        result = validate_implement.apply_async(args=[change.id])
+
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 2)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
