@@ -7,7 +7,8 @@ def mock_get_identity_by_id(identity_id):
         "id": identity_id,
         "version": 1,
         "details": {
-            "foo": "bar"
+            "foo": "bar",
+            "lang_code": "afr_ZA"
         },
         "communicate_through": None,
         "operator": None,

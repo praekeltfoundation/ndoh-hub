@@ -1,6 +1,7 @@
 from celery.task import Task
 from celery.utils.log import get_task_logger
 from django.conf import settings
+from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
 
 from ndoh_hub import utils
@@ -11,6 +12,11 @@ from registrations.models import SubscriptionRequest
 sbm_client = StageBasedMessagingApiClient(
     api_url=settings.STAGE_BASED_MESSAGING_URL,
     auth_token=settings.STAGE_BASED_MESSAGING_TOKEN
+)
+
+is_client = IdentityStoreApiClient(
+    api_url=settings.IDENTITY_STORE_URL,
+    auth_token=settings.IDENTITY_STORE_TOKEN
 )
 
 
@@ -145,7 +151,8 @@ class ValidateImplement(Task):
         app, we're only deactivating the subscriptions here.
         """
         self.l.info("Starting PMTCT non-loss optout")
-        if change.data["reason"] == 'unknown':
+
+        if change.data["reason"] == 'unknown':  # SMS optout
             self.deactivate_all(change)
         else:
             self.deactivate_all_except_nurseconnect(change)
@@ -213,34 +220,30 @@ class ValidateImplement(Task):
             return "Momconnect switch to loss aborted"
 
         else:
-            self.l.info("Deactivating active subscriptions")
-            for active_sub in active_subs:
-                sbm_client.update_subscription(
-                    active_sub["id"], {"active": False})
-                lang = active_sub["lang"]
-
-            self.l.info("Starting loss subscription creation")
+            self.deactivate_all_except_nurseconnect(change)
 
             self.l.info("Determining messageset shortname")
             short_name = utils.get_messageset_short_name(
                 "loss_%s" % change.data["reason"], "patient", 0)
 
-            # . determine sbm details
             self.l.info("Determining SBM details")
             msgset_id, msgset_schedule, next_sequence_number =\
                 utils.get_messageset_schedule_sequence(
                     short_name, 0)
 
+            self.l.info("Determining language")
+            identity = is_client.get_identity(change.registrant_id)
+
             subscription = {
                 "identity": change.registrant_id,
                 "messageset": msgset_id,
                 "next_sequence_number": next_sequence_number,
-                "lang": lang,
+                "lang": identity["details"]["lang_code"],
                 "schedule": msgset_schedule
             }
+
             self.l.info("Creating SubscriptionRequest object")
             SubscriptionRequest.objects.create(**subscription)
-            self.l.info("SubscriptionRequest created")
 
             self.l.info("PMTCT switch to loss completed")
             return "PMTCT switch to loss completed"
@@ -251,19 +254,9 @@ class ValidateImplement(Task):
         app, we're only deactivating the subscriptions here.
         """
         self.l.info("Starting MomConnect loss optout")
-
-        self.l.info("Retrieving active subscriptions")
-        active_subs = sbm_client.get_subscriptions(
-            {'id': change.registrant_id, 'active': True}
-        )["results"]
-
-        self.l.info("Deactivating active subscriptions")
-        for active_sub in active_subs:
-            sbm_client.update_subscription(active_sub["id"], {"active": False})
-
-        self.l.info("MomConnect optout due to loss completed")
-
-        return "MomConnect optout due to loss completed"
+        self.deactivate_all_except_nurseconnect(change)
+        self.l.info("Completed MomConnect loss optout")
+        return "Completed MomConnect loss optout"
 
     def momconnect_nonloss_optout(self, change):
         """ The rest of the action required (opting out the identity on the
@@ -272,18 +265,13 @@ class ValidateImplement(Task):
         """
         self.l.info("Starting MomConnect non-loss optout")
 
-        self.l.info("Retrieving active subscriptions")
-        active_subs = sbm_client.get_subscriptions(
-            {'id': change.registrant_id, 'active': True}
-        )["results"]
+        if change.data["reason"] == 'unknown':  # SMS optout
+            self.deactivate_all(change)
+        else:
+            self.deactivate_all_except_nurseconnect(change)
 
-        self.l.info("Deactivating active subscriptions")
-        for active_sub in active_subs:
-            sbm_client.update_subscription(active_sub["id"], {"active": False})
-
-        self.l.info("MomConnect optout due to non-loss completed")
-
-        return "MomConnect optout due to non-loss completed"
+        self.l.info("Completed MomConnect non-loss optout")
+        return "Completed MomConnect non-loss optout"
 
     # Validation checks
     def check_pmtct_loss_optout_reason(self, data_fields, change):

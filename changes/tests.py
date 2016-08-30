@@ -1318,9 +1318,16 @@ class TestChangeActions(AuthenticatedAPITestCase):
         mock_deactivate_subscriptions(active_subscription_ids)
 
         # . mock get messageset by shortname
+        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+
+        # . mock get messageset by shortname
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "loss_miscarriage.patient.1")
         utils_tests.mock_get_schedule(schedule_id)
+
+        # . mock get identity by id
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
@@ -1392,6 +1399,9 @@ class TestChangeActions(AuthenticatedAPITestCase):
         active_subscription_ids = mock_get_active_subscriptions(
             change_data["registrant_id"])
 
+        # . mock get messageset by shortname
+        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions(active_subscription_ids)
 
@@ -1427,6 +1437,9 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # . mock get subscription request
         active_subscription_ids = mock_get_active_subscriptions(
             change_data["registrant_id"])
+
+        # . mock get messageset by shortname
+        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
 
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions(active_subscription_ids)
