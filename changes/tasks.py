@@ -65,6 +65,23 @@ class ValidateImplement(Task):
         self.l.info("Non-nurseconnect subscriptions deactivated")
         return True
 
+    def deactivate_nurseconnect(self, change):
+        """ Deactivates nurseconnect subscription only
+        """
+        self.l.info("Retrieving nurseconnect messageset id")
+        messageset = sbm_client.get_messagesets(
+            {"short_name": "nurseconnect.hw_full.1"})["results"][0]
+
+        self.l.info("Retrieving active nurseconnect subscriptions")
+        active_subs = sbm_client.get_subscriptions({
+            'id': change.registrant_id, 'active': True,
+            'messageset': messageset["id"]}
+        )["results"]
+
+        self.l.info("Deactivating active nurseconnect subscriptions")
+        for active_sub in active_subs:
+            sbm_client.update_subscription(active_sub["id"], {"active": False})
+
     # Action implementation
     def baby_switch(self, change):
         """ This should be applied when a mother has her baby. Currently it
@@ -173,9 +190,7 @@ class ValidateImplement(Task):
         handle sending the information update to Jembi
         """
         self.l.info("Starting nurseconnect msisdn change")
-
         self.l.info("Completed nurseconnect msisdn change")
-
         return "NurseConnect msisdn changed"
 
     def nurse_optout(self, change):
@@ -184,25 +199,10 @@ class ValidateImplement(Task):
         app, we're only deactivating the subscriptions here. Note this only
         deactivates the NurseConnect subscription.
         """
-        self.l.info("Starting nurseconnect optout")
-
-        self.l.info("Retrieving nurseconnect messageset id")
-        messageset = sbm_client.get_messagesets(
-            {"short_name": "nurseconnect.hw_full.1"})["results"][0]
-
-        self.l.info("Retrieving active nurseconnect subscriptions")
-        active_subs = sbm_client.get_subscriptions({
-            'id': change.registrant_id, 'active': True,
-            'messageset': messageset["id"]}
-        )["results"]
-
-        self.l.info("Deactivating active nurseconnect subscriptions")
-        for active_sub in active_subs:
-            sbm_client.update_subscription(active_sub["id"], {"active": False})
-
-        self.l.info("NurseConnect optout completed")
-
-        return "Nurse optout completed"
+        self.l.info("Starting CurseConnect optout")
+        self.deactivate_nurseconnect(change)
+        self.l.info("Completed CurseConnect optout")
+        return "Completed CurseConnect optout"
 
     def momconnect_loss_switch(self, change):
         """ Deactivate any active momconnect & pmtct subscriptions, then
