@@ -1065,9 +1065,14 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions(active_subscription_ids)
 
-        # . mock get messageset by shortname
+        # . mock get pmtct_postbirth messageset by shortname
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "pmtct_postbirth.patient.1")
+        utils_tests.mock_get_schedule(schedule_id)
+
+        # . mock get momconnect_postrbirh messageset by shortname
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_postbirth.hw_full.1")
         utils_tests.mock_get_schedule(schedule_id)
 
         # Execute
@@ -1078,7 +1083,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(result.get(), True)
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 1)
-        self.assertEqual(SubscriptionRequest.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 2)
 
     @responses.activate
     def test_pmtct_loss_switch(self):

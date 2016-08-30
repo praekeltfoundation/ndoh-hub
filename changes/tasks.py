@@ -98,20 +98,50 @@ class ValidateImplement(Task):
         # Determine if the mother has an active pmtct subscription and
         # deactivate active subscriptions
         self.l.info("Evaluating active subscriptions")
-        has_active_pmtct_sub = False
+        has_active_pmtct_prebirth_sub = False
+        has_active_momconnect_prebirth_sub = False
 
         for active_sub in active_subs:
-            # get the messageset and check if it is pmtct
+            self.l.info("Retrieving messageset")
             messageset = sbm_client.get_messageset(active_sub["messageset"])
-            if "pmtct" in messageset["short_name"]:
-                has_active_pmtct_sub = True
+            if "pmtct_prebirth" in messageset["short_name"]:
+                has_active_pmtct_prebirth_sub = True
                 lang = active_sub["lang"]
+            if "momconnect_prebirth" in messageset["short_name"]:
+                has_active_momconnect_prebirth_sub = True
+                lang = active_sub["lang"]
+            if "nurseconnect" not in messageset["short_name"]:
+                self.l.info("Deactivating subscription")
+                sbm_client.update_subscription(
+                    active_sub["id"], {"active": False})
 
-            self.l.info("Deactivating active pmtct subscriptions")
-            sbm_client.update_subscription(active_sub["id"], {"active": False})
+        if has_active_momconnect_prebirth_sub:
+            self.l.info("Starting postbirth momconnect subscriptionrequest")
 
-        if has_active_pmtct_sub:
-            self.l.info("Creating postbirth pmtct subscriptionrequest")
+            self.l.info("Determining messageset shortname")
+            # . determine messageset shortname
+            short_name = utils.get_messageset_short_name(
+                "momconnect_postbirth", "hw_full", 0)
+
+            # . determine sbm details
+            self.l.info("Determining SBM details")
+            msgset_id, msgset_schedule, next_sequence_number =\
+                utils.get_messageset_schedule_sequence(
+                    short_name, 0)
+
+            subscription = {
+                "identity": change.registrant_id,
+                "messageset": msgset_id,
+                "next_sequence_number": next_sequence_number,
+                "lang": lang,
+                "schedule": msgset_schedule
+            }
+            self.l.info("Creating MomConnect postbirth SubscriptionRequest")
+            SubscriptionRequest.objects.create(**subscription)
+            self.l.info("Created MomConnect postbirth SubscriptionRequest")
+
+        if has_active_pmtct_prebirth_sub:
+            self.l.info("Starting postbirth pmtct subscriptionrequest")
 
             self.l.info("Determining messageset shortname")
             # . determine messageset shortname
@@ -131,11 +161,9 @@ class ValidateImplement(Task):
                 "lang": lang,
                 "schedule": msgset_schedule
             }
-            self.l.info("Creating SubscriptionRequest object")
+            self.l.info("Creating PMTCT postbirth SubscriptionRequest")
             SubscriptionRequest.objects.create(**subscription)
-            self.l.info("SubscriptionRequest created")
-
-        # Future: create a postbirth momconnect subscriptionrequest
+            self.l.info("Created PMTCT postbirth SubscriptionRequest")
 
         return "Switch to baby completed"
 
