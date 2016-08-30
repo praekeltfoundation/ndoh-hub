@@ -110,7 +110,7 @@ class ValidateImplement(Task):
             if "momconnect_prebirth" in messageset["short_name"]:
                 has_active_momconnect_prebirth_sub = True
                 lang = active_sub["lang"]
-            if "nurseconnect" not in messageset["short_name"]:
+            if "prebirth" in messageset["short_name"]:
                 self.l.info("Deactivating subscription")
                 sbm_client.update_subscription(
                     active_sub["id"], {"active": False})
@@ -175,6 +175,7 @@ class ValidateImplement(Task):
         """
         self.l.info("Starting PMTCT switch to loss")
         self.deactivate_all_except_nurseconnect(change)
+        # Future: Create subscription to loss messages
         self.l.info("Completed PMTCT switch to loss")
         return "Completed PMTCT switch to loss"
 
@@ -227,10 +228,10 @@ class ValidateImplement(Task):
         app, we're only deactivating the subscriptions here. Note this only
         deactivates the NurseConnect subscription.
         """
-        self.l.info("Starting CurseConnect optout")
+        self.l.info("Starting NurseConnect optout")
         self.deactivate_nurseconnect(change)
-        self.l.info("Completed CurseConnect optout")
-        return "Completed CurseConnect optout"
+        self.l.info("Completed NurseConnect optout")
+        return "Completed NurseConnect optout"
 
     def momconnect_loss_switch(self, change):
         """ Deactivate any active momconnect & pmtct subscriptions, then
