@@ -1103,6 +1103,9 @@ class TestChangeActions(AuthenticatedAPITestCase):
         active_subscription_ids = mock_get_active_subscriptions(
             change_data["registrant_id"])
 
+        # . mock get messageset by shortname
+        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions(active_subscription_ids)
 
@@ -1139,6 +1142,9 @@ class TestChangeActions(AuthenticatedAPITestCase):
         active_subscription_ids = mock_get_active_subscriptions(
             change_data["registrant_id"])
 
+        # . mock get messageset by shortname
+        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions(active_subscription_ids)
 
@@ -1173,6 +1179,9 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # . mock get subscription request
         active_subscription_ids = mock_get_active_subscriptions(
             change_data["registrant_id"])
+
+        # . mock get messageset by shortname
+        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
 
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions(active_subscription_ids)

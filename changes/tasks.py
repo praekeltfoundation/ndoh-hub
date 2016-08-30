@@ -20,6 +20,45 @@ class ValidateImplement(Task):
     name = "ndoh_hub.changes.tasks.validate_implement"
     l = get_task_logger(__name__)
 
+    # Deactivation helpers
+    def deactivate_all(self, change):
+        """ Deactivates all subscriptions for an identity
+        """
+        self.l.info("Retrieving active subscriptions")
+        active_subs = sbm_client.get_subscriptions(
+            {'id': change.registrant_id, 'active': True}
+        )["results"]
+
+        self.l.info("Deactivating all active subscriptions")
+        for active_sub in active_subs:
+            sbm_client.update_subscription(
+                active_sub["id"], {"active": False})
+
+        self.l.info("All subscriptions deactivated")
+        return True
+
+    def deactivate_all_except_nurseconnect(self, change):
+        """ Deactivates all subscriptions for an identity that are not to
+        nurseconnect
+        """
+        self.l.info("Retrieving active subscriptions")
+        active_subs = sbm_client.get_subscriptions(
+            {'id': change.registrant_id, 'active': True}
+        )["results"]
+
+        self.l.info("Retrieving nurseconnect messageset")
+        messageset = sbm_client.get_messagesets(
+            {"short_name": "nurseconnect.hw_full.1"})["results"][0]
+
+        self.l.info("Deactivating active non-nurseconnect subscriptions")
+        for active_sub in active_subs:
+            if messageset["id"] != active_sub["messageset"]:
+                sbm_client.update_subscription(
+                    active_sub["id"], {"active": False})
+
+        self.l.info("Non-nurseconnect subscriptions deactivated")
+        return True
+
     # Action implementation
     def baby_switch(self, change):
         """ This should be applied when a mother has her baby. Currently it
@@ -83,20 +122,10 @@ class ValidateImplement(Task):
         old system via the ndoh-jsbox ussd_pmtct app, we're only deactivating
         the subscriptions here.
         """
-        self.l.info("Starting switch to loss")
-
-        self.l.info("Retrieving active subscriptions")
-        active_subs = sbm_client.get_subscriptions(
-            {'id': change.registrant_id, 'active': True}
-        )["results"]
-
-        self.l.info("Deactivating active subscriptions")
-        for active_sub in active_subs:
-            sbm_client.update_subscription(active_sub["id"], {"active": False})
-
-        self.l.info("PMTCT switch to loss completed")
-
-        return "PMTCT switch to loss completed"
+        self.l.info("Starting PMTCT switch to loss")
+        self.deactivate_all_except_nurseconnect(change)
+        self.l.info("Completed PMTCT switch to loss")
+        return "Completed PMTCT switch to loss"
 
     def pmtct_loss_optout(self, change):
         """ The rest of the action required (opting out the identity on the
@@ -105,19 +134,9 @@ class ValidateImplement(Task):
         app, we're only deactivating the subscriptions here.
         """
         self.l.info("Starting PMTCT loss optout")
-
-        self.l.info("Retrieving active subscriptions")
-        active_subs = sbm_client.get_subscriptions(
-            {'id': change.registrant_id, 'active': True}
-        )["results"]
-
-        self.l.info("Deactivating active subscriptions")
-        for active_sub in active_subs:
-            sbm_client.update_subscription(active_sub["id"], {"active": False})
-
-        self.l.info("PMTCT optout due to loss completed")
-
-        return "PMTCT optout due to loss completed"
+        self.deactivate_all_except_nurseconnect(change)
+        self.l.info("Completed PMTCT loss optout")
+        return "Completed PMTCT loss optout"
 
     def pmtct_nonloss_optout(self, change):
         """ The rest of the action required (opting out the identity on the
@@ -125,30 +144,22 @@ class ValidateImplement(Task):
         system subscriptions) is currently done via the ndoh-jsbox ussd_pmtct
         app, we're only deactivating the subscriptions here.
         """
-        self.l.info("Starting non-loss optout")
+        self.l.info("Starting PMTCT non-loss optout")
+        if change.data["reason"] == 'unknown':
+            self.deactivate_all(change)
+        else:
+            self.deactivate_all_except_nurseconnect(change)
 
-        self.l.info("Retrieving active subscriptions")
-        active_subs = sbm_client.get_subscriptions(
-            {'id': change.registrant_id, 'active': True}
-        )["results"]
-
-        self.l.info("Deactivating active subscriptions")
-        for active_sub in active_subs:
-            sbm_client.update_subscription(active_sub["id"], {"active": False})
-
-        self.l.info("PMTCT optout due to non-loss reason completed")
-
-        return "PMTCT optout not due to non-loss reason completed"
+        self.l.info("Completed PMTCT non-loss optout")
+        return "Completed PMTCT non-loss optout"
 
     def nurse_update_detail(self, change):
         """ This currently does nothing, but in a seperate issue this will
         handle sending the information update to Jembi
         """
         self.l.info("Starting nurseconnect detail update")
-
         self.l.info("Completed nurseconnect detail update")
-
-        return "NurseConnect detail updated"
+        return "Completed nurseconnect detail update"
 
     def nurse_change_msisdn(self, change):
         """ This currently does nothing, but in a seperate issue this will
@@ -166,7 +177,7 @@ class ValidateImplement(Task):
         app, we're only deactivating the subscriptions here. Note this only
         deactivates the NurseConnect subscription.
         """
-        self.l.info("Starting switch to loss")
+        self.l.info("Starting nurseconnect optout")
 
         self.l.info("Retrieving nurseconnect messageset id")
         messageset = sbm_client.get_messagesets(
@@ -178,7 +189,7 @@ class ValidateImplement(Task):
             'messageset': messageset["id"]}
         )["results"]
 
-        self.l.info("Deactivating active subscriptions")
+        self.l.info("Deactivating active nurseconnect subscriptions")
         for active_sub in active_subs:
             sbm_client.update_subscription(active_sub["id"], {"active": False})
 
