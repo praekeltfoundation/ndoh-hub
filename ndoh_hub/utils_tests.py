@@ -68,7 +68,7 @@ def mock_get_messageset_by_shortname(short_name):
         "momconnect_prebirth.hw_partial.1": 42,
         "loss_miscarriage.patient.1": 51,
         "loss_stillbirth.patient.1": 52,
-        "loss_babydeath.patient.1": 53,
+        "loss_babyloss.patient.1": 53,
         "nurseconnect.hw_full.1": 61
     }[short_name]
 
@@ -90,7 +90,7 @@ def mock_get_messageset_by_shortname(short_name):
         "momconnect_prebirth.hw_partial.1": 142,
         "loss_miscarriage.patient.1": 151,
         "loss_stillbirth.patient.1": 152,
-        "loss_babydeath.patient.1": 153,
+        "loss_babyloss.patient.1": 153,
         "nurseconnect.hw_full.1": 161
     }[short_name]
 
@@ -132,7 +132,7 @@ def mock_get_messageset(messageset_id):
         42: "momconnect_prebirth.hw_partial.1",
         51: "loss_miscarriage.patient.1",
         52: "loss_stillbirth.patient.1",
-        53: "loss_babydeath.patient.1",
+        53: "loss_babyloss.patient.1",
         61: "nurseconnect.hw_full.1"
     }[messageset_id]
 
@@ -154,7 +154,7 @@ def mock_get_messageset(messageset_id):
         "momconnect_prebirth.hw_partial.1": 142,
         "loss_miscarriage.patient.1": 151,
         "loss_stillbirth.patient.1": 152,
-        "loss_babydeath.patient.1": 153,
+        "loss_babyloss.patient.1": 153,
         "nurseconnect.hw_full.1": 161
     }[short_name]
 

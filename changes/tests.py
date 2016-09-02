@@ -76,6 +76,23 @@ def mock_get_active_subscriptions(registrant_id):
     return [subscription_id_1, subscription_id_2]
 
 
+def mock_get_active_subscriptions_none(registrant_id):
+    responses.add(
+        responses.GET,
+        'http://sbm/api/v1/subscriptions/?active=True&id=%s' % registrant_id,
+        json={
+            "count": 0,
+            "next": None,
+            "previous": None,
+            "results": [],
+        },
+        status=200, content_type='application/json',
+        match_querystring=True
+    )
+
+    return []
+
+
 def mock_get_active_nurseconnect_subscriptions(registrant_id):
     subscription_id = "subscription1-4bf1-8779-c47b428e89d0"
     responses.add(
@@ -255,6 +272,20 @@ class AuthenticatedAPITestCase(APITestCase):
         }
         return Registration.objects.create(**registration_data)
 
+    def make_registration_momconnect_prebirth(self):
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_normaluser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "edd": "2016-11-30",
+            },
+        }
+        return Registration.objects.create(**registration_data)
+
     def setUp(self):
         super(AuthenticatedAPITestCase, self).setUp()
         self._replace_post_save_hooks_change()
@@ -420,6 +451,36 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         # Setup
         # Execute
         self.make_registration_pmtct_prebirth()
+        # Test
+        d = Registration.objects.last()
+        self.assertEqual(d.registrant_id,
+                         "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(d.data["mom_dob"], "1999-01-27")
+
+    def test_make_registration_pmtct_postbirth(self):
+        # Setup
+        # Execute
+        self.make_registration_pmtct_postbirth()
+        # Test
+        d = Registration.objects.last()
+        self.assertEqual(d.registrant_id,
+                         "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(d.data["mom_dob"], "1999-01-27")
+
+    def test_make_registration_nurseconnect(self):
+        # Setup
+        # Execute
+        self.make_registration_nurseconnect()
+        # Test
+        d = Registration.objects.last()
+        self.assertEqual(d.registrant_id,
+                         "nurse001-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(d.data["faccode"], "123456")
+
+    def test_make_registration_momconnect_prebirth(self):
+        # Setup
+        # Execute
+        self.make_registration_momconnect_prebirth()
         # Test
         d = Registration.objects.last()
         self.assertEqual(d.registrant_id,
@@ -1054,9 +1115,10 @@ class TestChangeActions(AuthenticatedAPITestCase):
     @responses.activate
     def test_pmtct_loss_switch(self):
         # Setup
-        # make registration
+        # make registrations
+        self.make_registration_momconnect_prebirth()
         self.make_registration_pmtct_prebirth()
-        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(Registration.objects.all().count(), 2)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
@@ -1083,7 +1145,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         change.refresh_from_db()
         self.assertEqual(result.get(), True)
         self.assertEqual(change.validated, True)
-        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(Registration.objects.all().count(), 2)
+        # below should change to 1 after migration
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
 
     @responses.activate
@@ -1249,4 +1312,154 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(result.get(), True)
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+
+    @responses.activate
+    def test_momconnect_loss_switch_has_active(self):
+        # Setup
+        # make registrations
+        self.make_registration_momconnect_prebirth()
+        self.make_registration_pmtct_prebirth()
+        self.assertEqual(Registration.objects.all().count(), 2)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        # make change object
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "momconnect_loss_switch",
+            "data": {
+                "reason": "miscarriage"
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+
+        # . mock get subscription request
+        active_subscription_ids = mock_get_active_subscriptions(
+            change_data["registrant_id"])
+
+        # . mock deactivate active subscriptions
+        mock_deactivate_subscriptions(active_subscription_ids)
+
+        # . mock get messageset by shortname
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "loss_miscarriage.patient.1")
+        utils_tests.mock_get_schedule(schedule_id)
+
+        # Execute
+        result = validate_implement.apply_async(args=[change.id])
+
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 2)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 1)
+
+        subreq = SubscriptionRequest.objects.last()
+        self.assertEqual(subreq.messageset, 51)
+        self.assertEqual(subreq.schedule, 151)
+        self.assertEqual(subreq.next_sequence_number, 1)
+
+    @responses.activate
+    def test_momconnect_loss_switch_no_active(self):
+        # Setup
+        # . make registrations
+        self.make_registration_momconnect_prebirth()
+        self.make_registration_pmtct_prebirth()
+        self.assertEqual(Registration.objects.all().count(), 2)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        # . make change object
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "momconnect_loss_switch",
+            "data": {
+                "reason": "miscarriage"
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+
+        # . mock get subscription request
+        mock_get_active_subscriptions_none(change_data["registrant_id"])
+
+        # Execute
+        result = validate_implement.apply_async(args=[change.id])
+
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 2)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+
+    @responses.activate
+    def test_momconnect_loss_optout(self):
+        # Setup
+        # make registration
+        self.make_registration_momconnect_prebirth()
+        self.make_registration_pmtct_prebirth()
+        self.assertEqual(Registration.objects.all().count(), 2)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        # make change object
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "momconnect_loss_optout",
+            "data": {
+                "reason": "stillbirth"
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+
+        # . mock get subscription request
+        active_subscription_ids = mock_get_active_subscriptions(
+            change_data["registrant_id"])
+
+        # . mock deactivate active subscriptions
+        mock_deactivate_subscriptions(active_subscription_ids)
+
+        # Execute
+        result = validate_implement.apply_async(args=[change.id])
+
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 2)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+
+    @responses.activate
+    def test_momconnect_nonloss_optout(self):
+        # Setup
+        # make registration
+        self.make_registration_momconnect_prebirth()
+        self.make_registration_pmtct_prebirth()
+        self.assertEqual(Registration.objects.all().count(), 2)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        # make change object
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "momconnect_nonloss_optout",
+            "data": {
+                "reason": "other"
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+
+        # . mock get subscription request
+        active_subscription_ids = mock_get_active_subscriptions(
+            change_data["registrant_id"])
+
+        # . mock deactivate active subscriptions
+        mock_deactivate_subscriptions(active_subscription_ids)
+
+        # Execute
+        result = validate_implement.apply_async(args=[change.id])
+
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 2)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)

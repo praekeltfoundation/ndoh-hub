@@ -118,7 +118,7 @@ NDOH Registration and Change service for MomConnect and NurseConnect
         "registrant_id": "cb245673-aa41-4302-ac47-10000000001",
         "action": "pmtct_loss_optout",
         "data": {
-            "reason": "miscarriage"
+            "reason": "miscarriage"  // | "babyloss" | "stillbirth"
         }
     }
 
@@ -127,7 +127,7 @@ NDOH Registration and Change service for MomConnect and NurseConnect
         "registrant_id": "cb245673-aa41-4302-ac47-00000000001",
         "action": "pmtct_nonloss_optout",
         "data": {
-            "reason": "unknown"
+            "reason": "unknown"  // | "not_useful" | "not_hiv_pos" | "other"
         }
     }
 
@@ -230,7 +230,7 @@ NDOH Registration and Change service for MomConnect and NurseConnect
         "registrant_id": "cb245673-aa41-4302-ac47-10000000001",
         "action": "momconnect_loss_optout",
         "data": {
-            "reason": "miscarriage"
+            "reason": "miscarriage"  // | "babyloss" | "stillbirth"
         }
     }
 
@@ -239,7 +239,7 @@ NDOH Registration and Change service for MomConnect and NurseConnect
         "registrant_id": "cb245673-aa41-4302-ac47-00000000001",
         "action": "momconnect_nonloss_optout",
         "data": {
-            "reason": "unknown"
+            "reason": "unknown"  // | "other" | "not_useful"
         }
     }
 
