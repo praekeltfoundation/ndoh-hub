@@ -2,13 +2,16 @@ import django_filters
 
 from django.contrib.auth.models import User, Group
 from rest_hooks.models import Hook
-from rest_framework import viewsets, mixins, generics, filters
+from rest_framework import viewsets, mixins, generics, filters, status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.views import APIView
+from rest_framework.authtoken.models import Token
+from rest_framework.response import Response
 
 from .models import Source, Registration
 from .serializers import (UserSerializer, GroupSerializer,
                           SourceSerializer, RegistrationSerializer,
-                          HookSerializer)
+                          HookSerializer, CreateUserSerializer)
 
 
 class HookViewSet(viewsets.ModelViewSet):
@@ -31,6 +34,29 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticated,)
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+
+class UserView(APIView):
+    """ API endpoint that allows users creation and returns their token.
+    Only admin users can do this to avoid permissions escalation.
+    """
+    permission_classes = (IsAdminUser,)
+
+    def post(self, request):
+        '''Create a user and token, given an email. If user exists just
+        provide the token.'''
+        serializer = CreateUserSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data.get('email')
+        try:
+            user = User.objects.get(username=email)
+        except User.DoesNotExist:
+            user = User.objects.create_user(email, email=email)
+        token, created = Token.objects.get_or_create(user=user)
+
+        return Response(
+            status=status.HTTP_201_CREATED, data={'token': token.key})
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
@@ -93,3 +119,21 @@ class RegistrationGetViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Registration.objects.all()
     serializer_class = RegistrationSerializer
     filter_class = RegistrationFilter
+
+
+class HealthcheckView(APIView):
+
+    """ Healthcheck Interaction
+        GET - returns service up - getting auth'd requires DB
+    """
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        status = 200
+        resp = {
+            "up": True,
+            "result": {
+                "database": "Accessible"
+            }
+        }
+        return Response(resp, status=status)
