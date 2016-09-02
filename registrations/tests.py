@@ -459,9 +459,9 @@ class AuthenticatedAPITestCase(APITestCase):
             'testnormaluser@example.com',
             self.normalpassword)
         normaltoken = Token.objects.create(user=self.normaluser)
-        self.normaltoken = normaltoken.key
+        self.normaltoken = normaltoken
         self.normalclient.credentials(
-            HTTP_AUTHORIZATION='Token ' + self.normaltoken)
+            HTTP_AUTHORIZATION='Token %s' % self.normaltoken)
 
         # Admin User setup
         self.adminusername = 'testadminuser'
@@ -471,9 +471,9 @@ class AuthenticatedAPITestCase(APITestCase):
             'testadminuser@example.com',
             self.adminpassword)
         admintoken = Token.objects.create(user=self.adminuser)
-        self.admintoken = admintoken.key
+        self.admintoken = admintoken
         self.adminclient.credentials(
-            HTTP_AUTHORIZATION='Token ' + self.admintoken)
+            HTTP_AUTHORIZATION='Token %s' % self.admintoken)
 
         # Partial User setup
         self.partialusername = 'testpartialuser'
@@ -483,9 +483,9 @@ class AuthenticatedAPITestCase(APITestCase):
             'testpartialuser@example.com',
             self.partialpassword)
         partialtoken = Token.objects.create(user=self.partialuser)
-        self.partialtoken = partialtoken.key
+        self.partialtoken = partialtoken
         self.partialclient.credentials(
-            HTTP_AUTHORIZATION='Token ' + self.partialtoken)
+            HTTP_AUTHORIZATION='Token %s' % self.partialtoken)
 
     def tearDown(self):
         self._restore_post_save_hooks()
@@ -558,6 +558,71 @@ class TestLogin(AuthenticatedAPITestCase):
         self.assertIsNone(
             token, "Could not receive authentication token on login post.")
         self.assertEqual(request.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class TestUserCreation(AuthenticatedAPITestCase):
+
+    def test_create_user_and_token(self):
+        # Setup
+        user_request = {"email": "test@example.org"}
+        # Execute
+        request = self.adminclient.post('/api/v1/user/token/', user_request)
+        token = request.json().get('token', None)
+        # Check
+        self.assertIsNotNone(
+            token, "Could not receive authentication token on post.")
+        self.assertEqual(
+            request.status_code, 201,
+            "Status code on /api/v1/user/token/ was %s (should be 201)."
+            % request.status_code)
+
+    def test_create_user_and_token_fail_nonadmin(self):
+        # Setup
+        user_request = {"email": "test@example.org"}
+        # Execute
+        request = self.normalclient.post('/api/v1/user/token/', user_request)
+        error = request.json().get('detail', None)
+        # Check
+        self.assertIsNotNone(
+            error, "Could not receive error on post.")
+        self.assertEqual(
+            error, "You do not have permission to perform this action.",
+            "Error message was unexpected: %s."
+            % error)
+
+    def test_create_user_and_token_not_created(self):
+        # Setup
+        user_request = {"email": "test@example.org"}
+        # Execute
+        request = self.adminclient.post('/api/v1/user/token/', user_request)
+        token = request.json().get('token', None)
+        # And again, to get the same token
+        request2 = self.adminclient.post('/api/v1/user/token/', user_request)
+        token2 = request2.json().get('token', None)
+
+        # Check
+        self.assertEqual(
+            token, token2,
+            "Tokens are not equal, should be the same as not recreated.")
+
+    def test_create_user_new_token_nonadmin(self):
+        # Setup
+        user_request = {"email": "test@example.org"}
+        request = self.adminclient.post('/api/v1/user/token/', user_request)
+        token = request.json().get('token', None)
+        cleanclient = APIClient()
+        cleanclient.credentials(HTTP_AUTHORIZATION='Token %s' % token)
+        # Execute
+        request = cleanclient.post('/api/v1/user/token/', user_request)
+        error = request.json().get('detail', None)
+        # Check
+        # new user should not be admin
+        self.assertIsNotNone(
+            error, "Could not receive error on post.")
+        self.assertEqual(
+            error, "You do not have permission to perform this action.",
+            "Error message was unexpected: %s."
+            % error)
 
 
 class TestSourceAPI(AuthenticatedAPITestCase):
