@@ -45,16 +45,13 @@ class UserView(APIView):
     def post(self, request):
         '''Create a user and token, given an email. If user exists just
         provide the token.'''
-        print('posting')
         serializer = CreateUserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data.get('email')
         try:
-            print('trying')
             user = User.objects.get(username=email)
         except User.DoesNotExist:
-            print('excepting')
             user = User.objects.create_user(email, email=email)
         token, created = Token.objects.get_or_create(user=user)
 
