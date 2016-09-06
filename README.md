@@ -65,7 +65,7 @@ NDOH Registration and Change service for MomConnect and NurseConnect
             // if id_type == none, then
             "mom_dob": "1982-08-03",
 
-            "language": "eng_ZA",  // currently always eng_ZA for nurseconnect
+            "language": "eng_ZA",
             "edd": "2016-01-01",  // estimated due date
             "faccode": "123456",  // facility/clinic code
             "consent": true,  // or null
@@ -91,7 +91,7 @@ NDOH Registration and Change service for MomConnect and NurseConnect
             // if id_type == none, then
             "mom_dob": "1982-08-03",
 
-            "language": "eng_ZA",  // currently always eng_ZA for nurseconnect
+            "language": "eng_ZA",
             "consent": true,  // or null
         }
     }
@@ -104,7 +104,7 @@ NDOH Registration and Change service for MomConnect and NurseConnect
             "operator_id": "cb245673-aa41-4302-ac47-00000000007",  // device owner id
             "msisdn_registrant": "+27821235555",  // msisdn of the registrant
             "msisdn_device": "+27821235555",  // device msisdn
-            "language": "eng_ZA",  // currently always eng_ZA for nurseconnect
+            "language": "eng_ZA",
             "consent": true,  // or null
         }
     }

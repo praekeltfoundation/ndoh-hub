@@ -208,6 +208,7 @@ class ValidateSubscribe(Task):
                 data_fields, registration)
 
         elif registration.reg_type == "momconnect_prebirth":
+            # Checks that apply to clinic, chw, public
             validation_errors += self.check_operator_id(
                 data_fields, registration)
             validation_errors += self.check_msisdn_registrant(
@@ -216,14 +217,20 @@ class ValidateSubscribe(Task):
                 data_fields, registration)
             validation_errors += self.check_lang(
                 data_fields, registration)
-            validation_errors += self.check_edd(
-                data_fields, registration)
-            validation_errors += self.check_faccode(
-                data_fields, registration)
             validation_errors += self.check_consent(
                 data_fields, registration)
-            validation_errors += self.check_id(
-                data_fields, registration)
+
+            # Checks that apply to clinic, chw
+            if registration.source.authority in ["hw_full", "hw_partial"]:
+                validation_errors += self.check_id(
+                    data_fields, registration)
+
+            # Checks that apply to clinic only
+            if registration.source.authority == "hw_full":
+                validation_errors += self.check_edd(
+                    data_fields, registration)
+                validation_errors += self.check_faccode(
+                    data_fields, registration)
 
         elif registration.reg_type == "momconnect_postbirth":
             validation_errors.append("Momconnect postbirth not yet supported")
