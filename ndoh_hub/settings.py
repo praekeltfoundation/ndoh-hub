@@ -177,7 +177,7 @@ CELERY_ROUTES = {
     'registrations.tasks.validate_subscribe': {
         'queue': 'priority',
     },
-    'changes.tasks.implement_action': {
+    'changes.tasks.validate_implement': {
         'queue': 'priority',
     },
     'registrations.tasks.DeliverHook': {
