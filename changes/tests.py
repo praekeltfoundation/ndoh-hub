@@ -29,7 +29,7 @@ def mock_get_active_subs_mcpre_mcpost_pmtct_nc(registrant_id):
     momconnect_postbirth_sub_id = "subscriptionid-momconnect-postbirth-"
     responses.add(
         responses.GET,
-        'http://sbm/api/v1/subscriptions/?active=True&id=%s' % registrant_id,
+        'http://sbm/api/v1/subscriptions/?active=True&identity=%s' % registrant_id,  # noqa
         json={
             "count": 4,
             "next": None,
@@ -117,7 +117,7 @@ def mock_get_active_subs_mc(registrant_id):
     momconnect_prebirth_sub_id = "subscriptionid-momconnect-prebirth-0"
     responses.add(
         responses.GET,
-        'http://sbm/api/v1/subscriptions/?active=True&id=%s' % registrant_id,
+        'http://sbm/api/v1/subscriptions/?active=True&identity=%s' % registrant_id,  # noqa
         json={
             "count": 1,
             "next": None,
@@ -152,7 +152,7 @@ def mock_get_active_subs_mc(registrant_id):
 def mock_get_active_subscriptions_none(registrant_id):
     responses.add(
         responses.GET,
-        'http://sbm/api/v1/subscriptions/?active=True&id=%s' % registrant_id,
+        'http://sbm/api/v1/subscriptions/?active=True&identity=%s' % registrant_id,  # noqa
         json={
             "count": 0,
             "next": None,
@@ -170,8 +170,7 @@ def mock_get_active_nurseconnect_subscriptions(registrant_id):
     nurseconnect_sub_id = "subscriptionid-nurseconnect-00000000"
     responses.add(
         responses.GET,
-        'http://sbm/api/v1/subscriptions/?active=True&messageset=61&id=%s' % (
-            registrant_id),
+        'http://sbm/api/v1/subscriptions/?active=True&messageset=61&identity=%s' % registrant_id,  # noqa
         json={
             "count": 1,
             "next": None,

@@ -32,7 +32,7 @@ class ValidateImplement(Task):
         """
         self.l.info("Retrieving active subscriptions")
         active_subs = sbm_client.get_subscriptions(
-            {'id': change.registrant_id, 'active': True}
+            {'identity': change.registrant_id, 'active': True}
         )["results"]
 
         self.l.info("Deactivating all active subscriptions")
@@ -49,7 +49,7 @@ class ValidateImplement(Task):
         """
         self.l.info("Retrieving active subscriptions")
         active_subs = sbm_client.get_subscriptions(
-            {'id': change.registrant_id, 'active': True}
+            {'identity': change.registrant_id, 'active': True}
         )["results"]
 
         self.l.info("Retrieving nurseconnect messageset")
@@ -73,9 +73,9 @@ class ValidateImplement(Task):
             {"short_name": "nurseconnect.hw_full.1"})["results"][0]
 
         self.l.info("Retrieving active nurseconnect subscriptions")
-        active_subs = sbm_client.get_subscriptions({
-            'id': change.registrant_id, 'active': True,
-            'messageset': messageset["id"]}
+        active_subs = sbm_client.get_subscriptions(
+            {'identity': change.registrant_id, 'active': True,
+             'messageset': messageset["id"]}
         )["results"]
 
         self.l.info("Deactivating active nurseconnect subscriptions")
@@ -92,7 +92,7 @@ class ValidateImplement(Task):
 
         self.l.info("Retrieving active subscriptions")
         active_subs = sbm_client.get_subscriptions(
-            {'id': change.registrant_id, 'active': True}
+            {'identity': change.registrant_id, 'active': True}
         )["results"]
 
         # Determine if the mother has an active pmtct subscription and
@@ -241,7 +241,7 @@ class ValidateImplement(Task):
 
         self.l.info("Retrieving active subscriptions")
         active_subs = sbm_client.get_subscriptions(
-            {'id': change.registrant_id, 'active': True}
+            {'identity': change.registrant_id, 'active': True}
         )["results"]
 
         if (len(active_subs) == 0):
