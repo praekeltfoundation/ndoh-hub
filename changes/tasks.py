@@ -53,12 +53,12 @@ class ValidateImplement(Task):
         )["results"]
 
         self.l.info("Retrieving nurseconnect messageset")
-        messageset = sbm_client.get_messagesets(
+        nc_messageset = sbm_client.get_messagesets(
             {"short_name": "nurseconnect.hw_full.1"})["results"][0]
 
         self.l.info("Deactivating active non-nurseconnect subscriptions")
         for active_sub in active_subs:
-            if messageset["id"] != active_sub["messageset"]:
+            if nc_messageset["id"] != active_sub["messageset"]:
                 sbm_client.update_subscription(
                     active_sub["id"], {"active": False})
 
@@ -68,14 +68,14 @@ class ValidateImplement(Task):
     def deactivate_nurseconnect(self, change):
         """ Deactivates nurseconnect subscription only
         """
-        self.l.info("Retrieving nurseconnect messageset id")
-        messageset = sbm_client.get_messagesets(
+        self.l.info("Retrieving nurseconnect messageset")
+        nc_messageset = sbm_client.get_messagesets(
             {"short_name": "nurseconnect.hw_full.1"})["results"][0]
 
         self.l.info("Retrieving active nurseconnect subscriptions")
         active_subs = sbm_client.get_subscriptions(
             {'identity': change.registrant_id, 'active': True,
-             'messageset': messageset["id"]}
+             'messageset': nc_messageset["id"]}
         )["results"]
 
         self.l.info("Deactivating active nurseconnect subscriptions")
@@ -126,8 +126,7 @@ class ValidateImplement(Task):
             # . determine sbm details
             self.l.info("Determining SBM details")
             msgset_id, msgset_schedule, next_sequence_number =\
-                utils.get_messageset_schedule_sequence(
-                    short_name, 0)
+                utils.get_messageset_schedule_sequence(short_name, 0)
 
             subscription = {
                 "identity": change.registrant_id,
@@ -151,8 +150,7 @@ class ValidateImplement(Task):
             # . determine sbm details
             self.l.info("Determining SBM details")
             msgset_id, msgset_schedule, next_sequence_number =\
-                utils.get_messageset_schedule_sequence(
-                    short_name, 0)
+                utils.get_messageset_schedule_sequence(short_name, 0)
 
             subscription = {
                 "identity": change.registrant_id,
