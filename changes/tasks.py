@@ -234,10 +234,7 @@ class ValidateImplement(Task):
             return "Aborted PMTCT switch to loss"
 
     def pmtct_loss_optout(self, change):
-        """ The rest of the action required (opting out the identity on the
-        identity store, opting out the vumi contact, deactivating the old
-        system subscriptions) is currently done via the ndoh-jsbox ussd_pmtct
-        app, we're only deactivating the subscriptions here.
+        """ This only deactivates non-nurseconnect subscriptions
         """
         self.l.info("Starting PMTCT loss optout")
         self.deactivate_all_except_nurseconnect(change)
@@ -245,10 +242,9 @@ class ValidateImplement(Task):
         return "Completed PMTCT loss optout"
 
     def pmtct_nonloss_optout(self, change):
-        """ The rest of the action required (opting out the identity on the
-        identity store, opting out the vumi contact, deactivating the old
-        system subscriptions) is currently done via the ndoh-jsbox ussd_pmtct
-        app, we're only deactivating the subscriptions here.
+        """ Identity optout only happens for SMS optout and is done
+        in the JS app. SMS optout deactivates all subscriptions,
+        whereas USSD optout deactivates all except nurseconnect
         """
         self.l.info("Starting PMTCT non-loss optout")
 
@@ -279,8 +275,7 @@ class ValidateImplement(Task):
     def nurse_optout(self, change):
         """ The rest of the action required (opting out the identity on the
         identity store) is currently done via the ndoh-jsbox ussd_nurse
-        app, we're only deactivating the subscriptions here. Note this only
-        deactivates the NurseConnect subscription.
+        app, we're only deactivating any NurseConnect subscriptions here.
         """
         self.l.info("Starting NurseConnect optout")
         self.deactivate_nurseconnect(change)
@@ -302,9 +297,7 @@ class ValidateImplement(Task):
             return "Aborted MomConnect switch to loss"
 
     def momconnect_loss_optout(self, change):
-        """ The rest of the action required (opting out the identity on the
-        identity store) is currently done via the ndoh-jsbox ussd_optout
-        app, we're only deactivating the subscriptions here.
+        """ This only deactivates non-nurseconnect subscriptions
         """
         self.l.info("Starting MomConnect loss optout")
         self.deactivate_all_except_nurseconnect(change)
@@ -312,9 +305,9 @@ class ValidateImplement(Task):
         return "Completed MomConnect loss optout"
 
     def momconnect_nonloss_optout(self, change):
-        """ The rest of the action required (opting out the identity on the
-        identity store) is currently done via the ndoh-jsbox ussd_optout
-        app, we're only deactivating the subscriptions here.
+        """ Identity optout only happens for SMS optout and is done
+        in the JS app. SMS optout deactivates all subscriptions,
+        whereas USSD optout deactivates all except nurseconnect
         """
         self.l.info("Starting MomConnect non-loss optout")
 
