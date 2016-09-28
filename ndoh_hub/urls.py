@@ -15,6 +15,7 @@ urlpatterns = patterns(
     url(r'^api/token-auth/',
         'rest_framework.authtoken.views.obtain_auth_token'),
     url(r'^api/health/', views.HealthcheckView.as_view()),
+    url(r'^docs/', include('rest_framework_docs.urls')),
     url(r'^', include('registrations.urls')),
     url(r'^', include('changes.urls')),
 )
