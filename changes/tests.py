@@ -1291,6 +1291,17 @@ class TestChangeActions(AuthenticatedAPITestCase):
             "subscriptionid-pmtct-prebirth-000000"
         ])
 
+        # . mock get messageset by shortname
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "loss_miscarriage.patient.1")
+
+        # . mock get schedule
+        utils_tests.mock_get_schedule(schedule_id)
+
+        # . mock get identity by id
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+
         # Execute
         result = validate_implement.apply_async(args=[change.id])
 
@@ -1299,9 +1310,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(result.get(), True)
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 2)
-        # # Future: below should change to 1 after migration
-        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
-        self.assertEqual(len(responses.calls), 5)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 1)
+        self.assertEqual(len(responses.calls), 8)
 
     @responses.activate
     def test_pmtct_loss_optout(self):
@@ -1525,6 +1535,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # . mock get messageset by shortname
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "loss_miscarriage.patient.1")
+
+        # . mock get schedule
         utils_tests.mock_get_schedule(schedule_id)
 
         # . mock get identity by id
