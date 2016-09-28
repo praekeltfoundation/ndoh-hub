@@ -92,6 +92,14 @@ class ValidateImplement(Task):
             self.l.info("No active subscriptions - aborting")
             return False
 
+        # TODO: Provide temporary bridging code while both systems are
+        # being used. The purpose of this would be to accommodate making
+        # changes to ndoh-hub that need to be deployed to production while
+        # the old system is still in use in production while the new system
+        # is in use in QA.
+        # If the active subscriptions do not include a momconnect
+        # subscription, it means the old system is still being used.
+
         else:
             self.deactivate_all_except_nurseconnect(change)
 
