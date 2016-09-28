@@ -1185,6 +1185,14 @@ class TestChangeActions(AuthenticatedAPITestCase):
             "momconnect_postbirth.hw_full.1")
         utils_tests.mock_get_schedule(schedule_id)
 
+        # . mock get identity by id
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+
+        # . mock update mock_patch_identity
+        # . this is a general patch - `responses` doesn't check the data
+        utils_tests.mock_patch_identity("mother01-63e2-4acc-9b94-26663b9bc267")
+
         # Execute
         result = validate_implement.apply_async(args=[change.id])
 
@@ -1194,7 +1202,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 2)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 2)
-        self.assertEqual(len(responses.calls), 9)
+        self.assertEqual(len(responses.calls), 11)
 
     @responses.activate
     def test_baby_switch_momconnect_only_sub(self):
@@ -1231,6 +1239,14 @@ class TestChangeActions(AuthenticatedAPITestCase):
             "momconnect_postbirth.hw_full.1")
         utils_tests.mock_get_schedule(schedule_id)
 
+        # . mock get identity by id
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+
+        # . mock update mock_patch_identity
+        # . this is a general patch - `responses` doesn't check the data
+        utils_tests.mock_patch_identity("mother01-63e2-4acc-9b94-26663b9bc267")
+
         # Execute
         result = validate_implement.apply_async(args=[change.id])
 
@@ -1240,7 +1256,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 1)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 1)
-        self.assertEqual(len(responses.calls), 4)
+        self.assertEqual(len(responses.calls), 6)
 
     @responses.activate
     def test_pmtct_loss_switch(self):

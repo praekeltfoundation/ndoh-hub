@@ -163,6 +163,14 @@ class ValidateImplement(Task):
             SubscriptionRequest.objects.create(**subscription)
             self.l.info("Created PMTCT postbirth SubscriptionRequest")
 
+        self.l.info("Saving the date of birth to the identity")
+        identity = is_client.get_identity(change.registrant_id)
+        details = identity["details"]
+        details["last_baby_dob"] = utils.get_today().strftime("%Y-%m-%d")
+        is_client.update_identity(
+            change.registrant_id, {"details": details})
+        self.l.info("Saved the date of birth to the identity")
+
         return "Switch to baby completed"
 
     def pmtct_loss_switch(self, change):
