@@ -1378,13 +1378,14 @@ class TestChangeActions(AuthenticatedAPITestCase):
         mock_get_active_subs_mcpre_mcpost_pmtct_nc(
             change_data["registrant_id"])
 
-        # . mock get messageset by shortname
-        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+        # . mock get messageset
+        utils_tests.mock_get_messageset(11)
+        utils_tests.mock_get_messageset(21)
+        utils_tests.mock_get_messageset(32)
+        utils_tests.mock_get_messageset(61)
 
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions([
-            "subscriptionid-momconnect-prebirth-0",
-            "subscriptionid-momconnect-postbirth-",
             "subscriptionid-pmtct-prebirth-000000"
         ])
 
@@ -1397,7 +1398,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 1)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
-        self.assertEqual(len(responses.calls), 5)
+        self.assertEqual(len(responses.calls), 6)
 
     @responses.activate
     def test_nurse_update_detail(self):

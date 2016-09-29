@@ -82,6 +82,22 @@ class ValidateImplement(Task):
         for active_sub in active_subs:
             sbm_client.update_subscription(active_sub["id"], {"active": False})
 
+    def deactivate_pmtct(self, change):
+        """ Deactivates any pmtct subscriptions
+        """
+        self.l.info("Retrieving active subscriptions")
+        active_subs = sbm_client.get_subscriptions(
+            {'identity': change.registrant_id, 'active': True}
+        )["results"]
+
+        self.l.info("Deactivating active pmtct subscriptions")
+        for active_sub in active_subs:
+            messageset = sbm_client.get_messageset(active_sub["messageset"])
+            if "pmtct" in messageset["short_name"]:
+                self.l.info("Deactivating messageset %s" % messageset["id"])
+                sbm_client.update_subscription(
+                    active_sub["id"], {"active": False})
+
     def loss_switch(self, change):
         self.l.info("Retrieving active subscriptions")
         active_subs = sbm_client.get_subscriptions(
@@ -244,14 +260,14 @@ class ValidateImplement(Task):
     def pmtct_nonloss_optout(self, change):
         """ Identity optout only happens for SMS optout and is done
         in the JS app. SMS optout deactivates all subscriptions,
-        whereas USSD optout deactivates all except nurseconnect
+        whereas USSD optout deactivates only pmtct subscriptions
         """
         self.l.info("Starting PMTCT non-loss optout")
 
         if change.data["reason"] == 'unknown':  # SMS optout
             self.deactivate_all(change)
         else:
-            self.deactivate_all_except_nurseconnect(change)
+            self.deactivate_pmtct(change)
 
         self.l.info("Completed PMTCT non-loss optout")
         return "Completed PMTCT non-loss optout"
