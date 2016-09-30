@@ -1185,6 +1185,14 @@ class TestChangeActions(AuthenticatedAPITestCase):
             "momconnect_postbirth.hw_full.1")
         utils_tests.mock_get_schedule(schedule_id)
 
+        # . mock get identity by id
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+
+        # . mock update mock_patch_identity
+        # . this is a general patch - `responses` doesn't check the data
+        utils_tests.mock_patch_identity("mother01-63e2-4acc-9b94-26663b9bc267")
+
         # Execute
         result = validate_implement.apply_async(args=[change.id])
 
@@ -1194,7 +1202,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 2)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 2)
-        self.assertEqual(len(responses.calls), 9)
+        self.assertEqual(len(responses.calls), 11)
 
     @responses.activate
     def test_baby_switch_momconnect_only_sub(self):
@@ -1231,6 +1239,14 @@ class TestChangeActions(AuthenticatedAPITestCase):
             "momconnect_postbirth.hw_full.1")
         utils_tests.mock_get_schedule(schedule_id)
 
+        # . mock get identity by id
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+
+        # . mock update mock_patch_identity
+        # . this is a general patch - `responses` doesn't check the data
+        utils_tests.mock_patch_identity("mother01-63e2-4acc-9b94-26663b9bc267")
+
         # Execute
         result = validate_implement.apply_async(args=[change.id])
 
@@ -1240,7 +1256,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 1)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 1)
-        self.assertEqual(len(responses.calls), 4)
+        self.assertEqual(len(responses.calls), 6)
 
     @responses.activate
     def test_pmtct_loss_switch(self):
@@ -1275,6 +1291,17 @@ class TestChangeActions(AuthenticatedAPITestCase):
             "subscriptionid-pmtct-prebirth-000000"
         ])
 
+        # . mock get messageset by shortname
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "loss_miscarriage.patient.1")
+
+        # . mock get schedule
+        utils_tests.mock_get_schedule(schedule_id)
+
+        # . mock get identity by id
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+
         # Execute
         result = validate_implement.apply_async(args=[change.id])
 
@@ -1283,9 +1310,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(result.get(), True)
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 2)
-        # # Future: below should change to 1 after migration
-        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
-        self.assertEqual(len(responses.calls), 5)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 1)
+        self.assertEqual(len(responses.calls), 8)
 
     @responses.activate
     def test_pmtct_loss_optout(self):
@@ -1352,13 +1378,14 @@ class TestChangeActions(AuthenticatedAPITestCase):
         mock_get_active_subs_mcpre_mcpost_pmtct_nc(
             change_data["registrant_id"])
 
-        # . mock get messageset by shortname
-        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+        # . mock get messageset
+        utils_tests.mock_get_messageset(11)
+        utils_tests.mock_get_messageset(21)
+        utils_tests.mock_get_messageset(32)
+        utils_tests.mock_get_messageset(61)
 
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions([
-            "subscriptionid-momconnect-prebirth-0",
-            "subscriptionid-momconnect-postbirth-",
             "subscriptionid-pmtct-prebirth-000000"
         ])
 
@@ -1371,7 +1398,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 1)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
-        self.assertEqual(len(responses.calls), 5)
+        self.assertEqual(len(responses.calls), 6)
 
     @responses.activate
     def test_nurse_update_detail(self):
@@ -1509,6 +1536,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # . mock get messageset by shortname
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "loss_miscarriage.patient.1")
+
+        # . mock get schedule
         utils_tests.mock_get_schedule(schedule_id)
 
         # . mock get identity by id

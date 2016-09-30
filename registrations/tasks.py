@@ -339,7 +339,10 @@ class ValidateSubscribe(Task):
 
         if reg_validates:
             self.create_subscriptionrequests(registration)
-            self.set_risk_status(registration)
+
+            if "pmtct" in registration.reg_type:
+                self.set_risk_status(registration)
+
             self.l.info("Task executed successfully")
             return True
         else:
