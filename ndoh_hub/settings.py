@@ -207,3 +207,7 @@ MESSAGE_SENDER_URL = os.environ.get('MESSAGE_SENDER_URL',
                                     'http://ms/api/v1')
 MESSAGE_SENDER_TOKEN = os.environ.get('MESSAGE_SENDER_TOKEN',
                                       'REPLACEME')
+SERVICE_RATING_URL = os.environ.get('SERVICE_RATING_URL',
+                                    'http://sr/api/v1')
+SERVICE_RATING_TOKEN = os.environ.get('SERVICE_RATING_TOKEN',
+                                      'REPLACEME')

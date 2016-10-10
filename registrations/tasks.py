@@ -6,7 +6,7 @@ from django.conf import settings
 from celery.task import Task
 from celery.utils.log import get_task_logger
 from seed_services_client.identity_store import IdentityStoreApiClient
-from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
+# from seed_services_client.identity_store import ServiceRatingApiClient
 
 from ndoh_hub import utils
 from .models import Registration, SubscriptionRequest
@@ -16,6 +16,11 @@ is_client = IdentityStoreApiClient(
     api_url=settings.IDENTITY_STORE_URL,
     auth_token=settings.IDENTITY_STORE_TOKEN
 )
+
+# sr_client = ServiceRatingApiClient(
+#     api_url=settings.SERVICE_RATING_URL,
+#     auth_token=settings.SERVICE_RATING_TOKEN
+# )
 
 
 def get_risk_status(reg_type, mom_dob, edd):
@@ -302,6 +307,32 @@ class ValidateSubscribe(Task):
 
         return "SubscriptionRequest created"
 
+    # Create ServiceRating Invite
+    def create_servicerating_invite(self, registration):
+        """ Create a new servicerating invite
+        """
+        invite_data = {
+            "identity": registration.registrant_id
+            # could provide "invite" to override servicerating defaults
+        }
+        self.l.info("Creating ServiceRating invite")
+
+        # TODO: use sr_client instead when pull request landed
+        # response = sr_client.create_invite(invite_data)
+        result = requests.post(
+            url="%s/invite/" % settings.SERVICE_RATING_URL,
+            data=json.dumps(invite_data),
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': 'Token %s' % settings.SERVICE_RATING_TOKEN
+            }
+        )
+        result.raise_for_status()
+        response = result.json()
+
+        self.l.info("Created ServiceRating invite")
+        return response
+
     # Set risk status
     def set_risk_status(self, registration):
         """ Determine the risk status of the mother and save it to her identity
@@ -340,11 +371,9 @@ class ValidateSubscribe(Task):
         if reg_validates:
             self.create_subscriptionrequests(registration)
 
-            # create a servicerating invite if applicable
             if registration.reg_type == "momconnect_prebirth" and\
                registration.source.authority == "hw_full":
-                self.send_servicerating_invite(
-                    )
+                self.create_servicerating_invite(registration)
 
             if "pmtct" in registration.reg_type:
                 self.set_risk_status(registration)
