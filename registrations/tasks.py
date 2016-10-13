@@ -6,7 +6,7 @@ from django.conf import settings
 from celery.task import Task
 from celery.utils.log import get_task_logger
 from seed_services_client.identity_store import IdentityStoreApiClient
-# from seed_services_client.identity_store import ServiceRatingApiClient
+from seed_services_client.service_rating import ServiceRatingApiClient
 
 from ndoh_hub import utils
 from .models import Registration, SubscriptionRequest
@@ -17,10 +17,10 @@ is_client = IdentityStoreApiClient(
     auth_token=settings.IDENTITY_STORE_TOKEN
 )
 
-# sr_client = ServiceRatingApiClient(
-#     api_url=settings.SERVICE_RATING_URL,
-#     auth_token=settings.SERVICE_RATING_TOKEN
-# )
+sr_client = ServiceRatingApiClient(
+    api_url=settings.SERVICE_RATING_URL,
+    auth_token=settings.SERVICE_RATING_TOKEN
+)
 
 
 def get_risk_status(reg_type, mom_dob, edd):
@@ -316,20 +316,7 @@ class ValidateSubscribe(Task):
             # could provide "invite" to override servicerating defaults
         }
         self.l.info("Creating ServiceRating invite")
-
-        # TODO: use sr_client instead when pull request landed
-        # response = sr_client.create_invite(invite_data)
-        result = requests.post(
-            url="%s/invite/" % settings.SERVICE_RATING_URL,
-            data=json.dumps(invite_data),
-            headers={
-                'Content-Type': 'application/json',
-                'Authorization': 'Token %s' % settings.SERVICE_RATING_TOKEN
-            }
-        )
-        result.raise_for_status()
-        response = result.json()
-
+        response = sr_client.create_invite(invite_data)
         self.l.info("Created ServiceRating invite")
         return response
 
