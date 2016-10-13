@@ -204,3 +204,12 @@ def mock_get_schedule(schedule_id):
         json={"id": schedule_id, "day_of_week": day_of_week},
         status=200, content_type='application/json',
     )
+
+
+def mock_create_servicerating_invite(identity_id):
+    responses.add(
+        responses.POST,
+        'http://sr/api/v1/invite/',
+        json={"identity": identity_id},
+        status=201, content_type='application/json'
+    )

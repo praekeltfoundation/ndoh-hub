@@ -1596,7 +1596,7 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
                 "msisdn_device": "+27821113333",
                 "id_type": "sa_id",
                 "sa_id_no": "8108015001051",
-                "dob": "1982-08-01",
+                "mom_dob": "1982-08-01",
                 "language": "eng_ZA",
                 "edd": "2016-05-01",  # in week 23 of pregnancy
                 "faccode": "123456",
@@ -1753,7 +1753,7 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
 class TestRegistrationCreation(AuthenticatedAPITestCase):
 
     @responses.activate
-    def test_registration_process_good(self):
+    def test_registration_process_pmtct_good(self):
         """ Test a full registration process with good data """
         # Setup
         registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
@@ -1784,6 +1784,9 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         registration = Registration.objects.create(**registration_data)
 
         # Check
+        # . check number of calls made
+        self.assertEqual(len(responses.calls), 4)
+
         # . check registration validated
         registration.refresh_from_db()
         self.assertEqual(registration.validated, True)
@@ -1795,6 +1798,61 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         self.assertEqual(sr.next_sequence_number, 17)  # (23 - 6) * 1
         self.assertEqual(sr.lang, "eng_ZA")
         self.assertEqual(sr.schedule, 111)
+
+        # Teardown
+        post_save.disconnect(psh_validate_subscribe, sender=Registration)
+
+    @responses.activate
+    def test_registration_process_clinic_good(self):
+        """ Test a full registration process with good data """
+        # Setup
+        registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
+        # . reactivate post-save hook
+        post_save.connect(psh_validate_subscribe, sender=Registration)
+
+        # . setup momconnect_prebirth self registration (clinic)
+        registration_data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "msisdn_registrant": "+27821113333",
+                "msisdn_device": "+27821113333",
+                "id_type": "sa_id",
+                "sa_id_no": "8108015001051",
+                "mom_dob": "1982-08-01",
+                "language": "eng_ZA",
+                "edd": "2016-05-01",  # in week 23 of pregnancy
+                "faccode": "123456",
+                "consent": True
+            },
+        }
+
+        # . setup fixture responses
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_prebirth.hw_full.1")
+        utils_tests.mock_get_schedule(schedule_id)
+        utils_tests.mock_create_servicerating_invite(registrant_uuid)
+
+        # Execute
+        registration = Registration.objects.create(**registration_data)
+
+        # Check
+        # . check number of calls made
+        self.assertEqual(len(responses.calls), 3)
+
+        # . check registration validated
+        registration.refresh_from_db()
+        self.assertEqual(registration.validated, True)
+
+        # . check subscriptionrequest object
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 21)
+        self.assertEqual(sr.next_sequence_number, 37)  # ((23 - 4) * 2) - 1
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 121)
 
         # Teardown
         post_save.disconnect(psh_validate_subscribe, sender=Registration)
@@ -1828,6 +1886,9 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         self.assertEqual(registration.validated, False)
         self.assertEqual(registration.data["invalid_fields"],
                          ['Estimated Due Date missing'])
+
+        # . check number of calls made
+        self.assertEqual(len(responses.calls), 0)
 
         # . check no subscriptionrequest objects were created
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
