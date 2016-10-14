@@ -9,6 +9,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 
 from .models import Source, Registration
+from ndoh_hub import utils
 from .serializers import (UserSerializer, GroupSerializer,
                           SourceSerializer, RegistrationSerializer,
                           HookSerializer, CreateUserSerializer)
@@ -136,4 +137,27 @@ class HealthcheckView(APIView):
                 "database": "Accessible"
             }
         }
+        return Response(resp, status=status)
+
+
+class MetricsView(APIView):
+
+    """ Metrics Interaction
+        GET - returns list of all available metrics on the service
+        POST - starts up the task that fires all the scheduled metrics
+    """
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        status = 200
+        resp = {
+            "metrics_available": utils.get_available_metrics()
+        }
+        return Response(resp, status=status)
+
+    def post(self, request, *args, **kwargs):
+        status = 201
+        # Uncomment line below if scheduled metrics are added
+        # scheduled_metrics.apply_async()
+        resp = {"scheduled_metrics_initiated": True}
         return Response(resp, status=status)

@@ -25,8 +25,9 @@ setup(
         'six==1.10.0',
         'django-rest-hooks==1.3.1',
         'requests==2.9.1',
-        'seed-services-client',
         'drfdocs==0.0.11',
+        'go-http==0.3.0',
+        'seed-services-client',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

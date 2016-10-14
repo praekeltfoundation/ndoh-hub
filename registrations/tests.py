@@ -3,22 +3,45 @@ import uuid
 import datetime
 import responses
 
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.db.models.signals import post_save
+from django.conf import settings
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
 from rest_hooks.models import model_saved
+from requests_testadapter import TestAdapter, TestSession
+from go_http.metrics import MetricsApiClient
 
-from .models import (Source, Registration, SubscriptionRequest,
-                     psh_validate_subscribe)
+from .models import (
+    Source, Registration, SubscriptionRequest,
+    psh_validate_subscribe, fire_created_metric
+)
 from .tasks import validate_subscribe, get_risk_status
 from ndoh_hub import utils, utils_tests
 
 
 def override_get_today():
     return datetime.datetime.strptime("2016-01-01", "%Y-%m-%d")
+
+
+class RecordingAdapter(TestAdapter):
+
+    """ Record the request that was handled by the adapter.
+    """
+    def __init__(self, *args, **kwargs):
+        self.requests = []
+        super(RecordingAdapter, self).__init__(*args, **kwargs)
+
+    def send(self, request, *args, **kw):
+        self.requests.append(request)
+        return super(RecordingAdapter, self).send(request, *args, **kw)
 
 
 class TestUtils(TestCase):
@@ -348,6 +371,7 @@ class APITestCase(TestCase):
         self.normalclient = APIClient()
         self.partialclient = APIClient()
         self.otherclient = APIClient()
+        self.session = TestSession()
         utils.get_today = override_get_today
 
 
@@ -363,6 +387,8 @@ class AuthenticatedAPITestCase(APITestCase):
                              sender=Registration)
         post_save.disconnect(receiver=model_saved,
                              dispatch_uid='instance-saved-hook')
+        post_save.disconnect(receiver=fire_created_metric,
+                             sender=Registration)
         assert not has_listeners(), (
             "Registration model still has post_save listeners. Make sure"
             " helpers cleaned up properly in earlier tests.")
@@ -373,7 +399,22 @@ class AuthenticatedAPITestCase(APITestCase):
         assert not has_listeners(), (
             "Registration model still has post_save listeners. Make sure"
             " helpers removed them properly in earlier tests.")
-        post_save.connect(psh_validate_subscribe, sender=Registration)
+        post_save.connect(psh_validate_subscribe,
+                          sender=Registration)
+        post_save.connect(receiver=fire_created_metric,
+                          sender=Registration)
+
+    def _replace_get_metric_client(self, session=None):
+        return MetricsApiClient(
+            auth_token=settings.METRICS_AUTH_TOKEN,
+            api_url=settings.METRICS_URL,
+            session=self.session)
+
+    def _restore_get_metric_client(self, session=None):
+        return MetricsApiClient(
+            auth_token=settings.METRICS_AUTH_TOKEN,
+            api_url=settings.METRICS_URL,
+            session=session)
 
     def make_source_adminuser(self):
         data = {
@@ -450,6 +491,7 @@ class AuthenticatedAPITestCase(APITestCase):
     def setUp(self):
         super(AuthenticatedAPITestCase, self).setUp()
         self._replace_post_save_hooks()
+        utils.get_metric_client = self._replace_get_metric_client
 
         # Normal User setup
         self.normalusername = 'testnormaluser'
@@ -489,6 +531,7 @@ class AuthenticatedAPITestCase(APITestCase):
 
     def tearDown(self):
         self._restore_post_save_hooks()
+        utils.get_metric_client = self._restore_get_metric_client
 
 
 class TestLogin(AuthenticatedAPITestCase):
@@ -1895,3 +1938,118 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 
         # Teardown
         post_save.disconnect(psh_validate_subscribe, sender=Registration)
+
+
+class TestMetricsAPI(AuthenticatedAPITestCase):
+
+    def test_metrics_read(self):
+        # Setup
+        self.make_source_normaluser()
+        self.make_source_adminuser()
+        # Execute
+        response = self.adminclient.get(
+            '/api/metrics/', content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data["metrics_available"], [
+                'registrations.created.sum',
+                # 'registrations.source.testnormaluser.sum',
+                # 'registrations.source.testadminuser.sum',
+            ]
+        )
+
+    @responses.activate
+    def test_post_metrics(self):
+        # Setup
+        # deactivate Testsession for this test
+        self.session = None
+        responses.add(responses.POST,
+                      "http://metrics-url/metrics/",
+                      json={"foo": "bar"},
+                      status=200, content_type='application/json')
+        # Execute
+        response = self.adminclient.post(
+            '/api/metrics/', content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["scheduled_metrics_initiated"], True)
+
+
+class TestMetrics(AuthenticatedAPITestCase):
+
+    def _check_request(
+            self, request, method, params=None, data=None, headers=None):
+        self.assertEqual(request.method, method)
+        if params is not None:
+            url = urlparse.urlparse(request.url)
+            qs = urlparse.parse_qsl(url.query)
+            self.assertEqual(dict(qs), params)
+        if headers is not None:
+            for key, value in headers.items():
+                self.assertEqual(request.headers[key], value)
+        if data is None:
+            self.assertEqual(request.body, None)
+        else:
+            self.assertEqual(json.loads(request.body), data)
+
+    def _mount_session(self):
+        response = [{
+            'name': 'foo',
+            'value': 9000,
+            'aggregator': 'bar',
+        }]
+        adapter = RecordingAdapter(json.dumps(response).encode('utf-8'))
+        self.session.mount(
+            "http://metrics/api/v1/metrics/", adapter)
+        return adapter
+
+    def test_direct_fire(self):
+        # Setup
+        adapter = self._mount_session()
+        # Execute
+        result = utils.fire_metric.apply_async(kwargs={
+            "metric_name": 'foo.last',
+            "metric_value": 1,
+            "session": self.session
+        })
+        # Check
+        [request] = adapter.requests
+        self._check_request(
+            request, 'POST',
+            data={"foo.last": 1.0}
+        )
+        self.assertEqual(result.get(),
+                         "Fired metric <foo.last> with value <1.0>")
+
+    def test_created_metric(self):
+        # Setup
+        adapter = self._mount_session()
+        # reconnect metric post_save hook
+        post_save.connect(fire_created_metric, sender=Registration)
+
+        # Execute
+        self.make_registration_adminuser()
+        self.make_registration_adminuser()
+
+        # Check
+        [request1, request3] = adapter.requests
+        # [request1, request2, request3, request4] = adapter.requests
+        self._check_request(
+            request1, 'POST',
+            data={"registrations.created.sum": 1.0}
+        )
+        # self._check_request(
+        #     request2, 'POST',
+        #     data={"registrations.created.total.last": 1}
+        # )
+        self._check_request(
+            request3, 'POST',
+            data={"registrations.created.sum": 1.0}
+        )
+        # self._check_request(
+        #     request4, 'POST',
+        #     data={"registrations.created.total.last": 2}
+        # )
+        # remove post_save hooks to prevent teardown errors
+        post_save.disconnect(fire_created_metric, sender=Registration)

@@ -1,8 +1,12 @@
 from __future__ import division
 
 import datetime
+import re
 
+from celery.task import Task
 from django.conf import settings
+from django.core.cache import cache
+from go_http.metrics import MetricsApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
 
 
@@ -10,6 +14,65 @@ sbm_client = StageBasedMessagingApiClient(
     api_url=settings.STAGE_BASED_MESSAGING_URL,
     auth_token=settings.STAGE_BASED_MESSAGING_TOKEN
 )
+
+
+def get_metric_client(session=None):
+    return MetricsApiClient(
+        auth_token=settings.METRICS_AUTH_TOKEN,
+        api_url=settings.METRICS_URL,
+        session=session)
+
+
+class FireMetric(Task):
+
+    """ Fires a metric using the MetricsApiClient
+    """
+    name = "ndoh_hub.tasks.fire_metric"
+
+    def run(self, metric_name, metric_value, session=None, **kwargs):
+        metric_value = float(metric_value)
+        metric = {
+            metric_name: metric_value
+        }
+        metric_client = get_metric_client(session=session)
+        metric_client.fire(metric)
+        return "Fired metric <%s> with value <%s>" % (
+            metric_name, metric_value)
+
+fire_metric = FireMetric()
+
+
+def get_or_incr_cache(key, func):
+    """
+    Used to either get a value from the cache, or if the value doesn't exist
+    in the cache, run the function to get a value to use to populate the cache
+    """
+    value = cache.get(key)
+    if value is None:
+        value = func()
+        cache.set(key, value)
+    else:
+        cache.incr(key)
+        value += 1
+    return value
+
+
+def get_available_metrics():
+    # from registrations.models import Source
+
+    available_metrics = []
+    available_metrics.extend(settings.METRICS_REALTIME)
+    available_metrics.extend(settings.METRICS_SCHEDULED)
+
+    # sources = Source.objects.all()
+    # for source in sources:
+    #     # only append usernames with characters that are all alphanumeric
+    #     # and/or underscores
+    #     if re.match(r'\w+$', source.user.username):
+    #         available_metrics.append(
+    #             "registrations.source.%s.sum" % source.user.username)
+
+    return available_metrics
 
 
 def is_valid_uuid(id):
