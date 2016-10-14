@@ -185,6 +185,9 @@ CELERY_ROUTES = {
     'registrations.tasks.DeliverHook': {
         'queue': 'priority',
     },
+    'ndoh_hub.tasks.fire_metric': {
+        'queue': 'metrics',
+    },
 }
 
 CELERY_TASK_SERIALIZER = 'json'
@@ -211,3 +214,13 @@ SERVICE_RATING_URL = os.environ.get('SERVICE_RATING_URL',
                                     'http://sr/api/v1')
 SERVICE_RATING_TOKEN = os.environ.get('SERVICE_RATING_TOKEN',
                                       'REPLACEME')
+METRICS_URL = os.environ.get("METRICS_URL",
+                             'http://metrics/api/v1')
+METRICS_AUTH_TOKEN = os.environ.get("METRICS_AUTH_TOKEN",
+                                    "REPLACEME")
+
+METRICS_REALTIME = [
+    'registrations.created.sum',
+]
+METRICS_SCHEDULED = [
+]

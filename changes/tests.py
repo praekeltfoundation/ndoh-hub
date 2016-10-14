@@ -14,8 +14,10 @@ from rest_hooks.models import model_saved
 from ndoh_hub import utils, utils_tests
 from .models import Change, psh_validate_implement
 from .tasks import validate_implement
-from registrations.models import (Source, Registration, SubscriptionRequest,
-                                  psh_validate_subscribe)
+from registrations.models import (
+    Source, Registration, SubscriptionRequest,
+    psh_validate_subscribe, fire_created_metric
+)
 
 
 def override_get_today():
@@ -256,6 +258,8 @@ class AuthenticatedAPITestCase(APITestCase):
                              sender=Registration)
         post_save.disconnect(receiver=model_saved,
                              dispatch_uid='instance-saved-hook')
+        post_save.disconnect(receiver=fire_created_metric,
+                             sender=Registration)
         assert not has_listeners(), (
             "Registration model still has post_save listeners. Make sure"
             " helpers cleaned up properly in earlier tests.")
@@ -266,7 +270,10 @@ class AuthenticatedAPITestCase(APITestCase):
         assert not has_listeners(), (
             "Registration model still has post_save listeners. Make sure"
             " helpers removed them properly in earlier tests.")
-        post_save.connect(psh_validate_subscribe, sender=Registration)
+        post_save.connect(psh_validate_subscribe,
+                          sender=Registration)
+        post_save.connect(receiver=fire_created_metric,
+                          sender=Registration)
 
     def make_source_adminuser(self):
         data = {

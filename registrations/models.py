@@ -7,6 +7,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.encoding import python_2_unicode_compatible
 
+from ndoh_hub import utils
+
 
 @python_2_unicode_compatible
 class Source(models.Model):
@@ -84,6 +86,25 @@ def psh_validate_subscribe(sender, instance, created, **kwargs):
         from .tasks import validate_subscribe
         validate_subscribe.apply_async(
             kwargs={"registration_id": str(instance.id)})
+
+
+@receiver(post_save, sender=Registration)
+def fire_created_metric(sender, instance, created, **kwargs):
+    # from .tasks import fire_metric
+    if created:
+        utils.fire_metric.apply_async(kwargs={
+            "metric_name": 'registrations.created.sum',
+            "metric_value": 1.0
+        })
+
+        # total_key = 'registrations.created.total.last'
+        # total = utils.get_or_incr_cache(
+        #     total_key,
+        #     Registration.objects.count)
+        # fire_metric.apply_async(kwargs={
+        #     'metric_name': total_key,
+        #     'metric_value': total,
+        # })
 
 
 @python_2_unicode_compatible
