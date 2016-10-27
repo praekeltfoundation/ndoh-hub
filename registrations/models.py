@@ -85,6 +85,16 @@ def psh_validate_subscribe(sender, instance, created, **kwargs):
         validate_subscribe.apply_async(
             kwargs={"registration_id": str(instance.id)})
 
+@receiver(post_save, sender=Registration)
+def psh_push_registration_to_jembi(sender, instance, created, **kwargs):
+    """ Post save hook to push registrations to Jembi
+    """
+    if created:
+        from .tasks import push_registration_to_jembi
+        push_registration_to_jembi.apply_async(
+            kwargs={"registration_id": str(instance.id)})
+
+
 
 @python_2_unicode_compatible
 class SubscriptionRequest(models.Model):

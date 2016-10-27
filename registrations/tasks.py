@@ -375,6 +375,19 @@ class ValidateSubscribe(Task):
 validate_subscribe = ValidateSubscribe()
 
 
+class PushRegistrationToJembi(Task):
+    """ Task to push registration data to Jembi
+    """
+    name = "ndoh_hub.registrations.tasks.validate_subscribe"
+    l = get_task_logger(__name__)
+
+    def run(self, registration_id, **kwargs):
+        pass
+
+
+push_registration_to_jembi = PushRegistrationToJembi()
+
+
 class DeliverHook(Task):
     def run(self, target, payload, instance_id=None, hook_id=None, **kwargs):
         """
