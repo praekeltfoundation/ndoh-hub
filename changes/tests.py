@@ -15,8 +15,7 @@ from ndoh_hub import utils, utils_tests
 from .models import Change, psh_validate_implement
 from .tasks import validate_implement
 from registrations.models import (Source, Registration, SubscriptionRequest,
-                                  psh_validate_subscribe,
-                                  psh_push_registration_to_jembi)
+                                  psh_validate_subscribe)
 
 
 def override_get_today():
@@ -257,8 +256,6 @@ class AuthenticatedAPITestCase(APITestCase):
                              sender=Registration)
         post_save.disconnect(receiver=model_saved,
                              dispatch_uid='instance-saved-hook')
-        post_save.disconnect(receiver=psh_push_registration_to_jembi,
-                             sender=Registration)
         assert not has_listeners(), (
             "Registration model still has post_save listeners. Make sure"
             " helpers cleaned up properly in earlier tests.")
@@ -270,8 +267,6 @@ class AuthenticatedAPITestCase(APITestCase):
             "Registration model still has post_save listeners. Make sure"
             " helpers removed them properly in earlier tests.")
         post_save.connect(psh_validate_subscribe, sender=Registration)
-        post_save.disconnect(psh_push_registration_to_jembi,
-                             sender=Registration)
 
 
     def make_source_adminuser(self):

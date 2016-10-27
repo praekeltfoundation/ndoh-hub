@@ -365,6 +365,11 @@ class ValidateSubscribe(Task):
             if "pmtct" in registration.reg_type:
                 self.set_risk_status(registration)
 
+            push_registration_to_jembi.apply_async(kwargs={
+                'registration_id': str(registration.id)
+            })
+            self.l.info("Scheduling task push_registration_to_jembi")
+
             self.l.info("Task executed successfully")
             return True
         else:

@@ -12,7 +12,7 @@ from rest_framework.authtoken.models import Token
 from rest_hooks.models import model_saved
 
 from .models import (Source, Registration, SubscriptionRequest,
-                     psh_validate_subscribe, psh_push_registration_to_jembi)
+                     psh_validate_subscribe)
 from .tasks import (validate_subscribe, get_risk_status,
                     push_registration_to_jembi)
 from ndoh_hub import utils, utils_tests
@@ -362,8 +362,6 @@ class AuthenticatedAPITestCase(APITestCase):
             " helpers cleaned up properly in earlier tests.")
         post_save.disconnect(receiver=psh_validate_subscribe,
                              sender=Registration)
-        post_save.disconnect(receiver=psh_push_registration_to_jembi,
-                             sender=Registration)
         post_save.disconnect(receiver=model_saved,
                              dispatch_uid='instance-saved-hook')
         assert not has_listeners(), (
@@ -377,7 +375,6 @@ class AuthenticatedAPITestCase(APITestCase):
             "Registration model still has post_save listeners. Make sure"
             " helpers removed them properly in earlier tests.")
         post_save.connect(psh_validate_subscribe, sender=Registration)
-        post_save.connect(psh_push_registration_to_jembi, sender=Registration)
 
     def make_source_adminuser(self):
         data = {
