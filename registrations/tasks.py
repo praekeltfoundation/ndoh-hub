@@ -9,7 +9,6 @@ from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.service_rating import ServiceRatingApiClient
 
 from ndoh_hub import utils
-from .models import Registration, SubscriptionRequest
 
 
 is_client = IdentityStoreApiClient(
@@ -302,6 +301,7 @@ class ValidateSubscribe(Task):
             "schedule": msgset_schedule
         }
         self.l.info("Creating SubscriptionRequest object")
+        from .models import SubscriptionRequest
         SubscriptionRequest.objects.create(**subscription)
         self.l.info("SubscriptionRequest created")
 
@@ -351,6 +351,7 @@ class ValidateSubscribe(Task):
         """
         self.l = self.get_logger(**kwargs)
         self.l.info("Looking up the registration")
+        from .models import Registration
         registration = Registration.objects.get(id=registration_id)
 
         reg_validates = self.validate(registration)
@@ -365,9 +366,6 @@ class ValidateSubscribe(Task):
             if "pmtct" in registration.reg_type:
                 self.set_risk_status(registration)
 
-            push_registration_to_jembi.apply_async(kwargs={
-                'registration_id': str(registration.id)
-            })
             self.l.info("Scheduling task push_registration_to_jembi")
 
             self.l.info("Task executed successfully")

@@ -5,16 +5,15 @@ import responses
 
 from django.contrib.auth.models import User
 from django.test import TestCase
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
 from rest_hooks.models import model_saved
 
-from .models import (Source, Registration, SubscriptionRequest,
-                     psh_validate_subscribe)
-from .tasks import (validate_subscribe, get_risk_status,
-                    push_registration_to_jembi)
+from .models import Source, Registration, SubscriptionRequest
+from .signals import psh_validate_subscribe, psh_push_registration_to_jembi
+from .tasks import (validate_subscribe, get_risk_status)
 from ndoh_hub import utils, utils_tests
 
 
@@ -362,6 +361,8 @@ class AuthenticatedAPITestCase(APITestCase):
             " helpers cleaned up properly in earlier tests.")
         post_save.disconnect(receiver=psh_validate_subscribe,
                              sender=Registration)
+        pre_save.disconnect(receiver=psh_push_registration_to_jembi,
+                            sender=Registration)
         post_save.disconnect(receiver=model_saved,
                              dispatch_uid='instance-saved-hook')
         assert not has_listeners(), (
@@ -375,6 +376,7 @@ class AuthenticatedAPITestCase(APITestCase):
             "Registration model still has post_save listeners. Make sure"
             " helpers removed them properly in earlier tests.")
         post_save.connect(psh_validate_subscribe, sender=Registration)
+        pre_save.connect(psh_push_registration_to_jembi, sender=Registration)
 
     def make_source_adminuser(self):
         data = {
