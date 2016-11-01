@@ -1,9 +1,6 @@
-from . import models  # noqa
-from django.db.models.signals import post_save, pre_save  # noqa
-from django.dispatch import receiver
+from .models import Registration
 
 
-@receiver(post_save, sender=models.Registration)
 def psh_validate_subscribe(sender, instance, created, **kwargs):
     """ Post save hook to fire Registration validation task
     """
@@ -13,7 +10,6 @@ def psh_validate_subscribe(sender, instance, created, **kwargs):
             kwargs={"registration_id": str(instance.id)})
 
 
-@receiver(pre_save, sender=models.Registration)
 def psh_push_registration_to_jembi(sender, instance, raw, **kwargs):
     """
     Pre-save hook to push registrations to Jembi, only schedule the push
@@ -28,12 +24,12 @@ def psh_push_registration_to_jembi(sender, instance, raw, **kwargs):
     if raw:
         return
 
-    registrations = models.Registration.objects.all()
+    registrations = Registration.objects.all()
 
     if registrations.filter(pk=instance.pk).exists():
         # Fetch the registration as it is in the database so we can
         # compare the values we're about to save to the database
-        db_registration = models.Registration.objects.get(pk=instance.pk)
+        db_registration = Registration.objects.get(pk=instance.pk)
         # If it wasn't validated before but is now then
         # we need to notify Jembi
         if not db_registration.validated and instance.validated:

@@ -12,7 +12,8 @@ from rest_framework.authtoken.models import Token
 from rest_hooks.models import model_saved
 
 from ndoh_hub import utils, utils_tests
-from .models import Change, psh_validate_implement
+from .models import Change
+from .signals import psh_validate_implement
 from .tasks import validate_implement
 from registrations.models import Source, Registration, SubscriptionRequest
 from registrations.signals import psh_validate_subscribe
@@ -267,7 +268,6 @@ class AuthenticatedAPITestCase(APITestCase):
             "Registration model still has post_save listeners. Make sure"
             " helpers removed them properly in earlier tests.")
         post_save.connect(psh_validate_subscribe, sender=Registration)
-
 
     def make_source_adminuser(self):
         data = {
