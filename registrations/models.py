@@ -3,8 +3,7 @@ import uuid
 from django.contrib.postgres.fields import JSONField
 from django.contrib.auth.models import User
 from django.db import models
-from django.db.models.signals import post_save
-from django.dispatch import receiver
+
 from django.utils.encoding import python_2_unicode_compatible
 
 
@@ -74,16 +73,6 @@ class Registration(models.Model):
 
     def __str__(self):
         return str(self.id)
-
-
-@receiver(post_save, sender=Registration)
-def psh_validate_subscribe(sender, instance, created, **kwargs):
-    """ Post save hook to fire Registration validation task
-    """
-    if created:
-        from .tasks import validate_subscribe
-        validate_subscribe.apply_async(
-            kwargs={"registration_id": str(instance.id)})
 
 
 @python_2_unicode_compatible

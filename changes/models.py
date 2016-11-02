@@ -1,8 +1,6 @@
 import uuid
 
 from django.db import models
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField
 from django.utils.encoding import python_2_unicode_compatible
@@ -54,13 +52,3 @@ class Change(models.Model):
 
     def __str__(self):
         return str(self.id)
-
-
-@receiver(post_save, sender=Change)
-def psh_validate_implement(sender, instance, created, **kwargs):
-    """ Post save hook to fire Change validation task
-    """
-    if created:
-        from .tasks import validate_implement
-        validate_implement.apply_async(
-            kwargs={"change_id": str(instance.id)})

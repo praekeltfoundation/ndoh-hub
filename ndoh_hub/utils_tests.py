@@ -1,4 +1,5 @@
 import responses
+import json
 
 
 # Mocks used in testing
@@ -213,3 +214,22 @@ def mock_create_servicerating_invite(identity_id):
         json={"identity": identity_id},
         status=201, content_type='application/json'
     )
+
+
+def mock_push_registration_to_jembi(ok_response="ok", err_response="err",
+                                    fields={}):
+    def request_callback(request):
+        errors = []
+        payload = json.loads(request.body)
+        for key, value in fields.items():
+            if payload[key] != value:
+                errors.append('%s != %s for %s' % (payload[key], value, key))
+        if errors:
+            return (400, {}, json.dumps({"result": err_response,
+                                         "errors": errors}))
+        return (201, {}, json.dumps({"result": ok_response}))
+
+    responses.add_callback(
+        responses.POST,
+        'http://jembi/ws/rest/v1/subscription',
+        callback=request_callback)

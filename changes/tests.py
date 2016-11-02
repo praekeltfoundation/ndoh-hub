@@ -12,10 +12,11 @@ from rest_framework.authtoken.models import Token
 from rest_hooks.models import model_saved
 
 from ndoh_hub import utils, utils_tests
-from .models import Change, psh_validate_implement
+from .models import Change
+from .signals import psh_validate_implement
 from .tasks import validate_implement
-from registrations.models import (Source, Registration, SubscriptionRequest,
-                                  psh_validate_subscribe)
+from registrations.models import Source, Registration, SubscriptionRequest
+from registrations.signals import psh_validate_subscribe
 
 
 def override_get_today():
