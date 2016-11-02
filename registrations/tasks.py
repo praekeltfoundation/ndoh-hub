@@ -399,18 +399,14 @@ class PushRegistrationToJembi(Task):
 
     def get_subscription_type(self, authority):
         authority_map = {
+            'unknown': 0,   # NOTE: this was added after the migration
+                            #       to deal with any kind of oddities in the
+                            #       data and how authority & sources are mapped
             'personal': 1,
             'chw': 2,
             'clinic': 3
         }
-        # NOTE: this was added after the migration
-        #       to deal with any kind of oddities in the
-        #       data and how authority & sources are mapped, for things
-        #       we are unable to map we return `0`
-        subscription_type = authority_map.get(authority)
-        if subscription_type is None:
-            return 0
-        return subscription_type
+        return authority_map[authority]
 
     def get_today(self):
         return datetime.today()
@@ -424,9 +420,22 @@ class PushRegistrationToJembi(Task):
         else:
             return None
 
+    def get_authority_from_source(self, source):
+        """
+        NOTE:   this is a convenience method to map the new "source"
+                back to ndoh-control's "authority" fields to maintain
+                backwards compatibility with existing APIs
+        """
+        return {
+            'CLINIC USSD app': 'clinic',
+            'PUBLIC USSD app': 'personal',
+            'CHW USSD app': 'chw',
+            'NURSE USSD App': 'nurseconnect',
+        }.get(source.name, 'unknown')  # See note at get_subscription_type
+
     def build_jembi_json(self, registration):
         """ Compile json to be sent to Jembi. """
-        authority = registration.source.authority
+        authority = self.get_authority_from_source(registration.source)
         json_template = {
             "mha": 1,
             "swt": 1,
