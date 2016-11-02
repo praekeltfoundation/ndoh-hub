@@ -484,7 +484,6 @@ class PushRegistrationToJembi(Task):
             result.raise_for_status()
             return result.text
         except (HTTPError,) as e:
-            print 'e', e
             # retry message sending if in 500 range (3 default retries)
             if 500 < e.response.status_code < 599:
                 raise self.retry(exc=e)
