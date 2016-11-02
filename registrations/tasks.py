@@ -472,7 +472,7 @@ class PushRegistrationToJembi(Task):
             "lang": self.transform_language_code(
                 registration.data['language']),
             "encdate": self.get_timestamp(),
-            "faccode": registration.data['faccode'],
+            "faccode": registration.data.get('faccode'),
             "dob": (self.get_dob(
                 datetime.strptime(registration.data['mom_dob'], '%Y-%m-%d'))
                     if registration.data.get('mom_db')
@@ -495,7 +495,6 @@ class PushRegistrationToJembi(Task):
         registration = Registration.objects.get(pk=registration_id)
         authority = self.get_authority_from_source(registration.source)
         if authority is None:
-            print 'authority is none for', registration.source
             self.l.error(
                 'Unable to establish authority for source %s. Skipping.' % (
                     registration.source))

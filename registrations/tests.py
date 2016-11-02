@@ -1767,7 +1767,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         post_save.connect(psh_validate_subscribe, sender=Registration)
 
         source = self.make_source_normaluser()
-        source.name = 'PUBLIC USSD app'
+        source.name = 'PUBLIC USSD App'
         source.save()
 
         # . setup pmtct_prebirth registration
