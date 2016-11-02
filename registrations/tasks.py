@@ -486,6 +486,8 @@ class PushRegistrationToJembi(Task):
             if 500 < e.response.status_code < 599:
                 raise self.retry(exc=e)
             else:
+                self.l.error('Error when posting to Jembi. Payload: %r' % (
+                    json_doc))
                 raise e
         except (Exception,) as e:
             self.l.error(
