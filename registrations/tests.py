@@ -4,7 +4,7 @@ import datetime
 import responses
 
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.db.models.signals import post_save, pre_save
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -13,7 +13,8 @@ from rest_hooks.models import model_saved
 
 from .models import Source, Registration, SubscriptionRequest
 from .signals import psh_validate_subscribe, psh_push_registration_to_jembi
-from .tasks import (validate_subscribe, get_risk_status)
+from .tasks import (validate_subscribe, get_risk_status,
+                    push_registration_to_jembi)
 from ndoh_hub import utils, utils_tests
 
 
@@ -1898,3 +1899,20 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 
         # Teardown
         post_save.disconnect(psh_validate_subscribe, sender=Registration)
+
+    @responses.activate
+    def test_push_registration_to_jembi(self):
+        pre_save.connect(
+            psh_push_registration_to_jembi,
+            sender='registrations.Registration')
+
+        registration = self.make_registration_normaluser()
+        self.assertFalse(registration.validated)
+        registration.validated = True
+        registration.save()
+
+        print push_registration_to_jembi.log
+        pre_save.disconnect(
+            psh_push_registration_to_jembi,
+            sender='registrations.Registration')
+        assert False

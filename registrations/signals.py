@@ -25,7 +25,6 @@ def psh_push_registration_to_jembi(sender, instance, raw, **kwargs):
         return
 
     registrations = Registration.objects.all()
-
     if registrations.filter(pk=instance.pk).exists():
         # Fetch the registration as it is in the database so we can
         # compare the values we're about to save to the database
