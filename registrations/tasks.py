@@ -400,12 +400,15 @@ class PushRegistrationToJembi(Task):
 
     def get_subscription_type(self, authority):
         authority_map = {
-            'unknown': 0,   # NOTE: this was added after the migration
-                            #       to deal with any kind of oddities in the
-                            #       data and how authority & sources are mapped
             'personal': 1,
             'chw': 2,
-            'clinic': 3
+            'clinic': 3,
+            'optout': 4,
+            # NOTE: these are other valid values recognised by Jembi but
+            #       currently not used by us.
+            # 'babyloss': 5,
+            # 'servicerating': 6,
+            # 'helpdesk': 7,
         }
         return authority_map[authority]
 
@@ -428,15 +431,17 @@ class PushRegistrationToJembi(Task):
                 backwards compatibility with existing APIs
         """
         return {
-            'CLINIC USSD app': 'clinic',
             'PUBLIC USSD app': 'personal',
+            'OPTOUT USSD app': 'optout',
+            'CLINIC USSD app': 'clinic',
             'CHW USSD app': 'chw',
-            'NURSE USSD App': 'nurseconnect',
-        }.get(source.name, 'unknown')  # See note at get_subscription_type
+        }.get(source.name)  # See note at get_subscription_type
 
     def build_jembi_json(self, registration):
         """ Compile json to be sent to Jembi. """
+        print 'registration.source', registration.source.name
         authority = self.get_authority_from_source(registration.source)
+        print 'authority', authority
         json_template = {
             "mha": 1,
             "swt": 1,
@@ -463,7 +468,8 @@ class PushRegistrationToJembi(Task):
             json_template["dmsisdn"] = registration.data['msisdn_registrant']
 
         if authority == 'clinic':
-            json_template["edd"] = registration.data["edd"].strftime("%Y%m%d")
+            json_template["edd"] = datetime.strptime(
+                registration.data["edd"], '%Y-%m-%d').strftime("%Y%m%d")
 
         return json_template
 

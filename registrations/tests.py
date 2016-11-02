@@ -1766,11 +1766,15 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         # . reactivate post-save hook
         post_save.connect(psh_validate_subscribe, sender=Registration)
 
+        source = self.make_source_normaluser()
+        source.name = 'PUBLIC USSD app'
+        source.save()
+
         # . setup pmtct_prebirth registration
         registration_data = {
             "reg_type": "pmtct_prebirth",
             "registrant_id": registrant_uuid,
-            "source": self.make_source_normaluser(),
+            "source": source,
             "data": {
                 "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "language": "eng_ZA",
@@ -1822,11 +1826,19 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         # . reactivate post-save hook
         post_save.connect(psh_validate_subscribe, sender=Registration)
 
+        # NOTE: manually setting the name here so the mapping in the test
+        #       works, better approach would be to make sure the names
+        #       generated for sources in the tests match what's expected
+        #       in production
+        source = self.make_source_adminuser()
+        source.name = 'CLINIC USSD app'
+        source.save()
+
         # . setup momconnect_prebirth self registration (clinic)
         registration_data = {
             "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "source": self.make_source_adminuser(),
+            "source": source,
             "data": {
                 "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "msisdn_registrant": "+27821113333",
