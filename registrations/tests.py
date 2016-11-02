@@ -3,7 +3,10 @@ import uuid
 import datetime
 from datetime import timedelta
 import responses
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 from django.contrib.auth.models import User
 from django.core.management import call_command
