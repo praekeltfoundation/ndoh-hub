@@ -435,8 +435,6 @@ class PushRegistrationToJembi(Task):
 
     def build_jembi_json(self, registration):
         """ Compile json to be sent to Jembi. """
-        "TODO: confirm these values are mapped correctly from ndoh-control"
-
         authority = self.get_authority_from_source(registration.source)
         json_template = {
             "mha": 1,
