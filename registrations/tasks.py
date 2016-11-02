@@ -461,10 +461,10 @@ class PushRegistrationToJembi(Task):
             "dmsisdn": registration.data['msisdn_device'],
             "cmsisdn": registration.data['msisdn_registrant'],
             "id": self.get_patient_id(
-                registration.data['id_type'],
-                (registration.data['sa_id_no']
-                 if registration.data['id_type'] == 'sa_id'
-                 else registration.data['passport_no']),
+                registration.data.get('id_type'),
+                (registration.data.get('sa_id_no')
+                 if registration.data.get('id_type') == 'sa_id'
+                 else registration.data.get('passport_no')),
                 # passport_origin may be None if sa_id is used
                 registration.data.get('passport_origin'),
                 registration.data['msisdn_registrant']),
