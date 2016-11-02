@@ -493,6 +493,13 @@ class PushRegistrationToJembi(Task):
         self.l.info("Compiling Jembi Json data")
         from .models import Registration
         registration = Registration.objects.get(pk=registration_id)
+        authority = self.get_authority_from_source(registration.source)
+        if authority is None:
+            self.l.error(
+                'Unable to establish authority for source %s. Skipping.' % (
+                    registration.source))
+            return
+
         json_doc = self.build_jembi_json(registration)
         try:
             result = requests.post(
