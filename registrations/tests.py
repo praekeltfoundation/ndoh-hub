@@ -1845,7 +1845,8 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "momconnect_prebirth.hw_full.1")
         utils_tests.mock_get_schedule(schedule_id)
-        utils_tests.mock_create_servicerating_invite(registrant_uuid)
+        # disabled service rating for now
+        # utils_tests.mock_create_servicerating_invite(registrant_uuid)
 
         # Execute
         registration = Registration.objects.create(**registration_data)
@@ -1853,7 +1854,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         # Check
         # . check number of calls made:
         #   message set, schedule, service rating, jembi registration
-        self.assertEqual(len(responses.calls), 4)
+        self.assertEqual(len(responses.calls), 3)
 
         # . check registration validated
         registration.refresh_from_db()
