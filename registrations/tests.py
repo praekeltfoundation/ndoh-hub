@@ -1,9 +1,15 @@
 ﻿import json
 import uuid
 import datetime
+from datetime import timedelta
 import responses
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 from django.contrib.auth.models import User
+from django.core.management import call_command
 from django.test import TestCase
 from django.db.models.signals import post_save
 from rest_framework import status
@@ -1955,3 +1961,69 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 
         post_save.disconnect(
             psh_validate_subscribe, sender=Registration)
+
+    @responses.activate
+    def test_push_registration_to_jembi_via_management_task(self):
+        # Mock API call to SBM for message set
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            'pmtct_prebirth.patient.1')
+        utils_tests.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_patch_identity(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_push_registration_to_jembi(
+            ok_response="jembi-is-ok",
+            err_response="jembi-is-unhappy",
+            fields={"cmsisdn": "+27111111111"})
+
+        # Setup
+        source = Source.objects.create(
+            name="PUBLIC USSD app",
+            authority="patient",
+            user=User.objects.get(username='testnormaluser'))
+
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": source,
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "id_type": "sa_id",
+                "sa_id_no": "0000000000",
+                "edd": "2016-11-30",
+                "faccode": "123456",
+                "msisdn_device": "+2700000000",
+                "msisdn_registrant": "+27111111111",
+            },
+        }
+
+        registration = Registration.objects.create(**registration_data)
+        # NOTE: we're faking validation step here
+        registration.validated = True
+        registration.save()
+
+        def format_timestamp(ts):
+            return ts.strftime('%Y-%m-%d %H:%M:%S')
+
+        stdout = StringIO()
+        call_command(
+            'jembi_submit_registrations',
+            '--since', format_timestamp(
+                registration.created_at - timedelta(seconds=1)),
+            '--until', format_timestamp(
+                registration.created_at + timedelta(seconds=1)),
+            stdout=stdout)
+
+        self.assertEqual(stdout.getvalue().strip(), '\n'.join([
+            'Submitting 1 registrations.',
+            str(registration.pk,),
+            'Done.',
+        ]))
+
+        [jembi_call] = responses.calls  # jembi should be the only one
+        self.assertEqual(json.loads(jembi_call.response.text), {
+            "result": "jembi-is-ok"
+        })
