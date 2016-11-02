@@ -1818,7 +1818,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
     def test_registration_process_clinic_good(self):
         """ Test a full registration process with good data """
         # Setup
-        registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
+        # registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
         # . reactivate post-save hook
         post_save.connect(psh_validate_subscribe, sender=Registration)
 
