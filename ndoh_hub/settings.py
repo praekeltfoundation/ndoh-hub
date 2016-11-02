@@ -211,3 +211,7 @@ SERVICE_RATING_URL = os.environ.get('SERVICE_RATING_URL',
                                     'http://sr/api/v1')
 SERVICE_RATING_TOKEN = os.environ.get('SERVICE_RATING_TOKEN',
                                       'REPLACEME')
+JEMBI_BASE_URL = os.environ.get('JEMBI_BASE_URL',
+                                'http://jembi/ws/rest/v1')
+JEMBI_USERNAME = os.environ.get('JEMBI_USERNAME', 'test')
+JEMBI_PASSWORD = os.environ.get('JEMBI_PASSWORD', 'test')

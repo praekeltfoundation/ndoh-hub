@@ -8,12 +8,8 @@ class RegistrationsAppConfig(AppConfig):
     name = 'registrations'
 
     def ready(self):
-        from .signals import (
-            psh_validate_subscribe, psh_push_registration_to_jembi)
+        from .signals import psh_validate_subscribe
 
         post_save.connect(
             psh_validate_subscribe,
-            sender='registrations.Registration')
-        pre_save.connect(
-            psh_push_registration_to_jembi,
             sender='registrations.Registration')

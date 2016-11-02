@@ -5,16 +5,15 @@ import responses
 
 from django.contrib.auth.models import User
 from django.test import TestCase
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
 from rest_hooks.models import model_saved
 
 from .models import Source, Registration, SubscriptionRequest
-from .signals import psh_validate_subscribe, psh_push_registration_to_jembi
-from .tasks import (validate_subscribe, get_risk_status,
-                    push_registration_to_jembi)
+from .signals import psh_validate_subscribe
+from .tasks import validate_subscribe, get_risk_status
 from ndoh_hub import utils, utils_tests
 
 
@@ -362,8 +361,6 @@ class AuthenticatedAPITestCase(APITestCase):
             " helpers cleaned up properly in earlier tests.")
         post_save.disconnect(receiver=psh_validate_subscribe,
                              sender=Registration)
-        pre_save.disconnect(receiver=psh_push_registration_to_jembi,
-                            sender=Registration)
         post_save.disconnect(receiver=model_saved,
                              dispatch_uid='instance-saved-hook')
         assert not has_listeners(), (
@@ -377,7 +374,6 @@ class AuthenticatedAPITestCase(APITestCase):
             "Registration model still has post_save listeners. Make sure"
             " helpers removed them properly in earlier tests.")
         post_save.connect(psh_validate_subscribe, sender=Registration)
-        pre_save.connect(psh_push_registration_to_jembi, sender=Registration)
 
     def make_source_adminuser(self):
         data = {
@@ -1902,17 +1898,53 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 
     @responses.activate
     def test_push_registration_to_jembi(self):
-        pre_save.connect(
-            psh_push_registration_to_jembi,
-            sender='registrations.Registration')
+        post_save.connect(
+            psh_validate_subscribe, sender=Registration)
 
-        registration = self.make_registration_normaluser()
+        # Mock API call to SBM for message set
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            'pmtct_prebirth.patient.1')
+        utils_tests.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_patch_identity(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_push_registration_to_jembi(
+            ok_response="jembi-is-ok",
+            err_response="jembi-is-unhappy",
+            fields={"cmsisdn": "+27111111111"})
+
+        # Setup
+        source = Source.objects.create(
+            name="PUBLIC USSD app",
+            authority="patient",
+            user=User.objects.get(username='testnormaluser'))
+
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": source,
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "id_type": "sa_id",
+                "sa_id_no": "0000000000",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "edd": "2016-11-30",
+                "faccode": "123456",
+                "msisdn_device": "+2700000000",
+                "msisdn_registrant": "+27111111111",
+            },
+        }
+
+        registration = Registration.objects.create(**registration_data)
         self.assertFalse(registration.validated)
-        registration.validated = True
         registration.save()
 
-        print push_registration_to_jembi.log
-        pre_save.disconnect(
-            psh_push_registration_to_jembi,
-            sender='registrations.Registration')
-        assert False
+        jembi_call = responses.calls[-1]  # jembi should be the last one
+        self.assertEqual(json.loads(jembi_call.response.text), {
+            "result": "jembi-is-ok"
+        })
+
+        post_save.disconnect(
+            psh_validate_subscribe, sender=Registration)
