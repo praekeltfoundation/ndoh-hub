@@ -435,13 +435,11 @@ class PushRegistrationToJembi(Task):
             'OPTOUT USSD app': 'optout',
             'CLINIC USSD app': 'clinic',
             'CHW USSD app': 'chw',
-        }.get(source.name)  # See note at get_subscription_type
+        }.get(source.name)
 
     def build_jembi_json(self, registration):
         """ Compile json to be sent to Jembi. """
-        print 'registration.source', registration.source.name
         authority = self.get_authority_from_source(registration.source)
-        print 'authority', authority
         json_template = {
             "mha": 1,
             "swt": 1,
