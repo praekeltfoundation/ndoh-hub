@@ -1769,7 +1769,12 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "language": "eng_ZA",
                 "mom_dob": "1999-01-27",
-                "edd": "2016-05-01"  # in week 23 of pregnancy
+                "edd": "2016-05-01",  # in week 23 of pregnancy
+                "msisdn_registrant": "+27821113333",
+                "msisdn_device": "+27821113333",
+                "id_type": "sa_id",
+                "sa_id_no": "8108015001051",
+                "faccode": "123456",
             },
         }
 
@@ -1784,8 +1789,9 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         registration = Registration.objects.create(**registration_data)
 
         # Check
-        # . check number of calls made
-        self.assertEqual(len(responses.calls), 4)
+        # . check number of calls made:
+        #   messageset, schedule, identity, patch identity, jembi registration
+        self.assertEqual(len(responses.calls), 5)
 
         # . check registration validated
         registration.refresh_from_db()
@@ -1839,8 +1845,9 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         registration = Registration.objects.create(**registration_data)
 
         # Check
-        # . check number of calls made
-        self.assertEqual(len(responses.calls), 3)
+        # . check number of calls made:
+        #   message set, schedule, service rating, jembi registration
+        self.assertEqual(len(responses.calls), 4)
 
         # . check registration validated
         registration.refresh_from_db()
@@ -1926,10 +1933,10 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             "source": source,
             "data": {
                 "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-                "id_type": "sa_id",
-                "sa_id_no": "0000000000",
                 "language": "eng_ZA",
                 "mom_dob": "1999-01-27",
+                "id_type": "sa_id",
+                "sa_id_no": "0000000000",
                 "edd": "2016-11-30",
                 "faccode": "123456",
                 "msisdn_device": "+2700000000",
