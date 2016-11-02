@@ -473,8 +473,10 @@ class PushRegistrationToJembi(Task):
                 registration.data['language']),
             "encdate": self.get_timestamp(),
             "faccode": registration.data['faccode'],
-            "dob": self.get_dob(
+            "dob": (self.get_dob(
                 datetime.strptime(registration.data['mom_dob'], '%Y-%m-%d'))
+                    if registration.data.get('mom_db')
+                    else None)
         }
 
         # Self registrations on all lines should use cmsisdn as dmsisdn too
