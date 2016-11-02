@@ -400,12 +400,15 @@ class PushRegistrationToJembi(Task):
 
     def get_subscription_type(self, authority):
         authority_map = {
-            'unknown': 0,   # NOTE: this was added after the migration
-                            #       to deal with any kind of oddities in the
-                            #       data and how authority & sources are mapped
             'personal': 1,
             'chw': 2,
-            'clinic': 3
+            'clinic': 3,
+            'optout': 4,
+            # NOTE: these are other valid values recognised by Jembi but
+            #       currently not used by us.
+            # 'babyloss': 5,
+            # 'servicerating': 6,
+            # 'helpdesk': 7,
         }
         return authority_map[authority]
 
@@ -428,11 +431,26 @@ class PushRegistrationToJembi(Task):
                 backwards compatibility with existing APIs
         """
         return {
-            'CLINIC USSD app': 'clinic',
             'PUBLIC USSD app': 'personal',
+            'OPTOUT USSD app': 'optout',
+            'CLINIC USSD app': 'clinic',
             'CHW USSD app': 'chw',
-            'NURSE USSD App': 'nurseconnect',
-        }.get(source.name, 'unknown')  # See note at get_subscription_type
+        }.get(source.name)
+
+    def transform_language_code(self, lang):
+        return {
+            'zul_ZA': 'zu',
+            'xho_ZA': 'xh',
+            'afr_ZA': 'af',
+            'eng_ZA': 'en',
+            'nso_ZA': 'nso',
+            'tsn_ZA': 'tn',
+            'sot_ZA': 'st',
+            'tso_ZA': 'ts',
+            'ssw_ZA': 'ss',
+            'ven_ZA': 've',
+            'nbl_ZA': 'nr',
+        }[lang]
 
     def build_jembi_json(self, registration):
         """ Compile json to be sent to Jembi. """
@@ -443,19 +461,22 @@ class PushRegistrationToJembi(Task):
             "dmsisdn": registration.data['msisdn_device'],
             "cmsisdn": registration.data['msisdn_registrant'],
             "id": self.get_patient_id(
-                registration.data['id_type'],
-                (registration.data['sa_id_no']
-                 if registration.data['id_type'] == 'sa_id'
-                 else registration.data['passport_no']),
+                registration.data.get('id_type'),
+                (registration.data.get('sa_id_no')
+                 if registration.data.get('id_type') == 'sa_id'
+                 else registration.data.get('passport_no')),
                 # passport_origin may be None if sa_id is used
                 registration.data.get('passport_origin'),
                 registration.data['msisdn_registrant']),
             "type": self.get_subscription_type(authority),
-            "lang": registration.data['language'],
+            "lang": self.transform_language_code(
+                registration.data['language']),
             "encdate": self.get_timestamp(),
             "faccode": registration.data['faccode'],
-            "dob": self.get_dob(
+            "dob": (self.get_dob(
                 datetime.strptime(registration.data['mom_dob'], '%Y-%m-%d'))
+                    if registration.data.get('mom_db')
+                    else None)
         }
 
         # Self registrations on all lines should use cmsisdn as dmsisdn too
@@ -463,7 +484,8 @@ class PushRegistrationToJembi(Task):
             json_template["dmsisdn"] = registration.data['msisdn_registrant']
 
         if authority == 'clinic':
-            json_template["edd"] = registration.data["edd"].strftime("%Y%m%d")
+            json_template["edd"] = datetime.strptime(
+                registration.data["edd"], '%Y-%m-%d').strftime("%Y%m%d")
 
         return json_template
 
