@@ -488,7 +488,9 @@ class PushRegistrationToJembi(Task):
             else:
                 raise e
         except (Exception,) as e:
-            self.l.error('Problem posting JSON to Jembi', exc_info=True)
+            self.l.error(
+                'Problem posting Registration %s JSON to Jembi' % (
+                    registration_id), exc_info=True)
 
 
 push_registration_to_jembi = PushRegistrationToJembi()
