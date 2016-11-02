@@ -1938,7 +1938,10 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         utils_tests.mock_push_registration_to_jembi(
             ok_response="jembi-is-ok",
             err_response="jembi-is-unhappy",
-            fields={"cmsisdn": "+27111111111"})
+            fields={
+                "cmsisdn": "+27111111111",
+                "lang": "en",
+            })
 
         # Setup
         source = Source.objects.create(

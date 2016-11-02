@@ -437,6 +437,21 @@ class PushRegistrationToJembi(Task):
             'CHW USSD app': 'chw',
         }.get(source.name)
 
+    def transform_language_code(self, lang):
+        return {
+            'zul_ZA': 'zu',
+            'xho_ZA': 'xh',
+            'afr_ZA': 'af',
+            'eng_ZA': 'en',
+            'nso_ZA': 'nso',
+            'tsn_ZA': 'tn',
+            'sot_ZA': 'st',
+            'tso_ZA': 'ts',
+            'ssw_ZA': 'ss',
+            'ven_ZA': 've',
+            'nbl_ZA': 'nr',
+        }[lang]
+
     def build_jembi_json(self, registration):
         """ Compile json to be sent to Jembi. """
         authority = self.get_authority_from_source(registration.source)
@@ -454,7 +469,8 @@ class PushRegistrationToJembi(Task):
                 registration.data.get('passport_origin'),
                 registration.data['msisdn_registrant']),
             "type": self.get_subscription_type(authority),
-            "lang": registration.data['language'],
+            "lang": self.transform_language_code(
+                registration.data['language']),
             "encdate": self.get_timestamp(),
             "faccode": registration.data['faccode'],
             "dob": self.get_dob(
