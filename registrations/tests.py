@@ -1831,7 +1831,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         #       generated for sources in the tests match what's expected
         #       in production
         source = self.make_source_adminuser()
-        source.name = 'CLINIC USSD app'
+        source.name = 'CLINIC USSD App'
         source.save()
 
         # . setup momconnect_prebirth self registration (clinic)
@@ -1945,7 +1945,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 
         # Setup
         source = Source.objects.create(
-            name="PUBLIC USSD app",
+            name="PUBLIC USSD App",
             authority="patient",
             user=User.objects.get(username='testnormaluser'))
 
@@ -1995,7 +1995,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 
         # Setup
         source = Source.objects.create(
-            name="PUBLIC USSD app",
+            name="PUBLIC USSD App",
             authority="patient",
             user=User.objects.get(username='testnormaluser'))
 

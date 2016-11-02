@@ -431,10 +431,10 @@ class PushRegistrationToJembi(Task):
                 backwards compatibility with existing APIs
         """
         return {
-            'PUBLIC USSD app': 'personal',
-            'OPTOUT USSD app': 'optout',
-            'CLINIC USSD app': 'clinic',
-            'CHW USSD app': 'chw',
+            'PUBLIC USSD App': 'personal',
+            'OPTOUT USSD App': 'optout',
+            'CLINIC USSD App': 'clinic',
+            'CHW USSD App': 'chw',
         }.get(source.name)
 
     def transform_language_code(self, lang):
@@ -495,6 +495,7 @@ class PushRegistrationToJembi(Task):
         registration = Registration.objects.get(pk=registration_id)
         authority = self.get_authority_from_source(registration.source)
         if authority is None:
+            print 'authority is none for', registration.source
             self.l.error(
                 'Unable to establish authority for source %s. Skipping.' % (
                     registration.source))
