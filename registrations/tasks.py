@@ -361,9 +361,10 @@ class ValidateSubscribe(Task):
         if reg_validates:
             self.create_subscriptionrequests(registration)
 
-            if registration.reg_type == "momconnect_prebirth" and\
-               registration.source.authority == "hw_full":
-                self.create_servicerating_invite(registration)
+            # NOTE: disable service rating for now
+            # if registration.reg_type == "momconnect_prebirth" and\
+            #    registration.source.authority == "hw_full":
+            #     self.create_servicerating_invite(registration)
 
             if "pmtct" in registration.reg_type:
                 self.set_risk_status(registration)
