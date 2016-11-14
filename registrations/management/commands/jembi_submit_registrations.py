@@ -21,7 +21,7 @@ class Command(BaseCommand):
             help='The source to limit registrations to.')
         parser.add_argument(
             '--registration', type=UUID, nargs='+', default=None,
-            help=('UUIDs for registrations to fire manually (use if finer )'
+            help=('UUIDs for registrations to fire manually. Use if finer '
                   'controls are needed than `since` and `until` date ranges.'))
 
     def handle(self, *args, **options):

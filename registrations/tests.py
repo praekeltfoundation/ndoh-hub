@@ -8,7 +8,6 @@ try:
 except ImportError:
     from io import StringIO
 
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.test import TestCase
