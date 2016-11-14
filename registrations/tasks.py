@@ -399,10 +399,12 @@ class ValidateSubscribe(Task):
 validate_subscribe = ValidateSubscribe()
 
 
-class PushRegistrationToJembi(Task):
-    """ Task to push registration data to Jembi
+class BasePushRegistrationToJembi(object):
     """
-    name = "ndoh_hub.registrations.tasks.push_registration_to_jembi"
+    Base class that contains helper functions for pushing registration data
+    to Jembi.
+    """
+    name = "ndoh_hub.registrations.tasks.base_push_registration_to_jembi"
     l = get_task_logger(__name__)
 
     def get_patient_id(self, id_type, id_no=None,
@@ -413,6 +415,76 @@ class PushRegistrationToJembi(Task):
             return id_no + '^^^' + passport_origin.upper() + '^PPN'
         else:
             return mom_msisdn.replace('+', '') + '^^^ZAF^TEL'
+
+    def get_dob(self, mom_dob):
+        if mom_dob is not None:
+            return mom_dob.strftime("%Y%m%d")
+        else:
+            return None
+
+    def get_today(self):
+        return datetime.today()
+
+    def get_timestamp(self):
+        return self.get_today().strftime("%Y%m%d%H%M%S")
+
+    @staticmethod
+    def get_authority_from_source(source):
+        """
+        NOTE:   this is a convenience method to map the new "source"
+                back to ndoh-control's "authority" fields to maintain
+                backwards compatibility with existing APIs
+        """
+        return {
+            'PUBLIC USSD App': 'personal',
+            'OPTOUT USSD App': 'optout',
+            'CLINIC USSD App': 'clinic',
+            'CHW USSD App': 'chw',
+            'NURSE USSD App': 'nurse',
+        }.get(source.name)
+
+    def run(self, registration_id, **kwargs):
+        self.l.info("Compiling Jembi Json data")
+        from .models import Registration
+        registration = Registration.objects.get(pk=registration_id)
+        authority = self.get_authority_from_source(registration.source)
+        if authority is None:
+            self.l.error(
+                'Unable to establish authority for source %s. Skipping.' % (
+                    registration.source))
+            return
+
+        json_doc = self.build_jembi_json(registration)
+        try:
+            result = requests.post(
+                self.URL,
+                headers={'Content-Type': 'application/json'},
+                data=json.dumps(json_doc),
+                auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+                verify=False
+            )
+            result.raise_for_status()
+            return result.text
+        except (HTTPError,) as e:
+            # retry message sending if in 500 range (3 default retries)
+            if 500 < e.response.status_code < 599:
+                raise self.retry(exc=e)
+            else:
+                self.l.error('Error when posting to Jembi. Payload: %r' % (
+                    json_doc))
+                raise e
+        except (Exception,) as e:
+            self.l.error(
+                'Problem posting Registration %s JSON to Jembi' % (
+                    registration_id), exc_info=True)
+
+
+class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
+    """ Task to push registration data to Jembi
+    """
+    name = "ndoh_hub.registrations.tasks.push_registration_to_jembi"
+    l = get_task_logger(__name__)
+    URL = "%s/subscription" % settings.JEMBI_BASE_URL
 
     def get_subscription_type(self, authority):
         authority_map = {
@@ -427,31 +499,6 @@ class PushRegistrationToJembi(Task):
             # 'helpdesk': 7,
         }
         return authority_map[authority]
-
-    def get_today(self):
-        return datetime.today()
-
-    def get_timestamp(self):
-        return self.get_today().strftime("%Y%m%d%H%M%S")
-
-    def get_dob(self, mom_dob):
-        if mom_dob is not None:
-            return mom_dob.strftime("%Y%m%d")
-        else:
-            return None
-
-    def get_authority_from_source(self, source):
-        """
-        NOTE:   this is a convenience method to map the new "source"
-                back to ndoh-control's "authority" fields to maintain
-                backwards compatibility with existing APIs
-        """
-        return {
-            'PUBLIC USSD App': 'personal',
-            'OPTOUT USSD App': 'optout',
-            'CLINIC USSD App': 'clinic',
-            'CHW USSD App': 'chw',
-        }.get(source.name)
 
     def transform_language_code(self, lang):
         return {
@@ -505,40 +552,8 @@ class PushRegistrationToJembi(Task):
 
         return json_template
 
-    def run(self, registration_id, **kwargs):
-        self.l.info("Compiling Jembi Json data")
-        from .models import Registration
-        registration = Registration.objects.get(pk=registration_id)
-        authority = self.get_authority_from_source(registration.source)
-        if authority is None:
-            self.l.error(
-                'Unable to establish authority for source %s. Skipping.' % (
-                    registration.source))
-            return
 
-        json_doc = self.build_jembi_json(registration)
-        try:
-            result = requests.post(
-                "%s/subscription" % settings.JEMBI_BASE_URL,  # url
-                headers={'Content-Type': 'application/json'},
-                data=json.dumps(json_doc),
-                auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
-                verify=False
-            )
-            result.raise_for_status()
-            return result.text
-        except (HTTPError,) as e:
-            # retry message sending if in 500 range (3 default retries)
-            if 500 < e.response.status_code < 599:
-                raise self.retry(exc=e)
-            else:
-                self.l.error('Error when posting to Jembi. Payload: %r' % (
-                    json_doc))
-                raise e
-        except (Exception,) as e:
-            self.l.error(
-                'Problem posting Registration %s JSON to Jembi' % (
-                    registration_id), exc_info=True)
+push_registration_to_jembi = PushRegistrationToJembi()
 
 
 push_registration_to_jembi = PushRegistrationToJembi()
