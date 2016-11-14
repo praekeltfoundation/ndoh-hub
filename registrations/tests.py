@@ -8,6 +8,7 @@ try:
 except ImportError:
     from io import StringIO
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.test import TestCase
@@ -1979,7 +1980,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             psh_validate_subscribe, sender=Registration)
 
     @responses.activate
-    def test_push_registration_to_jembi_via_management_task(self):
+    def test_push_momconnect_registration_to_jembi_via_management_task(self):
         # Mock API call to SBM for message set
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
             'pmtct_prebirth.patient.1')
@@ -2040,6 +2041,80 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         ]))
 
         [jembi_call] = responses.calls  # jembi should be the only one
+        self.assertEqual(json.loads(jembi_call.response.text), {
+            "result": "jembi-is-ok"
+        })
+
+    @responses.activate
+    def test_push_nurseconnect_registration_to_jembi_via_management_task(self):
+        # Mock API call to SBM for message set
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            'nurseconnect.hw_full.1')
+        utils_tests.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_identity_by_id(
+            "nurseconnect-identity", {
+                'nurseconnect': {
+                    'persal_no': 'persal',
+                    'sanc_reg_no': 'sanc',
+                }
+            })
+        utils_tests.mock_patch_identity(
+            "nurseconnect-identity")
+        utils_tests.mock_jembi_json_api_call(
+            url='http://jembi/ws/rest/v1/nc/subscription',
+            ok_response="jembi-is-ok",
+            err_response="jembi-is-unhappy",
+            fields={
+                "cmsisdn": "+27821112222",
+                "dmsisdn": "+27821112222",
+                "persal": "persal",
+                "sanc": "sanc",
+            })
+
+        # Setup
+        source = Source.objects.create(
+            name="NURSE USSD App",
+            authority="hw_full",
+            user=User.objects.get(username='testadminuser'))
+
+        registration_data = {
+            "reg_type": "nurseconnect",
+            "registrant_id": "nurseconnect-identity",
+            "source": source,
+            "data": {
+                "operator_id": "nurseconnect-identity",
+                "msisdn_registrant": "+27821112222",
+                "msisdn_device": "+27821112222",
+                "faccode": "123456",
+                "language": "eng_ZA",
+            },
+        }
+
+        registration = Registration.objects.create(**registration_data)
+        # NOTE: we're faking validation step here
+        registration.validated = True
+        registration.save()
+
+        def format_timestamp(ts):
+            return ts.strftime('%Y-%m-%d %H:%M:%S')
+
+        stdout = StringIO()
+        call_command(
+            'jembi_submit_registrations',
+            '--source', str(source.pk),
+            '--registration', registration.pk.hex,
+            stdout=stdout)
+
+        self.assertEqual(stdout.getvalue().strip(), '\n'.join([
+            'Submitting 1 registrations.',
+            str(registration.pk,),
+            'Done.',
+        ]))
+
+        [identity_store_call, jembi_call] = responses.calls
+        self.assertEqual(
+            jembi_call.request.url,
+            'http://jembi/ws/rest/v1/nc/subscription')
         self.assertEqual(json.loads(jembi_call.response.text), {
             "result": "jembi-is-ok"
         })

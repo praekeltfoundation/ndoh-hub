@@ -352,16 +352,8 @@ class ValidateSubscribe(Task):
         Runs the correct task to send the registration information to
         Jembi.
         """
-        authority = BasePushRegistrationToJembi.get_authority_from_source(
-            registration.source)
-        task = {
-            'nurse': push_nurse_registration_to_jembi,
-            'personal': push_registration_to_jembi,
-            'optout': push_registration_to_jembi,
-            'clinic': push_registration_to_jembi,
-            'chw': push_registration_to_jembi,
-        }.get(authority, push_registration_to_jembi)
-
+        task = BasePushRegistrationToJembi.get_jembi_task_for_registration(
+            registration)
         return task.delay(registration_id=str(registration.pk))
 
     # Run
@@ -427,6 +419,22 @@ class BasePushRegistrationToJembi(object):
 
     def get_timestamp(self):
         return self.get_today().strftime("%Y%m%d%H%M%S")
+
+    @staticmethod
+    def get_jembi_task_for_registration(registration):
+        """
+        NOTE:   this is a convenience method for getting the relevant
+                Jembi task to fire for a registration.
+        """
+        authority = BasePushRegistrationToJembi.get_authority_from_source(
+            registration.source)
+        return {
+            'nurse': push_nurse_registration_to_jembi,
+            'personal': push_registration_to_jembi,
+            'optout': push_registration_to_jembi,
+            'clinic': push_registration_to_jembi,
+            'chw': push_registration_to_jembi,
+        }.get(authority, push_registration_to_jembi)
 
     @staticmethod
     def get_authority_from_source(source):
@@ -561,31 +569,29 @@ class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
     l = get_task_logger(__name__)
     URL = "%s/nc/subscription" % settings.JEMBI_BASE_URL
 
-    def get_persal(persal):
-        if persal is not None:
-            return str(persal)
-        else:
-            return None
+    def get_persal(self, identity):
+        details = identity['details']
+        return details.get('nurseconnect', {}).get('persal_no')
 
-    def get_sanc(sanc):
-        if sanc is not None:
-            return str(sanc)
-        else:
-            return None
+    def get_sanc(self, identity):
+        details = identity['details']
+        return details.get('nurseconnect', {}).get('sanc_reg_no')
 
     def build_jembi_json(self, registration):
         """
         Compiles and returns a dictionary representing the JSON that should
         be sent to Jembi for the given registration.
         """
+        identity = is_client.get_identity(registration.registrant_id)
         json_template = {
             "mha": 1,
             "swt": 3,
             "type": 7,
             "dmsisdn": registration.data['msisdn_device'],
             "cmsisdn": registration.data['msisdn_registrant'],
-            # TODO: is rmsisdn correct, not sure what it is?
-            "rmsisdn": registration.data['msisdn_registrant'],
+            # NOTE: this likely needs to be updated to reflect a change
+            #       in msisdn as `rmsisdn` stands for replacement msisdn
+            "rmsisdn": None,
             "faccode": registration.data['faccode'],
             "id": self.get_patient_id(
                 registration.data.get('id_type'),
@@ -599,11 +605,8 @@ class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
                 datetime.strptime(registration.data['mom_dob'], '%Y-%m-%d'))
                     if registration.data.get('mom_db')
                     else None),
-            # TODO: Where is this? Only submitted on `change` requests
-            # line 275 of changes/tasks.py has something
-            # "persal": self.get_persal(.....),
-            # TODO: Same here as with persal
-            # "sanc": self.get_sanc(...),
+            "persal": self.get_persal(identity),
+            "sanc": self.get_sanc(identity),
             "encdate": self.get_timestamp(),
         }
 
