@@ -556,7 +556,60 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
 push_registration_to_jembi = PushRegistrationToJembi()
 
 
-push_registration_to_jembi = PushRegistrationToJembi()
+class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
+    name = "ndoh_hub.registrations.tasks.push_nurse_registration_to_jembi"
+    l = get_task_logger(__name__)
+    URL = "%s/nc/subscription" % settings.JEMBI_BASE_URL
+
+    def get_persal(persal):
+        if persal is not None:
+            return str(persal)
+        else:
+            return None
+
+    def get_sanc(sanc):
+        if sanc is not None:
+            return str(sanc)
+        else:
+            return None
+
+    def build_jembi_json(self, registration):
+        """
+        Compiles and returns a dictionary representing the JSON that should
+        be sent to Jembi for the given registration.
+        """
+        json_template = {
+            "mha": 1,
+            "swt": 3,
+            "type": 7,
+            "dmsisdn": registration.data['msisdn_device'],
+            "cmsisdn": registration.data['msisdn_registrant'],
+            # TODO: is rmsisdn correct, not sure what it is?
+            "rmsisdn": registration.data['msisdn_registrant'],
+            "faccode": registration.data['faccode'],
+            "id": self.get_patient_id(
+                registration.data.get('id_type'),
+                (registration.data.get('sa_id_no')
+                 if registration.data.get('id_type') == 'sa_id'
+                 else registration.data.get('passport_no')),
+                # passport_origin may be None if sa_id is used
+                registration.data.get('passport_origin'),
+                registration.data['msisdn_registrant']),
+            "dob": (self.get_dob(
+                datetime.strptime(registration.data['mom_dob'], '%Y-%m-%d'))
+                    if registration.data.get('mom_db')
+                    else None),
+            # TODO: Where is this? Only submitted on `change` requests
+            # line 275 of changes/tasks.py has something
+            # "persal": self.get_persal(.....),
+            # TODO: Same here as with persal
+            # "sanc": self.get_sanc(...),
+            "encdate": self.get_timestamp(),
+        }
+
+        return json_template
+
+push_nurse_registration_to_jembi = PushNurseRegistrationToJembi()
 
 
 class DeliverHook(Task):
