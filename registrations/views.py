@@ -178,12 +178,12 @@ class ThirdPartyRegistration(APIView):
             else:
                 hcw_identity = None
 
+            id_type = serializer.validated_data['mom_id_type']
             # Get or create Mom Identity
             result = is_client.get_identity_by_address(
                 'msisdn', mom_msisdn)
-
             if 'results' in result and not result['results']:
-                id_type = serializer.validated_data['mom_id_type']
+
                 identity = {
                     'details': {
                         'default_addr_type': 'msisdn',
@@ -214,12 +214,12 @@ class ThirdPartyRegistration(APIView):
 
             # Create registration
             if hcw_identity is not None:
-                device = hcw_identity['id']
+                device = hcw_msisdn
             else:
-                device = mom_identity['id']
+                device = mom_msisdn
             reg_data = {
                 'operator_id': None if hcw_identity is None else hcw_identity['id'],
-                'msisdn_registrant': mom_identity['id'],
+                'msisdn_registrant': mom_msisdn,
                 'msisdn_device': device,
                 'id_type': id_type,
                 'language': serializer.validated_data['mom_lang'],
@@ -232,7 +232,10 @@ class ThirdPartyRegistration(APIView):
                 reg_type='momconnect_prebirth',
                 registrant_id=mom_identity['id'],
                 source=source,
-                data=reg_data)
+                data=reg_data,
+                created_by=self.request.user,
+                updated_by=self.request.user
+            )
             reg_serializer = RegistrationSerializer(instance=reg)
             return Response(
                 reg_serializer.data, status=status.HTTP_201_CREATED)
