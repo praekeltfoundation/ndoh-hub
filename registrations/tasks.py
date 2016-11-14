@@ -452,7 +452,6 @@ class BasePushRegistrationToJembi(object):
         }.get(source.name)
 
     def run(self, registration_id, **kwargs):
-        self.l.info("Compiling Jembi Json data")
         from .models import Registration
         registration = Registration.objects.get(pk=registration_id)
         authority = self.get_authority_from_source(registration.source)
@@ -525,6 +524,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
 
     def build_jembi_json(self, registration):
         """ Compile json to be sent to Jembi. """
+        self.l.info("Compiling Jembi Json data for PushRegistrationToJembi")
         authority = self.get_authority_from_source(registration.source)
         json_template = {
             "mha": 1,
@@ -582,6 +582,8 @@ class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
         Compiles and returns a dictionary representing the JSON that should
         be sent to Jembi for the given registration.
         """
+        self.l.info(
+            "Compiling Jembi Json data for PushNurseRegistrationToJembi")
         identity = is_client.get_identity(registration.registrant_id)
         json_template = {
             "mha": 1,
