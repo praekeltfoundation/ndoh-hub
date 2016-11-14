@@ -1,3 +1,4 @@
+from uuid import UUID
 from django.core.management import BaseCommand, CommandError
 from django.utils.dateparse import parse_datetime
 
@@ -15,27 +16,47 @@ class Command(BaseCommand):
         parser.add_argument(
             '--until', type=parse_datetime,
             help='Filter for created_at until (required YYYY-MM-DD HH:MM:SS)')
+        parser.add_argument(
+            '--source', type=int, default=None,
+            help='The source to limit registrations to.')
+        parser.add_argument(
+            '--registration', type=UUID, nargs='+', default=None,
+            help=('UUIDs for registrations to fire manually. Use if finer '
+                  'controls are needed than `since` and `until` date ranges.'))
 
     def handle(self, *args, **options):
         from registrations.models import Registration
-        from registrations.tasks import push_registration_to_jembi
+        from registrations.tasks import BasePushRegistrationToJembi
         since = options['since']
         until = options['until']
+        source = options['source']
+        registration_uuids = options['registration']
 
-        if not since:
-            raise CommandError('--since is a required parameter')
+        if not (all([since, until]) or registration_uuids):
+            raise CommandError(
+                'At a minimum please specify --since and --until '
+                'or use --registration to specify one or more registrations')
 
-        if not until:
-            raise CommandError('--until is a required parameter')
+        registrations = Registration.objects.all()
 
-        registrations = Registration.objects.filter(
-            created_at__gte=since,
-            created_at__lte=until,
-            validated=True)
+        if since and until:
+            registrations = registrations.filter(
+                created_at__gte=since,
+                created_at__lte=until,
+                validated=True)
+
+        if source is not None:
+            registrations = registrations.filter(source__pk=source)
+
+        if registration_uuids:
+            registrations = registrations.filter(pk__in=registration_uuids)
+
         self.stdout.write(
             'Submitting %s registrations.' % (registrations.count(),))
         for registration in registrations:
-            push_registration_to_jembi.apply_async(kwargs={
+            task = BasePushRegistrationToJembi.get_jembi_task_for_registration(
+                registration)
+            task.apply_async(kwargs={
                 'registration_id': str(registration.pk),
             })
             self.stdout.write(str(registration.pk))

@@ -347,6 +347,15 @@ class ValidateSubscribe(Task):
         self.l.info("Identity updated with risk level")
         return risk
 
+    def send_to_jembi(self, registration):
+        """
+        Runs the correct task to send the registration information to
+        Jembi.
+        """
+        task = BasePushRegistrationToJembi.get_jembi_task_for_registration(
+            registration)
+        return task.delay(registration_id=str(registration.pk))
+
     # Run
     def run(self, registration_id, **kwargs):
         """ Sets the registration's validated field to True if
@@ -370,8 +379,7 @@ class ValidateSubscribe(Task):
                 self.set_risk_status(registration)
 
             self.l.info("Scheduling registration push to Jembi")
-            push_registration_to_jembi.apply_async(kwargs={
-                "registration_id": str(registration.pk)})
+            self.send_to_jembi(registration)
 
             self.l.info("Task executed successfully")
             return True
@@ -383,10 +391,12 @@ class ValidateSubscribe(Task):
 validate_subscribe = ValidateSubscribe()
 
 
-class PushRegistrationToJembi(Task):
-    """ Task to push registration data to Jembi
+class BasePushRegistrationToJembi(object):
     """
-    name = "ndoh_hub.registrations.tasks.push_registration_to_jembi"
+    Base class that contains helper functions for pushing registration data
+    to Jembi.
+    """
+    name = "ndoh_hub.registrations.tasks.base_push_registration_to_jembi"
     l = get_task_logger(__name__)
 
     def get_patient_id(self, id_type, id_no=None,
@@ -397,6 +407,91 @@ class PushRegistrationToJembi(Task):
             return id_no + '^^^' + passport_origin.upper() + '^PPN'
         else:
             return mom_msisdn.replace('+', '') + '^^^ZAF^TEL'
+
+    def get_dob(self, mom_dob):
+        if mom_dob is not None:
+            return mom_dob.strftime("%Y%m%d")
+        else:
+            return None
+
+    def get_today(self):
+        return datetime.today()
+
+    def get_timestamp(self):
+        return self.get_today().strftime("%Y%m%d%H%M%S")
+
+    @staticmethod
+    def get_jembi_task_for_registration(registration):
+        """
+        NOTE:   this is a convenience method for getting the relevant
+                Jembi task to fire for a registration.
+        """
+        authority = BasePushRegistrationToJembi.get_authority_from_source(
+            registration.source)
+        return {
+            'nurse': push_nurse_registration_to_jembi,
+            'personal': push_registration_to_jembi,
+            'optout': push_registration_to_jembi,
+            'clinic': push_registration_to_jembi,
+            'chw': push_registration_to_jembi,
+        }.get(authority, push_registration_to_jembi)
+
+    @staticmethod
+    def get_authority_from_source(source):
+        """
+        NOTE:   this is a convenience method to map the new "source"
+                back to ndoh-control's "authority" fields to maintain
+                backwards compatibility with existing APIs
+        """
+        return {
+            'PUBLIC USSD App': 'personal',
+            'OPTOUT USSD App': 'optout',
+            'CLINIC USSD App': 'clinic',
+            'CHW USSD App': 'chw',
+            'NURSE USSD App': 'nurse',
+        }.get(source.name)
+
+    def run(self, registration_id, **kwargs):
+        from .models import Registration
+        registration = Registration.objects.get(pk=registration_id)
+        authority = self.get_authority_from_source(registration.source)
+        if authority is None:
+            self.l.error(
+                'Unable to establish authority for source %s. Skipping.' % (
+                    registration.source))
+            return
+
+        json_doc = self.build_jembi_json(registration)
+        try:
+            result = requests.post(
+                self.URL,
+                headers={'Content-Type': 'application/json'},
+                data=json.dumps(json_doc),
+                auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+                verify=False
+            )
+            result.raise_for_status()
+            return result.text
+        except (HTTPError,) as e:
+            # retry message sending if in 500 range (3 default retries)
+            if 500 < e.response.status_code < 599:
+                raise self.retry(exc=e)
+            else:
+                self.l.error('Error when posting to Jembi. Payload: %r' % (
+                    json_doc))
+                raise e
+        except (Exception,) as e:
+            self.l.error(
+                'Problem posting Registration %s JSON to Jembi' % (
+                    registration_id), exc_info=True)
+
+
+class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
+    """ Task to push registration data to Jembi
+    """
+    name = "ndoh_hub.registrations.tasks.push_registration_to_jembi"
+    l = get_task_logger(__name__)
+    URL = "%s/subscription" % settings.JEMBI_BASE_URL
 
     def get_subscription_type(self, authority):
         authority_map = {
@@ -411,31 +506,6 @@ class PushRegistrationToJembi(Task):
             # 'helpdesk': 7,
         }
         return authority_map[authority]
-
-    def get_today(self):
-        return datetime.today()
-
-    def get_timestamp(self):
-        return self.get_today().strftime("%Y%m%d%H%M%S")
-
-    def get_dob(self, mom_dob):
-        if mom_dob is not None:
-            return mom_dob.strftime("%Y%m%d")
-        else:
-            return None
-
-    def get_authority_from_source(self, source):
-        """
-        NOTE:   this is a convenience method to map the new "source"
-                back to ndoh-control's "authority" fields to maintain
-                backwards compatibility with existing APIs
-        """
-        return {
-            'PUBLIC USSD App': 'personal',
-            'OPTOUT USSD App': 'optout',
-            'CLINIC USSD App': 'clinic',
-            'CHW USSD App': 'chw',
-        }.get(source.name)
 
     def transform_language_code(self, lang):
         return {
@@ -454,6 +524,7 @@ class PushRegistrationToJembi(Task):
 
     def build_jembi_json(self, registration):
         """ Compile json to be sent to Jembi. """
+        self.l.info("Compiling Jembi Json data for PushRegistrationToJembi")
         authority = self.get_authority_from_source(registration.source)
         json_template = {
             "mha": 1,
@@ -489,43 +560,61 @@ class PushRegistrationToJembi(Task):
 
         return json_template
 
-    def run(self, registration_id, **kwargs):
-        self.l.info("Compiling Jembi Json data")
-        from .models import Registration
-        registration = Registration.objects.get(pk=registration_id)
-        authority = self.get_authority_from_source(registration.source)
-        if authority is None:
-            self.l.error(
-                'Unable to establish authority for source %s. Skipping.' % (
-                    registration.source))
-            return
-
-        json_doc = self.build_jembi_json(registration)
-        try:
-            result = requests.post(
-                "%s/subscription" % settings.JEMBI_BASE_URL,  # url
-                headers={'Content-Type': 'application/json'},
-                data=json.dumps(json_doc),
-                auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
-                verify=False
-            )
-            result.raise_for_status()
-            return result.text
-        except (HTTPError,) as e:
-            # retry message sending if in 500 range (3 default retries)
-            if 500 < e.response.status_code < 599:
-                raise self.retry(exc=e)
-            else:
-                self.l.error('Error when posting to Jembi. Payload: %r' % (
-                    json_doc))
-                raise e
-        except (Exception,) as e:
-            self.l.error(
-                'Problem posting Registration %s JSON to Jembi' % (
-                    registration_id), exc_info=True)
-
 
 push_registration_to_jembi = PushRegistrationToJembi()
+
+
+class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
+    name = "ndoh_hub.registrations.tasks.push_nurse_registration_to_jembi"
+    l = get_task_logger(__name__)
+    URL = "%s/nc/subscription" % settings.JEMBI_BASE_URL
+
+    def get_persal(self, identity):
+        details = identity['details']
+        return details.get('nurseconnect', {}).get('persal_no')
+
+    def get_sanc(self, identity):
+        details = identity['details']
+        return details.get('nurseconnect', {}).get('sanc_reg_no')
+
+    def build_jembi_json(self, registration):
+        """
+        Compiles and returns a dictionary representing the JSON that should
+        be sent to Jembi for the given registration.
+        """
+        self.l.info(
+            "Compiling Jembi Json data for PushNurseRegistrationToJembi")
+        identity = is_client.get_identity(registration.registrant_id)
+        json_template = {
+            "mha": 1,
+            "swt": 3,
+            "type": 7,
+            "dmsisdn": registration.data['msisdn_device'],
+            "cmsisdn": registration.data['msisdn_registrant'],
+            # NOTE: this likely needs to be updated to reflect a change
+            #       in msisdn as `rmsisdn` stands for replacement msisdn
+            "rmsisdn": None,
+            "faccode": registration.data['faccode'],
+            "id": self.get_patient_id(
+                registration.data.get('id_type'),
+                (registration.data.get('sa_id_no')
+                 if registration.data.get('id_type') == 'sa_id'
+                 else registration.data.get('passport_no')),
+                # passport_origin may be None if sa_id is used
+                registration.data.get('passport_origin'),
+                registration.data['msisdn_registrant']),
+            "dob": (self.get_dob(
+                datetime.strptime(registration.data['mom_dob'], '%Y-%m-%d'))
+                    if registration.data.get('mom_db')
+                    else None),
+            "persal": self.get_persal(identity),
+            "sanc": self.get_sanc(identity),
+            "encdate": self.get_timestamp(),
+        }
+
+        return json_template
+
+push_nurse_registration_to_jembi = PushNurseRegistrationToJembi()
 
 
 class DeliverHook(Task):
