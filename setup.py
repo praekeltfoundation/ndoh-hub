@@ -27,6 +27,7 @@ setup(
         'requests==2.9.1',
         'seed-services-client',
         'drfdocs==0.0.11',
+        'demands==3.0.0',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
