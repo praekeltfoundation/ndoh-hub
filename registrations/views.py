@@ -1,6 +1,5 @@
 import django_filters
 
-from demands import HTTPServiceError
 from django.conf import settings
 from django.contrib.auth.models import User, Group
 from rest_hooks.models import Hook
@@ -179,11 +178,16 @@ class ThirdPartyRegistration(APIView):
                 hcw_identity = None
 
             id_type = serializer.validated_data['mom_id_type']
+            if hcw_identity is not None:
+                operator = hcw_identity['id']
+                device = hcw_msisdn
+            else:
+                operator = None
+                device = mom_msisdn
             # Get or create Mom Identity
             result = is_client.get_identity_by_address(
                 'msisdn', mom_msisdn)
             if 'results' in result and not result['results']:
-
                 identity = {
                     'details': {
                         'default_addr_type': 'msisdn',
@@ -193,7 +197,7 @@ class ThirdPartyRegistration(APIView):
                             }
                         }
                     },
-                    'operator_id': None if hcw_identity is None else hcw_identity['id'],
+                    'operator_id': operator,
                     'lang_code': serializer.validated_data['mom_lang'],
                     'id_type': id_type,
                     'mom_dob': serializer.validated_data['mom_dob'],
@@ -204,21 +208,20 @@ class ThirdPartyRegistration(APIView):
                     'swt': serializer.validated_data['swt'],
                 }
                 if id_type == 'sa_id':
-                    identity['details']['sa_id_no'] = serializer.validated_data['mom_id_no']
+                    identity['details']['sa_id_no'] = (
+                        serializer.validated_data['mom_id_no'])
                 elif id_type == 'passport':
-                    identity['details']['passport_origin'] = serializer.validated_data['mom_passport_origin']
-                    identity['details']['passport_no'] = serializer.validated_data['mom_id_no']
+                    identity['details']['passport_origin'] = (
+                        serializer.validated_data['mom_passport_origin'])
+                    identity['details']['passport_no'] = (
+                        serializer.validated_data['mom_id_no'])
                 mom_identity = is_client.create_identity(identity)
             else:
                 mom_identity = result['results'][0]
 
             # Create registration
-            if hcw_identity is not None:
-                device = hcw_msisdn
-            else:
-                device = mom_msisdn
             reg_data = {
-                'operator_id': None if hcw_identity is None else hcw_identity['id'],
+                'operator_id': operator,
                 'msisdn_registrant': mom_msisdn,
                 'msisdn_device': device,
                 'id_type': id_type,
