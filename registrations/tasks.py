@@ -347,6 +347,23 @@ class ValidateSubscribe(Task):
         self.l.info("Identity updated with risk level")
         return risk
 
+    def send_to_jembi(self, registration):
+        """
+        Runs the correct task to send the registration information to
+        Jembi.
+        """
+        authority = BasePushRegistrationToJembi.get_authority_from_source(
+            registration.source)
+        task = {
+            'nurse': push_nurse_registration_to_jembi,
+            'personal': push_registration_to_jembi,
+            'optout': push_registration_to_jembi,
+            'clinic': push_registration_to_jembi,
+            'chw': push_registration_to_jembi,
+        }.get(authority, push_registration_to_jembi)
+
+        return task.delay(registration_id=str(registration.pk))
+
     # Run
     def run(self, registration_id, **kwargs):
         """ Sets the registration's validated field to True if
@@ -370,8 +387,7 @@ class ValidateSubscribe(Task):
                 self.set_risk_status(registration)
 
             self.l.info("Scheduling registration push to Jembi")
-            push_registration_to_jembi.apply_async(kwargs={
-                "registration_id": str(registration.pk)})
+            self.send_to_jembi(registration)
 
             self.l.info("Task executed successfully")
             return True
