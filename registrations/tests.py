@@ -917,7 +917,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
 class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
 
     @responses.activate
-    def test_create_third_party_registration(self):
+    def test_create_third_party_registration_existing_identity(self):
         # Setup
         self.make_source_normaluser()
 
@@ -974,7 +974,7 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
                     'updated_at': '2016-10-27T19:04:03.138598Z',
                     'updated_by': 53,
                     'version': 1
-                }]},
+            }]},
             match_querystring=True,
             status=200,
             content_type='application/json')
@@ -1006,7 +1006,106 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
                     'updated_at': '2016-10-27T19:04:03.138598Z',
                     'updated_by': 53,
                     'version': 1
-                }]},
+            }]},
+            match_querystring=True,
+            status=200,
+            content_type='application/json')
+        post_data = {
+            "hcw_msisdn": "+27831111111",
+            "mom_msisdn": "+27824440000",
+            "mom_id_type": "none",
+            "mom_passport_origin": None,
+            "mom_id_no": "27625249986",
+            "mom_lang": "en",
+            "mom_edd": "2016-11-05",
+            "mom_dob": "1999-02-21",
+            "clinic_code": None,
+            "authority": "chw",
+            "consent": True,
+            "mha": 2,
+            "swt": 3
+        }
+        # Execute
+        response = self.normalclient.post('/api/v1/extregistration/',
+                                          json.dumps(post_data),
+                                          content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        d = Registration.objects.last()
+        self.assertEqual(d.source.name, 'test_source_normaluser')
+        self.assertEqual(d.reg_type, 'momconnect_prebirth')
+        self.assertEqual(d.registrant_id,
+                         "02144938-847d-4d2c-9daf-707cb864d077")
+        self.assertEqual(d.data['edd'], '2016-11-05')
+
+    @responses.activate
+    def test_create_third_party_registration_new_identity(self):
+        # Setup
+        self.make_source_normaluser()
+
+        responses.add(
+            responses.GET,
+            'http://identitystore/identities/search/?details__addresses__msisdn=%2B27831111111',  # noqa
+            json={
+                'count': 1,
+                'next': None,
+                'previous': None,
+                'results': [{
+                    'created_at': '2015-10-14T07:25:53.218988Z',
+                    'created_by': 53,
+                    'details': {
+                        'addresses': {
+                            'msisdn': {'+27831111111': {'default': True}}
+                        },
+                        'default_addr_type': 'msisdn',
+                    },
+                    'id': '3a4af5d9-887b-410f-afa1-460d4b3ecc05',
+                    'operator': None,
+                    'updated_at': '2016-10-27T19:04:03.138598Z',
+                    'updated_by': 53,
+                    'version': 1
+            }]},
+            match_querystring=True,
+            status=200,
+            content_type='application/json')
+        responses.add(
+            responses.GET,
+            'http://identitystore/identities/search/?details__addresses__msisdn=%2B27824440000',  # noqa
+            json={
+                'count': 0,
+                'next': None,
+                'previous': None,
+                'results': []
+            },
+            match_querystring=True,
+            status=200,
+            content_type='application/json')
+        responses.add(
+            responses.POST,
+            'http://identitystore/identities/',
+            json={
+                'communicate_through': None,
+                'created_at': '2015-10-14T07:25:53.218988Z',
+                'created_by': 53,
+                'details': {
+                    'addresses': {
+                        'msisdn': {'+27824440000': {'default': True}}
+                    },
+                    'consent': False,
+                    'default_addr_type': 'msisdn',
+                    'lang_code': 'eng_ZA',
+                    'last_mc_reg_on': 'clinic',
+                    'mom_dob': '1999-02-21',
+                    'sa_id_no': '27625249986',
+                    'source': 'clinic'
+                },
+                'id': '02144938-847d-4d2c-9daf-707cb864d077',
+                'operator': '3a4af5d9-887b-410f-afa1-460d4b3ecc05',
+                'updated_at': '2016-10-27T19:04:03.138598Z',
+                'updated_by': 53,
+                'version': 1
+            },
             match_querystring=True,
             status=200,
             content_type='application/json')
