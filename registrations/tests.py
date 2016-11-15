@@ -12,6 +12,7 @@ from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.db.models.signals import post_save
+from mock import patch
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
@@ -1988,7 +1989,8 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
 class TestRegistrationCreation(AuthenticatedAPITestCase):
 
     @responses.activate
-    def test_registration_process_pmtct_good(self):
+    @patch('registrations.tasks.PushRegistrationToJembi.get_today')
+    def test_registration_process_pmtct_good(self, mock_date):
         """ Test a full registration process with good data """
         # Setup
         registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
@@ -1996,7 +1998,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         post_save.connect(psh_validate_subscribe, sender=Registration)
 
         source = self.make_source_normaluser()
-        source.name = 'PUBLIC USSD App'
+        source.name = 'PMTCT USSD App'
         source.save()
 
         # . setup pmtct_prebirth registration
@@ -2023,6 +2025,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         utils_tests.mock_get_schedule(schedule_id)
         utils_tests.mock_get_identity_by_id(registrant_uuid)
         utils_tests.mock_patch_identity(registrant_uuid)
+        mock_date.return_value = datetime.date(2016, 1, 1)
 
         # Execute
         registration = Registration.objects.create(**registration_data)
@@ -2031,6 +2034,20 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         # . check number of calls made:
         #   messageset, schedule, identity, patch identity, jembi registration
         self.assertEqual(len(responses.calls), 5)
+
+        # check jembi registration
+        self.assertEqual(json.loads(responses.calls[-1].request.body), {
+            'lang': 'en',
+            'dob': '19990127',
+            'cmsisdn': '+27821113333',
+            'dmsisdn': '+27821113333',
+            'faccode': '123456',
+            'id': '8108015001051^^^ZAF^NI',
+            'encdate': '20160101000000',
+            'type': 8,
+            'swt': 1,
+            'mha': 1,
+        })
 
         # . check registration validated
         registration.refresh_from_db()
@@ -2158,7 +2175,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 
         # Mock API call to SBM for message set
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
-            'pmtct_prebirth.patient.1')
+            'momconnect_prebirth.patient.1')
         utils_tests.mock_get_schedule(schedule_id)
         utils_tests.mock_get_identity_by_id(
             "mother01-63e2-4acc-9b94-26663b9bc267")
@@ -2179,7 +2196,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             user=User.objects.get(username='testnormaluser'))
 
         registration_data = {
-            "reg_type": "pmtct_prebirth",
+            "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": source,
             "data": {
@@ -2190,8 +2207,9 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "sa_id_no": "0000000000",
                 "edd": "2016-11-30",
                 "faccode": "123456",
-                "msisdn_device": "+2700000000",
+                "msisdn_device": "+27000000000",
                 "msisdn_registrant": "+27111111111",
+                "consent": True,
             },
         }
 
@@ -2229,7 +2247,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             user=User.objects.get(username='testnormaluser'))
 
         registration_data = {
-            "reg_type": "pmtct_prebirth",
+            "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": source,
             "data": {
