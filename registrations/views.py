@@ -17,6 +17,22 @@ from .serializers import (UserSerializer, GroupSerializer,
                           ThirdPartyRegistrationSerializer)
 
 
+def transform_language_code(lang):
+    return {
+        'zu': 'zul_ZA',
+        'xh': 'xho_ZA',
+        'af': 'afr_ZA',
+        'en': 'eng_ZA',
+        'nso': 'nso_ZA',
+        'tn': 'tsn_ZA',
+        'st': 'sot_ZA',
+        'ts': 'tso_ZA',
+        'ss': 'ssw_ZA',
+        've': 'ven_ZA',
+        'nr': 'nbl_ZA'
+    }[lang]
+
+
 class HookViewSet(viewsets.ModelViewSet):
     """
     Retrieve, create, update or destroy webhooks.
@@ -156,6 +172,8 @@ class ThirdPartyRegistration(APIView):
         if serializer.is_valid():
             mom_msisdn = serializer.validated_data['mom_msisdn']
             hcw_msisdn = serializer.validated_data['hcw_msisdn']
+            lang_code = serializer.validated_data['mom_lang']
+            lang_code = transform_language_code(lang_code)
             if mom_msisdn != hcw_msisdn:
                 # Get or create HCW Identity
                 result = is_client.get_identity_by_address(
@@ -198,7 +216,7 @@ class ThirdPartyRegistration(APIView):
                         }
                     },
                     'operator_id': operator,
-                    'lang_code': serializer.validated_data['mom_lang'],
+                    'lang_code': lang_code,
                     'id_type': id_type,
                     'mom_dob': serializer.validated_data['mom_dob'],
                     'edd': serializer.validated_data['mom_edd'],
@@ -225,7 +243,7 @@ class ThirdPartyRegistration(APIView):
                 'msisdn_registrant': mom_msisdn,
                 'msisdn_device': device,
                 'id_type': id_type,
-                'language': serializer.validated_data['mom_lang'],
+                'language': lang_code,
                 'edd': serializer.validated_data['mom_edd'],
                 'faccode': serializer.validated_data['clinic_code'],
                 'consent': serializer.validated_data['consent'],
