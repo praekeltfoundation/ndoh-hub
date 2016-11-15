@@ -5,7 +5,6 @@ import requests
 from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.shortcuts import get_object_or_404
-from django.conf import settings
 
 from rest_hooks.models import Hook
 from rest_framework import viewsets, mixins, generics, filters, status
