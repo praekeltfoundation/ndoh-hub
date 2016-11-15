@@ -149,17 +149,14 @@ class JembiHelpdeskOutgoingView(APIView):
             "swt": 2,  # 1 ussd, 2 sms
             "cmsisdn": validated_data.get('to'),
             "dmsisdn": validated_data.get('to'),
-            "faccode":
-                registration.data.faccode
-                if hasattr(registration.data, 'faccode') else '',
+            "faccode": registration.data.get('faccode', ''),
             "data": {
                 "question": validated_data.get('content'),
                 "answer": validated_data.get('reply_to'),
             },
             "class": validated_data.get('label'),
             "type": 7,  # 7 helpdesk
-            "op": registration.data.operator_id
-                if hasattr(registration.data, 'operator_id') else '',
+            "op": registration.data.get('operator_id', ''),
         }
         return json_template
 
@@ -174,12 +171,18 @@ class JembiHelpdeskOutgoingView(APIView):
         serializer.is_valid(raise_exception=True)
 
         post_data = self.build_jembi_helpdesk_json(serializer.validated_data)
-        requests.post(
-            '%s/helpdesk' % settings.JEMBI_BASE_URL,
-            headers={'Content-Type': 'application/json'},
-            data=json.dumps(post_data),
-            auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
-            verify=False)
+        try:
+            result = requests.post(
+                '%s/helpdesk' % settings.JEMBI_BASE_URL,
+                headers={'Content-Type': 'application/json'},
+                data=json.dumps(post_data),
+                auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+                verify=False)
+            result.raise_for_status()
+        except requests.exceptions.HTTPError:
+            return Response(
+                'Error when posting to Jembi. Payload: %r' % post_data,
+                status=status.HTTP_400_BAD_REQUEST)
 
         return Response(
             status=status.HTTP_200_OK)
