@@ -1796,7 +1796,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         utils_tests.mock_get_schedule(schedule_id)
         utils_tests.mock_get_identity_by_id(registrant_uuid)
         utils_tests.mock_patch_identity(registrant_uuid)
-        mock_date.return_value = datetime.date(2016, 01, 01)
+        mock_date.return_value = datetime.date(2016, 1, 1)
 
         # Execute
         registration = Registration.objects.create(**registration_data)
