@@ -176,8 +176,12 @@ class ThirdPartyRegistration(APIView):
             lang_code = transform_language_code(lang_code)
             if mom_msisdn != hcw_msisdn:
                 # Get or create HCW Identity
-                result = is_client.get_identity_by_address(
-                    'msisdn', hcw_msisdn)
+                result = is_client.get_identity_by_address('msisdn',
+                                                           hcw_msisdn)
+                # The get_identity_by_address API call does not parse the
+                # response in any way, so to check if we have gotten a result
+                # we need to look for a results key in the response dict and
+                # check that it is not an empty list.
                 if 'results' in result and not result['results']:
                     identity = {
                         'details': {
@@ -202,9 +206,9 @@ class ThirdPartyRegistration(APIView):
             else:
                 operator = None
                 device = mom_msisdn
+
             # Get or create Mom Identity
-            result = is_client.get_identity_by_address(
-                'msisdn', mom_msisdn)
+            result = is_client.get_identity_by_address('msisdn', mom_msisdn)
             if 'results' in result and not result['results']:
                 identity = {
                     'details': {
@@ -213,17 +217,18 @@ class ThirdPartyRegistration(APIView):
                             'msisdn': {
                                 mom_msisdn: {'default': True}
                             }
-                        }
+                        },
+                        'operator_id': operator,
+                        'lang_code': lang_code,
+                        'id_type': id_type,
+                        'mom_dob': serializer.validated_data['mom_dob'],
+                        'last_edd': serializer.validated_data['mom_edd'],
+                        'faccode': serializer.validated_data['clinic_code'],
+                        'consent': serializer.validated_data['consent'],
+                        'last_mc_reg_on': (
+                            serializer.validated_data['authority']),
+                        'source': 'external',
                     },
-                    'operator_id': operator,
-                    'lang_code': lang_code,
-                    'id_type': id_type,
-                    'mom_dob': serializer.validated_data['mom_dob'],
-                    'edd': serializer.validated_data['mom_edd'],
-                    'faccode': serializer.validated_data['clinic_code'],
-                    'consent': serializer.validated_data['consent'],
-                    'mha': serializer.validated_data['mha'],
-                    'swt': serializer.validated_data['swt'],
                 }
                 if id_type == 'sa_id':
                     identity['details']['sa_id_no'] = (
@@ -236,6 +241,29 @@ class ThirdPartyRegistration(APIView):
                 mom_identity = is_client.create_identity(identity)
             else:
                 mom_identity = result['results'][0]
+                # Update Seed Identity record
+                details = mom_identity['details']
+                details['operator_id'] = operator
+                details['lang_code'] = lang_code
+                details['id_type'] = id_type
+                details['mom_dob'] = serializer.validated_data['mom_dob']
+                details['last_edd'] = serializer.validated_data['mom_edd']
+                details['faccode'] = serializer.validated_data['clinic_code']
+                details['consent'] = serializer.validated_data['consent']
+                details['last_mc_reg_on'] = (
+                            serializer.validated_data['authority'])
+                details['source'] = 'external'
+                if id_type == 'sa_id':
+                    details['sa_id_no'] = (
+                        serializer.validated_data['mom_id_no'])
+                elif id_type == 'passport':
+                    details['passport_origin'] = (
+                        serializer.validated_data['mom_passport_origin'])
+                    details['passport_no'] = (
+                        serializer.validated_data['mom_id_no'])
+                mom_identity['details'] = details
+                mom_identity = is_client.update_identity(mom_identity['id'],
+                                                         data=mom_identity)
 
             # Create registration
             reg_data = {
@@ -244,11 +272,22 @@ class ThirdPartyRegistration(APIView):
                 'msisdn_device': device,
                 'id_type': id_type,
                 'language': lang_code,
+                'mom_dob': serializer.validated_data['mom_dob'],
                 'edd': serializer.validated_data['mom_edd'],
                 'faccode': serializer.validated_data['clinic_code'],
                 'consent': serializer.validated_data['consent'],
-
+                'mha': serializer.validated_data['mha'],
+                'swt': serializer.validated_data['swt'],
             }
+            if id_type == 'sa_id':
+                reg_data['sa_id_no'] = (
+                    serializer.validated_data['mom_id_no'])
+            elif id_type == 'passport':
+                reg_data['passport_origin'] = (
+                    serializer.validated_data['mom_passport_origin'])
+                reg_data['passport_no'] = (
+                    serializer.validated_data['mom_id_no'])
+
             reg = Registration.objects.create(
                 reg_type='momconnect_prebirth',
                 registrant_id=mom_identity['id'],
