@@ -39,6 +39,11 @@ class RegistrationSerializer(serializers.ModelSerializer):
                   'source', 'created_at', 'updated_at', 'created_by',
                   'updated_by')
 
+    def validate(self, attrs):
+        instance = Registration(**attrs)
+        instance.clean()
+        return attrs
+
 
 class HookSerializer(serializers.ModelSerializer):
 

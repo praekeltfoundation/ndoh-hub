@@ -12,6 +12,7 @@ from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.test import TestCase
 from django.db.models.signals import post_save
+from django.core.exceptions import ValidationError
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
@@ -21,6 +22,40 @@ from .models import Source, Registration, SubscriptionRequest
 from .signals import psh_validate_subscribe
 from .tasks import validate_subscribe, get_risk_status
 from ndoh_hub import utils, utils_tests
+
+
+# Valid data for registrations
+DATA_CLINIC_PREBIRTH = {
+    "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+    "msisdn_registrant": "+27821113333",
+    "msisdn_device": "+27821113333",
+    "id_type": "sa_id",
+    "sa_id_no": "8108015001051",
+    "mom_dob": "1982-08-01",
+    "language": "eng_ZA",
+    "edd": "2016-05-01",  # in week 23 of pregnancy
+    "faccode": "123456",
+    "consent": True
+}
+DATA_PUBLIC_PREBIRTH = {
+    "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+    "msisdn_registrant": "+27821113333",
+    "msisdn_device": "+27821113333",
+    "language": "zul_ZA",
+    "consent": True
+}
+DATA_PMTCT_PREBIRTH = {
+    "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+    "language": "eng_ZA",
+    "mom_dob": "1999-01-27",
+    "edd": "2016-11-30",
+}
+DATA_PMTCT_POSTBIRTH = {
+    "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+    "language": "eng_ZA",
+    "mom_dob": "1999-01-27",
+    "baby_dob": "2016-01-01"
+}
 
 
 def override_get_today():
@@ -409,7 +444,7 @@ class AuthenticatedAPITestCase(APITestCase):
         data = {
             "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "data": {"test_adminuser_reg_key": "test_adminuser_reg_value"},
+            "data": DATA_CLINIC_PREBIRTH,
             "source": self.make_source_adminuser()
         }
         return Registration.objects.create(**data)
@@ -418,7 +453,7 @@ class AuthenticatedAPITestCase(APITestCase):
         data = {
             "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "data": {"test_normaluser_reg_key": "test_normaluser_reg_value"},
+            "data": DATA_PUBLIC_PREBIRTH,
             "source": self.make_source_normaluser()
         }
         return Registration.objects.create(**data)
@@ -428,12 +463,7 @@ class AuthenticatedAPITestCase(APITestCase):
             "reg_type": "pmtct_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": self.make_source_adminuser(),
-            "data": {
-                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-                "language": "eng_ZA",
-                "mom_dob": "1999-01-27",
-                "edd": "2016-11-30",
-            },
+            "data": DATA_PMTCT_PREBIRTH,
             "validated": True
         }
         registration1 = Registration.objects.create(**registration1_data)
@@ -441,12 +471,7 @@ class AuthenticatedAPITestCase(APITestCase):
             "reg_type": "pmtct_postbirth",
             "registrant_id": "mother02-63e2-4acc-9b94-26663b9bc267",
             "source": self.make_source_normaluser(),
-            "data": {
-                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-                "language": "eng_ZA",
-                "mom_dob": "1999-01-27",
-                "baby_dob": "2016-01-01"
-            },
+            "data": DATA_PMTCT_POSTBIRTH,
             "validated": False
         }
         registration2 = Registration.objects.create(**registration2_data)
@@ -720,7 +745,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         post_data = {
             "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "data": {"test_key1": "test_value1"}
+            "data": DATA_CLINIC_PREBIRTH
         }
         # Execute
         response = self.adminclient.post('/api/v1/registration/',
@@ -735,7 +760,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         self.assertEqual(d.registrant_id,
                          "mother01-63e2-4acc-9b94-26663b9bc267")
         self.assertEqual(d.validated, False)
-        self.assertEqual(d.data, {"test_key1": "test_value1"})
+        self.assertEqual(d.data, DATA_CLINIC_PREBIRTH)
         self.assertEqual(d.created_by, self.adminuser)
 
     def test_create_registration_normaluser(self):
@@ -744,7 +769,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         post_data = {
             "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "data": {"test_key1": "test_value1"}
+            "data": DATA_PUBLIC_PREBIRTH
         }
         # Execute
         response = self.normalclient.post('/api/v1/registration/',
@@ -759,7 +784,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         self.assertEqual(d.registrant_id,
                          "mother01-63e2-4acc-9b94-26663b9bc267")
         self.assertEqual(d.validated, False)
-        self.assertEqual(d.data, {"test_key1": "test_value1"})
+        self.assertEqual(d.data, DATA_PUBLIC_PREBIRTH)
         self.assertEqual(d.created_by, self.normaluser)
 
     def test_create_registration_set_readonly_field(self):
@@ -768,7 +793,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         post_data = {
             "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "data": {"test_key1": "test_value1"},
+            "data": DATA_PUBLIC_PREBIRTH,
             "validated": True
         }
         # Execute
@@ -784,7 +809,52 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         self.assertEqual(d.registrant_id,
                          "mother01-63e2-4acc-9b94-26663b9bc267")
         self.assertEqual(d.validated, False)  # Should ignore True post_data
-        self.assertEqual(d.data, {"test_key1": "test_value1"})
+        self.assertEqual(d.data, DATA_PUBLIC_PREBIRTH)
+
+    def test_create_registration_normaluser_invalid_reg_type(self):
+        # Setup
+        self.make_source_normaluser()
+        post_data = {
+            "reg_type": "momconnect",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "data": DATA_PUBLIC_PREBIRTH
+        }
+        # Execute
+        response = self.normalclient.post('/api/v1/registration/',
+                                          json.dumps(post_data),
+                                          content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["reg_type"],
+                         ['"momconnect" is not a valid choice.'])
+
+    def test_create_registration_normaluser_invalid_data_fields(self):
+        # Setup
+        self.make_source_normaluser()
+        post_data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "data": {
+                "operator_id": "baduuid",
+                "msisdn_registrant": "+2782",
+                "msisdn_device": "+2782",
+                "language": "zulu",
+                "consent": "no"
+            }
+        }
+        # Execute
+        response = self.normalclient.post('/api/v1/registration/',
+                                          json.dumps(post_data),
+                                          content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["non_field_errors"], [
+            'Invalid UUID: operator_id',
+            'Invalid MSISDN: msisdn_registrant',
+            'Invalid MSISDN: msisdn_device',
+            'Invalid Language: language',
+            'Invalid Consent: consent must be True'
+        ])
 
     def test_list_registrations(self):
         # Setup
@@ -936,18 +1006,33 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
             "reg_type": "pmtct_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": self.make_source_normaluser(),
-            "data": {
-                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-                "language": "eng_ZA",
-                "mom_dob": "1999-01-27",
-                "edd": "2016-11-30",
-            },
+            "data": DATA_PMTCT_PREBIRTH,
         }
         registration = Registration.objects.create(**registration_data)
         # Execute
         v = validate_subscribe.validate(registration)
         # Check
         self.assertEqual(v, True)
+
+    def test_validate_pmtct_prebirth_extra_field(self):
+        """ Malformed data pmtct_prebirth test """
+        # Setup
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_normaluser(),
+            "data": DATA_PMTCT_PREBIRTH,
+        }
+        registration_data["data"]["foo"] = "bar"
+        # Execute
+        with self.assertRaises(ValidationError) as cm:
+            Registration.objects.create(**registration_data)
+
+        # Check
+        self.assertEqual(
+            str(['Superfluous fields: foo']),
+            str(cm.exception)
+        )
 
     def test_validate_pmtct_prebirth_malformed_data(self):
         """ Malformed data pmtct_prebirth test """
@@ -961,18 +1046,22 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 "language": "en",
                 "mom_dob": "199-01-27",
                 "edd": "201-11-30",
+                "foo": "bar"
             },
         }
-        registration = Registration.objects.create(**registration_data)
         # Execute
-        v = validate_subscribe.validate(registration)
+        with self.assertRaises(ValidationError) as cm:
+            Registration.objects.create(**registration_data)
+
         # Check
-        self.assertEqual(v, False)
-        registration.refresh_from_db()
-        self.assertEqual(registration.data["invalid_fields"], [
-            'Invalid UUID registrant_id', 'Language not a valid option',
-            'Mother DOB invalid', 'Estimated Due Date invalid',
-            'Operator ID invalid']
+        self.assertEqual(
+            str([
+                'Invalid UUID: registrant_id',
+                'Invalid UUID: operator_id',
+                'Invalid date: mom_dob',
+                'Invalid date: edd',
+                'Invalid Language: language']),
+            str(cm.exception)
         )
 
     def test_validate_pmtct_prebirth_missing_data(self):
@@ -1002,12 +1091,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
             "reg_type": "pmtct_postbirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": self.make_source_normaluser(),
-            "data": {
-                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-                "language": "eng_ZA",
-                "mom_dob": "1999-01-27",
-                "baby_dob": "2016-01-01"
-            },
+            "data": DATA_PMTCT_POSTBIRTH,
         }
         registration = Registration.objects.create(**registration_data)
         # Execute
@@ -1137,18 +1221,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
             "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": self.make_source_adminuser(),
-            "data": {
-                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-                "msisdn_registrant": "+27821113333",
-                "msisdn_device": "+27821113333",
-                "id_type": "sa_id",
-                "sa_id_no": "8108015001051",
-                "mom_dob": "1982-08-01",
-                "language": "eng_ZA",
-                "edd": "2016-05-01",  # in week 23 of pregnancy
-                "faccode": "123456",
-                "consent": True
-            },
+            "data": DATA_CLINIC_PREBIRTH,
         }
         registration = Registration.objects.create(**registration_data)
         # Execute
@@ -1318,13 +1391,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
             "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": self.make_source_normaluser(),
-            "data": {
-                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-                "msisdn_registrant": "+27821113333",
-                "msisdn_device": "+27821113333",
-                "language": "zul_ZA",
-                "consent": True
-            },
+            "data": DATA_PUBLIC_PREBIRTH,
         }
         registration = Registration.objects.create(**registration_data)
         # Execute
@@ -1481,12 +1548,7 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
             "reg_type": "pmtct_postbirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": self.make_source_normaluser(),
-            "data": {
-                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-                "language": "eng_ZA",
-                "mom_dob": "1999-01-27",
-                "baby_dob": "2016-01-01"
-            },
+            "data": DATA_PMTCT_POSTBIRTH,
         }
         registration = Registration.objects.create(**registration_data)
         registration.validated = True
@@ -1596,18 +1658,7 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
             "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": self.make_source_adminuser(),
-            "data": {
-                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-                "msisdn_registrant": "+27821113333",
-                "msisdn_device": "+27821113333",
-                "id_type": "sa_id",
-                "sa_id_no": "8108015001051",
-                "mom_dob": "1982-08-01",
-                "language": "eng_ZA",
-                "edd": "2016-05-01",  # in week 23 of pregnancy
-                "faccode": "123456",
-                "consent": True
-            },
+            "data": DATA_CLINIC_PREBIRTH,
         }
         registration = Registration.objects.create(**registration_data)
         registration.validated = True
@@ -1839,18 +1890,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": source,
-            "data": {
-                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-                "msisdn_registrant": "+27821113333",
-                "msisdn_device": "+27821113333",
-                "id_type": "sa_id",
-                "sa_id_no": "8108015001051",
-                "mom_dob": "1982-08-01",
-                "language": "eng_ZA",
-                "edd": "2016-05-01",  # in week 23 of pregnancy
-                "faccode": "123456",
-                "consent": True
-            },
+            "data": DATA_CLINIC_PREBIRTH,
         }
 
         # . setup fixture responses
