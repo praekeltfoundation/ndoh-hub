@@ -2,6 +2,7 @@ import django_filters
 import json
 import requests
 
+from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.shortcuts import get_object_or_404
 from django.conf import settings
@@ -13,11 +14,29 @@ from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 
+from seed_services_client.identity_store import IdentityStoreApiClient
 from .models import Source, Registration
 from .serializers import (UserSerializer, GroupSerializer,
                           SourceSerializer, RegistrationSerializer,
                           HookSerializer, CreateUserSerializer,
-                          JembiHelpdeskOutgoingSerializer)
+                          JembiHelpdeskOutgoingSerializer,
+                          ThirdPartyRegistrationSerializer)
+
+
+def transform_language_code(lang):
+    return {
+        'zu': 'zul_ZA',
+        'xh': 'xho_ZA',
+        'af': 'afr_ZA',
+        'en': 'eng_ZA',
+        'nso': 'nso_ZA',
+        'tn': 'tsn_ZA',
+        'st': 'sot_ZA',
+        'ts': 'tso_ZA',
+        'ss': 'ssw_ZA',
+        've': 'ven_ZA',
+        'nr': 'nbl_ZA'
+    }[lang]
 
 
 class HookViewSet(viewsets.ModelViewSet):
@@ -204,3 +223,148 @@ class HealthcheckView(APIView):
             }
         }
         return Response(resp, status=status)
+
+
+class ThirdPartyRegistration(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        is_client = IdentityStoreApiClient(
+            api_url=settings.IDENTITY_STORE_URL,
+            auth_token=settings.IDENTITY_STORE_TOKEN
+        )
+        # load the users sources - posting users should only have one source
+        source = Source.objects.get(user=self.request.user)
+        serializer = ThirdPartyRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            mom_msisdn = serializer.validated_data['mom_msisdn']
+            hcw_msisdn = serializer.validated_data['hcw_msisdn']
+            lang_code = serializer.validated_data['mom_lang']
+            lang_code = transform_language_code(lang_code)
+            if mom_msisdn != hcw_msisdn:
+                # Get or create HCW Identity
+                result = is_client.get_identity_by_address('msisdn',
+                                                           hcw_msisdn)
+                # The get_identity_by_address API call does not parse the
+                # response in any way, so to check if we have gotten a result
+                # we need to look for a results key in the response dict and
+                # check that it is not an empty list.
+                if 'results' in result and not result['results']:
+                    identity = {
+                        'details': {
+                            'default_addr_type': 'msisdn',
+                            'addresses': {
+                                'msisdn': {
+                                    hcw_msisdn: {'default': True}
+                                }
+                            }
+                        }
+                    }
+                    hcw_identity = is_client.create_identity(identity)
+                else:
+                    hcw_identity = result['results'][0]
+            else:
+                hcw_identity = None
+
+            id_type = serializer.validated_data['mom_id_type']
+            if hcw_identity is not None:
+                operator = hcw_identity['id']
+                device = hcw_msisdn
+            else:
+                operator = None
+                device = mom_msisdn
+
+            # Get or create Mom Identity
+            result = is_client.get_identity_by_address('msisdn', mom_msisdn)
+            if 'results' in result and not result['results']:
+                identity = {
+                    'details': {
+                        'default_addr_type': 'msisdn',
+                        'addresses': {
+                            'msisdn': {
+                                mom_msisdn: {'default': True}
+                            }
+                        },
+                        'operator_id': operator,
+                        'lang_code': lang_code,
+                        'id_type': id_type,
+                        'mom_dob': serializer.validated_data['mom_dob'],
+                        'last_edd': serializer.validated_data['mom_edd'],
+                        'faccode': serializer.validated_data['clinic_code'],
+                        'consent': serializer.validated_data['consent'],
+                        'last_mc_reg_on': (
+                            serializer.validated_data['authority']),
+                        'source': 'external',
+                    },
+                }
+                if id_type == 'sa_id':
+                    identity['details']['sa_id_no'] = (
+                        serializer.validated_data['mom_id_no'])
+                elif id_type == 'passport':
+                    identity['details']['passport_origin'] = (
+                        serializer.validated_data['mom_passport_origin'])
+                    identity['details']['passport_no'] = (
+                        serializer.validated_data['mom_id_no'])
+                mom_identity = is_client.create_identity(identity)
+            else:
+                mom_identity = result['results'][0]
+                # Update Seed Identity record
+                details = mom_identity['details']
+                details['operator_id'] = operator
+                details['lang_code'] = lang_code
+                details['id_type'] = id_type
+                details['mom_dob'] = serializer.validated_data['mom_dob']
+                details['last_edd'] = serializer.validated_data['mom_edd']
+                details['faccode'] = serializer.validated_data['clinic_code']
+                details['consent'] = serializer.validated_data['consent']
+                details['last_mc_reg_on'] = (
+                            serializer.validated_data['authority'])
+                details['source'] = 'external'
+                if id_type == 'sa_id':
+                    details['sa_id_no'] = (
+                        serializer.validated_data['mom_id_no'])
+                elif id_type == 'passport':
+                    details['passport_origin'] = (
+                        serializer.validated_data['mom_passport_origin'])
+                    details['passport_no'] = (
+                        serializer.validated_data['mom_id_no'])
+                mom_identity['details'] = details
+                result = is_client.update_identity(mom_identity['id'],
+                                                   data=mom_identity)
+                mom_identity = result['results'][0]
+
+            # Create registration
+            reg_data = {
+                'operator_id': operator,
+                'msisdn_registrant': mom_msisdn,
+                'msisdn_device': device,
+                'id_type': id_type,
+                'language': lang_code,
+                'mom_dob': serializer.validated_data['mom_dob'],
+                'edd': serializer.validated_data['mom_edd'],
+                'faccode': serializer.validated_data['clinic_code'],
+                'consent': serializer.validated_data['consent'],
+                'mha': serializer.validated_data['mha'],
+                'swt': serializer.validated_data['swt'],
+            }
+            if id_type == 'sa_id':
+                reg_data['sa_id_no'] = (
+                    serializer.validated_data['mom_id_no'])
+            elif id_type == 'passport':
+                reg_data['passport_origin'] = (
+                    serializer.validated_data['mom_passport_origin'])
+                reg_data['passport_no'] = (
+                    serializer.validated_data['mom_id_no'])
+            reg = Registration.objects.create(
+                reg_type='momconnect_prebirth',
+                registrant_id=mom_identity['id'],
+                source=source,
+                data=reg_data,
+                created_by=self.request.user,
+                updated_by=self.request.user
+            )
+            reg_serializer = RegistrationSerializer(instance=reg)
+            return Response(
+                reg_serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

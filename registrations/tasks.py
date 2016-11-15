@@ -426,15 +426,9 @@ class BasePushRegistrationToJembi(object):
         NOTE:   this is a convenience method for getting the relevant
                 Jembi task to fire for a registration.
         """
-        authority = BasePushRegistrationToJembi.get_authority_from_source(
-            registration.source)
-        return {
-            'nurse': push_nurse_registration_to_jembi,
-            'personal': push_registration_to_jembi,
-            'optout': push_registration_to_jembi,
-            'clinic': push_registration_to_jembi,
-            'chw': push_registration_to_jembi,
-        }.get(authority, push_registration_to_jembi)
+        if registration.reg_type in ('nurseconnect',):
+            return push_nurse_registration_to_jembi
+        return push_registration_to_jembi
 
     @staticmethod
     def get_authority_from_source(source):
@@ -449,6 +443,7 @@ class BasePushRegistrationToJembi(object):
             'CLINIC USSD App': 'clinic',
             'CHW USSD App': 'chw',
             'NURSE USSD App': 'nurse',
+            'PMTCT USSD App': 'pmtct',
         }.get(source.name)
 
     def run(self, registration_id, **kwargs):
@@ -504,6 +499,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
             # 'babyloss': 5,
             # 'servicerating': 6,
             # 'helpdesk': 7,
+            'pmtct': 8,
         }
         return authority_map[authority]
 
@@ -527,8 +523,8 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
         self.l.info("Compiling Jembi Json data for PushRegistrationToJembi")
         authority = self.get_authority_from_source(registration.source)
         json_template = {
-            "mha": 1,
-            "swt": 1,
+            "mha": registration.data.get('mha', 1),
+            "swt": registration.data.get('swt', 1),
             "dmsisdn": registration.data['msisdn_device'],
             "cmsisdn": registration.data['msisdn_registrant'],
             "id": self.get_patient_id(
@@ -546,7 +542,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
             "faccode": registration.data.get('faccode'),
             "dob": (self.get_dob(
                 datetime.strptime(registration.data['mom_dob'], '%Y-%m-%d'))
-                    if registration.data.get('mom_db')
+                    if registration.data.get('mom_dob')
                     else None)
         }
 

@@ -10,8 +10,9 @@ except ImportError:
 
 from django.contrib.auth.models import User
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.db.models.signals import post_save
+from mock import patch
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
@@ -910,6 +911,235 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         self.assertEqual(response.data["count"], 2)
 
 
+@override_settings(
+    IDENTITY_STORE_URL='http://identitystore/',
+    IDENTITY_STORE_TOKEN='identitystore_token'
+)
+class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
+
+    @responses.activate
+    def test_create_third_party_registration_existing_identity(self):
+        # Setup
+        self.make_source_normaluser()
+
+        responses.add(
+            responses.GET,
+            'http://identitystore/identities/search/?details__addresses__msisdn=%2B27831111111',  # noqa
+            json={
+                'count': 1,
+                'next': None,
+                'previous': None,
+                'results': [{
+                    'created_at': '2015-10-14T07:25:53.218988Z',
+                    'created_by': 53,
+                    'details': {
+                        'addresses': {
+                            'msisdn': {'+27831111111': {'default': True}}
+                        },
+                        'default_addr_type': 'msisdn',
+                    },
+                    'id': '3a4af5d9-887b-410f-afa1-460d4b3ecc05',
+                    'operator': None,
+                    'updated_at': '2016-10-27T19:04:03.138598Z',
+                    'updated_by': 53,
+                    'version': 1
+                }]},
+            match_querystring=True,
+            status=200,
+            content_type='application/json')
+        responses.add(
+            responses.GET,
+            'http://identitystore/identities/search/?details__addresses__msisdn=%2B27824440000',  # noqa
+            json={
+                'count': 1,
+                'next': None,
+                'previous': None,
+                'results': [{
+                    'communicate_through': None,
+                    'created_at': '2015-10-14T07:25:53.218988Z',
+                    'created_by': 53,
+                    'details': {
+                        'addresses': {
+                            'msisdn': {'+27824440000': {'default': True}}
+                        },
+                        'consent': False,
+                        'default_addr_type': 'msisdn',
+                        'lang_code': 'eng_ZA',
+                        'last_mc_reg_on': 'clinic',
+                        'mom_dob': '1999-02-21',
+                        'sa_id_no': '27625249986',
+                        'source': 'clinic'
+                    },
+                    'id': '02144938-847d-4d2c-9daf-707cb864d077',
+                    'operator': '3a4af5d9-887b-410f-afa1-460d4b3ecc05',
+                    'updated_at': '2016-10-27T19:04:03.138598Z',
+                    'updated_by': 53,
+                    'version': 1
+            }]},
+            match_querystring=True,
+            status=200,
+            content_type='application/json')
+        responses.add(
+            responses.PATCH,
+            'http://identitystore/identities/02144938-847d-4d2c-9daf-707cb864d077/',  # noqa
+            json={
+                'count': 1,
+                'next': None,
+                'previous': None,
+                'results': [{
+                    'communicate_through': None,
+                    'created_at': '2015-10-14T07:25:53.218988Z',
+                    'created_by': 53,
+                    'details': {
+                        'addresses': {
+                            'msisdn': {'+27824440000': {'default': True}}
+                        },
+                        'consent': False,
+                        'default_addr_type': 'msisdn',
+                        'lang_code': 'eng_ZA',
+                        'last_mc_reg_on': 'clinic',
+                        'mom_dob': '1999-02-21',
+                        'sa_id_no': '27625249986',
+                        'source': 'clinic'
+                    },
+                    'id': '02144938-847d-4d2c-9daf-707cb864d077',
+                    'operator': '3a4af5d9-887b-410f-afa1-460d4b3ecc05',
+                    'updated_at': '2016-10-27T19:04:03.138598Z',
+                    'updated_by': 53,
+                    'version': 1
+            }]},
+            match_querystring=True,
+            status=200,
+            content_type='application/json')
+        post_data = {
+            "hcw_msisdn": "+27831111111",
+            "mom_msisdn": "+27824440000",
+            "mom_id_type": "none",
+            "mom_passport_origin": None,
+            "mom_id_no": "27625249986",
+            "mom_lang": "en",
+            "mom_edd": "2016-11-05",
+            "mom_dob": "1999-02-21",
+            "clinic_code": None,
+            "authority": "chw",
+            "consent": True,
+            "mha": 2,
+            "swt": 3
+        }
+        # Execute
+        response = self.normalclient.post('/api/v1/extregistration/',
+                                          json.dumps(post_data),
+                                          content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        d = Registration.objects.last()
+        self.assertEqual(d.source.name, 'test_source_normaluser')
+        self.assertEqual(d.reg_type, 'momconnect_prebirth')
+        self.assertEqual(d.registrant_id,
+                         "02144938-847d-4d2c-9daf-707cb864d077")
+        self.assertEqual(d.data['edd'], '2016-11-05')
+
+    @responses.activate
+    def test_create_third_party_registration_new_identity(self):
+        # Setup
+        self.make_source_normaluser()
+
+        responses.add(
+            responses.GET,
+            'http://identitystore/identities/search/?details__addresses__msisdn=%2B27831111111',  # noqa
+            json={
+                'count': 1,
+                'next': None,
+                'previous': None,
+                'results': [{
+                    'created_at': '2015-10-14T07:25:53.218988Z',
+                    'created_by': 53,
+                    'details': {
+                        'addresses': {
+                            'msisdn': {'+27831111111': {'default': True}}
+                        },
+                        'default_addr_type': 'msisdn',
+                    },
+                    'id': '3a4af5d9-887b-410f-afa1-460d4b3ecc05',
+                    'operator': None,
+                    'updated_at': '2016-10-27T19:04:03.138598Z',
+                    'updated_by': 53,
+                    'version': 1
+            }]},
+            match_querystring=True,
+            status=200,
+            content_type='application/json')
+        responses.add(
+            responses.GET,
+            'http://identitystore/identities/search/?details__addresses__msisdn=%2B27824440000',  # noqa
+            json={
+                'count': 0,
+                'next': None,
+                'previous': None,
+                'results': []
+            },
+            match_querystring=True,
+            status=200,
+            content_type='application/json')
+        responses.add(
+            responses.POST,
+            'http://identitystore/identities/',
+            json={
+                'communicate_through': None,
+                'created_at': '2015-10-14T07:25:53.218988Z',
+                'created_by': 53,
+                'details': {
+                    'addresses': {
+                        'msisdn': {'+27824440000': {'default': True}}
+                    },
+                    'consent': False,
+                    'default_addr_type': 'msisdn',
+                    'lang_code': 'eng_ZA',
+                    'last_mc_reg_on': 'clinic',
+                    'mom_dob': '1999-02-21',
+                    'sa_id_no': '27625249986',
+                    'source': 'clinic'
+                },
+                'id': '02144938-847d-4d2c-9daf-707cb864d077',
+                'operator': '3a4af5d9-887b-410f-afa1-460d4b3ecc05',
+                'updated_at': '2016-10-27T19:04:03.138598Z',
+                'updated_by': 53,
+                'version': 1
+            },
+            match_querystring=True,
+            status=200,
+            content_type='application/json')
+        post_data = {
+            "hcw_msisdn": "+27831111111",
+            "mom_msisdn": "+27824440000",
+            "mom_id_type": "none",
+            "mom_passport_origin": None,
+            "mom_id_no": "27625249986",
+            "mom_lang": "en",
+            "mom_edd": "2016-11-05",
+            "mom_dob": "1999-02-21",
+            "clinic_code": None,
+            "authority": "chw",
+            "consent": True,
+            "mha": 2,
+            "swt": 3
+        }
+        # Execute
+        response = self.normalclient.post('/api/v1/extregistration/',
+                                          json.dumps(post_data),
+                                          content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        d = Registration.objects.last()
+        self.assertEqual(d.source.name, 'test_source_normaluser')
+        self.assertEqual(d.reg_type, 'momconnect_prebirth')
+        self.assertEqual(d.registrant_id,
+                         "02144938-847d-4d2c-9daf-707cb864d077")
+        self.assertEqual(d.data['edd'], '2016-11-05')
+
+
 class TestRegistrationHelpers(AuthenticatedAPITestCase):
 
     def test_get_risk_status(self):
@@ -1759,7 +1989,8 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
 class TestRegistrationCreation(AuthenticatedAPITestCase):
 
     @responses.activate
-    def test_registration_process_pmtct_good(self):
+    @patch('registrations.tasks.PushRegistrationToJembi.get_today')
+    def test_registration_process_pmtct_good(self, mock_date):
         """ Test a full registration process with good data """
         # Setup
         registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
@@ -1767,7 +1998,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         post_save.connect(psh_validate_subscribe, sender=Registration)
 
         source = self.make_source_normaluser()
-        source.name = 'PUBLIC USSD App'
+        source.name = 'PMTCT USSD App'
         source.save()
 
         # . setup pmtct_prebirth registration
@@ -1794,6 +2025,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         utils_tests.mock_get_schedule(schedule_id)
         utils_tests.mock_get_identity_by_id(registrant_uuid)
         utils_tests.mock_patch_identity(registrant_uuid)
+        mock_date.return_value = datetime.date(2016, 1, 1)
 
         # Execute
         registration = Registration.objects.create(**registration_data)
@@ -1802,6 +2034,20 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         # . check number of calls made:
         #   messageset, schedule, identity, patch identity, jembi registration
         self.assertEqual(len(responses.calls), 5)
+
+        # check jembi registration
+        self.assertEqual(json.loads(responses.calls[-1].request.body), {
+            'lang': 'en',
+            'dob': '19990127',
+            'cmsisdn': '+27821113333',
+            'dmsisdn': '+27821113333',
+            'faccode': '123456',
+            'id': '8108015001051^^^ZAF^NI',
+            'encdate': '20160101000000',
+            'type': 8,
+            'swt': 1,
+            'mha': 1,
+        })
 
         # . check registration validated
         registration.refresh_from_db()
@@ -1929,7 +2175,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 
         # Mock API call to SBM for message set
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
-            'pmtct_prebirth.patient.1')
+            'momconnect_prebirth.patient.1')
         utils_tests.mock_get_schedule(schedule_id)
         utils_tests.mock_get_identity_by_id(
             "mother01-63e2-4acc-9b94-26663b9bc267")
@@ -1950,7 +2196,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             user=User.objects.get(username='testnormaluser'))
 
         registration_data = {
-            "reg_type": "pmtct_prebirth",
+            "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": source,
             "data": {
@@ -1961,8 +2207,9 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "sa_id_no": "0000000000",
                 "edd": "2016-11-30",
                 "faccode": "123456",
-                "msisdn_device": "+2700000000",
+                "msisdn_device": "+27000000000",
                 "msisdn_registrant": "+27111111111",
+                "consent": True,
             },
         }
 
@@ -2000,7 +2247,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             user=User.objects.get(username='testnormaluser'))
 
         registration_data = {
-            "reg_type": "pmtct_prebirth",
+            "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": source,
             "data": {

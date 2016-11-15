@@ -47,6 +47,22 @@ class HookSerializer(serializers.ModelSerializer):
         read_only_fields = ('user',)
 
 
+class ThirdPartyRegistrationSerializer(serializers.Serializer):
+    hcw_msisdn = serializers.CharField()
+    mom_msisdn = serializers.CharField()
+    mom_id_type = serializers.CharField()
+    mom_passport_origin = serializers.CharField(allow_null=True)
+    mom_lang = serializers.CharField()
+    mom_edd = serializers.CharField()
+    mom_id_no = serializers.CharField()
+    mom_dob = serializers.CharField()
+    clinic_code = serializers.CharField(allow_null=True)
+    authority = serializers.CharField()
+    consent = serializers.BooleanField()
+    mha = serializers.IntegerField()
+    swt = serializers.IntegerField()
+
+
 class JembiHelpdeskOutgoingSerializer(serializers.Serializer):
     to = serializers.CharField()
     reply_to = serializers.CharField()
