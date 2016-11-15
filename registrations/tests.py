@@ -1929,7 +1929,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 
         # Mock API call to SBM for message set
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
-            'pmtct_prebirth.patient.1')
+            'momconnect_prebirth.patient.1')
         utils_tests.mock_get_schedule(schedule_id)
         utils_tests.mock_get_identity_by_id(
             "mother01-63e2-4acc-9b94-26663b9bc267")
@@ -1950,7 +1950,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             user=User.objects.get(username='testnormaluser'))
 
         registration_data = {
-            "reg_type": "pmtct_prebirth",
+            "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": source,
             "data": {
@@ -1961,8 +1961,9 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "sa_id_no": "0000000000",
                 "edd": "2016-11-30",
                 "faccode": "123456",
-                "msisdn_device": "+2700000000",
+                "msisdn_device": "+27000000000",
                 "msisdn_registrant": "+27111111111",
+                "consent": True,
             },
         }
 
@@ -2000,7 +2001,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             user=User.objects.get(username='testnormaluser'))
 
         registration_data = {
-            "reg_type": "pmtct_prebirth",
+            "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": source,
             "data": {

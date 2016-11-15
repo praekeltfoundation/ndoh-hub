@@ -426,15 +426,11 @@ class BasePushRegistrationToJembi(object):
         NOTE:   this is a convenience method for getting the relevant
                 Jembi task to fire for a registration.
         """
-        authority = BasePushRegistrationToJembi.get_authority_from_source(
-            registration.source)
-        return {
-            'nurse': push_nurse_registration_to_jembi,
-            'personal': push_registration_to_jembi,
-            'optout': push_registration_to_jembi,
-            'clinic': push_registration_to_jembi,
-            'chw': push_registration_to_jembi,
-        }.get(authority, push_registration_to_jembi)
+        if registration.reg_type in ('pmtct_prebirth', 'pmtct_postbirth'):
+            return push_pmtct_registration_to_jembi
+        elif registration.reg_type in ('nurseconnect',):
+            return push_nurse_registration_to_jembi
+        return push_registration_to_jembi
 
     @staticmethod
     def get_authority_from_source(source):
@@ -615,6 +611,14 @@ class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
         return json_template
 
 push_nurse_registration_to_jembi = PushNurseRegistrationToJembi()
+
+
+class PushPmtctRegistrationToJembi(BasePushRegistrationToJembi, Task):
+    name = "ndoh_hub.registrations.tasks.push_pmtct_registration_to_jembi"
+    l = get_task_logger(__name__)
+    URL = "%s/nc/subscription" % settings.JEMBI_BASE_URL
+
+push_pmtct_registration_to_jembi = PushPmtctRegistrationToJembi()
 
 
 class DeliverHook(Task):
