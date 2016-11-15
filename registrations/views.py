@@ -262,8 +262,9 @@ class ThirdPartyRegistration(APIView):
                     details['passport_no'] = (
                         serializer.validated_data['mom_id_no'])
                 mom_identity['details'] = details
-                mom_identity = is_client.update_identity(mom_identity['id'],
-                                                         data=mom_identity)
+                result = is_client.update_identity(mom_identity['id'],
+                                                   data=mom_identity)
+                mom_identity = result['results'][0]
 
             # Create registration
             reg_data = {
@@ -287,7 +288,6 @@ class ThirdPartyRegistration(APIView):
                     serializer.validated_data['mom_passport_origin'])
                 reg_data['passport_no'] = (
                     serializer.validated_data['mom_id_no'])
-
             reg = Registration.objects.create(
                 reg_type='momconnect_prebirth',
                 registrant_id=mom_identity['id'],
