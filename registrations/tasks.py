@@ -426,9 +426,7 @@ class BasePushRegistrationToJembi(object):
         NOTE:   this is a convenience method for getting the relevant
                 Jembi task to fire for a registration.
         """
-        if registration.reg_type in ('pmtct_prebirth', 'pmtct_postbirth'):
-            return push_pmtct_registration_to_jembi
-        elif registration.reg_type in ('nurseconnect',):
+        if registration.reg_type in ('nurseconnect',):
             return push_nurse_registration_to_jembi
         return push_registration_to_jembi
 
@@ -445,6 +443,7 @@ class BasePushRegistrationToJembi(object):
             'CLINIC USSD App': 'clinic',
             'CHW USSD App': 'chw',
             'NURSE USSD App': 'nurse',
+            'PMTCT USSD App': 'pmtct',
         }.get(source.name)
 
     def run(self, registration_id, **kwargs):
@@ -500,6 +499,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
             # 'babyloss': 5,
             # 'servicerating': 6,
             # 'helpdesk': 7,
+            'pmtct': 8,
         }
         return authority_map[authority]
 
@@ -542,7 +542,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
             "faccode": registration.data.get('faccode'),
             "dob": (self.get_dob(
                 datetime.strptime(registration.data['mom_dob'], '%Y-%m-%d'))
-                    if registration.data.get('mom_db')
+                    if registration.data.get('mom_dob')
                     else None)
         }
 
@@ -611,14 +611,6 @@ class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
         return json_template
 
 push_nurse_registration_to_jembi = PushNurseRegistrationToJembi()
-
-
-class PushPmtctRegistrationToJembi(BasePushRegistrationToJembi, Task):
-    name = "ndoh_hub.registrations.tasks.push_pmtct_registration_to_jembi"
-    l = get_task_logger(__name__)
-    URL = "%s/nc/subscription" % settings.JEMBI_BASE_URL
-
-push_pmtct_registration_to_jembi = PushPmtctRegistrationToJembi()
 
 
 class DeliverHook(Task):
