@@ -759,7 +759,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         self.assertEqual(d.reg_type, 'momconnect_prebirth')
         self.assertEqual(d.registrant_id,
                          "mother01-63e2-4acc-9b94-26663b9bc267")
-        self.assertEqual(d.validated, False)
+        self.assertEqual(d.validated, True)
         self.assertEqual(d.data, DATA_CLINIC_PREBIRTH)
         self.assertEqual(d.created_by, self.adminuser)
 
@@ -783,7 +783,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         self.assertEqual(d.reg_type, 'momconnect_prebirth')
         self.assertEqual(d.registrant_id,
                          "mother01-63e2-4acc-9b94-26663b9bc267")
-        self.assertEqual(d.validated, False)
+        self.assertEqual(d.validated, True)
         self.assertEqual(d.data, DATA_PUBLIC_PREBIRTH)
         self.assertEqual(d.created_by, self.normaluser)
 
@@ -808,7 +808,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         self.assertEqual(d.reg_type, 'momconnect_prebirth')
         self.assertEqual(d.registrant_id,
                          "mother01-63e2-4acc-9b94-26663b9bc267")
-        self.assertEqual(d.validated, False)  # Should ignore True post_data
+        self.assertEqual(d.validated, True)  # Should ignore True post_data
         self.assertEqual(d.data, DATA_PUBLIC_PREBIRTH)
 
     def test_create_registration_normaluser_invalid_reg_type(self):
@@ -906,7 +906,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
             content_type='application/json')
         # Check
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["count"], 2)
         result = response.data["results"][0]
         self.assertEqual(result["id"], str(registration1.id))
 
@@ -1021,13 +1021,12 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
             "reg_type": "pmtct_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": self.make_source_normaluser(),
-            "data": DATA_PMTCT_PREBIRTH,
+            "data": DATA_PMTCT_PREBIRTH.copy(),
         }
         registration_data["data"]["foo"] = "bar"
         # Execute
         with self.assertRaises(ValidationError) as cm:
             Registration.objects.create(**registration_data)
-
         # Check
         self.assertEqual(
             str(['Superfluous fields: foo']),
@@ -1052,7 +1051,6 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Execute
         with self.assertRaises(ValidationError) as cm:
             Registration.objects.create(**registration_data)
-
         # Check
         self.assertEqual(
             str([
@@ -1073,15 +1071,17 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
             "source": self.make_source_normaluser(),
             "data": {},
         }
-        registration = Registration.objects.create(**registration_data)
         # Execute
-        v = validate_subscribe.validate(registration)
+        with self.assertRaises(ValidationError) as cm:
+            Registration.objects.create(**registration_data)
         # Check
-        self.assertEqual(v, False)
-        registration.refresh_from_db()
-        self.assertEqual(registration.data["invalid_fields"], [
-            'Language is missing from data', 'Mother DOB missing',
-            'Estimated Due Date missing', 'Operator ID missing']
+        self.assertEqual(
+            str([
+                'Missing field: operator_id',
+                'Missing field: mom_dob',
+                'Missing field: edd',
+                'Missing field: language']),
+            str(cm.exception)
         )
 
     def test_validate_pmtct_postbirth_good(self):
@@ -1113,16 +1113,18 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 "baby_dob": "2016-01-09"
             },
         }
-        registration = Registration.objects.create(**registration_data)
         # Execute
-        v = validate_subscribe.validate(registration)
+        with self.assertRaises(ValidationError) as cm:
+            Registration.objects.create(**registration_data)
         # Check
-        self.assertEqual(v, False)
-        registration.refresh_from_db()
-        self.assertEqual(registration.data["invalid_fields"], [
-            'Invalid UUID registrant_id', 'Language not a valid option',
-            'Mother DOB invalid', 'Baby Date of Birth cannot be in the future',
-            'Operator ID invalid']
+        self.assertEqual(
+            str([
+                'Invalid UUID: registrant_id',
+                'Invalid UUID: operator_id',
+                'Invalid date: mom_dob',
+                'Invalid date: baby_dob is in the future',
+                'Invalid Language: language']),
+            str(cm.exception)
         )
 
     def test_validate_pmtct_postbirth_missing_data(self):
@@ -1134,15 +1136,17 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
             "source": self.make_source_normaluser(),
             "data": {},
         }
-        registration = Registration.objects.create(**registration_data)
         # Execute
-        v = validate_subscribe.validate(registration)
+        with self.assertRaises(ValidationError) as cm:
+            Registration.objects.create(**registration_data)
         # Check
-        self.assertEqual(v, False)
-        registration.refresh_from_db()
-        self.assertEqual(registration.data["invalid_fields"], [
-            'Language is missing from data', 'Mother DOB missing',
-            'Baby Date of Birth missing', 'Operator ID missing']
+        self.assertEqual(
+            str([
+                'Missing field: operator_id',
+                'Missing field: mom_dob',
+                'Missing field: baby_dob',
+                'Missing field: language']),
+            str(cm.exception)
         )
 
     def test_validate_nurseconnect_good(self):
@@ -1181,16 +1185,18 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 "language": "en"
             },
         }
-        registration = Registration.objects.create(**registration_data)
         # Execute
-        v = validate_subscribe.validate(registration)
+        with self.assertRaises(ValidationError) as cm:
+            Registration.objects.create(**registration_data)
         # Check
-        self.assertEqual(v, False)
-        registration.refresh_from_db()
-        self.assertEqual(registration.data["invalid_fields"], [
-            'Invalid UUID registrant_id', 'Operator ID invalid',
-            'MSISDN of Registrant invalid', 'MSISDN of device invalid',
-            'Language not a valid option']
+        self.assertEqual(
+            str([
+                'Invalid UUID: registrant_id',
+                'Invalid UUID: operator_id',
+                'Invalid MSISDN: msisdn_registrant',
+                'Invalid MSISDN: msisdn_device',
+                'Invalid Language: language']),
+            str(cm.exception)
         )
 
     def test_validate_nurseconnect_missing_data(self):
@@ -1202,16 +1208,18 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
             "source": self.make_source_adminuser(),
             "data": {},
         }
-        registration = Registration.objects.create(**registration_data)
         # Execute
-        v = validate_subscribe.validate(registration)
+        with self.assertRaises(ValidationError) as cm:
+            Registration.objects.create(**registration_data)
         # Check
-        self.assertEqual(v, False)
-        registration.refresh_from_db()
-        self.assertEqual(registration.data["invalid_fields"], [
-            'Facility (clinic) code missing', 'Operator ID missing',
-            'MSISDN of Registrant missing', 'MSISDN of device missing',
-            'Language is missing from data']
+        self.assertEqual(
+            str([
+                'Missing field: operator_id',
+                'Missing field: msisdn_registrant',
+                'Missing field: msisdn_device',
+                'Missing field: language',
+                'Missing field: faccode']),
+            str(cm.exception)
         )
 
     def test_validate_momconnect_prebirth_clinic_good(self):
@@ -1249,24 +1257,23 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 "consent": None
             },
         }
-        registration = Registration.objects.create(**registration_data)
         # Execute
-        v = validate_subscribe.validate(registration)
+        with self.assertRaises(ValidationError) as cm:
+            Registration.objects.create(**registration_data)
         # Check
-        self.assertEqual(v, False)
-        registration.refresh_from_db()
-        self.assertEqual(registration.data["invalid_fields"], [
-            "Invalid UUID registrant_id",
-            "Operator ID invalid",
-            "MSISDN of Registrant invalid",
-            "MSISDN of device invalid",
-            "Language not a valid option",
-            "Cannot continue without consent",
-            "SA ID number invalid",
-            "Mother DOB invalid",
-            "Estimated Due Date invalid",
-            "Facility code invalid",
-            ]
+        self.assertEqual(
+            str([
+                'Invalid UUID: registrant_id',
+                'Invalid UUID: operator_id',
+                'Invalid MSISDN: msisdn_registrant',
+                'Invalid MSISDN: msisdn_device',
+                'Invalid SA ID number: sa_id_no',
+                'Invalid date: mom_dob',
+                'Invalid Language: language',
+                'Invalid date: edd',
+                'Invalid Clinic Code: faccode',
+                'Invalid Consent: consent must be True']),
+            str(cm.exception)
         )
 
     def test_validate_momconnect_prebirth_clinic_malformed_data_2(self):
@@ -1288,24 +1295,23 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 "consent": None
             },
         }
-        registration = Registration.objects.create(**registration_data)
         # Execute
-        v = validate_subscribe.validate(registration)
+        with self.assertRaises(ValidationError) as cm:
+            Registration.objects.create(**registration_data)
         # Check
-        self.assertEqual(v, False)
-        registration.refresh_from_db()
-        self.assertEqual(registration.data["invalid_fields"], [
-            "Invalid UUID registrant_id",
-            "Operator ID invalid",
-            "MSISDN of Registrant invalid",
-            "MSISDN of device invalid",
-            "Language not a valid option",
-            "Cannot continue without consent",
-            "Passport number missing",
-            "Passport origin invalid",
-            "Estimated Due Date invalid",
-            "Facility code invalid",
-            ]
+        self.assertEqual(
+            str([
+                'Invalid UUID: registrant_id',
+                'Invalid UUID: operator_id',
+                'Invalid MSISDN: msisdn_registrant',
+                'Invalid MSISDN: msisdn_device',
+                'Missing field: passport_no',
+                'Invalid Passport origin: passport_origin',
+                'Invalid Language: language',
+                'Invalid date: edd',
+                'Invalid Clinic Code: faccode',
+                'Invalid Consent: consent must be True']),
+            str(cm.exception)
         )
 
     def test_validate_momconnect_prebirth_clinic_missing_data(self):
@@ -1317,23 +1323,22 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
             "source": self.make_source_adminuser(),
             "data": {},
         }
-        registration = Registration.objects.create(**registration_data)
         # Execute
-        v = validate_subscribe.validate(registration)
+        with self.assertRaises(ValidationError) as cm:
+            Registration.objects.create(**registration_data)
         # Check
-        self.assertEqual(v, False)
-        registration.refresh_from_db()
-        self.assertEqual(registration.data["invalid_fields"], [
-            "Invalid UUID registrant_id",
-            "Operator ID missing",
-            "MSISDN of Registrant missing",
-            "MSISDN of device missing",
-            "Language is missing from data",
-            "Consent is missing",
-            "ID type missing",
-            "Estimated Due Date missing",
-            "Facility (clinic) code missing",
-            ]
+        self.assertEqual(
+            str([
+                'Invalid UUID: registrant_id',
+                'Missing field: operator_id',
+                'Missing field: msisdn_registrant',
+                'Missing field: msisdn_device',
+                'Missing field: id_type',
+                'Missing field: language',
+                'Missing field: edd',
+                'Missing field: faccode',
+                'Missing field: consent']),
+            str(cm.exception)
         )
 
     def test_validate_momconnect_prebirth_chw_good(self):
@@ -1369,20 +1374,20 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
             "source": self.make_source_partialuser(),
             "data": {},
         }
-        registration = Registration.objects.create(**registration_data)
         # Execute
-        v = validate_subscribe.validate(registration)
+        with self.assertRaises(ValidationError) as cm:
+            Registration.objects.create(**registration_data)
         # Check
-        self.assertEqual(v, False)
-        registration.refresh_from_db()
-        self.assertEqual(registration.data["invalid_fields"], [
-            "Operator ID missing",
-            "MSISDN of Registrant missing",
-            "MSISDN of device missing",
-            "Language is missing from data",
-            "Consent is missing",
-            "ID type missing",
-        ])
+        self.assertEqual(
+            str([
+                'Missing field: operator_id',
+                'Missing field: msisdn_registrant',
+                'Missing field: msisdn_device',
+                'Missing field: id_type',
+                'Missing field: language',
+                'Missing field: consent']),
+            str(cm.exception)
+        )
 
     def test_validate_momconnect_prebirth_public_good(self):
         """ public momconnect_prebirth """
@@ -1408,19 +1413,19 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
             "source": self.make_source_normaluser(),
             "data": {},
         }
-        registration = Registration.objects.create(**registration_data)
         # Execute
-        v = validate_subscribe.validate(registration)
+        with self.assertRaises(ValidationError) as cm:
+            Registration.objects.create(**registration_data)
         # Check
-        self.assertEqual(v, False)
-        registration.refresh_from_db()
-        self.assertEqual(registration.data["invalid_fields"], [
-            "Operator ID missing",
-            "MSISDN of Registrant missing",
-            "MSISDN of device missing",
-            "Language is missing from data",
-            "Consent is missing",
-        ])
+        self.assertEqual(
+            str([
+                'Missing field: operator_id',
+                'Missing field: msisdn_registrant',
+                'Missing field: msisdn_device',
+                'Missing field: language',
+                'Missing field: consent']),
+            str(cm.exception)
+        )
 
 
 class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
