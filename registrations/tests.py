@@ -2117,3 +2117,58 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         self.assertEqual(json.loads(jembi_call.response.text), {
             "result": "jembi-is-ok"
         })
+
+
+class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
+
+    @responses.activate
+    def test_send_outgoing_message_to_jembi(self):
+        self.make_registration_normaluser()
+
+        utils_tests.mock_jembi_json_api_call(
+            url='http://jembi/ws/rest/v1/helpdesk',
+            ok_response="jembi-is-ok",
+            err_response="jembi-is-unhappy",
+            fields={})
+
+        user_request = {
+            "to": "+27123456789",
+            "content": "this is a sample reponse",
+            "reply_to": "this is a sample user message",
+            "created_on": override_get_today(),
+            "user_id": 'mother01-63e2-4acc-9b94-26663b9bc267',
+            "label": 'Complaint'}
+        # Execute
+        response = self.normalclient.post(
+            '/api/v1/jembi/helpdesk/outgoing/', user_request)
+        self.assertEqual(
+            response.status_code, 200)
+
+    def test_send_outgoing_message_to_jembi_invalid_user_id(self):
+        user_request = {
+            "to": "+27123456789",
+            "content": "this is a sample reponse",
+            "reply_to": "this is a sample user message",
+            "created_on": override_get_today(),
+            "user_id": 'unknown-uuid',
+            "label": 'Complaint'}
+        # Execute
+        response = self.normalclient.post(
+            '/api/v1/jembi/helpdesk/outgoing/', user_request)
+        self.assertEqual(
+            response.status_code, 404)
+
+    def test_send_outgoing_message_to_jembi_improperly_configured(self):
+        user_request = {
+            "to": "+27123456789",
+            "content": "this is a sample reponse",
+            "reply_to": "this is a sample user message",
+            "created_on": override_get_today(),
+            "user_id": 'unknown-uuid',
+            "label": 'Complaint'}
+        # Execute
+        with self.settings(JEMBI_BASE_URL=''):
+            response = self.normalclient.post(
+                '/api/v1/jembi/helpdesk/outgoing/', user_request)
+            self.assertEqual(
+                response.status_code, 503)

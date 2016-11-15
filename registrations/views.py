@@ -164,16 +164,18 @@ class JembiHelpdeskOutgoingView(APIView):
         return json_template
 
     def post(self, request):
-        if not (settings.JEMBI_API_URL and settings.JEMBI_USERNAME and
+        if not (settings.JEMBI_BASE_URL and settings.JEMBI_USERNAME and
                 settings.JEMBI_PASSWORD):
-            return Response('Jembi integration is not configured properly.')
+            return Response(
+                'Jembi integration is not configured properly.',
+                status.HTTP_503_SERVICE_UNAVAILABLE)
 
         serializer = JembiHelpdeskOutgoingSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         post_data = self.build_jembi_helpdesk_json(serializer.validated_data)
         requests.post(
-            '%s/helpdesk' % settings.JEMBI_API_URL,
+            '%s/helpdesk' % settings.JEMBI_BASE_URL,
             headers={'Content-Type': 'application/json'},
             data=json.dumps(post_data),
             auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
