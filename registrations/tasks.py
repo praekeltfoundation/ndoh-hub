@@ -456,8 +456,8 @@ class PushRegistrationToJembi(Task):
         """ Compile json to be sent to Jembi. """
         authority = self.get_authority_from_source(registration.source)
         json_template = {
-            "mha": 1,
-            "swt": 1,
+            "mha": registration.data.get('mha', 1),
+            "swt": registration.data.get('swt', 1),
             "dmsisdn": registration.data['msisdn_device'],
             "cmsisdn": registration.data['msisdn_registrant'],
             "id": self.get_patient_id(
