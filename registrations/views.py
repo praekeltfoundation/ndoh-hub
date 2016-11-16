@@ -169,8 +169,8 @@ class JembiHelpdeskOutgoingView(APIView):
             "dmsisdn": validated_data.get('to'),
             "faccode": registration.data.get('faccode', ''),
             "data": {
-                "question": validated_data.get('content'),
-                "answer": validated_data.get('reply_to'),
+                "question": validated_data.get('reply_to'),
+                "answer": validated_data.get('content'),
             },
             "class": validated_data.get('label'),
             "type": 7,  # 7 helpdesk

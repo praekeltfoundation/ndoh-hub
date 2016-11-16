@@ -65,8 +65,8 @@ class ThirdPartyRegistrationSerializer(serializers.Serializer):
 
 class JembiHelpdeskOutgoingSerializer(serializers.Serializer):
     to = serializers.CharField()
-    reply_to = serializers.CharField()
+    reply_to = serializers.CharField(allow_blank=True)
     content = serializers.CharField()
     user_id = serializers.CharField()
-    label = serializers.CharField()
+    label = serializers.CharField(allow_blank=True)
     created_on = serializers.DateTimeField()
