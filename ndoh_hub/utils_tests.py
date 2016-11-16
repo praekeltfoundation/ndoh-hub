@@ -3,14 +3,18 @@ import json
 
 
 # Mocks used in testing
-def mock_get_identity_by_id(identity_id):
+def mock_get_identity_by_id(identity_id, details={}):
+
+    default_details = {
+        "foo": "bar",
+        "lang_code": "afr_ZA"
+    }
+    default_details.update(details)
+
     identity = {
         "id": identity_id,
         "version": 1,
-        "details": {
-            "foo": "bar",
-            "lang_code": "afr_ZA"
-        },
+        "details": default_details,
         "communicate_through": None,
         "operator": None,
         "created_at": "2016-03-31T09:28:29.506591Z",
@@ -218,6 +222,14 @@ def mock_create_servicerating_invite(identity_id):
 
 def mock_push_registration_to_jembi(ok_response="ok", err_response="err",
                                     fields={}):
+    return mock_jembi_json_api_call(
+        'http://jembi/ws/rest/v1/subscription',
+        ok_response=ok_response, err_response=err_response,
+        fields=fields)
+
+
+def mock_jembi_json_api_call(url, ok_response="ok", err_response="err",
+                             fields={}):
     def request_callback(request):
         errors = []
         payload = json.loads(request.body)
@@ -229,7 +241,4 @@ def mock_push_registration_to_jembi(ok_response="ok", err_response="err",
                                          "errors": errors}))
         return (201, {}, json.dumps({"result": ok_response}))
 
-    responses.add_callback(
-        responses.POST,
-        'http://jembi/ws/rest/v1/subscription',
-        callback=request_callback)
+    responses.add_callback(responses.POST, url, callback=request_callback)
