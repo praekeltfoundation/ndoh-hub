@@ -1528,6 +1528,58 @@ class TestChangeActions(AuthenticatedAPITestCase):
         })
 
     @responses.activate
+    @mock.patch('changes.tasks.PushNurseconnectOptoutToJembi.get_today')
+    def test_nurse_optout_through_management_command(self, mock_timestamp):
+        # Setup
+        # make registration
+        self.make_registration_nurseconnect()
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        # make change object
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_optout",
+            "data": {
+                "reason": "job_change"
+            },
+            "source": self.make_source_adminuser(),
+            "validated": True,
+        }
+        change = Change.objects.create(**change_data)
+
+        # mock jembi sending timestamp
+        mock_timestamp.return_value = datetime.date(2016, 1, 1)
+
+        def format_timestamp(ts):
+            return ts.strftime('%Y-%m-%d %H:%M:%S')
+
+        # Execute
+        stdout = StringIO()
+        call_command(
+            'jembi_submit_optouts',
+            '--since', format_timestamp(
+                change.created_at - datetime.timedelta(seconds=1)),
+            '--until', format_timestamp(
+                change.created_at + datetime.timedelta(seconds=1)),
+            stdout=stdout)
+
+        # Check Jembi send
+        self.maxDiff = None
+        self.assertEqual(json.loads(responses.calls[-1].request.body), {
+            'encdate': '20160101000000',
+            'mha': 1,
+            'swt': 1,
+            'type': 8,
+            'cmsisdn': '+27821112222',
+            'dmsisdn': '+27821112222',
+            'rmsisdn': None,
+            'faccode': '123456',
+            'id': '27821112222^^^ZAF^TEL',
+            'dob': None,
+            'optoutreason': 7
+        })
+
+    @responses.activate
     def test_momconnect_loss_switch_has_active(self):
         # Setup
         # make registrations
