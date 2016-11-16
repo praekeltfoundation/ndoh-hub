@@ -1388,6 +1388,61 @@ class TestChangeActions(AuthenticatedAPITestCase):
 
     @responses.activate
     @mock.patch('changes.tasks.PushMomconnectOptoutToJembi.get_today')
+    def test_pmtct_loss_optout_management_command(self, mock_getdate):
+        # Setup
+        # make registration
+        self.make_registration_pmtct_prebirth()
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        # make change object
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "pmtct_loss_optout",
+            "data": {
+                "reason": "stillbirth"
+            },
+            "source": self.make_source_normaluser(),
+            "validated": True,
+        }
+        change = Change.objects.create(**change_data)
+
+        # mock identity store lookup for jembi push
+        utils_tests.mock_get_identity_by_id(
+            'mother01-63e2-4acc-9b94-26663b9bc267', {
+                'addresses': {
+                    'msisdn': {'+27821112222': {}},
+                },
+            })
+
+        # mock jembi sent date
+        mock_getdate.return_value = datetime.date(2016, 1, 1)
+
+        def format_timestamp(ts):
+            return ts.strftime('%Y-%m-%d %H:%M:%S')
+
+        # Execute
+        stdout = StringIO()
+        call_command(
+            'jembi_submit_optouts',
+            '--since', format_timestamp(
+                change.created_at - datetime.timedelta(seconds=1)),
+            '--until', format_timestamp(
+                change.created_at + datetime.timedelta(seconds=1)),
+            stdout=stdout)
+
+        # Check jembi push
+        self.assertEqual(json.loads(responses.calls[-1].request.body), {
+            'cmsisdn': '+27821112222',
+            'dmsisdn': '+27821112222',
+            'encdate': '20160101000000',
+            'mha': 1,
+            'swt': 1,
+            'optoutreason': 2,
+            'type': 4,
+        })
+
+    @responses.activate
+    @mock.patch('changes.tasks.PushMomconnectOptoutToJembi.get_today')
     def test_pmtct_nonloss_optout(self, mock_getdate):
         # Setup
         # make registration
@@ -1558,7 +1613,6 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(len(responses.calls), 4)
 
         # Check Jembi send
-        self.maxDiff = None
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
             'encdate': '20160101000000',
             'mha': 1,
@@ -1610,7 +1664,6 @@ class TestChangeActions(AuthenticatedAPITestCase):
             stdout=stdout)
 
         # Check Jembi send
-        self.maxDiff = None
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
             'encdate': '20160101000000',
             'mha': 1,
