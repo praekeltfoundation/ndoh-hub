@@ -1,6 +1,7 @@
 import datetime
 import json
 import responses
+import mock
 
 from django.test import TestCase
 from django.contrib.auth.models import User
@@ -1594,7 +1595,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(len(responses.calls), 1)
 
     @responses.activate
-    def test_momconnect_loss_optout(self):
+    @mock.patch('changes.tasks.PushMomconnectOptoutToJembi.get_today')
+    def test_momconnect_loss_optout(self, mock_today):
         # Setup
         # make registration
         self.make_registration_momconnect_prebirth()
@@ -1626,6 +1628,17 @@ class TestChangeActions(AuthenticatedAPITestCase):
             "subscriptionid-pmtct-prebirth-000000"
         ])
 
+        # mock identity lookup
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267", {
+                'addresses': {
+                    'msisdn': {'+27111111111': {}},
+                },
+            })
+
+        # mock datetime
+        mock_today.return_value = datetime.date(2016, 1, 1)
+
         # Execute
         result = validate_implement.apply_async(args=[change.id])
 
@@ -1635,10 +1648,22 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 2)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
-        self.assertEqual(len(responses.calls), 5)
+        self.assertEqual(len(responses.calls), 7)
+
+        # Check Jembi POST
+        self.assertEqual(json.loads(responses.calls[-1].request.body), {
+            'encdate': '20160101000000',
+            'mha': 1,
+            'swt': 1,
+            'cmsisdn': '+27111111111',
+            'dmsisdn': '+27111111111',
+            'type': 4,
+            'optoutreason': 2,
+        })
 
     @responses.activate
-    def test_momconnect_nonloss_optout(self):
+    @mock.patch('changes.tasks.PushMomconnectOptoutToJembi.get_today')
+    def test_momconnect_nonloss_optout(self, mock_today):
         # Setup
         # make registration
         self.make_registration_momconnect_prebirth()
@@ -1670,6 +1695,17 @@ class TestChangeActions(AuthenticatedAPITestCase):
             "subscriptionid-pmtct-prebirth-000000"
         ])
 
+        # mock datetime
+        mock_today.return_value = datetime.date(2016, 1, 1)
+
+        # mock identity lookup
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267", {
+                'addresses': {
+                    'msisdn': {'+27111111111': {}},
+                },
+            })
+
         # Execute
         result = validate_implement.apply_async(args=[change.id])
 
@@ -1679,4 +1715,15 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 2)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
-        self.assertEqual(len(responses.calls), 5)
+        self.assertEqual(len(responses.calls), 7)
+
+        # Check Jembi POST
+        self.assertEqual(json.loads(responses.calls[-1].request.body), {
+            'encdate': '20160101000000',
+            'mha': 1,
+            'swt': 1,
+            'cmsisdn': '+27111111111',
+            'dmsisdn': '+27111111111',
+            'type': 4,
+            'optoutreason': 5,
+        })
