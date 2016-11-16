@@ -8,6 +8,7 @@ from django.conf import settings
 from requests.exceptions import HTTPError
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
+from six import iteritems
 
 from ndoh_hub import utils
 from .models import Change
@@ -577,7 +578,7 @@ class PushMomconnectOptoutToJembi(Task):
         addresses = identity.get(
             'details', {}).get('addresses', {}).get(address_type, {})
         address = None
-        for address, details in addresses.iteritems():
+        for address, details in iteritems(addresses):
             if details.get('default'):
                 return address
         return address
