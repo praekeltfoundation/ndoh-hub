@@ -11,6 +11,7 @@ from seed_services_client.stage_based_messaging import StageBasedMessagingApiCli
 from six import iteritems
 
 from ndoh_hub import utils
+from registrations.models import Registration
 from .models import Change
 from registrations.models import SubscriptionRequest
 
@@ -301,6 +302,8 @@ class ValidateImplement(Task):
         """
         self.l.info("Starting NurseConnect optout")
         self.deactivate_nurseconnect(change)
+        self.l.info("Pushing optout to Jembi")
+        push_nurseconnect_optout_to_jembi.delay(change.pk)
         self.l.info("Completed NurseConnect optout")
         return "Completed NurseConnect optout"
 
@@ -556,32 +559,12 @@ class ValidateImplement(Task):
 validate_implement = ValidateImplement()
 
 
-class PushMomconnectOptoutToJembi(Task):
-    """
-    Sends a momconnect optout change to Jembi.
-    """
-    name = "ndoh_hub.changes.tasks.push_momconnect_optout_to_jembi"
-    l = get_task_logger(__name__)
-    URL = "%s/optout" % settings.JEMBI_BASE_URL
-
+class BasePushOptoutToJembi(object):
     def get_today(self):
         return datetime.datetime.today()
 
     def get_timestamp(self):
         return self.get_today().strftime("%Y%m%d%H%M%S")
-
-    def get_identity_address(self, identity, address_type='msisdn'):
-        """
-        Returns a single address for the identity for the given address
-        type.
-        """
-        addresses = identity.get(
-            'details', {}).get('addresses', {}).get(address_type, {})
-        address = None
-        for address, details in iteritems(addresses):
-            if details.get('default'):
-                return address
-        return address
 
     def get_optout_reason(self, reason):
         """
@@ -598,19 +581,6 @@ class PushMomconnectOptoutToJembi(Task):
             'number_owner_change': 8,
             'not_hiv_pos': 9,
         }.get(reason)
-
-    def build_jembi_json(self, change):
-        identity = is_client.get_identity(change.registrant_id) or {}
-        address = self.get_identity_address(identity)
-        return {
-            'encdate': self.get_timestamp(),
-            'mha': 1,
-            'swt': 1,
-            'cmsisdn': address,
-            'dmsisdn': address,
-            'type': 4,
-            'optoutreason': self.get_optout_reason(change.data['reason']),
-        }
 
     def run(self, change_id, **kwargs):
         from .models import Change
@@ -639,4 +609,102 @@ class PushMomconnectOptoutToJembi(Task):
                 'Problem posting Optout %s JSON to Jembi' % (
                     change_id), exc_info=True)
 
+
+class PushMomconnectOptoutToJembi(BasePushOptoutToJembi, Task):
+    """
+    Sends a momconnect optout change to Jembi.
+    """
+    name = "ndoh_hub.changes.tasks.push_momconnect_optout_to_jembi"
+    l = get_task_logger(__name__)
+    URL = "%s/optout" % settings.JEMBI_BASE_URL
+
+    def get_identity_address(self, identity, address_type='msisdn'):
+        """
+        Returns a single address for the identity for the given address
+        type.
+        """
+        addresses = identity.get(
+            'details', {}).get('addresses', {}).get(address_type, {})
+        address = None
+        for address, details in iteritems(addresses):
+            if details.get('default'):
+                return address
+        return address
+
+    def build_jembi_json(self, change):
+        identity = is_client.get_identity(change.registrant_id) or {}
+        address = self.get_identity_address(identity)
+        return {
+            'encdate': self.get_timestamp(),
+            'mha': 1,
+            'swt': 1,
+            'cmsisdn': address,
+            'dmsisdn': address,
+            'type': 4,
+            'optoutreason': self.get_optout_reason(change.data['reason']),
+        }
+
 push_momconnect_optout_to_jembi = PushMomconnectOptoutToJembi()
+
+
+class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
+    """
+    Sends a nurseconnect optout change to Jembi.
+    """
+    name = "ndoh_hub.changes.tasks.push_nurseconnect_optout_to_jembi"
+    l = get_task_logger(__name__)
+    URL = "%s/nc/optout" % settings.JEMBI_BASE_URL
+
+    def get_nurse_id(
+            self, id_type, id_no=None, passport_origin=None, mom_msisdn=None):
+        if id_type == 'sa_id':
+            return id_no + "^^^ZAF^NI"
+        elif id_type == 'passport':
+            return id_no + '^^^' + passport_origin.upper() + '^PPN'
+        else:
+            return mom_msisdn.replace('+', '') + '^^^ZAF^TEL'
+
+    def get_dob(self, nurse_dob):
+        return nurse_dob.strftime("%Y%m%d")
+
+    def get_nurse_registration(self, change):
+        """
+        A lot of the data that we need to send for the optout is contained
+        in the registration, so we need to get the latest registration.
+        """
+        return Registration.objects\
+            .filter(registrant_id=change.registrant_id)\
+            .order_by('-created_at')\
+            .first()
+
+    def build_jembi_json(self, change):
+        registration = self.get_nurse_registration(change)
+        if registration is None:
+            self.l.error(
+                'Cannot find registration for change {}'.format(change.pk))
+            return
+        return {
+            'encdate': self.get_timestamp(),
+            'mha': 1,
+            'swt': 1,
+            'type': 8,
+            "cmsisdn": registration.data['msisdn_registrant'],
+            "dmsisdn": registration.data['msisdn_device'],
+            'rmsisdn': None,
+            "faccode": registration.data['faccode'],
+            "id": self.get_nurse_id(
+                registration.data.get('id_type'),
+                (registration.data.get('sa_id_no')
+                 if registration.data.get('id_type') == 'sa_id'
+                 else registration.data.get('passport_no')),
+                # passport_origin may be None if sa_id is used
+                registration.data.get('passport_origin'),
+                registration.data['msisdn_registrant']),
+            "dob": (self.get_dob(
+                datetime.strptime(registration.data['mom_dob'], '%Y-%m-%d'))
+                    if registration.data.get('mom_db')
+                    else None),
+            'optoutreason': self.get_optout_reason(change.data['reason']),
+        }
+
+push_nurseconnect_optout_to_jembi = PushNurseconnectOptoutToJembi()
