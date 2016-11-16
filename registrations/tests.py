@@ -756,54 +756,6 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code,
                          status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def test_create_registration_adminuser(self):
-        # Setup
-        self.make_source_adminuser()
-        post_data = {
-            "reg_type": "momconnect_prebirth",
-            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "data": DATA_CLINIC_PREBIRTH
-        }
-        # Execute
-        response = self.adminclient.post('/api/v1/registration/',
-                                         json.dumps(post_data),
-                                         content_type='application/json')
-        # Check
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        d = Registration.objects.last()
-        self.assertEqual(d.source.name, 'test_source_adminuser')
-        self.assertEqual(d.reg_type, 'momconnect_prebirth')
-        self.assertEqual(d.registrant_id,
-                         "mother01-63e2-4acc-9b94-26663b9bc267")
-        self.assertEqual(d.validated, True)
-        self.assertEqual(d.data, DATA_CLINIC_PREBIRTH)
-        self.assertEqual(d.created_by, self.adminuser)
-
-    def test_create_registration_normaluser(self):
-        # Setup
-        self.make_source_normaluser()
-        post_data = {
-            "reg_type": "momconnect_prebirth",
-            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "data": DATA_PUBLIC_PREBIRTH
-        }
-        # Execute
-        response = self.normalclient.post('/api/v1/registration/',
-                                          json.dumps(post_data),
-                                          content_type='application/json')
-        # Check
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        d = Registration.objects.last()
-        self.assertEqual(d.source.name, 'test_source_normaluser')
-        self.assertEqual(d.reg_type, 'momconnect_prebirth')
-        self.assertEqual(d.registrant_id,
-                         "mother01-63e2-4acc-9b94-26663b9bc267")
-        self.assertEqual(d.validated, True)
-        self.assertEqual(d.data, DATA_PUBLIC_PREBIRTH)
-        self.assertEqual(d.created_by, self.normaluser)
-
     def test_create_registration_set_readonly_field(self):
         # Setup
         self.make_source_normaluser()
@@ -995,6 +947,134 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["count"], 2)
+
+    def test_create_registration_clinic_good(self):
+        # Setup
+        self.make_source_adminuser()
+        post_data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "data": DATA_CLINIC_PREBIRTH
+        }
+        # Execute
+        response = self.adminclient.post('/api/v1/registration/',
+                                         json.dumps(post_data),
+                                         content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        d = Registration.objects.last()
+        self.assertEqual(d.source.name, 'test_source_adminuser')
+        self.assertEqual(d.reg_type, 'momconnect_prebirth')
+        self.assertEqual(d.registrant_id,
+                         "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(d.validated, True)
+        self.assertEqual(d.data, DATA_CLINIC_PREBIRTH)
+        self.assertEqual(d.created_by, self.adminuser)
+
+    def test_create_registration_chw_good(self):
+        """ chw momconnect_prebirth passport """
+        # Setup
+        self.make_source_partialuser()
+        registration_data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "msisdn_registrant": "+27821113333",
+                "msisdn_device": "+27821113333",
+                "id_type": "passport",
+                "passport_no": "abc1234",
+                "passport_origin": "bw",
+                "language": "zul_ZA",
+                "consent": True
+            },
+        }
+        # Execute
+        response = self.partialclient.post('/api/v1/registration/',
+                                           json.dumps(registration_data),
+                                           content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        d = Registration.objects.last()
+        self.assertEqual(d.validated, True)
+
+    def test_create_registration_public_good(self):
+        # Setup
+        self.make_source_normaluser()
+        post_data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "data": DATA_PUBLIC_PREBIRTH
+        }
+        # Execute
+        response = self.normalclient.post('/api/v1/registration/',
+                                          json.dumps(post_data),
+                                          content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        d = Registration.objects.last()
+        self.assertEqual(d.validated, True)
+
+    def test_validate_pmtct_prebirth_good(self):
+        """ Good minimal data pmtct_prebirth test """
+        # Setup
+        self.make_source_normaluser()
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "data": DATA_PMTCT_PREBIRTH,
+        }
+        # Execute
+        response = self.normalclient.post('/api/v1/registration/',
+                                          json.dumps(registration_data),
+                                          content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        d = Registration.objects.last()
+        self.assertEqual(d.validated, True)
+
+    def test_validate_pmtct_postbirth_good(self):
+        """ Good minimal data pmtct_postbirth test """
+        # Setup
+        self.make_source_normaluser(),
+        registration_data = {
+            "reg_type": "pmtct_postbirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "data": DATA_PMTCT_POSTBIRTH,
+        }
+        # Execute
+        response = self.normalclient.post('/api/v1/registration/',
+                                          json.dumps(registration_data),
+                                          content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        d = Registration.objects.last()
+        self.assertEqual(d.validated, True)
+
+    def test_validate_nurseconnect_good(self):
+        """ Good minimal data nurseconnect test """
+        # Setup
+        self.make_source_adminuser(),
+        registration_data = {
+            "reg_type": "nurseconnect",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "msisdn_registrant": "+27821112222",
+                "msisdn_device": "+27821112222",
+                "faccode": "123456",
+                "language": "eng_ZA"
+            },
+        }
+        # Execute
+        response = self.adminclient.post('/api/v1/registration/',
+                                         json.dumps(registration_data),
+                                         content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        d = Registration.objects.last()
+        self.assertEqual(d.validated, True)
 
 
 @override_settings(
@@ -1245,21 +1325,6 @@ class TestRegistrationHelpers(AuthenticatedAPITestCase):
 
 class TestRegistrationValidation(AuthenticatedAPITestCase):
 
-    def test_validate_pmtct_prebirth_good(self):
-        """ Good minimal data pmtct_prebirth test """
-        # Setup
-        registration_data = {
-            "reg_type": "pmtct_prebirth",
-            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "source": self.make_source_normaluser(),
-            "data": DATA_PMTCT_PREBIRTH,
-        }
-        registration = Registration.objects.create(**registration_data)
-        # Execute
-        v = validate_subscribe.validate(registration)
-        # Check
-        self.assertEqual(v, True)
-
     def test_validate_pmtct_prebirth_extra_field(self):
         """ Malformed data pmtct_prebirth test """
         # Setup
@@ -1330,21 +1395,6 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
             str(cm.exception)
         )
 
-    def test_validate_pmtct_postbirth_good(self):
-        """ Good minimal data pmtct_postbirth test """
-        # Setup
-        registration_data = {
-            "reg_type": "pmtct_postbirth",
-            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "source": self.make_source_normaluser(),
-            "data": DATA_PMTCT_POSTBIRTH,
-        }
-        registration = Registration.objects.create(**registration_data)
-        # Execute
-        v = validate_subscribe.validate(registration)
-        # Check
-        self.assertEqual(v, True)
-
     def test_validate_pmtct_postbirth_malformed_data(self):
         """ Malformed data pmtct_postbirth test """
         # Setup
@@ -1395,27 +1445,6 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
             ]),
             str(cm.exception)
         )
-
-    def test_validate_nurseconnect_good(self):
-        """ Good minimal data nurseconnect test """
-        # Setup
-        registration_data = {
-            "reg_type": "nurseconnect",
-            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "source": self.make_source_adminuser(),
-            "data": {
-                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-                "msisdn_registrant": "+27821112222",
-                "msisdn_device": "+27821112222",
-                "faccode": "123456",
-                "language": "eng_ZA"
-            },
-        }
-        registration = Registration.objects.create(**registration_data)
-        # Execute
-        v = validate_subscribe.validate(registration)
-        # Check
-        self.assertEqual(v, True)
 
     def test_validate_nurseconnect_malformed_data(self):
         """ Malformed data nurseconnect test """
@@ -1469,21 +1498,6 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
             ]),
             str(cm.exception)
         )
-
-    def test_validate_momconnect_prebirth_clinic_good(self):
-        """ clinic momconnect_prebirth sa_id """
-        # Setup
-        registration_data = {
-            "reg_type": "momconnect_prebirth",
-            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "source": self.make_source_adminuser(),
-            "data": DATA_CLINIC_PREBIRTH,
-        }
-        registration = Registration.objects.create(**registration_data)
-        # Execute
-        v = validate_subscribe.validate(registration)
-        # Check
-        self.assertEqual(v, True)
 
     def test_validate_momconnect_prebirth_clinic_malformed_data_1(self):
         """ clinic momconnect_prebirth sa_id reg """
@@ -1583,30 +1597,6 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
             str(cm.exception)
         )
 
-    def test_validate_momconnect_prebirth_chw_good(self):
-        """ chw momconnect_prebirth passport """
-        # Setup
-        registration_data = {
-            "reg_type": "momconnect_prebirth",
-            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "source": self.make_source_partialuser(),
-            "data": {
-                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-                "msisdn_registrant": "+27821113333",
-                "msisdn_device": "+27821113333",
-                "id_type": "passport",
-                "passport_no": "abc1234",
-                "passport_origin": "bw",
-                "language": "zul_ZA",
-                "consent": True
-            },
-        }
-        registration = Registration.objects.create(**registration_data)
-        # Execute
-        v = validate_subscribe.validate(registration)
-        # Check
-        self.assertEqual(v, True)
-
     def test_validate_momconnect_prebirth_chw_missing_data(self):
         """ chw momconnect_prebirth data blob missing """
         # Setup
@@ -1631,21 +1621,6 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
             ]),
             str(cm.exception)
         )
-
-    def test_validate_momconnect_prebirth_public_good(self):
-        """ public momconnect_prebirth """
-        # Setup
-        registration_data = {
-            "reg_type": "momconnect_prebirth",
-            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "source": self.make_source_normaluser(),
-            "data": DATA_PUBLIC_PREBIRTH,
-        }
-        registration = Registration.objects.create(**registration_data)
-        # Execute
-        v = validate_subscribe.validate(registration)
-        # Check
-        self.assertEqual(v, True)
 
     def test_validate_momconnect_prebirth_public_missing_data(self):
         """ public momconnect_prebirth data blob missing """
