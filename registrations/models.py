@@ -202,6 +202,16 @@ class Registration(models.Model):
             self.v.append("Superfluous fields: %s" % ", ".join(
                 self.fields_to_check))
 
+    def _check_for_unrecognised_fields(self):
+        recognised_fields = [
+            "operator_id", "msisdn_registrant", "msisdn_device", "sa_id_no",
+            "mom_dob", "passport_no", "passport_origin", "id_type", "baby_dob",
+            "language", "edd", "faccode", "consent", "mha", "swt"
+        ]
+        for field in self.fields_to_check:
+            if field not in recognised_fields:
+                self.v.append("Unrecognised field: %s" % field)
+
     def validate_momconnect_clinic_prebirth(self):
         self._check_operator_id()
         self._check_msisdn_registrant()
@@ -255,7 +265,10 @@ class Registration(models.Model):
         self._check_registrant_id()
 
         # Validate the `data` JSONField
+        # Check for data fields that we don't recognise
         self.fields_to_check = list(self.data.keys())
+        self._check_for_unrecognised_fields()
+
         # . MomConnect
         if self.reg_type == "momconnect_prebirth" and \
            self.source.authority == "hw_full":
@@ -284,11 +297,6 @@ class Registration(models.Model):
         # have been mentions of its activation
         # elif self.reg_type == "loss_general":
         #     v = self._clean_loss_general()
-
-        # If there are no validation errors at this point, check if extra
-        # fields were submitted
-        if len(self.v) == 0:
-            self._check_superfluous_fields()
 
         if len(self.v) > 0:
             raise ValidationError(self.v)

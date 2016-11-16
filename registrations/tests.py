@@ -1275,7 +1275,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
             Registration.objects.create(**registration_data)
         # Check
         self.assertEqual(
-            str(['Superfluous fields: foo']),
+            str(['Unrecognised field: foo']),
             str(cm.exception)
         )
 
@@ -1301,6 +1301,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         self.assertEqual(
             str([
                 'Invalid UUID: registrant_id',
+                'Unrecognised field: foo',
                 'Invalid UUID: operator_id',
                 'Invalid date: mom_dob',
                 'Invalid date: edd',
@@ -2260,7 +2261,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         }
 
         registration = Registration.objects.create(**registration_data)
-        self.assertFalse(registration.validated)
+        self.assertTrue(registration.validated)
         registration.save()
 
         jembi_call = responses.calls[-1]  # jembi should be the last one
@@ -2304,8 +2305,9 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "sa_id_no": "0000000000",
                 "edd": "2016-11-30",
                 "faccode": "123456",
-                "msisdn_device": "+2700000000",
+                "msisdn_device": "+27000000000",
                 "msisdn_registrant": "+27111111111",
+                "consent": True
             },
         }
 
@@ -2344,14 +2346,14 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             'nurseconnect.hw_full.1')
         utils_tests.mock_get_schedule(schedule_id)
         utils_tests.mock_get_identity_by_id(
-            "nurseconnect-identity", {
+            "nurse001-63e2-4acc-9b94-26663b9bc267", {
                 'nurseconnect': {
                     'persal_no': 'persal',
                     'sanc_reg_no': 'sanc',
                 }
             })
         utils_tests.mock_patch_identity(
-            "nurseconnect-identity")
+            "nurse001-63e2-4acc-9b94-26663b9bc267")
         utils_tests.mock_jembi_json_api_call(
             url='http://jembi/ws/rest/v1/nc/subscription',
             ok_response="jembi-is-ok",
@@ -2371,10 +2373,10 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 
         registration_data = {
             "reg_type": "nurseconnect",
-            "registrant_id": "nurseconnect-identity",
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
             "source": source,
             "data": {
-                "operator_id": "nurseconnect-identity",
+                "operator_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
                 "msisdn_registrant": "+27821112222",
                 "msisdn_device": "+27821112222",
                 "faccode": "123456",
@@ -2420,7 +2422,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": self.make_source_normaluser(),
             "data": {
-                "operator_id": "operator-123456",
+                "operator_id": "operator-63e2-4acc-9b94-26663b9bc267",
                 "msisdn_registrant": "+27821113333",
                 "msisdn_device": "+27821113333",
                 "id_type": "sa_id",
@@ -2470,7 +2472,8 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             'answer': u'this is a sample response'})
         self.assertEqual(request_json['class'], 'Complaint')
         self.assertEqual(request_json['type'], 7)
-        self.assertEqual(request_json['op'], 'operator-123456')
+        self.assertEqual(request_json['op'],
+                         'operator-63e2-4acc-9b94-26663b9bc267')
 
     def test_send_outgoing_message_to_jembi_invalid_user_id(self):
         user_request = {
@@ -2557,4 +2560,5 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             'question': ''})
         self.assertEqual(request_json['class'], '')
         self.assertEqual(request_json['type'], 7)
-        self.assertEqual(request_json['op'], 'operator-123456')
+        self.assertEqual(request_json['op'],
+                         'operator-63e2-4acc-9b94-26663b9bc267')
