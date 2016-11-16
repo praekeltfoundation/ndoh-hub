@@ -2,9 +2,14 @@ import datetime
 import json
 import responses
 import mock
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 from django.test import TestCase
 from django.contrib.auth.models import User
+from django.core.management import call_command
 from django.db.models.signals import post_save
 
 from rest_framework import status
@@ -1660,6 +1665,70 @@ class TestChangeActions(AuthenticatedAPITestCase):
             'type': 4,
             'optoutreason': 2,
         })
+
+    @responses.activate
+    @mock.patch('changes.tasks.PushMomconnectOptoutToJembi.get_today')
+    def test_momconnect_loss_optout_via_management_task(self, mock_today):
+        # Setup
+        # make registration
+        self.make_registration_momconnect_prebirth()
+        self.make_registration_pmtct_prebirth()
+        self.assertEqual(Registration.objects.all().count(), 2)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        # make change object
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "momconnect_loss_optout",
+            "data": {
+                "reason": "stillbirth"
+            },
+            "source": self.make_source_normaluser(),
+            "validated": True,
+        }
+        change = Change.objects.create(**change_data)
+
+        # mock identity lookup
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267", {
+                'addresses': {
+                    'msisdn': {'+27111111111': {}},
+                },
+            })
+
+        # mock datetime
+        mock_today.return_value = datetime.date(2016, 1, 1)
+
+        def format_timestamp(ts):
+            return ts.strftime('%Y-%m-%d %H:%M:%S')
+
+        # Execute
+        stdout = StringIO()
+        call_command(
+            'jembi_submit_optouts',
+            '--since', format_timestamp(
+                change.created_at - datetime.timedelta(seconds=1)),
+            '--until', format_timestamp(
+                change.created_at + datetime.timedelta(seconds=1)),
+            stdout=stdout)
+
+        # Check
+        self.assertEqual(len(responses.calls), 2)
+
+        # Check Jembi POST
+        self.assertEqual(json.loads(responses.calls[-1].request.body), {
+            'encdate': '20160101000000',
+            'mha': 1,
+            'swt': 1,
+            'cmsisdn': '+27111111111',
+            'dmsisdn': '+27111111111',
+            'type': 4,
+            'optoutreason': 2,
+        })
+        self.assertEqual(stdout.getvalue().strip(), '\n'.join([
+            'Submitting 1 changes.',
+            str(change.pk,),
+            'Done.',
+        ]))
 
     @responses.activate
     @mock.patch('changes.tasks.PushMomconnectOptoutToJembi.get_today')
