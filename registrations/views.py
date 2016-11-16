@@ -241,7 +241,7 @@ class ThirdPartyRegistration(APIView):
             authority = serializer.validated_data['authority']
             # load the users sources with authority mapping
             if authority == 'chw':
-                source_auth = 'hw_limited'
+                source_auth = 'hw_partial'
             elif authority == 'clinic':
                 source_auth = 'hw_full'
             else:

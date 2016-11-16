@@ -444,7 +444,7 @@ class AuthenticatedAPITestCase(APITestCase):
     def make_external_source_limited(self):
         data = {
             "name": "test_source_external_limited",
-            "authority": "hw_limited",
+            "authority": "hw_partial",
             "user": User.objects.get(username='testpartialuser')
         }
         return Source.objects.create(**data)
@@ -866,11 +866,11 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["non_field_errors"], [
-            'Invalid UUID: operator_id',
-            'Invalid MSISDN: msisdn_registrant',
-            'Invalid MSISDN: msisdn_device',
+            'Invalid Consent: consent must be True',
             'Invalid Language: language',
-            'Invalid Consent: consent must be True'
+            'Invalid MSISDN: msisdn_device',
+            'Invalid MSISDN: msisdn_registrant',
+            'Invalid UUID: operator_id',
         ])
 
     def test_list_registrations(self):
@@ -1284,14 +1284,13 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Setup
         registration_data = {
             "reg_type": "pmtct_prebirth",
-            "registrant_id": "mother01",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": self.make_source_normaluser(),
             "data": {
                 "operator_id": "mother01",
                 "language": "en",
                 "mom_dob": "199-01-27",
                 "edd": "201-11-30",
-                "foo": "bar"
             },
         }
         # Execute
@@ -1300,12 +1299,11 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(
             str([
-                'Invalid UUID: registrant_id',
-                'Unrecognised field: foo',
-                'Invalid UUID: operator_id',
-                'Invalid date: mom_dob',
                 'Invalid date: edd',
-                'Invalid Language: language']),
+                'Invalid Language: language',
+                'Invalid date: mom_dob',
+                'Invalid UUID: operator_id',
+            ]),
             str(cm.exception)
         )
 
@@ -1324,10 +1322,11 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(
             str([
-                'Missing field: operator_id',
-                'Missing field: mom_dob',
                 'Missing field: edd',
-                'Missing field: language']),
+                'Missing field: language',
+                'Missing field: mom_dob',
+                'Missing field: operator_id',
+            ]),
             str(cm.exception)
         )
 
@@ -1351,7 +1350,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Setup
         registration_data = {
             "reg_type": "pmtct_postbirth",
-            "registrant_id": "mother01",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": self.make_source_normaluser(),
             "data": {
                 "operator_id": "mother01",
@@ -1366,11 +1365,11 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(
             str([
-                'Invalid UUID: registrant_id',
-                'Invalid UUID: operator_id',
-                'Invalid date: mom_dob',
                 'Invalid date: baby_dob is in the future',
-                'Invalid Language: language']),
+                'Invalid Language: language',
+                'Invalid date: mom_dob',
+                'Invalid UUID: operator_id',
+            ]),
             str(cm.exception)
         )
 
@@ -1389,10 +1388,11 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(
             str([
-                'Missing field: operator_id',
-                'Missing field: mom_dob',
                 'Missing field: baby_dob',
-                'Missing field: language']),
+                'Missing field: language',
+                'Missing field: mom_dob',
+                'Missing field: operator_id',
+            ]),
             str(cm.exception)
         )
 
@@ -1422,7 +1422,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Setup
         registration_data = {
             "reg_type": "nurseconnect",
-            "registrant_id": "mother01",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": self.make_source_adminuser(),
             "data": {
                 "operator_id": "mother01",
@@ -1438,11 +1438,11 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(
             str([
-                'Invalid UUID: registrant_id',
-                'Invalid UUID: operator_id',
-                'Invalid MSISDN: msisdn_registrant',
+                'Invalid Language: language',
                 'Invalid MSISDN: msisdn_device',
-                'Invalid Language: language']),
+                'Invalid MSISDN: msisdn_registrant',
+                'Invalid UUID: operator_id',
+            ]),
             str(cm.exception)
         )
 
@@ -1461,11 +1461,12 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(
             str([
-                'Missing field: operator_id',
-                'Missing field: msisdn_registrant',
-                'Missing field: msisdn_device',
+                'Missing field: faccode',
                 'Missing field: language',
-                'Missing field: faccode']),
+                'Missing field: msisdn_device',
+                'Missing field: msisdn_registrant',
+                'Missing field: operator_id',
+            ]),
             str(cm.exception)
         )
 
@@ -1511,15 +1512,8 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         self.assertEqual(
             str([
                 'Invalid UUID: registrant_id',
-                'Invalid UUID: operator_id',
-                'Invalid MSISDN: msisdn_registrant',
-                'Invalid MSISDN: msisdn_device',
-                'Invalid SA ID number: sa_id_no',
-                'Invalid date: mom_dob',
-                'Invalid Language: language',
-                'Invalid date: edd',
-                'Invalid Clinic Code: faccode',
-                'Invalid Consent: consent must be True']),
+                'Required field should not be None: consent',
+            ]),
             str(cm.exception)
         )
 
@@ -1528,7 +1522,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Setup
         registration_data = {
             "reg_type": "momconnect_prebirth",
-            "registrant_id": "mother01",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": self.make_source_adminuser(),
             "data": {
                 "operator_id": "mother01",
@@ -1536,10 +1530,11 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 "msisdn_device": "+27821113",
                 "id_type": "passport",
                 "passport_origin": "uruguay",
+                "passport_no": "",
                 "language": "eng",
                 "edd": "2016",
                 "faccode": "",
-                "consent": None
+                "consent": "yes"
             },
         }
         # Execute
@@ -1548,16 +1543,16 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(
             str([
-                'Invalid UUID: registrant_id',
-                'Invalid UUID: operator_id',
-                'Invalid MSISDN: msisdn_registrant',
-                'Invalid MSISDN: msisdn_device',
-                'Missing field: passport_no',
-                'Invalid Passport origin: passport_origin',
-                'Invalid Language: language',
+                'Invalid Consent: consent must be True',
                 'Invalid date: edd',
                 'Invalid Clinic Code: faccode',
-                'Invalid Consent: consent must be True']),
+                'Invalid Language: language',
+                'Invalid MSISDN: msisdn_device',
+                'Invalid MSISDN: msisdn_registrant',
+                'Invalid UUID: operator_id',
+                'Invalid Passport number: passport_no',
+                'Invalid Passport origin: passport_origin',
+            ]),
             str(cm.exception)
         )
 
@@ -1566,7 +1561,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Setup
         registration_data = {
             "reg_type": "momconnect_prebirth",
-            "registrant_id": "mother01",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": self.make_source_adminuser(),
             "data": {},
         }
@@ -1576,15 +1571,15 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(
             str([
-                'Invalid UUID: registrant_id',
-                'Missing field: operator_id',
-                'Missing field: msisdn_registrant',
-                'Missing field: msisdn_device',
-                'Missing field: id_type',
-                'Missing field: language',
+                'Missing field: consent',
                 'Missing field: edd',
                 'Missing field: faccode',
-                'Missing field: consent']),
+                'Missing field: id_type',
+                'Missing field: language',
+                'Missing field: msisdn_device',
+                'Missing field: msisdn_registrant',
+                'Missing field: operator_id',
+            ]),
             str(cm.exception)
         )
 
@@ -1627,12 +1622,13 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(
             str([
-                'Missing field: operator_id',
-                'Missing field: msisdn_registrant',
-                'Missing field: msisdn_device',
+                'Missing field: consent',
                 'Missing field: id_type',
                 'Missing field: language',
-                'Missing field: consent']),
+                'Missing field: msisdn_device',
+                'Missing field: msisdn_registrant',
+                'Missing field: operator_id',
+            ]),
             str(cm.exception)
         )
 
@@ -1666,11 +1662,12 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(
             str([
-                'Missing field: operator_id',
-                'Missing field: msisdn_registrant',
-                'Missing field: msisdn_device',
+                'Missing field: consent',
                 'Missing field: language',
-                'Missing field: consent']),
+                'Missing field: msisdn_device',
+                'Missing field: msisdn_registrant',
+                'Missing field: operator_id',
+            ]),
             str(cm.exception)
         )
 
@@ -2251,7 +2248,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "language": "eng_ZA",
                 "mom_dob": "1999-01-27",
                 "id_type": "sa_id",
-                "sa_id_no": "0000000000",
+                "sa_id_no": "0000000000000",
                 "edd": "2016-11-30",
                 "faccode": "123456",
                 "msisdn_device": "+27000000000",
@@ -2302,7 +2299,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "language": "eng_ZA",
                 "mom_dob": "1999-01-27",
                 "id_type": "sa_id",
-                "sa_id_no": "0000000000",
+                "sa_id_no": "0000000000000",
                 "edd": "2016-11-30",
                 "faccode": "123456",
                 "msisdn_device": "+27000000000",
