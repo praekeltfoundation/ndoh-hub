@@ -66,3 +66,12 @@ class ThirdPartyRegistrationSerializer(serializers.Serializer):
     consent = serializers.BooleanField()
     mha = serializers.IntegerField()
     swt = serializers.IntegerField()
+
+
+class JembiHelpdeskOutgoingSerializer(serializers.Serializer):
+    to = serializers.CharField()
+    reply_to = serializers.CharField()
+    content = serializers.CharField()
+    user_id = serializers.CharField()
+    label = serializers.CharField()
+    created_on = serializers.DateTimeField()

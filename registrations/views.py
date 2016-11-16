@@ -1,7 +1,11 @@
 import django_filters
+import json
+import requests
 
 from django.conf import settings
 from django.contrib.auth.models import User, Group
+from django.shortcuts import get_object_or_404
+
 from rest_hooks.models import Hook
 from rest_framework import viewsets, mixins, generics, filters, status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -14,6 +18,7 @@ from .models import Source, Registration
 from .serializers import (UserSerializer, GroupSerializer,
                           SourceSerializer, RegistrationSerializer,
                           HookSerializer, CreateUserSerializer,
+                          JembiHelpdeskOutgoingSerializer,
                           ThirdPartyRegistrationSerializer)
 
 
@@ -138,6 +143,67 @@ class RegistrationGetViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Registration.objects.all()
     serializer_class = RegistrationSerializer
     filter_class = RegistrationFilter
+
+
+class JembiHelpdeskOutgoingView(APIView):
+    """ API endpoint that allows the helpdesk to post messages to Jembi
+    """
+    permission_classes = (IsAuthenticated,)
+
+    def build_jembi_helpdesk_json(self, validated_data):
+
+        def jembi_format_date(date):
+            return date.strftime("%Y%m%d%H%M%S")
+
+        registration = get_object_or_404(
+            Registration, registrant_id=validated_data.get('user_id'))
+
+        json_template = {
+            "encdate": jembi_format_date(validated_data.get('created_on')),
+            # is casepro, adding a label doesn't change the timestamp
+            # (we only have created_on)
+            "repdate": jembi_format_date(validated_data.get('created_on')),
+            "mha": 1,
+            "swt": 2,  # 1 ussd, 2 sms
+            "cmsisdn": validated_data.get('to'),
+            "dmsisdn": validated_data.get('to'),
+            "faccode": registration.data.get('faccode', ''),
+            "data": {
+                "question": validated_data.get('content'),
+                "answer": validated_data.get('reply_to'),
+            },
+            "class": validated_data.get('label'),
+            "type": 7,  # 7 helpdesk
+            "op": registration.data.get('operator_id', ''),
+        }
+        return json_template
+
+    def post(self, request):
+        if not (settings.JEMBI_BASE_URL and settings.JEMBI_USERNAME and
+                settings.JEMBI_PASSWORD):
+            return Response(
+                'Jembi integration is not configured properly.',
+                status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        serializer = JembiHelpdeskOutgoingSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        post_data = self.build_jembi_helpdesk_json(serializer.validated_data)
+        try:
+            result = requests.post(
+                '%s/helpdesk' % settings.JEMBI_BASE_URL,
+                headers={'Content-Type': 'application/json'},
+                data=json.dumps(post_data),
+                auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+                verify=False)
+            result.raise_for_status()
+        except requests.exceptions.HTTPError:
+            return Response(
+                'Error when posting to Jembi. Payload: %r' % post_data,
+                status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(
+            status=status.HTTP_200_OK)
 
 
 class HealthcheckView(APIView):
