@@ -166,14 +166,22 @@ class ThirdPartyRegistration(APIView):
             api_url=settings.IDENTITY_STORE_URL,
             auth_token=settings.IDENTITY_STORE_TOKEN
         )
-        # load the users sources - posting users should only have one source
-        source = Source.objects.get(user=self.request.user)
         serializer = ThirdPartyRegistrationSerializer(data=request.data)
         if serializer.is_valid():
             mom_msisdn = serializer.validated_data['mom_msisdn']
             hcw_msisdn = serializer.validated_data['hcw_msisdn']
             lang_code = serializer.validated_data['mom_lang']
             lang_code = transform_language_code(lang_code)
+            authority = serializer.validated_data['authority']
+            # load the users sources with authority mapping
+            if authority == 'chw':
+                source_auth = 'hw_limited'
+            elif authority == 'clinic':
+                source_auth = 'hw_full'
+            else:
+                source_auth = 'patient'
+            source = Source.objects.get(user=self.request.user,
+                                        authority=source_auth)
             if mom_msisdn != hcw_msisdn:
                 # Get or create HCW Identity
                 result = is_client.get_identity_by_address('msisdn',
@@ -207,6 +215,7 @@ class ThirdPartyRegistration(APIView):
                 operator = None
                 device = mom_msisdn
 
+            # auth: chw, clinic,
             # Get or create Mom Identity
             result = is_client.get_identity_by_address('msisdn', mom_msisdn)
             if 'results' in result and not result['results']:
@@ -225,8 +234,7 @@ class ThirdPartyRegistration(APIView):
                         'last_edd': serializer.validated_data['mom_edd'],
                         'faccode': serializer.validated_data['clinic_code'],
                         'consent': serializer.validated_data['consent'],
-                        'last_mc_reg_on': (
-                            serializer.validated_data['authority']),
+                        'last_mc_reg_on': authority,
                         'source': 'external',
                     },
                 }
@@ -250,8 +258,7 @@ class ThirdPartyRegistration(APIView):
                 details['last_edd'] = serializer.validated_data['mom_edd']
                 details['faccode'] = serializer.validated_data['clinic_code']
                 details['consent'] = serializer.validated_data['consent']
-                details['last_mc_reg_on'] = (
-                            serializer.validated_data['authority'])
+                details['last_mc_reg_on'] = authority
                 details['source'] = 'external'
                 if id_type == 'sa_id':
                     details['sa_id_no'] = (

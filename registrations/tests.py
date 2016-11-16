@@ -406,6 +406,22 @@ class AuthenticatedAPITestCase(APITestCase):
         }
         return Source.objects.create(**data)
 
+    def make_external_source_limited(self):
+        data = {
+            "name": "test_source_external_limited",
+            "authority": "hw_limited",
+            "user": User.objects.get(username='testpartialuser')
+        }
+        return Source.objects.create(**data)
+
+    def make_external_source_full(self):
+        data = {
+            "name": "test_source_external_full",
+            "authority": "hw_full",
+            "user": User.objects.get(username='testadminuser')
+        }
+        return Source.objects.create(**data)
+
     def make_registration_adminuser(self):
         data = {
             "reg_type": "momconnect_prebirth",
@@ -920,7 +936,7 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
     @responses.activate
     def test_create_third_party_registration_existing_identity(self):
         # Setup
-        self.make_source_normaluser()
+        self.make_external_source_limited()
 
         responses.add(
             responses.GET,
@@ -1027,14 +1043,14 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
             "swt": 3
         }
         # Execute
-        response = self.normalclient.post('/api/v1/extregistration/',
-                                          json.dumps(post_data),
-                                          content_type='application/json')
+        response = self.partialclient.post('/api/v1/extregistration/',
+                                           json.dumps(post_data),
+                                           content_type='application/json')
         # Check
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         d = Registration.objects.last()
-        self.assertEqual(d.source.name, 'test_source_normaluser')
+        self.assertEqual(d.source.name, 'test_source_external_limited')
         self.assertEqual(d.reg_type, 'momconnect_prebirth')
         self.assertEqual(d.registrant_id,
                          "02144938-847d-4d2c-9daf-707cb864d077")
@@ -1043,7 +1059,7 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
     @responses.activate
     def test_create_third_party_registration_new_identity(self):
         # Setup
-        self.make_source_normaluser()
+        self.make_external_source_limited()
 
         responses.add(
             responses.GET,
@@ -1126,14 +1142,14 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
             "swt": 3
         }
         # Execute
-        response = self.normalclient.post('/api/v1/extregistration/',
-                                          json.dumps(post_data),
-                                          content_type='application/json')
+        response = self.partialclient.post('/api/v1/extregistration/',
+                                           json.dumps(post_data),
+                                           content_type='application/json')
         # Check
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         d = Registration.objects.last()
-        self.assertEqual(d.source.name, 'test_source_normaluser')
+        self.assertEqual(d.source.name, 'test_source_external_limited')
         self.assertEqual(d.reg_type, 'momconnect_prebirth')
         self.assertEqual(d.registrant_id,
                          "02144938-847d-4d2c-9daf-707cb864d077")
