@@ -546,7 +546,6 @@ class ValidateImplement(Task):
                 'momconnect_loss_optout': self.momconnect_loss_optout,
                 'momconnect_nonloss_optout': self.momconnect_nonloss_optout,
             }.get(change.action, None)(change)
-
             self.l.info("Task executed successfully")
             return True
         else:
