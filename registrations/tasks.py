@@ -525,8 +525,8 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
         json_template = {
             "mha": registration.data.get('mha', 1),
             "swt": registration.data.get('swt', 1),
-            "dmsisdn": registration.data['msisdn_device'],
-            "cmsisdn": registration.data['msisdn_registrant'],
+            "dmsisdn": registration.data.get('msisdn_device'),
+            "cmsisdn": registration.data.get('msisdn_registrant'),
             "id": self.get_patient_id(
                 registration.data.get('id_type'),
                 (registration.data.get('sa_id_no')
@@ -534,7 +534,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
                  else registration.data.get('passport_no')),
                 # passport_origin may be None if sa_id is used
                 registration.data.get('passport_origin'),
-                registration.data['msisdn_registrant']),
+                registration.data.get('msisdn_registrant')),
             "type": self.get_subscription_type(authority),
             "lang": self.transform_language_code(
                 registration.data['language']),
@@ -547,8 +547,9 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
         }
 
         # Self registrations on all lines should use cmsisdn as dmsisdn too
-        if registration.data['msisdn_device'] is None:
-            json_template["dmsisdn"] = registration.data['msisdn_registrant']
+        if registration.data.get('msisdn_device') is None:
+            json_template["dmsisdn"] = registration.data.get(
+                'msisdn_registrant')
 
         if authority == 'clinic':
             json_template["edd"] = datetime.strptime(
