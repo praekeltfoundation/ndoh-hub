@@ -7,7 +7,7 @@ class RegistrationAdmin(admin.ModelAdmin):
         "id", "reg_type", "validated", "registrant_id", "source",
         "created_at", "updated_at", "created_by", "updated_by"]
     list_filter = ["source", "validated", "created_at"]
-    search_fields = ["registrant_id", "to_addr"]
+    search_fields = ["registrant_id", "data"]
 
 
 class SubscriptionRequestAdmin(admin.ModelAdmin):
