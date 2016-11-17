@@ -54,7 +54,8 @@ class Command(BaseCommand):
         self.stdout.write(
             'Submitting %s changes.' % (changes.count(),))
         for change in changes.filter(action__in=(
-                'momconnect_loss_optout', 'momconnect_nonloss_optout')):
+                'momconnect_loss_optout', 'momconnect_nonloss_optout',
+                'pmtct_loss_optout', 'pmtct_nonloss_optout')):
             push_momconnect_optout_to_jembi.delay(change.pk)
             self.stdout.write(str(change.pk))
         for change in changes.filter(action='nurse_optout'):

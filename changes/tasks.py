@@ -262,6 +262,8 @@ class ValidateImplement(Task):
         self.l.info("Starting PMTCT loss optout")
         self.deactivate_all_except_nurseconnect(change)
         self.l.info("Completed PMTCT loss optout")
+        self.l.info("Sending optout to Jembi")
+        push_momconnect_optout_to_jembi.delay(change.pk)
         return "Completed PMTCT loss optout"
 
     def pmtct_nonloss_optout(self, change):
@@ -277,6 +279,8 @@ class ValidateImplement(Task):
             self.deactivate_pmtct(change)
 
         self.l.info("Completed PMTCT non-loss optout")
+        self.l.info("Sending optout to Jembi")
+        push_momconnect_optout_to_jembi.delay(change.pk)
         return "Completed PMTCT non-loss optout"
 
     def nurse_update_detail(self, change):
