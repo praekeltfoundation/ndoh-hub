@@ -263,7 +263,7 @@ class ValidateImplement(Task):
         self.deactivate_all_except_nurseconnect(change)
         self.l.info("Completed PMTCT loss optout")
         self.l.info("Sending optout to Jembi")
-        push_momconnect_optout_to_jembi.delay(change.pk)
+        push_momconnect_optout_to_jembi.delay(str(change.pk))
         return "Completed PMTCT loss optout"
 
     def pmtct_nonloss_optout(self, change):
@@ -280,7 +280,7 @@ class ValidateImplement(Task):
 
         self.l.info("Completed PMTCT non-loss optout")
         self.l.info("Sending optout to Jembi")
-        push_momconnect_optout_to_jembi.delay(change.pk)
+        push_momconnect_optout_to_jembi.delay(str(change.pk))
         return "Completed PMTCT non-loss optout"
 
     def nurse_update_detail(self, change):
@@ -307,7 +307,7 @@ class ValidateImplement(Task):
         self.l.info("Starting NurseConnect optout")
         self.deactivate_nurseconnect(change)
         self.l.info("Pushing optout to Jembi")
-        push_nurseconnect_optout_to_jembi.delay(change.pk)
+        push_nurseconnect_optout_to_jembi.delay(str(change.pk))
         self.l.info("Completed NurseConnect optout")
         return "Completed NurseConnect optout"
 
@@ -332,7 +332,7 @@ class ValidateImplement(Task):
         self.deactivate_all_except_nurseconnect(change)
         self.l.info("Completed MomConnect loss optout")
         self.l.info("Sending optout to Jembi")
-        push_momconnect_optout_to_jembi.delay(change.pk)
+        push_momconnect_optout_to_jembi.delay(str(change.pk))
         return "Completed MomConnect loss optout"
 
     def momconnect_nonloss_optout(self, change):
@@ -349,7 +349,7 @@ class ValidateImplement(Task):
 
         self.l.info("Completed MomConnect non-loss optout")
         self.l.info("Sending optout to Jembi")
-        push_momconnect_optout_to_jembi.delay(change.pk)
+        push_momconnect_optout_to_jembi.delay(str(change.pk))
         return "Completed MomConnect non-loss optout"
 
     # Validation checks
