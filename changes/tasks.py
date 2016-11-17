@@ -1,8 +1,14 @@
+import datetime
+import json
+import requests
+
 from celery.task import Task
 from celery.utils.log import get_task_logger
 from django.conf import settings
+from requests.exceptions import HTTPError
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
+from six import iteritems
 
 from ndoh_hub import utils
 from .models import Change
@@ -318,6 +324,8 @@ class ValidateImplement(Task):
         self.l.info("Starting MomConnect loss optout")
         self.deactivate_all_except_nurseconnect(change)
         self.l.info("Completed MomConnect loss optout")
+        self.l.info("Sending optout to Jembi")
+        push_momconnect_optout_to_jembi.delay(change.pk)
         return "Completed MomConnect loss optout"
 
     def momconnect_nonloss_optout(self, change):
@@ -333,6 +341,8 @@ class ValidateImplement(Task):
             self.deactivate_all_except_nurseconnect(change)
 
         self.l.info("Completed MomConnect non-loss optout")
+        self.l.info("Sending optout to Jembi")
+        push_momconnect_optout_to_jembi.delay(change.pk)
         return "Completed MomConnect non-loss optout"
 
     # Validation checks
@@ -544,3 +554,89 @@ class ValidateImplement(Task):
             return False
 
 validate_implement = ValidateImplement()
+
+
+class PushMomconnectOptoutToJembi(Task):
+    """
+    Sends a momconnect optout change to Jembi.
+    """
+    name = "ndoh_hub.changes.tasks.push_momconnect_optout_to_jembi"
+    l = get_task_logger(__name__)
+    URL = "%s/optout" % settings.JEMBI_BASE_URL
+
+    def get_today(self):
+        return datetime.datetime.today()
+
+    def get_timestamp(self):
+        return self.get_today().strftime("%Y%m%d%H%M%S")
+
+    def get_identity_address(self, identity, address_type='msisdn'):
+        """
+        Returns a single address for the identity for the given address
+        type.
+        """
+        addresses = identity.get(
+            'details', {}).get('addresses', {}).get(address_type, {})
+        address = None
+        for address, details in iteritems(addresses):
+            if details.get('default'):
+                return address
+        return address
+
+    def get_optout_reason(self, reason):
+        """
+        Returns the numerical Jembi optout reason for the given optout reason.
+        """
+        return {
+            'miscarriage': 1,
+            'stillbirth': 2,
+            'babyloss': 3,
+            'not_useful': 4,
+            'other': 5,
+            'unknown': 6,
+            'job_change': 7,
+            'number_owner_change': 8,
+            'not_hiv_pos': 9,
+        }.get(reason)
+
+    def build_jembi_json(self, change):
+        identity = is_client.get_identity(change.registrant_id) or {}
+        address = self.get_identity_address(identity)
+        return {
+            'encdate': self.get_timestamp(),
+            'mha': 1,
+            'swt': 1,
+            'cmsisdn': address,
+            'dmsisdn': address,
+            'type': 4,
+            'optoutreason': self.get_optout_reason(change.data['reason']),
+        }
+
+    def run(self, change_id, **kwargs):
+        from .models import Change
+        change = Change.objects.get(pk=change_id)
+        json_doc = self.build_jembi_json(change)
+        try:
+            result = requests.post(
+                self.URL,
+                headers={'Content-Type': 'application/json'},
+                data=json.dumps(json_doc),
+                auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+                verify=False
+            )
+            result.raise_for_status()
+            return result.text
+        except (HTTPError,) as e:
+            # retry message sending if in 500 range (3 default retries)
+            if 500 < e.response.status_code < 599:
+                raise self.retry(exc=e)
+            else:
+                self.l.error('Error when posting to Jembi. Payload: %r' % (
+                    json_doc))
+                raise e
+        except (Exception,) as e:
+            self.l.error(
+                'Problem posting Optout %s JSON to Jembi' % (
+                    change_id), exc_info=True)
+
+push_momconnect_optout_to_jembi = PushMomconnectOptoutToJembi()
