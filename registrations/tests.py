@@ -2535,7 +2535,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
         response = self.normalclient.post(
             '/api/v1/jembi/helpdesk/outgoing/', user_request)
         self.assertEqual(response.status_code, 400)
-        self.assertTrue('This was a bad request.' in response.content)
+        self.assertTrue('This was a bad request.' in str(response.content))
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_with_blank_values(self):
