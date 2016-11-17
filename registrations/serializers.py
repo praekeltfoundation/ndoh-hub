@@ -68,5 +68,6 @@ class JembiHelpdeskOutgoingSerializer(serializers.Serializer):
     reply_to = serializers.CharField(allow_blank=True)
     content = serializers.CharField()
     user_id = serializers.CharField()
+    helpdesk_operator_id = serializers.IntegerField()
     label = serializers.CharField(allow_blank=True)
     created_on = serializers.DateTimeField()
