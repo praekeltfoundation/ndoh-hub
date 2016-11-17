@@ -77,6 +77,16 @@ def is_valid_passport_origin(passport_origin):
     return passport_origin in valid_origins
 
 
+def is_valid_mha(mha):
+    """ A very basic mha validation check """
+    return type(mha) is int
+
+
+def is_valid_swt(swt):
+    """ A very basic swt validation check """
+    return type(swt) is int
+
+
 def get_today():
     return datetime.datetime.today()
 

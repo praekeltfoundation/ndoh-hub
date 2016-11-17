@@ -53,214 +53,6 @@ class ValidateSubscribe(Task):
     name = "ndoh_hub.registrations.tasks.validate_subscribe"
     l = get_task_logger(__name__)
 
-    # Validation checks
-    def check_lang(self, data_fields, registration):
-        if "language" not in data_fields:
-            return ["Language is missing from data"]
-        elif not utils.is_valid_lang(registration.data["language"]):
-            return ["Language not a valid option"]
-        else:
-            return []
-
-    def check_mom_dob(self, data_fields, registration):
-        if "mom_dob" not in data_fields:
-            return ["Mother DOB missing"]
-        elif not utils.is_valid_date(registration.data["mom_dob"]):
-            return ["Mother DOB invalid"]
-        else:
-            return []
-
-    def check_edd(self, data_fields, registration):
-        if "edd" not in data_fields:
-            return ["Estimated Due Date missing"]
-        elif not utils.is_valid_date(registration.data["edd"]):
-            return ["Estimated Due Date invalid"]
-        else:
-            return []
-
-    def check_baby_dob(self, data_fields, registration):
-        if "baby_dob" not in data_fields:
-            return ["Baby Date of Birth missing"]
-        elif not utils.is_valid_date(registration.data["baby_dob"]):
-            return ["Baby Date of Birth invalid"]
-        elif utils.get_baby_age(utils.get_today(),
-                                registration.data["baby_dob"]) < 0:
-            return ["Baby Date of Birth cannot be in the future"]
-        else:
-            return []
-
-    def check_operator_id(self, data_fields, registration):
-        if "operator_id" not in data_fields:
-            return ["Operator ID missing"]
-        elif not utils.is_valid_uuid(registration.data["operator_id"]):
-            return ["Operator ID invalid"]
-        else:
-            return []
-
-    def check_msisdn_registrant(self, data_fields, registration):
-        if "msisdn_registrant" not in data_fields:
-            return ["MSISDN of Registrant missing"]
-        elif not utils.is_valid_msisdn(registration.data["msisdn_registrant"]):
-            return ["MSISDN of Registrant invalid"]
-        else:
-            return []
-
-    def check_msisdn_device(self, data_fields, registration):
-        if "msisdn_device" not in data_fields:
-            return ["MSISDN of device missing"]
-        elif not utils.is_valid_msisdn(registration.data["msisdn_device"]):
-            return ["MSISDN of device invalid"]
-        else:
-            return []
-
-    def check_faccode(self, data_fields, registration):
-        if "faccode" not in data_fields:
-            return ["Facility (clinic) code missing"]
-        elif not utils.is_valid_faccode(registration.data["faccode"]):
-            return ["Facility code invalid"]
-        else:
-            return []
-
-    def check_consent(self, data_fields, registration):
-        if "consent" not in data_fields:
-            return ["Consent is missing"]
-        elif registration.data["consent"] is not True:
-            return ["Cannot continue without consent"]
-        else:
-            return []
-
-    def check_sa_id_no(self, data_fields, registration):
-        if "sa_id_no" not in data_fields:
-            return ["SA ID number missing"]
-        elif not utils.is_valid_sa_id_no(registration.data["sa_id_no"]):
-            return ["SA ID number invalid"]
-        else:
-            return []
-
-    def check_passport_no(self, data_fields, registration):
-        if "passport_no" not in data_fields:
-            return ["Passport number missing"]
-        elif not utils.is_valid_passport_no(registration.data["passport_no"]):
-            return ["Passport number invalid"]
-        else:
-            return []
-
-    def check_passport_origin(self, data_fields, registration):
-        if "passport_origin" not in data_fields:
-            return ["Passport origin missing"]
-        elif not utils.is_valid_passport_origin(
-          registration.data["passport_origin"]):
-            return ["Passport origin invalid"]
-        else:
-            return []
-
-    def check_id(self, data_fields, registration):
-        if "id_type" not in data_fields:
-            return ["ID type missing"]
-        elif registration.data["id_type"] not in ["sa_id", "passport", "none"]:
-            return ["ID type should be 'sa_id', 'passport' or 'none'"]
-        else:
-            id_errors = []
-            if registration.data["id_type"] == "sa_id":
-                id_errors += self.check_sa_id_no(data_fields, registration)
-                id_errors += self.check_mom_dob(data_fields, registration)
-            elif registration.data["id_type"] == "passport":
-                id_errors += self.check_passport_no(data_fields, registration)
-                id_errors += self.check_passport_origin(
-                    data_fields, registration)
-            elif registration.data["id_type"] == "none":
-                id_errors += self.check_mom_dob(data_fields, registration)
-            return id_errors
-
-    # Validate
-    def validate(self, registration):
-        """ Validates that all the required info is provided for a
-        registration.
-        """
-        self.l.info("Starting registration validation")
-
-        validation_errors = []
-
-        # Check if registrant_id is a valid UUID
-        if not utils.is_valid_uuid(registration.registrant_id):
-            validation_errors += ["Invalid UUID registrant_id"]
-
-        # Check that required fields are provided and valid
-        data_fields = registration.data.keys()
-
-        if registration.reg_type == "pmtct_prebirth":
-            validation_errors += self.check_lang(data_fields, registration)
-            validation_errors += self.check_mom_dob(data_fields, registration)
-            validation_errors += self.check_edd(data_fields, registration)
-            validation_errors += self.check_operator_id(
-                data_fields, registration)
-
-        elif registration.reg_type == "pmtct_postbirth":
-            validation_errors += self.check_lang(data_fields, registration)
-            validation_errors += self.check_mom_dob(data_fields, registration)
-            validation_errors += self.check_baby_dob(data_fields, registration)
-            validation_errors += self.check_operator_id(
-                data_fields, registration)
-
-        elif registration.reg_type == "nurseconnect":
-            validation_errors += self.check_faccode(
-                data_fields, registration)
-            validation_errors += self.check_operator_id(
-                data_fields, registration)
-            validation_errors += self.check_msisdn_registrant(
-                data_fields, registration)
-            validation_errors += self.check_msisdn_device(
-                data_fields, registration)
-            validation_errors += self.check_lang(
-                data_fields, registration)
-
-        elif registration.reg_type == "momconnect_prebirth":
-            # Checks that apply to clinic, chw, public
-            validation_errors += self.check_operator_id(
-                data_fields, registration)
-            validation_errors += self.check_msisdn_registrant(
-                data_fields, registration)
-            validation_errors += self.check_msisdn_device(
-                data_fields, registration)
-            validation_errors += self.check_lang(
-                data_fields, registration)
-            validation_errors += self.check_consent(
-                data_fields, registration)
-
-            # Checks that apply to clinic, chw
-            if registration.source.authority in ["hw_full", "hw_partial"]:
-                validation_errors += self.check_id(
-                    data_fields, registration)
-
-            # Checks that apply to clinic only
-            if registration.source.authority == "hw_full":
-                validation_errors += self.check_edd(
-                    data_fields, registration)
-                validation_errors += self.check_faccode(
-                    data_fields, registration)
-
-        elif registration.reg_type == "momconnect_postbirth":
-            validation_errors.append("Momconnect postbirth not yet supported")
-
-        elif registration.reg_type == "loss_general":
-            validation_errors.append("Loss general not yet supported")
-
-        # Evaluate if there were any problems, save and return
-        if len(validation_errors) == 0:
-            self.l.info("Registration validated successfully - updating "
-                        "registration object")
-            registration.validated = True
-            registration.save()
-            self.l.info("Registration object updated.")
-            return True
-        else:
-            self.l.info("Registration validation failed - updating "
-                        "registration object")
-            registration.data["invalid_fields"] = validation_errors
-            registration.save()
-            self.l.info("Registration object updated.")
-            return False
-
     # Create SubscriptionRequest
     def create_subscriptionrequests(self, registration):
         """ Create SubscriptionRequest(s) based on the
@@ -366,26 +158,21 @@ class ValidateSubscribe(Task):
         from .models import Registration
         registration = Registration.objects.get(id=registration_id)
 
-        reg_validates = self.validate(registration)
-        if reg_validates:
-            self.create_subscriptionrequests(registration)
+        self.create_subscriptionrequests(registration)
 
-            # NOTE: disable service rating for now
-            # if registration.reg_type == "momconnect_prebirth" and\
-            #    registration.source.authority == "hw_full":
-            #     self.create_servicerating_invite(registration)
+        # NOTE: disable service rating for now
+        # if registration.reg_type == "momconnect_prebirth" and\
+        #    registration.source.authority == "hw_full":
+        #     self.create_servicerating_invite(registration)
 
-            if "pmtct" in registration.reg_type:
-                self.set_risk_status(registration)
+        if "pmtct" in registration.reg_type:
+            self.set_risk_status(registration)
 
-            self.l.info("Scheduling registration push to Jembi")
-            self.send_to_jembi(registration)
+        self.l.info("Scheduling registration push to Jembi")
+        self.send_to_jembi(registration)
 
-            self.l.info("Task executed successfully")
-            return True
-        else:
-            self.l.info("Task terminated due to validation issues")
-            return False
+        self.l.info("Task executed successfully")
+        return True
 
 
 validate_subscribe = ValidateSubscribe()

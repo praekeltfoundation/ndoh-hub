@@ -332,7 +332,7 @@ class AuthenticatedAPITestCase(APITestCase):
                 "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "language": "eng_ZA",
                 "mom_dob": "1999-01-27",
-                "baby_dob": "2016-01-01"
+                "baby_dob": "2015-01-01"
             },
         }
         return Registration.objects.create(**registration_data)
@@ -347,6 +347,7 @@ class AuthenticatedAPITestCase(APITestCase):
                 "msisdn_registrant": "+27821112222",
                 "msisdn_device": "+27821112222",
                 "faccode": "123456",
+                "language": "eng_ZA"
             },
         }
         return Registration.objects.create(**registration_data)
