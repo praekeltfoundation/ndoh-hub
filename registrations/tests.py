@@ -2420,6 +2420,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "reply_to": "this is a sample user message",
             "created_on": override_get_today(),
             "user_id": 'mother01-63e2-4acc-9b94-26663b9bc267',
+            "helpdesk_operator_id": 1234,
             "label": 'Complaint'}
         # Execute
         response = self.normalclient.post(
@@ -2440,7 +2441,48 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             'answer': u'this is a sample response'})
         self.assertEqual(request_json['class'], 'Complaint')
         self.assertEqual(request_json['type'], 7)
-        self.assertEqual(request_json['op'], 'operator-123456')
+        self.assertEqual(request_json['op'], 1234)
+
+    @responses.activate
+    def test_send_outgoing_message_to_jembi_with_null_operator_id(self):
+        reg = self.make_registration_for_jembi_helpdesk()
+        reg.data['operator_id'] = None
+        reg.save()
+
+        utils_tests.mock_jembi_json_api_call(
+            url='http://jembi/ws/rest/v1/helpdesk',
+            ok_response="jembi-is-ok",
+            err_response="jembi-is-unhappy",
+            fields={})
+
+        user_request = {
+            "to": "+27123456789",
+            "content": "this is a sample response",
+            "reply_to": "this is a sample user message",
+            "created_on": override_get_today(),
+            "user_id": 'mother01-63e2-4acc-9b94-26663b9bc267',
+            "helpdesk_operator_id": 1234,
+            "label": 'Complaint'}
+        # Execute
+        response = self.normalclient.post(
+            '/api/v1/jembi/helpdesk/outgoing/', user_request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(responses.calls), 1)
+        request_json = json.loads(responses.calls[0].request.body)
+
+        self.assertEqual(request_json['dmsisdn'], '+27123456789')
+        self.assertEqual(request_json['cmsisdn'], '+27123456789')
+        self.assertEqual(request_json['encdate'], '20160101000000')
+        self.assertEqual(request_json['repdate'], '20160101000000')
+        self.assertEqual(request_json['mha'], 1)
+        self.assertEqual(request_json['swt'], 2)
+        self.assertEqual(request_json['faccode'], '123456')
+        self.assertEqual(request_json['data'], {
+            'question': u'this is a sample user message',
+            'answer': u'this is a sample response'})
+        self.assertEqual(request_json['class'], 'Complaint')
+        self.assertEqual(request_json['type'], 7)
+        self.assertEqual(request_json['op'], 1234)
 
     def test_send_outgoing_message_to_jembi_invalid_user_id(self):
         user_request = {
@@ -2449,6 +2491,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "reply_to": "this is a sample user message",
             "created_on": override_get_today(),
             "user_id": 'unknown-uuid',
+            "helpdesk_operator_id": 1234,
             "label": 'Complaint'}
         # Execute
         response = self.normalclient.post(
@@ -2476,7 +2519,8 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
         responses.add(
             responses.POST,
             'http://jembi/ws/rest/v1/helpdesk',
-            status=500, content_type='application/json'
+            status=500, content_type='application/json',
+            body='This was a bad request.'
         )
 
         user_request = {
@@ -2485,11 +2529,13 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "reply_to": "this is a sample user message",
             "created_on": override_get_today(),
             "user_id": 'mother01-63e2-4acc-9b94-26663b9bc267',
+            "helpdesk_operator_id": 1234,
             "label": 'Complaint'}
         # Execute
         response = self.normalclient.post(
             '/api/v1/jembi/helpdesk/outgoing/', user_request)
         self.assertEqual(response.status_code, 400)
+        self.assertTrue('This was a bad request.' in str(response.content))
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_with_blank_values(self):
@@ -2507,6 +2553,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "reply_to": "",
             "created_on": override_get_today(),
             "user_id": 'mother01-63e2-4acc-9b94-26663b9bc267',
+            "helpdesk_operator_id": 1234,
             "label": ""}
         # Execute
         response = self.normalclient.post(
@@ -2527,4 +2574,4 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             'question': ''})
         self.assertEqual(request_json['class'], '')
         self.assertEqual(request_json['type'], 7)
-        self.assertEqual(request_json['op'], 'operator-123456')
+        self.assertEqual(request_json['op'], 1234)
