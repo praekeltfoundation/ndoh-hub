@@ -203,9 +203,10 @@ class JembiHelpdeskOutgoingView(APIView):
                 auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
                 verify=False)
             result.raise_for_status()
-        except requests.exceptions.HTTPError:
+        except (requests.exceptions.HTTPError,) as e:
             return Response(
-                'Error when posting to Jembi. Payload: %r' % post_data,
+                'Error when posting to Jembi. Body: %s Payload: %r' % (
+                    e.response.content, post_data),
                 status=status.HTTP_400_BAD_REQUEST)
 
         return Response(
