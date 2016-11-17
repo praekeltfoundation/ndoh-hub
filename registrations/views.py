@@ -4,7 +4,7 @@ import requests
 
 from django.conf import settings
 from django.contrib.auth.models import User, Group
-from django.shortcuts import get_object_or_404
+from django.http import Http404
 
 from rest_hooks.models import Hook
 from rest_framework import viewsets, mixins, generics, filters, status
@@ -155,8 +155,13 @@ class JembiHelpdeskOutgoingView(APIView):
         def jembi_format_date(date):
             return date.strftime("%Y%m%d%H%M%S")
 
-        registration = get_object_or_404(
-            Registration, registrant_id=validated_data.get('user_id'))
+        registration = Registration.objects\
+            .filter(registrant_id=validated_data.get('user_id'))\
+            .order_by('-created_at')\
+            .first()
+
+        if not registration:
+            raise Http404
 
         json_template = {
             "encdate": jembi_format_date(validated_data.get('created_on')),
