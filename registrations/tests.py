@@ -1385,8 +1385,6 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         with self.assertRaises(ValidationError) as cm:
             Registration.objects.create(**registration_data)
         # Check
-        print(type(list(cm.exception)))
-        print(list(cm.exception))
         self.assertEqual(
             [
                 'Missing field: edd',
