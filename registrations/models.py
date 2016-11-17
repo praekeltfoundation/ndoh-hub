@@ -68,9 +68,9 @@ class Registration(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(User, related_name='registrations_created',
-                                   null=True)
+                                   null=True, blank=True)
     updated_by = models.ForeignKey(User, related_name='registrations_updated',
-                                   null=True)
+                                   null=True, blank=True)
     user = property(lambda self: self.created_by)
 
     def __str__(self):
@@ -269,7 +269,7 @@ class Registration(models.Model):
             self.validated = True
 
     def save(self, *args, **kwargs):
-        self.clean()
+        self.full_clean()
         super(Registration, self).save(*args, **kwargs)
 
 

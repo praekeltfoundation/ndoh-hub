@@ -1341,7 +1341,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(
             ['Unrecognised field: foo'],
-            list(cm.exception)
+            cm.exception.messages
         )
 
     def test_validate_pmtct_prebirth_malformed_data(self):
@@ -1369,7 +1369,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 'Invalid date: mom_dob',
                 'Invalid UUID: operator_id',
             ],
-            list(cm.exception)
+            cm.exception.messages
         )
 
     def test_validate_pmtct_prebirth_missing_data(self):
@@ -1392,7 +1392,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 'Missing field: mom_dob',
                 'Missing field: operator_id',
             ],
-            list(cm.exception)
+            cm.exception.messages
         )
 
     def test_validate_pmtct_postbirth_malformed_data(self):
@@ -1420,7 +1420,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 'Invalid date: mom_dob',
                 'Invalid UUID: operator_id',
             ],
-            list(cm.exception)
+            cm.exception.messages
         )
 
     def test_validate_pmtct_postbirth_missing_data(self):
@@ -1443,7 +1443,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 'Missing field: mom_dob',
                 'Missing field: operator_id',
             ],
-            list(cm.exception)
+            cm.exception.messages
         )
 
     def test_validate_nurseconnect_malformed_data(self):
@@ -1472,7 +1472,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 'Invalid MSISDN: msisdn_registrant',
                 'Invalid UUID: operator_id',
             ],
-            list(cm.exception)
+            cm.exception.messages
         )
 
     def test_validate_nurseconnect_missing_data(self):
@@ -1496,7 +1496,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 'Missing field: msisdn_registrant',
                 'Missing field: operator_id',
             ],
-            list(cm.exception)
+            cm.exception.messages
         )
 
     def test_validate_momconnect_prebirth_clinic_malformed_data_1(self):
@@ -1528,7 +1528,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 'Invalid UUID: registrant_id',
                 'Required field should not be None: consent',
             ],
-            list(cm.exception)
+            cm.exception.messages
         )
 
     def test_validate_momconnect_prebirth_clinic_malformed_data_2(self):
@@ -1567,7 +1567,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 'Invalid Passport number: passport_no',
                 'Invalid Passport origin: passport_origin',
             ],
-            list(cm.exception)
+            cm.exception.messages
         )
 
     def test_validate_momconnect_prebirth_clinic_missing_data(self):
@@ -1594,7 +1594,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 'Missing field: msisdn_registrant',
                 'Missing field: operator_id',
             ],
-            list(cm.exception)
+            cm.exception.messages
         )
 
     def test_validate_momconnect_prebirth_chw_missing_data(self):
@@ -1619,7 +1619,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 'Missing field: msisdn_registrant',
                 'Missing field: operator_id',
             ],
-            list(cm.exception)
+            cm.exception.messages
         )
 
     def test_validate_momconnect_prebirth_public_missing_data(self):
@@ -1643,7 +1643,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 'Missing field: msisdn_registrant',
                 'Missing field: operator_id',
             ],
-            list(cm.exception)
+            cm.exception.messages
         )
 
 

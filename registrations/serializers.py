@@ -41,7 +41,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         instance = Registration(**attrs)
-        instance.clean()
+        instance.full_clean()
         return attrs
 
 
