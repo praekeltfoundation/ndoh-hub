@@ -179,7 +179,7 @@ class JembiHelpdeskOutgoingView(APIView):
             },
             "class": validated_data.get('label'),
             "type": 7,  # 7 helpdesk
-            "op": validated_data.get('helpdesk_operator_id'),
+            "op": str(validated_data.get('helpdesk_operator_id')),
         }
         return json_template
 
