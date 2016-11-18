@@ -2384,6 +2384,13 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 
 class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
+    def setUp(self):
+        super(TestJembiHelpdeskOutgoing, self).setUp()
+        self.inbound_created_on_date = datetime.datetime.strptime(
+            "2016-01-01", "%Y-%m-%d")
+        self.outbound_created_on_date = datetime.datetime.strptime(
+            "2016-01-02", "%Y-%m-%d")
+
     def make_registration_for_jembi_helpdesk(self):
         registration_data = {
             "reg_type": "momconnect_prebirth",
@@ -2418,7 +2425,8 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "to": "+27123456789",
             "content": "this is a sample response",
             "reply_to": "this is a sample user message",
-            "created_on": override_get_today(),
+            "inbound_created_on": self.inbound_created_on_date,
+            "outbound_created_on": self.outbound_created_on_date,
             "user_id": 'mother01-63e2-4acc-9b94-26663b9bc267',
             "helpdesk_operator_id": 1234,
             "label": 'Complaint'}
@@ -2432,7 +2440,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
         self.assertEqual(request_json['dmsisdn'], '+27123456789')
         self.assertEqual(request_json['cmsisdn'], '+27123456789')
         self.assertEqual(request_json['encdate'], '20160101000000')
-        self.assertEqual(request_json['repdate'], '20160101000000')
+        self.assertEqual(request_json['repdate'], '20160102000000')
         self.assertEqual(request_json['mha'], 1)
         self.assertEqual(request_json['swt'], 2)
         self.assertEqual(request_json['faccode'], '123456')
@@ -2459,7 +2467,8 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "to": "+27123456789",
             "content": "this is a sample response",
             "reply_to": "this is a sample user message",
-            "created_on": override_get_today(),
+            "inbound_created_on": self.inbound_created_on_date,
+            "outbound_created_on": self.outbound_created_on_date,
             "user_id": 'mother01-63e2-4acc-9b94-26663b9bc267',
             "helpdesk_operator_id": 1234,
             "label": 'Complaint'}
@@ -2473,7 +2482,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
         self.assertEqual(request_json['dmsisdn'], '+27123456789')
         self.assertEqual(request_json['cmsisdn'], '+27123456789')
         self.assertEqual(request_json['encdate'], '20160101000000')
-        self.assertEqual(request_json['repdate'], '20160101000000')
+        self.assertEqual(request_json['repdate'], '20160102000000')
         self.assertEqual(request_json['mha'], 1)
         self.assertEqual(request_json['swt'], 2)
         self.assertEqual(request_json['faccode'], '123456')
@@ -2489,7 +2498,8 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "to": "+27123456789",
             "content": "this is a sample reponse",
             "reply_to": "this is a sample user message",
-            "created_on": override_get_today(),
+            "inbound_created_on": self.inbound_created_on_date,
+            "outbound_created_on": self.outbound_created_on_date,
             "user_id": 'unknown-uuid',
             "helpdesk_operator_id": 1234,
             "label": 'Complaint'}
@@ -2503,7 +2513,8 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "to": "+27123456789",
             "content": "this is a sample reponse",
             "reply_to": "this is a sample user message",
-            "created_on": override_get_today(),
+            "inbound_created_on": self.inbound_created_on_date,
+            "outbound_created_on": self.outbound_created_on_date,
             "user_id": 'unknown-uuid',
             "label": 'Complaint'}
         # Execute
@@ -2527,7 +2538,8 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "to": "+27123456789",
             "content": "this is a sample reponse",
             "reply_to": "this is a sample user message",
-            "created_on": override_get_today(),
+            "inbound_created_on": self.inbound_created_on_date,
+            "outbound_created_on": self.outbound_created_on_date,
             "user_id": 'mother01-63e2-4acc-9b94-26663b9bc267',
             "helpdesk_operator_id": 1234,
             "label": 'Complaint'}
@@ -2551,7 +2563,8 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "to": "+27123456789",
             "content": "this is a sample response",
             "reply_to": "",
-            "created_on": override_get_today(),
+            "inbound_created_on": self.inbound_created_on_date,
+            "outbound_created_on": self.outbound_created_on_date,
             "user_id": 'mother01-63e2-4acc-9b94-26663b9bc267',
             "helpdesk_operator_id": 1234,
             "label": ""}
@@ -2565,7 +2578,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
         self.assertEqual(request_json['dmsisdn'], '+27123456789')
         self.assertEqual(request_json['cmsisdn'], '+27123456789')
         self.assertEqual(request_json['encdate'], '20160101000000')
-        self.assertEqual(request_json['repdate'], '20160101000000')
+        self.assertEqual(request_json['repdate'], '20160102000000')
         self.assertEqual(request_json['mha'], 1)
         self.assertEqual(request_json['swt'], 2)
         self.assertEqual(request_json['faccode'], '123456')

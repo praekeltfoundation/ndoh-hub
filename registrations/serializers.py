@@ -70,4 +70,5 @@ class JembiHelpdeskOutgoingSerializer(serializers.Serializer):
     user_id = serializers.CharField()
     helpdesk_operator_id = serializers.IntegerField()
     label = serializers.CharField(allow_blank=True)
-    created_on = serializers.DateTimeField()
+    inbound_created_on = serializers.DateTimeField()
+    outbound_created_on = serializers.DateTimeField()
