@@ -164,10 +164,10 @@ class JembiHelpdeskOutgoingView(APIView):
             raise Http404
 
         json_template = {
-            "encdate": jembi_format_date(validated_data.get('created_on')),
-            # is casepro, adding a label doesn't change the timestamp
-            # (we only have created_on)
-            "repdate": jembi_format_date(validated_data.get('created_on')),
+            "encdate": jembi_format_date(
+                validated_data.get('inbound_created_on')),
+            "repdate": jembi_format_date(
+                validated_data.get('outbound_created_on')),
             "mha": 1,
             "swt": 2,  # 1 ussd, 2 sms
             "cmsisdn": validated_data.get('to'),
