@@ -2441,7 +2441,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             'answer': u'this is a sample response'})
         self.assertEqual(request_json['class'], 'Complaint')
         self.assertEqual(request_json['type'], 7)
-        self.assertEqual(request_json['op'], 1234)
+        self.assertEqual(request_json['op'], "1234")
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_with_null_operator_id(self):
@@ -2482,7 +2482,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             'answer': u'this is a sample response'})
         self.assertEqual(request_json['class'], 'Complaint')
         self.assertEqual(request_json['type'], 7)
-        self.assertEqual(request_json['op'], 1234)
+        self.assertEqual(request_json['op'], "1234")
 
     def test_send_outgoing_message_to_jembi_invalid_user_id(self):
         user_request = {
@@ -2574,4 +2574,4 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             'question': ''})
         self.assertEqual(request_json['class'], '')
         self.assertEqual(request_json['type'], 7)
-        self.assertEqual(request_json['op'], 1234)
+        self.assertEqual(request_json['op'], "1234")
