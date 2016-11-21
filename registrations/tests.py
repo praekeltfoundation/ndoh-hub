@@ -999,31 +999,27 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
             responses.PATCH,
             'http://identitystore/identities/02144938-847d-4d2c-9daf-707cb864d077/',  # noqa
             json={
-                'count': 1,
-                'next': None,
-                'previous': None,
-                'results': [{
-                    'communicate_through': None,
-                    'created_at': '2015-10-14T07:25:53.218988Z',
-                    'created_by': 53,
-                    'details': {
-                        'addresses': {
-                            'msisdn': {'+27824440000': {'default': True}}
-                        },
-                        'consent': False,
-                        'default_addr_type': 'msisdn',
-                        'lang_code': 'eng_ZA',
-                        'last_mc_reg_on': 'clinic',
-                        'mom_dob': '1999-02-21',
-                        'sa_id_no': '27625249986',
-                        'source': 'clinic'
+                'communicate_through': None,
+                'created_at': '2015-10-14T07:25:53.218988Z',
+                'created_by': 53,
+                'details': {
+                    'addresses': {
+                        'msisdn': {'+27824440000': {'default': True}}
                     },
-                    'id': '02144938-847d-4d2c-9daf-707cb864d077',
-                    'operator': '3a4af5d9-887b-410f-afa1-460d4b3ecc05',
-                    'updated_at': '2016-10-27T19:04:03.138598Z',
-                    'updated_by': 53,
-                    'version': 1
-            }]},
+                    'consent': False,
+                    'default_addr_type': 'msisdn',
+                    'lang_code': 'eng_ZA',
+                    'last_mc_reg_on': 'clinic',
+                    'mom_dob': '1999-02-21',
+                    'sa_id_no': '27625249986',
+                    'source': 'clinic'
+                },
+                'id': '02144938-847d-4d2c-9daf-707cb864d077',
+                'operator': '3a4af5d9-887b-410f-afa1-460d4b3ecc05',
+                'updated_at': '2016-10-27T19:04:03.138598Z',
+                'updated_by': 53,
+                'version': 1
+            },
             match_querystring=True,
             status=200,
             content_type='application/json')

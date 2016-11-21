@@ -343,7 +343,8 @@ class ThirdPartyRegistration(APIView):
                 mom_identity['details'] = details
                 result = is_client.update_identity(mom_identity['id'],
                                                    data=mom_identity)
-                mom_identity = result['results'][0]
+                # update_identity returns the object directly as JSON
+                mom_identity = result
 
             # Create registration
             reg_data = {
