@@ -444,6 +444,7 @@ class BasePushRegistrationToJembi(object):
             'CHW USSD App': 'chw',
             'NURSE USSD App': 'nurse',
             'PMTCT USSD App': 'pmtct',
+            'EXTERNAL Apps': 'chw',  # External apps are only using chw for now
         }.get(source.name)
 
     def run(self, registration_id, **kwargs):
