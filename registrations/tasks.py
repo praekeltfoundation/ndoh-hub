@@ -437,15 +437,18 @@ class BasePushRegistrationToJembi(object):
                 back to ndoh-control's "authority" fields to maintain
                 backwards compatibility with existing APIs
         """
-        return {
-            'PUBLIC USSD App': 'personal',
-            'OPTOUT USSD App': 'optout',
-            'CLINIC USSD App': 'clinic',
-            'CHW USSD App': 'chw',
-            'NURSE USSD App': 'nurse',
-            'PMTCT USSD App': 'pmtct',
-            'EXTERNAL Apps': 'chw',  # External apps are only using chw for now
-        }.get(source.name)
+        if source.name.startswith('EXTERNAL CHW'):
+            # catch all external chw sources
+            return 'chw'
+        else:
+            return {
+                'PUBLIC USSD App': 'personal',
+                'OPTOUT USSD App': 'optout',
+                'CLINIC USSD App': 'clinic',
+                'CHW USSD App': 'chw',
+                'NURSE USSD App': 'nurse',
+                'PMTCT USSD App': 'pmtct',
+            }.get(source.name)
 
     def run(self, registration_id, **kwargs):
         from .models import Registration
