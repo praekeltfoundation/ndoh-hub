@@ -2606,10 +2606,17 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
         self.assertEqual(request_json['type'], 7)
         self.assertEqual(request_json['op'], "1234")
 
+    @responses.activate
     def test_send_outgoing_message_to_jembi_invalid_user_id(self):
+        utils_tests.mock_jembi_json_api_call(
+            url='http://jembi/ws/rest/v1/helpdesk',
+            ok_response="jembi-is-ok",
+            err_response="jembi-is-unhappy",
+            fields={})
+
         user_request = {
             "to": "+27123456789",
-            "content": "this is a sample reponse",
+            "content": "this is a sample response",
             "reply_to": "this is a sample user message",
             "inbound_created_on": self.inbound_created_on_date,
             "outbound_created_on": self.outbound_created_on_date,
@@ -2619,7 +2626,23 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
         # Execute
         response = self.normalclient.post(
             '/api/v1/jembi/helpdesk/outgoing/', user_request)
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(responses.calls), 1)
+        request_json = json.loads(responses.calls[0].request.body)
+
+        self.assertEqual(request_json['dmsisdn'], '+27123456789')
+        self.assertEqual(request_json['cmsisdn'], '+27123456789')
+        self.assertEqual(request_json['encdate'], '20160101000000')
+        self.assertEqual(request_json['repdate'], '20160102000000')
+        self.assertEqual(request_json['mha'], 1)
+        self.assertEqual(request_json['swt'], 2)
+        self.assertEqual(request_json['faccode'], '')
+        self.assertEqual(request_json['data'], {
+            'question': u'this is a sample user message',
+            'answer': u'this is a sample response'})
+        self.assertEqual(request_json['class'], 'Complaint')
+        self.assertEqual(request_json['type'], 7)
+        self.assertEqual(request_json['op'], "1234")
 
     def test_send_outgoing_message_to_jembi_improperly_configured(self):
         user_request = {
