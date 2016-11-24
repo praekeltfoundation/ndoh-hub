@@ -59,8 +59,8 @@ class ThirdPartyRegistrationSerializer(serializers.Serializer):
     clinic_code = serializers.CharField(allow_null=True)
     authority = serializers.CharField()
     consent = serializers.BooleanField()
-    mha = serializers.IntegerField()
-    swt = serializers.IntegerField()
+    mha = serializers.IntegerField(required=False)
+    swt = serializers.IntegerField(required=False)
 
 
 class JembiHelpdeskOutgoingSerializer(serializers.Serializer):

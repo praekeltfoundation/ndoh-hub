@@ -357,8 +357,8 @@ class ThirdPartyRegistration(APIView):
                 'edd': serializer.validated_data['mom_edd'],
                 'faccode': serializer.validated_data['clinic_code'],
                 'consent': serializer.validated_data['consent'],
-                'mha': serializer.validated_data['mha'],
-                'swt': serializer.validated_data['swt'],
+                'mha': serializer.validated_data.get('mha', 1),
+                'swt': serializer.validated_data.get('swt', 1),
             }
             if id_type == 'sa_id':
                 reg_data['sa_id_no'] = (
