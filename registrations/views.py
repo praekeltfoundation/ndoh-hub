@@ -4,7 +4,6 @@ import requests
 
 from django.conf import settings
 from django.contrib.auth.models import User, Group
-from django.http import Http404
 
 from rest_hooks.models import Hook
 from rest_framework import viewsets, mixins, generics, filters, status
@@ -160,9 +159,6 @@ class JembiHelpdeskOutgoingView(APIView):
             .order_by('-created_at')\
             .first()
 
-        if not registration:
-            raise Http404
-
         json_template = {
             "encdate": jembi_format_date(
                 validated_data.get('inbound_created_on')),
@@ -172,7 +168,8 @@ class JembiHelpdeskOutgoingView(APIView):
             "swt": 2,  # 1 ussd, 2 sms
             "cmsisdn": validated_data.get('to'),
             "dmsisdn": validated_data.get('to'),
-            "faccode": registration.data.get('faccode', ''),
+            "faccode":
+                registration.data.get('faccode', '') if registration else '',
             "data": {
                 "question": validated_data.get('reply_to'),
                 "answer": validated_data.get('content'),
