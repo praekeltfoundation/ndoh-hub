@@ -2636,7 +2636,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
         self.assertEqual(request_json['repdate'], '20160102000000')
         self.assertEqual(request_json['mha'], 1)
         self.assertEqual(request_json['swt'], 2)
-        self.assertEqual(request_json['faccode'], '')
+        self.assertEqual(request_json['faccode'], None)
         self.assertEqual(request_json['data'], {
             'question': u'this is a sample user message',
             'answer': u'this is a sample response'})
