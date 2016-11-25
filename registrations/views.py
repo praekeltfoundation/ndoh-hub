@@ -169,7 +169,7 @@ class JembiHelpdeskOutgoingView(APIView):
             "cmsisdn": validated_data.get('to'),
             "dmsisdn": validated_data.get('to'),
             "faccode":
-                registration.data.get('faccode', '') if registration else '',
+                registration.data.get('faccode') if registration else None,
             "data": {
                 "question": validated_data.get('reply_to'),
                 "answer": validated_data.get('content'),
