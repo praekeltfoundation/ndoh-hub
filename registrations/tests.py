@@ -406,10 +406,10 @@ class AuthenticatedAPITestCase(APITestCase):
         }
         return Source.objects.create(**data)
 
-    def make_external_source_limited(self):
+    def make_external_source_partial(self):
         data = {
-            "name": "test_source_external_limited",
-            "authority": "hw_limited",
+            "name": "test_source_external_partial",
+            "authority": "hw_partial",
             "user": User.objects.get(username='testpartialuser')
         }
         return Source.objects.create(**data)
@@ -936,7 +936,7 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
     @responses.activate
     def test_create_third_party_registration_existing_identity(self):
         # Setup
-        self.make_external_source_limited()
+        self.make_external_source_partial()
 
         responses.add(
             responses.GET,
@@ -1046,7 +1046,7 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         d = Registration.objects.last()
-        self.assertEqual(d.source.name, 'test_source_external_limited')
+        self.assertEqual(d.source.name, 'test_source_external_partial')
         self.assertEqual(d.reg_type, 'momconnect_prebirth')
         self.assertEqual(d.registrant_id,
                          "02144938-847d-4d2c-9daf-707cb864d077")
@@ -1055,7 +1055,7 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
     @responses.activate
     def test_create_third_party_registration_new_identity(self):
         # Setup
-        self.make_external_source_limited()
+        self.make_external_source_partial()
 
         responses.add(
             responses.GET,
@@ -1145,7 +1145,7 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         d = Registration.objects.last()
-        self.assertEqual(d.source.name, 'test_source_external_limited')
+        self.assertEqual(d.source.name, 'test_source_external_partial')
         self.assertEqual(d.reg_type, 'momconnect_prebirth')
         self.assertEqual(d.registrant_id,
                          "02144938-847d-4d2c-9daf-707cb864d077")
@@ -1154,7 +1154,7 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
     @responses.activate
     def test_create_third_party_registration_no_swt_mha(self):
         # Setup
-        self.make_external_source_limited()
+        self.make_external_source_partial()
 
         responses.add(
             responses.GET,
@@ -1262,7 +1262,7 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         d = Registration.objects.last()
-        self.assertEqual(d.source.name, 'test_source_external_limited')
+        self.assertEqual(d.source.name, 'test_source_external_partial')
         self.assertEqual(d.reg_type, 'momconnect_prebirth')
         self.assertEqual(d.registrant_id,
                          "02144938-847d-4d2c-9daf-707cb864d077")
