@@ -16,7 +16,7 @@ class Source(models.Model):
     AUTHORITY_CHOICES = (
         ('patient', "Patient"),
         ('advisor', "Trusted Advisor"),
-        ('hw_limited', "Health Worker Limited"),
+        ('hw_partial', "Health Worker Partial"),
         ('hw_full', "Health Worker Full")
     )
     name = models.CharField(max_length=100, null=False, blank=False)
