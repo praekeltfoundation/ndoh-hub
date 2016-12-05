@@ -74,6 +74,15 @@ class Registration(models.Model):
     def __str__(self):
         return str(self.id)
 
+    def get_subscription_requests(self):
+        """
+        Returns all possible subscriptions created for this registration.
+
+        :returns: Django Queryset
+        """
+        return SubscriptionRequest.objects.filter(
+            identity=self.registrant_id)
+
 
 @python_2_unicode_compatible
 class SubscriptionRequest(models.Model):
