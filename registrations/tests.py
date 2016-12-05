@@ -2721,6 +2721,6 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
         self.assertEqual(request_json['data'], {
             'answer': u'this is a sample response',
             'question': ''})
-        self.assertEqual(request_json['class'], '')
+        self.assertEqual(request_json['class'], 'Unclassified')
         self.assertEqual(request_json['type'], 7)
         self.assertEqual(request_json['op'], "1234")
