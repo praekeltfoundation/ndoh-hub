@@ -148,6 +148,7 @@ class JembiHelpdeskOutgoingView(APIView):
     """ API endpoint that allows the helpdesk to post messages to Jembi
     """
     permission_classes = (IsAuthenticated,)
+    UNCLASSIFIED_MESSAGES_DEFAULT_LABEL = 'Unclassified'
 
     def build_jembi_helpdesk_json(self, validated_data):
 
@@ -174,7 +175,9 @@ class JembiHelpdeskOutgoingView(APIView):
                 "question": validated_data.get('reply_to'),
                 "answer": validated_data.get('content'),
             },
-            "class": validated_data.get('label'),
+            "class":
+                validated_data.get('label') or
+                self.UNCLASSIFIED_MESSAGES_DEFAULT_LABEL,
             "type": 7,  # 7 helpdesk
             "op": str(validated_data.get('helpdesk_operator_id')),
         }
