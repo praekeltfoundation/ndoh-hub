@@ -251,6 +251,7 @@ class ValidateImplement(Task):
 
         if switched is True:
             self.l.info("Completed PMTCT switch to loss")
+            push_momconnect_babyloss_to_jembi.delay(str(change.pk))
             return "Completed PMTCT switch to loss"
         else:
             self.l.info("Aborted PMTCT switch to loss")
@@ -649,6 +650,42 @@ class PushMomconnectOptoutToJembi(BasePushOptoutToJembi, Task):
         }
 
 push_momconnect_optout_to_jembi = PushMomconnectOptoutToJembi()
+
+
+class PushMomconnectBabyLossToJembi(BasePushOptoutToJembi, Task):
+    """
+    Sends a momconnect baby loss change to Jembi.
+    """
+    name = "ndoh_hub.changes.tasks.push_momconnect_babyloss_to_jembi"
+    l = get_task_logger(__name__)
+    URL = "%s/subscription" % settings.JEMBI_BASE_URL
+
+    def get_identity_address(self, identity, address_type='msisdn'):
+        """
+        Returns a single address for the identity for the given address
+        type.
+        """
+        addresses = identity.get(
+            'details', {}).get('addresses', {}).get(address_type, {})
+        address = None
+        for address, details in iteritems(addresses):
+            if details.get('default'):
+                return address
+        return address
+
+    def build_jembi_json(self, change):
+        identity = is_client.get_identity(change.registrant_id) or {}
+        address = self.get_identity_address(identity)
+        return {
+            'encdate': self.get_timestamp(),
+            'mha': 1,
+            'swt': 1,
+            'cmsisdn': address,
+            'dmsisdn': address,
+            'type': 5,
+        }
+
+push_momconnect_babyloss_to_jembi = PushMomconnectBabyLossToJembi()
 
 
 class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
