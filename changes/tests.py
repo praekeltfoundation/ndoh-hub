@@ -1328,8 +1328,6 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 1)
         self.assertEqual(len(responses.calls), 10)
 
-        print json.loads(responses.calls[-1].request.body)
-
         # Check Jembi POST
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
             'cmsisdn': '+27821112222',
