@@ -1697,7 +1697,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         })
 
     @responses.activate
-    def test_momconnect_loss_switch_has_active(self):
+    @mock.patch('changes.tasks.PushMomconnectBabyLossToJembi.get_today')
+    def test_momconnect_loss_switch_has_active(self, mock_today):
         # Setup
         # make registrations
         self.make_registration_momconnect_prebirth()
@@ -1738,7 +1739,14 @@ class TestChangeActions(AuthenticatedAPITestCase):
 
         # . mock get identity by id
         utils_tests.mock_get_identity_by_id(
-            "mother01-63e2-4acc-9b94-26663b9bc267")
+            "mother01-63e2-4acc-9b94-26663b9bc267", {
+                'addresses': {
+                    'msisdn': {'+27111111111': {}},
+                },
+            })
+
+        # mock datetime
+        mock_today.return_value = datetime.date(2016, 1, 1)
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
@@ -1749,11 +1757,21 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 2)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 1)
-        self.assertEqual(len(responses.calls), 8)
+        self.assertEqual(len(responses.calls), 10)
         subreq = SubscriptionRequest.objects.last()
         self.assertEqual(subreq.messageset, 51)
         self.assertEqual(subreq.schedule, 151)
         self.assertEqual(subreq.next_sequence_number, 1)
+
+        # Check Jembi POST
+        self.assertEqual(json.loads(responses.calls[-1].request.body), {
+            'encdate': '20160101000000',
+            'mha': 1,
+            'swt': 1,
+            'cmsisdn': '+27111111111',
+            'dmsisdn': '+27111111111',
+            'type': 5,
+        })
 
     @responses.activate
     def test_momconnect_loss_switch_no_active(self):
@@ -1787,6 +1805,69 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(Registration.objects.all().count(), 2)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         self.assertEqual(len(responses.calls), 1)
+
+    @responses.activate
+    @mock.patch('changes.tasks.PushMomconnectBabyLossToJembi.get_today')
+    def test_momconnect_babyloss_via_management_task(self, mock_today):
+        # Setup
+        # make registration
+        self.make_registration_momconnect_prebirth()
+        self.make_registration_pmtct_prebirth()
+        self.assertEqual(Registration.objects.all().count(), 2)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        # make change object
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "momconnect_loss_switch",
+            "data": {
+                "reason": "stillbirth"
+            },
+            "source": self.make_source_normaluser(),
+            "validated": True,
+        }
+        change = Change.objects.create(**change_data)
+
+        # mock identity lookup
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267", {
+                'addresses': {
+                    'msisdn': {'+27111111111': {}},
+                },
+            })
+
+        # mock datetime
+        mock_today.return_value = datetime.date(2016, 1, 1)
+
+        def format_timestamp(ts):
+            return ts.strftime('%Y-%m-%d %H:%M:%S')
+
+        # Execute
+        stdout = StringIO()
+        call_command(
+            'jembi_submit_babyloss',
+            '--since', format_timestamp(
+                change.created_at - datetime.timedelta(seconds=1)),
+            '--until', format_timestamp(
+                change.created_at + datetime.timedelta(seconds=1)),
+            stdout=stdout)
+
+        # Check
+        self.assertEqual(len(responses.calls), 2)
+
+        # Check Jembi POST
+        self.assertEqual(json.loads(responses.calls[-1].request.body), {
+            'encdate': '20160101000000',
+            'mha': 1,
+            'swt': 1,
+            'cmsisdn': '+27111111111',
+            'dmsisdn': '+27111111111',
+            'type': 5,
+        })
+        self.assertEqual(stdout.getvalue().strip(), '\n'.join([
+            'Submitting 1 changes.',
+            str(change.pk,),
+            'Done.',
+        ]))
 
     @responses.activate
     @mock.patch('changes.tasks.PushMomconnectOptoutToJembi.get_today')

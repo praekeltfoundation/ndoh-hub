@@ -321,6 +321,7 @@ class ValidateImplement(Task):
 
         if switched is True:
             self.l.info("Completed MomConnect switch to loss")
+            push_momconnect_babyloss_to_jembi.delay(str(change.pk))
             return "Completed MomConnect switch to loss"
         else:
             self.l.info("Aborted MomConnect switch to loss")
