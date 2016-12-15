@@ -542,7 +542,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
             "type": self.get_subscription_type(authority),
             "lang": self.transform_language_code(
                 registration.data['language']),
-            "encdate": self.get_timestamp(),
+            "encdate": registration.data.get('encdate', self.get_timestamp()),
             "faccode": registration.data.get('faccode'),
             "dob": (self.get_dob(
                 datetime.strptime(registration.data['mom_dob'], '%Y-%m-%d'))
