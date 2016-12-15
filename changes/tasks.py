@@ -710,9 +710,6 @@ class PushMomconnectBabySwitchToJembi(BasePushOptoutToJembi, Task):
         for address, details in iteritems(addresses):
             if details.get('default'):
                 return address
-        print 'XXX'
-        print address
-        print identity.get('details', {})
         return address
 
     def build_jembi_json(self, change):
