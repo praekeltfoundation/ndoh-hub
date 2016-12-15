@@ -1052,6 +1052,7 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
         self.assertEqual(d.registrant_id,
                          "02144938-847d-4d2c-9daf-707cb864d077")
         self.assertEqual(d.data['edd'], '2016-11-05')
+        self.assertEqual(d.data['encdate'], '20160101000001')
 
     @responses.activate
     def test_create_third_party_registration_new_identity(self):
