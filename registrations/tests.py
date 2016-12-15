@@ -1036,7 +1036,8 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
             "authority": "chw",
             "consent": True,
             "mha": 2,
-            "swt": 3
+            "swt": 3,
+            "encdate": "20160101000001",
         }
         # Execute
         response = self.partialclient.post('/api/v1/extregistration/',

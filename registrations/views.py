@@ -360,6 +360,8 @@ class ThirdPartyRegistration(APIView):
                 'mha': serializer.validated_data.get('mha', 1),
                 'swt': serializer.validated_data.get('swt', 1),
             }
+            if 'encdate' in serializer.validated_data:
+                reg_data['encdate'] = serializer.validated_data['encdate']
             if id_type == 'sa_id':
                 reg_data['sa_id_no'] = (
                     serializer.validated_data['mom_id_no'])
