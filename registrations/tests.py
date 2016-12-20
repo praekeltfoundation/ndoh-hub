@@ -2167,7 +2167,8 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         self.assertEqual(len(responses.calls), 5)
 
         # check jembi registration
-        self.assertEqual(json.loads(responses.calls[-1].request.body), {
+        jembi_call = responses.calls[-1]  # jembi should be the last one
+        self.assertEqual(json.loads(jembi_call.request.body), {
             'lang': 'en',
             'dob': '19990127',
             'cmsisdn': '+27821113333',
@@ -2179,6 +2180,10 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             'swt': 1,
             'mha': 1,
         })
+        self.assertEqual(
+            jembi_call.request.url,
+            'http://jembi/ws/rest/v1/pmtctSubscription')
+        self.assertEqual(jembi_call.request.method, "POST")
 
         # . check registration validated
         registration.refresh_from_db()
