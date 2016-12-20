@@ -428,6 +428,8 @@ class BasePushRegistrationToJembi(object):
         """
         if registration.reg_type in ('nurseconnect',):
             return push_nurse_registration_to_jembi
+        if "pmtct" in registration.reg_type:
+            return push_pmtct_registration_to_jembi
         return push_registration_to_jembi
 
     @staticmethod
@@ -563,6 +565,15 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
 
 
 push_registration_to_jembi = PushRegistrationToJembi()
+
+
+class PushPmtctRegistrationToJembi(PushRegistrationToJembi, Task):
+    """ Task to push PMTCT registration data to Jembi
+    """
+    name = "ndoh_hub.registrations.tasks.push_pmtct_registration_to_jembi"
+    URL = "%s/pmtctSubscription" % settings.JEMBI_BASE_URL
+
+push_pmtct_registration_to_jembi = PushPmtctRegistrationToJembi()
 
 
 class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
