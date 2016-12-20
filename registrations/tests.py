@@ -2176,7 +2176,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             'faccode': '123456',
             'id': '8108015001051^^^ZAF^NI',
             'encdate': '20160101000000',
-            'type': 8,
+            'type': 9,
             'swt': 1,
             'mha': 1,
         })
