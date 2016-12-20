@@ -505,7 +505,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
             # 'babyloss': 5,
             # 'servicerating': 6,
             # 'helpdesk': 7,
-            'pmtct': 8,
+            'pmtct': 9,
         }
         return authority_map[authority]
 
