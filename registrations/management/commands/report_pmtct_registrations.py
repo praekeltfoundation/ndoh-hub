@@ -1,8 +1,8 @@
-from itertools import izip
 import csv
 
 from django.core.management.base import BaseCommand
 from django.db import connection
+from six.moves import zip
 
 
 class Command(BaseCommand):
@@ -17,7 +17,7 @@ class Command(BaseCommand):
             if row is None:
                 break
 
-            row_dict = dict(izip(col_names, row))
+            row_dict = dict(zip(col_names, row))
             yield row_dict
 
         return
