@@ -12,6 +12,7 @@ from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.db.models.signals import post_save
+from django.utils import timezone
 from mock import patch
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -2731,3 +2732,54 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
         self.assertEqual(request_json['class'], 'Unclassified')
         self.assertEqual(request_json['type'], 7)
         self.assertEqual(request_json['op'], "1234")
+
+    @responses.activate
+    def test_report_pmtct_registrations(self):
+        # Mock API call to SBM for message set
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            'pmtct_prebirth.patient.1')
+        utils_tests.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_patch_identity(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_push_registration_to_jembi(
+            ok_response="jembi-is-ok",
+            err_response="jembi-is-unhappy",
+            fields={"cmsisdn": "+27111111111"})
+
+        # Setup
+        source = Source.objects.create(
+            name="PUBLIC USSD App",
+            authority="patient",
+            user=User.objects.get(username='testnormaluser'))
+
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": source,
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "id_type": "sa_id",
+                "sa_id_no": "0000000000",
+                "edd": "2016-11-30",
+                "faccode": "123456",
+                "msisdn_device": "+2700000000",
+                "msisdn_registrant": "+27111111111",
+            },
+        }
+
+        registration = Registration.objects.create(**registration_data)
+        # NOTE: we're faking validation step here
+        registration.validated = True
+        registration.save()
+
+        stdout = StringIO()
+        call_command('report_pmtct_registrations', stdout=stdout)
+
+        self.assertEqual(stdout.getvalue().strip(), '\r\n'.join([
+            'Registration Type,created,count',
+            'pmtct_prebirth,%s,1' % (timezone.now().strftime('%Y-%m-%d'),),
+        ]))
