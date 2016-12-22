@@ -266,7 +266,7 @@ class ValidateImplement(Task):
         self.deactivate_all_except_nurseconnect(change)
         self.l.info("Completed PMTCT loss optout")
         self.l.info("Sending optout to Jembi")
-        push_momconnect_optout_to_jembi.delay(str(change.pk))
+        push_pmtct_optout_to_jembi.delay(str(change.pk))
         return "Completed PMTCT loss optout"
 
     def pmtct_nonloss_optout(self, change):
@@ -283,7 +283,7 @@ class ValidateImplement(Task):
 
         self.l.info("Completed PMTCT non-loss optout")
         self.l.info("Sending optout to Jembi")
-        push_momconnect_optout_to_jembi.delay(str(change.pk))
+        push_pmtct_optout_to_jembi.delay(str(change.pk))
         return "Completed PMTCT non-loss optout"
 
     def nurse_update_detail(self, change):
@@ -653,6 +653,28 @@ class PushMomconnectOptoutToJembi(BasePushOptoutToJembi, Task):
         }
 
 push_momconnect_optout_to_jembi = PushMomconnectOptoutToJembi()
+
+
+class PushPMTCTOptoutToJembi(PushMomconnectOptoutToJembi, Task):
+    """
+    Sends a PMTCT optout change to Jembi.
+    """
+    name = "ndoh_hub.changes.tasks.push_pmtct_optout_to_jembi"
+
+    def build_jembi_json(self, change):
+        identity = is_client.get_identity(change.registrant_id) or {}
+        address = self.get_identity_address(identity)
+        return {
+            'encdate': self.get_timestamp(),
+            'mha': 1,
+            'swt': 1,
+            'cmsisdn': address,
+            'dmsisdn': address,
+            'type': 9,
+            'optoutreason': self.get_optout_reason(change.data['reason']),
+        }
+
+push_pmtct_optout_to_jembi = PushPMTCTOptoutToJembi()
 
 
 class PushMomconnectBabyLossToJembi(BasePushOptoutToJembi, Task):
