@@ -24,7 +24,7 @@ class Command(BaseCommand):
 
     def query_to_csv(self, fp, column_names, query):
         records = self.query(query)
-        writer = csv.DictWriter(self.stdout, column_names)
+        writer = csv.DictWriter(fp, column_names)
         writer.writeheader()
         for record in records:
             writer.writerow(record)
