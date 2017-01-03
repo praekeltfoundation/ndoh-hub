@@ -1431,6 +1431,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(len(responses.calls), 7)
 
         # Check jembi push
+        self.assertEqual(responses.calls[-1].request.url,
+                         'http://jembi/ws/rest/v1/pmtctOptout')
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
             'cmsisdn': '+27821112222',
             'dmsisdn': '+27821112222',
@@ -1493,7 +1495,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             'mha': 1,
             'swt': 1,
             'optoutreason': 2,
-            'type': 4,
+            'type': 10,
         })
 
     @responses.activate
@@ -1553,6 +1555,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(len(responses.calls), 8)
 
         # Check jembi push
+        self.assertEqual(responses.calls[-1].request.url,
+                         'http://jembi/ws/rest/v1/pmtctOptout')
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
             'cmsisdn': '+27821112222',
             'dmsisdn': '+27821112222',

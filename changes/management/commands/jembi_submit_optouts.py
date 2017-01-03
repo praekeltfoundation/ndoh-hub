@@ -27,7 +27,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         from changes.models import Change
         from changes.tasks import (
-            push_momconnect_optout_to_jembi, push_nurseconnect_optout_to_jembi)
+            push_momconnect_optout_to_jembi, push_pmtct_optout_to_jembi,
+            push_nurseconnect_optout_to_jembi)
         since = options['since']
         until = options['until']
         source = options['source']
@@ -53,11 +54,17 @@ class Command(BaseCommand):
 
         self.stdout.write(
             'Submitting %s changes.' % (changes.count(),))
+
         for change in changes.filter(action__in=(
-                'momconnect_loss_optout', 'momconnect_nonloss_optout',
-                'pmtct_loss_optout', 'pmtct_nonloss_optout')):
+                'momconnect_loss_optout', 'momconnect_nonloss_optout')):
             push_momconnect_optout_to_jembi.delay(str(change.pk))
             self.stdout.write(str(change.pk))
+
+        for change in changes.filter(action__in=(
+                'pmtct_loss_optout', 'pmtct_nonloss_optout')):
+            push_pmtct_optout_to_jembi.delay(str(change.pk))
+            self.stdout.write(str(change.pk))
+
         for change in changes.filter(action='nurse_optout'):
             push_nurseconnect_optout_to_jembi.delay(str(change.pk))
             self.stdout.write(str(change.pk))
