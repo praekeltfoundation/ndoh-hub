@@ -1488,6 +1488,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
             stdout=stdout)
 
         # Check jembi push
+        self.assertEqual(responses.calls[-1].request.url,
+                         'http://jembi/ws/rest/v1/pmtctOptout')
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
             'cmsisdn': '+27821112222',
             'dmsisdn': '+27821112222',
