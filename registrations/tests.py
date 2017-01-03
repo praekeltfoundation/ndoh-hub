@@ -20,7 +20,7 @@ from rest_framework.authtoken.models import Token
 from rest_hooks.models import model_saved
 
 from .models import Source, Registration, SubscriptionRequest
-from .signals import psh_validate_subscribe
+from .signals import psh_validate_subscribe, psh_fire_created_metric
 from .tasks import validate_subscribe, get_risk_status
 from ndoh_hub import utils, utils_tests
 
@@ -368,7 +368,11 @@ class AuthenticatedAPITestCase(APITestCase):
             "Registration model has no post_save listeners. Make sure"
             " helpers cleaned up properly in earlier tests.")
         post_save.disconnect(receiver=psh_validate_subscribe,
-                             sender=Registration)
+                             sender=Registration,
+                             dispatch_uid='psh_validate_subscribe')
+        post_save.disconnect(receiver=psh_fire_created_metric,
+                             sender=Registration,
+                             dispatch_uid='psh_fire_created_metric')
         post_save.disconnect(receiver=model_saved,
                              dispatch_uid='instance-saved-hook')
         assert not has_listeners(), (
@@ -381,7 +385,10 @@ class AuthenticatedAPITestCase(APITestCase):
         assert not has_listeners(), (
             "Registration model still has post_save listeners. Make sure"
             " helpers removed them properly in earlier tests.")
-        post_save.connect(psh_validate_subscribe, sender=Registration)
+        post_save.connect(psh_validate_subscribe, sender=Registration,
+                          dispatch_uid='psh_validate_subscribe')
+        post_save.connect(psh_fire_created_metric, sender=Registration,
+                          dispatch_uid='psh_fire_created_metric')
 
     def make_source_adminuser(self):
         data = {
@@ -2834,3 +2841,37 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             'risk,count',
             'high,1'
         ]))
+
+
+class TestMetricsAPI(AuthenticatedAPITestCase):
+
+    def test_metrics_read(self):
+        # Setup
+        self.make_source_normaluser()
+        self.make_source_adminuser()
+        # Execute
+        response = self.adminclient.get(
+            '/api/metrics/', content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            sorted(response.data["metrics_available"]), sorted([
+                'registrations.created.sum',
+            ])
+        )
+
+    @responses.activate
+    def test_post_metrics(self):
+        # Setup
+        # deactivate Testsession for this test
+        self.session = None
+        responses.add(responses.POST,
+                      "http://metrics-url/metrics/",
+                      json={"foo": "bar"},
+                      status=200, content_type='application/json')
+        # Execute
+        response = self.adminclient.post(
+            '/api/metrics/', content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["scheduled_metrics_initiated"], True)

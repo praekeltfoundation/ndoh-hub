@@ -196,3 +196,10 @@ def get_messageset_schedule_sequence(short_name, weeks):
 
     return (messageset["id"], messageset["default_schedule"],
             next_sequence_number)
+
+
+def get_available_metrics():
+    available_metrics = []
+    available_metrics.extend(settings.METRICS_REALTIME)
+    available_metrics.extend(settings.METRICS_SCHEDULED)
+    return available_metrics

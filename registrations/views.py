@@ -19,6 +19,7 @@ from .serializers import (UserSerializer, GroupSerializer,
                           HookSerializer, CreateUserSerializer,
                           JembiHelpdeskOutgoingSerializer,
                           ThirdPartyRegistrationSerializer)
+from ndoh_hub.utils import get_available_metrics
 
 
 def transform_language_code(lang):
@@ -383,3 +384,26 @@ class ThirdPartyRegistration(APIView):
                 reg_serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MetricsView(APIView):
+
+    """ Metrics Interaction
+        GET - returns list of all available metrics on the service
+        POST - starts up the task that fires all the scheduled metrics
+    """
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        status = 200
+        resp = {
+            "metrics_available": get_available_metrics()
+        }
+        return Response(resp, status=status)
+
+    def post(self, request, *args, **kwargs):
+        status = 201
+        # Uncomment line below if scheduled metrics are added
+        # scheduled_metrics.apply_async()
+        resp = {"scheduled_metrics_initiated": True}
+        return Response(resp, status=status)
