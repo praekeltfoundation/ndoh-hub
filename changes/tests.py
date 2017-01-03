@@ -1438,7 +1438,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             'mha': 1,
             'swt': 1,
             'optoutreason': 2,
-            'type': 9,
+            'type': 10,
         })
 
     @responses.activate
@@ -1560,7 +1560,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             'mha': 1,
             'swt': 1,
             'optoutreason': 5,
-            'type': 9,
+            'type': 10,
         })
 
     @responses.activate

@@ -670,7 +670,7 @@ class PushPMTCTOptoutToJembi(PushMomconnectOptoutToJembi, Task):
             'swt': 1,
             'cmsisdn': address,
             'dmsisdn': address,
-            'type': 9,
+            'type': 10,
             'optoutreason': self.get_optout_reason(change.data['reason']),
         }
 
