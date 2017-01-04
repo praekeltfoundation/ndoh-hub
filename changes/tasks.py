@@ -660,6 +660,7 @@ class PushPMTCTOptoutToJembi(PushMomconnectOptoutToJembi, Task):
     Sends a PMTCT optout change to Jembi.
     """
     name = "ndoh_hub.changes.tasks.push_pmtct_optout_to_jembi"
+    URL = "%s/pmtctOptout" % settings.JEMBI_BASE_URL
 
     def build_jembi_json(self, change):
         identity = is_client.get_identity(change.registrant_id) or {}
