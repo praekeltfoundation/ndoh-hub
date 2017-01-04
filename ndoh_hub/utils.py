@@ -1,8 +1,11 @@
 from __future__ import division
+from __future__ import absolute_import
 
 import datetime
 
+from celery.task import Task
 from django.conf import settings
+from go_http.metrics import MetricsApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
 
 
@@ -203,3 +206,29 @@ def get_available_metrics():
     available_metrics.extend(settings.METRICS_REALTIME)
     available_metrics.extend(settings.METRICS_SCHEDULED)
     return available_metrics
+
+
+def get_metric_client(session=None):
+    return MetricsApiClient(
+        auth_token=settings.METRICS_AUTH_TOKEN,
+        api_url=settings.METRICS_URL,
+        session=session)
+
+
+class FireMetric(Task):
+
+    """ Fires a metric using the MetricsApiClient
+    """
+    name = "ndoh_hub.tasks.fire_metric"
+
+    def run(self, metric_name, metric_value, session=None, **kwargs):
+        metric_value = float(metric_value)
+        metric = {
+            metric_name: metric_value
+        }
+        metric_client = get_metric_client(session=session)
+        metric_client.fire(metric)
+        return "Fired metric <%s> with value <%s>" % (
+            metric_name, metric_value)
+
+fire_metric = FireMetric()

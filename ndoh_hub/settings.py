@@ -185,7 +185,7 @@ CELERY_ROUTES = {
     'registrations.tasks.DeliverHook': {
         'queue': 'priority',
     },
-    'registrations.tasks.fire_metric': {
+    'ndoh_hub.tasks.fire_metric': {
         'queue': 'metrics',
     },
 }
@@ -204,8 +204,8 @@ METRICS_SCHEDULED = [
 METRICS_SCHEDULED_TASKS = [
 ]
 
-METRICS_AUTH_TOKEN = os.environ.get("METRICS_AUTH_TOKEN", "REPLACEME")
-METRICS_URL = os.environ.get("METRICS_URL", None)
+METRICS_AUTH_TOKEN = os.environ.get('METRICS_AUTH_TOKEN', 'REPLACEME')
+METRICS_URL = os.environ.get('METRICS_URL', 'http://metrics/api/v1')
 
 PREBIRTH_MIN_WEEKS = int(os.environ.get('PREBIRTH_MIN_WEEKS', '4'))
 

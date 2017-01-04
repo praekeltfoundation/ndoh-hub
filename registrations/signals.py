@@ -14,8 +14,8 @@ def psh_fire_created_metric(sender, instance, created, **kwargs):
     """ Post save hook to fire Registration created metric
     """
     if created:
-        from .tasks import fire_metric
-        fire_metric.apply_async(kwargs={
+        from ndoh_hub import utils
+        utils.fire_metric.apply_async(kwargs={
             "metric_name": 'registrations.created.sum',
             "metric_value": 1.0
         })
