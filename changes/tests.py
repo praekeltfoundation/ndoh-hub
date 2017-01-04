@@ -22,7 +22,8 @@ from .models import Change
 from .signals import psh_validate_implement
 from .tasks import validate_implement
 from registrations.models import Source, Registration, SubscriptionRequest
-from registrations.signals import psh_validate_subscribe
+from registrations.signals import (psh_validate_subscribe,
+                                   psh_fire_created_metric)
 
 
 def override_get_today():
@@ -260,7 +261,11 @@ class AuthenticatedAPITestCase(APITestCase):
             "Registration model has no post_save listeners. Make sure"
             " helpers cleaned up properly in earlier tests.")
         post_save.disconnect(receiver=psh_validate_subscribe,
-                             sender=Registration)
+                             sender=Registration,
+                             dispatch_uid='psh_validate_subscribe')
+        post_save.disconnect(receiver=psh_fire_created_metric,
+                             sender=Registration,
+                             dispatch_uid='psh_fire_created_metric')
         post_save.disconnect(receiver=model_saved,
                              dispatch_uid='instance-saved-hook')
         assert not has_listeners(), (
@@ -273,7 +278,10 @@ class AuthenticatedAPITestCase(APITestCase):
         assert not has_listeners(), (
             "Registration model still has post_save listeners. Make sure"
             " helpers removed them properly in earlier tests.")
-        post_save.connect(psh_validate_subscribe, sender=Registration)
+        post_save.connect(psh_validate_subscribe, sender=Registration,
+                          dispatch_uid='psh_validate_subscribe')
+        post_save.connect(psh_fire_created_metric, sender=Registration,
+                          dispatch_uid='psh_fire_created_metric')
 
     def make_source_adminuser(self):
         data = {

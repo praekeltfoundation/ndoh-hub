@@ -185,6 +185,9 @@ CELERY_ROUTES = {
     'registrations.tasks.DeliverHook': {
         'queue': 'priority',
     },
+    'ndoh_hub.tasks.fire_metric': {
+        'queue': 'metrics',
+    },
 }
 
 CELERY_TASK_SERIALIZER = 'json'
@@ -192,6 +195,17 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json']
 
 djcelery.setup_loader()
+
+METRICS_REALTIME = [
+    'registrations.created.sum',
+]
+METRICS_SCHEDULED = [
+]
+METRICS_SCHEDULED_TASKS = [
+]
+
+METRICS_AUTH_TOKEN = os.environ.get('METRICS_AUTH_TOKEN', 'REPLACEME')
+METRICS_URL = os.environ.get('METRICS_URL', 'http://metrics/api/v1')
 
 PREBIRTH_MIN_WEEKS = int(os.environ.get('PREBIRTH_MIN_WEEKS', '4'))
 
