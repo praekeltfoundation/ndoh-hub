@@ -2244,6 +2244,88 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         post_save.disconnect(psh_validate_subscribe, sender=Registration)
 
     @responses.activate
+    @patch('registrations.tasks.PushRegistrationToJembi.get_today')
+    def test_registration_process_pmtct_minimal_data(self, mock_date):
+        """ Test a full registration process with good data """
+        # Setup
+        registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
+        # . reactivate post-save hook
+        post_save.connect(psh_validate_subscribe, sender=Registration)
+
+        source = self.make_source_normaluser()
+        source.name = 'PMTCT USSD App'
+        source.save()
+
+        # . setup pmtct_prebirth registration
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": registrant_uuid,
+            "source": source,
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "edd": "2016-05-01",  # in week 23 of pregnancy
+                "faccode": "123456",
+            },
+        }
+
+        # . setup fixture responses
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "pmtct_prebirth.patient.1")
+        utils_tests.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_identity_by_id(registrant_uuid, {
+            'addresses': {
+                'msisdn': {'+8108015001051': {'default': True}}
+            },
+            'default_addr_type': 'msisdn',
+        })
+        utils_tests.mock_patch_identity(registrant_uuid)
+        mock_date.return_value = datetime.date(2016, 1, 1)
+
+        # Execute
+        registration = Registration.objects.create(**registration_data)
+
+        # Check
+        # . check number of calls made:
+        #   messageset, schedule, identity, patch identity, jembi registration
+        self.assertEqual(len(responses.calls), 6)
+
+        # check jembi registration
+        jembi_call = responses.calls[-1]  # jembi should be the last one
+        self.assertEqual(json.loads(jembi_call.request.body), {
+            'lang': 'en',
+            'dob': '19990127',
+            'cmsisdn': None,
+            'dmsisdn': None,
+            'faccode': '123456',
+            'id': '8108015001051^^^ZAF^TEL',
+            'encdate': '20160101000000',
+            'type': 9,
+            'swt': 1,
+            'mha': 1,
+        })
+        self.assertEqual(
+            jembi_call.request.url,
+            'http://jembi/ws/rest/v1/pmtctSubscription')
+        self.assertEqual(jembi_call.request.method, "POST")
+
+        # . check registration validated
+        registration.refresh_from_db()
+        self.assertEqual(registration.validated, True)
+
+        # . check subscriptionrequest object
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 11)
+        self.assertEqual(sr.next_sequence_number, 17)  # (23 - 6) * 1
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 111)
+
+        # Teardown
+        post_save.disconnect(psh_validate_subscribe, sender=Registration)
+
+    @responses.activate
     def test_registration_process_clinic_good(self):
         """ Test a full registration process with good data """
         # Setup

@@ -399,14 +399,23 @@ class BasePushRegistrationToJembi(object):
     name = "ndoh_hub.registrations.tasks.base_push_registration_to_jembi"
     l = get_task_logger(__name__)
 
-    def get_patient_id(self, id_type, id_no=None,
-                       passport_origin=None, mom_msisdn=None):
+    def get_patient_id(self, id_type, id_no=None, passport_origin=None,
+                       mom_msisdn=None, registrant_id=None):
         if id_type == 'sa_id':
             return id_no + "^^^ZAF^NI"
         elif id_type == 'passport':
             return id_no + '^^^' + passport_origin.upper() + '^PPN'
-        else:
+        elif mom_msisdn:
             return mom_msisdn.replace('+', '') + '^^^ZAF^TEL'
+        elif registrant_id:
+            identity = is_client.get_identity(registrant_id)
+            if identity:
+                msisdns = \
+                    identity['details'].get('addresses', {}).get('msisdn', {})
+
+                for key in msisdns:
+                    if not msisdns[key].get('optedout', False):
+                        return key.replace('+', '') + '^^^ZAF^TEL'
 
     def get_dob(self, mom_dob):
         if mom_dob is not None:
@@ -528,6 +537,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
         """ Compile json to be sent to Jembi. """
         self.l.info("Compiling Jembi Json data for PushRegistrationToJembi")
         authority = self.get_authority_from_source(registration.source)
+
         json_template = {
             "mha": registration.data.get('mha', 1),
             "swt": registration.data.get('swt', 1),
@@ -540,7 +550,8 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
                  else registration.data.get('passport_no')),
                 # passport_origin may be None if sa_id is used
                 registration.data.get('passport_origin'),
-                registration.data.get('msisdn_registrant')),
+                registration.data.get('msisdn_registrant'),
+                registration.registrant_id),
             "type": self.get_subscription_type(authority),
             "lang": self.transform_language_code(
                 registration.data['language']),
@@ -614,7 +625,8 @@ class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
                  else registration.data.get('passport_no')),
                 # passport_origin may be None if sa_id is used
                 registration.data.get('passport_origin'),
-                registration.data['msisdn_registrant']),
+                registration.data['msisdn_registrant'],
+                registration.registrant_id),
             "dob": (self.get_dob(
                 datetime.strptime(registration.data['mom_dob'], '%Y-%m-%d'))
                     if registration.data.get('mom_db')
