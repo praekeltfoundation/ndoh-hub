@@ -409,12 +409,13 @@ class BasePushRegistrationToJembi(object):
             return mom_msisdn.replace('+', '') + '^^^ZAF^TEL'
         elif registrant_id:
             identity = is_client.get_identity(registrant_id)
-            msisdns = \
-                identity['details'].get('addresses', {}).get('msisdn', {})
+            if identity:
+                msisdns = \
+                    identity['details'].get('addresses', {}).get('msisdn', {})
 
-            for key in msisdns:
-                if not msisdns[key].get('optedout', False):
-                    return key.replace('+', '') + '^^^ZAF^TEL'
+                for key in msisdns:
+                    if not msisdns[key].get('optedout', False):
+                        return key.replace('+', '') + '^^^ZAF^TEL'
 
     def get_dob(self, mom_dob):
         if mom_dob is not None:
