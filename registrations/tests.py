@@ -2297,7 +2297,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             'lang': 'en',
             'dob': '19990127',
             'cmsisdn': '+8108015001051',
-            'dmsisdn': None,
+            'dmsisdn': '+8108015001051',
             'faccode': '123456',
             'id': '8108015001051^^^ZAF^TEL',
             'encdate': '20160101000000',
