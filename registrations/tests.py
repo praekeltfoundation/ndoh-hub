@@ -2296,7 +2296,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         self.assertEqual(json.loads(jembi_call.request.body), {
             'lang': 'en',
             'dob': '19990127',
-            'cmsisdn': None,
+            'cmsisdn': '+8108015001051',
             'dmsisdn': None,
             'faccode': '123456',
             'id': '8108015001051^^^ZAF^TEL',
