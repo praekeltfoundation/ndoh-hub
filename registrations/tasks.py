@@ -570,7 +570,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
         # Self registrations on all lines should use cmsisdn as dmsisdn too
         if registration.data.get('msisdn_device') is None:
             json_template["dmsisdn"] = registration.data.get(
-                'msisdn_registrant')
+                'msisdn_registrant', id_msisdn)
 
         if authority == 'clinic':
             json_template["edd"] = datetime.strptime(
