@@ -2627,6 +2627,62 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         })
 
 
+class TestFixPmtctRegistrationsCommand(AuthenticatedAPITestCase):
+
+    @responses.activate
+    def test_fix_pmtct_registrations(self):
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            'pmtct_prebirth.patient.1')
+        utils_tests.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_patch_identity(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_get_identity_by_id(
+            "mother02-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_patch_identity(
+            "mother02-63e2-4acc-9b94-26663b9bc267")
+
+        # create the previous momconnect registration
+        data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "data": {"edd": "2017-08-01"},
+            "source": self.make_source_normaluser(),
+            "validated": True
+        }
+        Registration.objects.create(**data)
+        data['registrant_id'] = "mother02-63e2-4acc-9b94-26663b9bc267"
+        Registration.objects.create(**data)
+
+        # create the failed pmtct regsitration
+        data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "mom_dob": "1987-04-24",
+                "invalid_fields": ["Estimated Due Date missing"],
+                "language": "eng_ZA"
+            },
+            "source": self.make_source_normaluser()
+        }
+        Registration.objects.create(**data)
+        data['registrant_id'] = "mother02-63e2-4acc-9b94-26663b9bc267"
+        data['data']['operator_id'] = "mother02-63e2-4acc-9b94-26663b9bc267"
+        check_registration = Registration.objects.create(**data)
+
+        stdout = StringIO()
+        call_command('fix_pmtct_registrations', stdout=stdout)
+
+        check_registration = Registration.objects.get(id=check_registration.id)
+
+        self.assertEqual(stdout.getvalue().strip(),
+                         '2 registrations fixed and validated.')
+        self.assertEqual(check_registration.data.get("edd"), "2017-08-01")
+        self.assertEqual(check_registration.validated, True)
+
+
 class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
     def setUp(self):
