@@ -21,7 +21,8 @@ class Command(BaseCommand):
             related_regs = Registration.objects.filter(
                     validated=True,
                     registrant_id=registration.registrant_id
-                ).exclude(reg_type__in=("pmtct_prebirth", "pmtct_postbirth"))
+                ).exclude(reg_type__in=("pmtct_prebirth", "pmtct_postbirth")).\
+                order_by('-created_at')
 
             for related_reg in related_regs:
 
