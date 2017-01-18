@@ -16,6 +16,12 @@ class Command(BaseCommand):
 
         updates = 0
 
+        common_fields = ('language', 'mom_dob', 'operator_id')
+        fields = {
+            'pmtct_prebirth': common_fields + ('edd',),
+            'pmtct_postbirth': common_fields + ('baby_dob',),
+        }
+
         for registration in registrations:
 
             related_regs = Registration.objects.filter(
@@ -25,7 +31,7 @@ class Command(BaseCommand):
                 order_by('-created_at')
 
             resubmit = True
-            for field in set(('edd', 'language', 'mom_dob', 'operator_id')).\
+            for field in set(fields[registration.reg_type]).\
                     difference(registration.data.keys()):
 
                 related_reg = related_regs.filter(data__has_key=field).first()
