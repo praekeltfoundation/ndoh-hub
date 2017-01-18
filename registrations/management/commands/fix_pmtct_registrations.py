@@ -31,8 +31,10 @@ class Command(BaseCommand):
                 order_by('-created_at')
 
             resubmit = True
-            for field in set(fields[registration.reg_type]).\
-                    difference(registration.data.keys()):
+            for field in set(fields[registration.reg_type]):
+
+                if registration.data.get(field):
+                    continue
 
                 related_reg = related_regs.filter(data__has_key=field).first()
                 if related_reg:
