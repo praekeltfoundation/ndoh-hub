@@ -24,18 +24,23 @@ class Command(BaseCommand):
                 ).exclude(reg_type__in=("pmtct_prebirth", "pmtct_postbirth")).\
                 order_by('-created_at')
 
+            updated = False
             for related_reg in related_regs:
+                for field in ['edd', 'language', 'mom_dob', 'operator_id']:
 
-                if related_reg.data.get("edd"):
-                    del registration.data["invalid_fields"]
-                    registration.data["edd"] = related_reg.data["edd"]
-                    registration.save()
+                    if (related_reg.data.get(field) and
+                            not registration.data.get(field)):
+                        registration.data[field] = related_reg.data[field]
+                        updated = True
 
-                    validate_subscribe.apply_async(
-                        kwargs={"registration_id": str(registration.id)})
+            if updated:
+                registration.data.pop("invalid_fields", None)
+                registration.save()
 
-                    updates += 1
-                    break
+                validate_subscribe.apply_async(
+                    kwargs={"registration_id": str(registration.id)})
+
+                updates += 1
 
         self.log("%s registrations fixed and validated." % (updates))
 

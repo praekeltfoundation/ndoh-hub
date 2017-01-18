@@ -2647,7 +2647,12 @@ class TestFixPmtctRegistrationsCommand(AuthenticatedAPITestCase):
         data = {
             "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "data": {"edd": "2017-08-01"},
+            "data": {
+                "edd": "2017-08-01",
+                "mom_dob": "1982-08-01",
+                "language": "eng_ZA",
+                "operator_id": "operator-123456",
+            },
             "source": self.make_source_normaluser(),
             "validated": True
         }
@@ -2660,7 +2665,6 @@ class TestFixPmtctRegistrationsCommand(AuthenticatedAPITestCase):
             "reg_type": "pmtct_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "data": {
-                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "mom_dob": "1987-04-24",
                 "invalid_fields": ["Estimated Due Date missing"],
                 "language": "eng_ZA"
