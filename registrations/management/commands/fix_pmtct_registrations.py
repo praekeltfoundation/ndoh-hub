@@ -24,16 +24,17 @@ class Command(BaseCommand):
                 ).exclude(reg_type__in=("pmtct_prebirth", "pmtct_postbirth")).\
                 order_by('-created_at')
 
-            updated = False
-            for related_reg in related_regs:
-                for field in ['edd', 'language', 'mom_dob', 'operator_id']:
+            resubmit = True
+            for field in set(('edd', 'language', 'mom_dob', 'operator_id')).\
+                    difference(registration.data.keys()):
 
-                    if (related_reg.data.get(field) and
-                            not registration.data.get(field)):
-                        registration.data[field] = related_reg.data[field]
-                        updated = True
+                related_reg = related_regs.filter(data__has_key=field).first()
+                if related_reg:
+                    registration.data[field] = related_reg.data[field]
+                else:
+                    resubmit = False
 
-            if updated:
+            if resubmit:
                 registration.data.pop("invalid_fields", None)
                 registration.save()
 

@@ -2652,6 +2652,7 @@ class TestFixPmtctRegistrationsCommand(AuthenticatedAPITestCase):
                 "mom_dob": "1982-08-01",
                 "language": "eng_ZA",
                 "operator_id": "operator-123456",
+                "test": "test"
             },
             "source": self.make_source_normaluser(),
             "validated": True
