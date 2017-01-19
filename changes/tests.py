@@ -1,7 +1,6 @@
 import datetime
 import json
 import responses
-import mock
 try:
     from StringIO import StringIO
 except ImportError:
@@ -1156,9 +1155,7 @@ class TestChangeValidation(AuthenticatedAPITestCase):
 class TestChangeActions(AuthenticatedAPITestCase):
 
     @responses.activate
-    @mock.patch('changes.tasks.PushMomconnectBabySwitchToJembi.get_today')
-    def test_baby_switch_momconnect_pmtct_nurseconnect_subs(self,
-                                                            mock_getdate):
+    def test_baby_switch_momconnect_pmtct_nurseconnect_subs(self):
         # Pretest
         self.assertEqual(Registration.objects.all().count(), 0)
         # Setup
@@ -1214,9 +1211,6 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # . this is a general patch - `responses` doesn't check the data
         utils_tests.mock_patch_identity("mother01-63e2-4acc-9b94-26663b9bc267")
 
-        # mock jembi sent date
-        mock_getdate.return_value = datetime.date(2016, 1, 1)
-
         # Execute
         result = validate_implement.apply_async(args=[change.id])
 
@@ -1232,15 +1226,14 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
             'cmsisdn': '+27821112222',
             'dmsisdn': '+27821112222',
-            'encdate': '20160101000000',
+            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
             'mha': 1,
             'swt': 1,
             'type': 11,
         })
 
     @responses.activate
-    @mock.patch('changes.tasks.PushMomconnectBabySwitchToJembi.get_today')
-    def test_baby_switch_momconnect_only_sub(self, mock_getdate):
+    def test_baby_switch_momconnect_only_sub(self):
         # Pretest
         self.assertEqual(Registration.objects.all().count(), 0)
         # Setup
@@ -1286,9 +1279,6 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # . this is a general patch - `responses` doesn't check the data
         utils_tests.mock_patch_identity("mother01-63e2-4acc-9b94-26663b9bc267")
 
-        # mock jembi sent date
-        mock_getdate.return_value = datetime.date(2016, 1, 1)
-
         # Execute
         result = validate_implement.apply_async(args=[change.id])
 
@@ -1304,15 +1294,14 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
             'cmsisdn': '+27821112222',
             'dmsisdn': '+27821112222',
-            'encdate': '20160101000000',
+            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
             'mha': 1,
             'swt': 1,
             'type': 11,
         })
 
     @responses.activate
-    @mock.patch('changes.tasks.PushMomconnectBabyLossToJembi.get_today')
-    def test_pmtct_loss_switch(self, mock_getdate):
+    def test_pmtct_loss_switch(self):
         # Setup
         # make registrations
         self.make_registration_momconnect_prebirth()
@@ -1359,9 +1348,6 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 },
             })
 
-        # mock jembi sent date
-        mock_getdate.return_value = datetime.date(2016, 1, 1)
-
         # Execute
         result = validate_implement.apply_async(args=[change.id])
 
@@ -1377,15 +1363,14 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
             'cmsisdn': '+27821112222',
             'dmsisdn': '+27821112222',
-            'encdate': '20160101000000',
+            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
             'mha': 1,
             'swt': 1,
             'type': 5,
         })
 
     @responses.activate
-    @mock.patch('changes.tasks.PushMomconnectOptoutToJembi.get_today')
-    def test_pmtct_loss_optout(self, mock_getdate):
+    def test_pmtct_loss_optout(self):
         # Setup
         # make registration
         self.make_registration_pmtct_prebirth()
@@ -1424,9 +1409,6 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 },
             })
 
-        # mock jembi sent date
-        mock_getdate.return_value = datetime.date(2016, 1, 1)
-
         # Execute
         result = validate_implement.apply_async(args=[change.id])
 
@@ -1444,7 +1426,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
             'cmsisdn': '+27821112222',
             'dmsisdn': '+27821112222',
-            'encdate': '20160101000000',
+            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
             'mha': 1,
             'swt': 1,
             'optoutreason': 2,
@@ -1452,8 +1434,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         })
 
     @responses.activate
-    @mock.patch('changes.tasks.PushMomconnectOptoutToJembi.get_today')
-    def test_pmtct_loss_optout_management_command(self, mock_getdate):
+    def test_pmtct_loss_optout_management_command(self):
         # Setup
         # make registration
         self.make_registration_pmtct_prebirth()
@@ -1479,9 +1460,6 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 },
             })
 
-        # mock jembi sent date
-        mock_getdate.return_value = datetime.date(2016, 1, 1)
-
         def format_timestamp(ts):
             return ts.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -1501,7 +1479,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
             'cmsisdn': '+27821112222',
             'dmsisdn': '+27821112222',
-            'encdate': '20160101000000',
+            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
             'mha': 1,
             'swt': 1,
             'optoutreason': 2,
@@ -1509,8 +1487,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         })
 
     @responses.activate
-    @mock.patch('changes.tasks.PushMomconnectOptoutToJembi.get_today')
-    def test_pmtct_nonloss_optout(self, mock_getdate):
+    def test_pmtct_nonloss_optout(self):
         # Setup
         # make registration
         self.make_registration_pmtct_prebirth()
@@ -1550,9 +1527,6 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 },
             })
 
-        # mock jembi sent date
-        mock_getdate.return_value = datetime.date(2016, 1, 1)
-
         # Execute
         result = validate_implement.apply_async(args=[change.id])
 
@@ -1570,7 +1544,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
             'cmsisdn': '+27821112222',
             'dmsisdn': '+27821112222',
-            'encdate': '20160101000000',
+            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
             'mha': 1,
             'swt': 1,
             'optoutreason': 5,
@@ -1637,8 +1611,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(len(responses.calls), 0)
 
     @responses.activate
-    @mock.patch('changes.tasks.PushNurseconnectOptoutToJembi.get_today')
-    def test_nurse_optout(self, mock_timestamp):
+    def test_nurse_optout(self):
         # Setup
         # make registration
         self.make_registration_nurseconnect()
@@ -1667,9 +1640,6 @@ class TestChangeActions(AuthenticatedAPITestCase):
             "subscriptionid-nurseconnect-00000000"
         ])
 
-        # mock jembi sending timestamp
-        mock_timestamp.return_value = datetime.date(2016, 1, 1)
-
         # Execute
         result = validate_implement.apply_async(args=[change.id])
 
@@ -1683,7 +1653,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
 
         # Check Jembi send
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
-            'encdate': '20160101000000',
+            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
             'mha': 1,
             'swt': 1,
             'type': 8,
@@ -1697,8 +1667,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         })
 
     @responses.activate
-    @mock.patch('changes.tasks.PushNurseconnectOptoutToJembi.get_today')
-    def test_nurse_optout_through_management_command(self, mock_timestamp):
+    def test_nurse_optout_through_management_command(self):
         # Setup
         # make registration
         self.make_registration_nurseconnect()
@@ -1716,9 +1685,6 @@ class TestChangeActions(AuthenticatedAPITestCase):
         }
         change = Change.objects.create(**change_data)
 
-        # mock jembi sending timestamp
-        mock_timestamp.return_value = datetime.date(2016, 1, 1)
-
         def format_timestamp(ts):
             return ts.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -1734,7 +1700,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
 
         # Check Jembi send
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
-            'encdate': '20160101000000',
+            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
             'mha': 1,
             'swt': 1,
             'type': 8,
@@ -1748,8 +1714,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         })
 
     @responses.activate
-    @mock.patch('changes.tasks.PushMomconnectBabyLossToJembi.get_today')
-    def test_momconnect_loss_switch_has_active(self, mock_today):
+    def test_momconnect_loss_switch_has_active(self):
         # Setup
         # make registrations
         self.make_registration_momconnect_prebirth()
@@ -1796,9 +1761,6 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 },
             })
 
-        # mock datetime
-        mock_today.return_value = datetime.date(2016, 1, 1)
-
         # Execute
         result = validate_implement.apply_async(args=[change.id])
 
@@ -1816,7 +1778,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
 
         # Check Jembi POST
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
-            'encdate': '20160101000000',
+            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
             'mha': 1,
             'swt': 1,
             'cmsisdn': '+27111111111',
@@ -1858,8 +1820,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(len(responses.calls), 1)
 
     @responses.activate
-    @mock.patch('changes.tasks.PushMomconnectBabyLossToJembi.get_today')
-    def test_momconnect_babyloss_via_management_task(self, mock_today):
+    def test_momconnect_babyloss_via_management_task(self):
         # Setup
         # make registration
         self.make_registration_momconnect_prebirth()
@@ -1886,9 +1847,6 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 },
             })
 
-        # mock datetime
-        mock_today.return_value = datetime.date(2016, 1, 1)
-
         def format_timestamp(ts):
             return ts.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -1907,7 +1865,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
 
         # Check Jembi POST
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
-            'encdate': '20160101000000',
+            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
             'mha': 1,
             'swt': 1,
             'cmsisdn': '+27111111111',
@@ -1921,8 +1879,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         ]))
 
     @responses.activate
-    @mock.patch('changes.tasks.PushMomconnectBabySwitchToJembi.get_today')
-    def test_momconnect_babyswitch_via_management_task(self, mock_today):
+    def test_momconnect_babyswitch_via_management_task(self):
         # Setup
         # make registration
         self.make_registration_momconnect_prebirth()
@@ -1947,9 +1904,6 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 },
             })
 
-        # mock datetime
-        mock_today.return_value = datetime.date(2016, 1, 1)
-
         def format_timestamp(ts):
             return ts.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -1968,7 +1922,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
 
         # Check Jembi POST
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
-            'encdate': '20160101000000',
+            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
             'mha': 1,
             'swt': 1,
             'cmsisdn': '+27111111111',
@@ -1982,8 +1936,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         ]))
 
     @responses.activate
-    @mock.patch('changes.tasks.PushMomconnectOptoutToJembi.get_today')
-    def test_momconnect_loss_optout(self, mock_today):
+    def test_momconnect_loss_optout(self):
         # Setup
         # make registration
         self.make_registration_momconnect_prebirth()
@@ -2023,9 +1976,6 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 },
             })
 
-        # mock datetime
-        mock_today.return_value = datetime.date(2016, 1, 1)
-
         # Execute
         result = validate_implement.apply_async(args=[change.id])
 
@@ -2039,7 +1989,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
 
         # Check Jembi POST
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
-            'encdate': '20160101000000',
+            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
             'mha': 1,
             'swt': 1,
             'cmsisdn': '+27111111111',
@@ -2049,8 +1999,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         })
 
     @responses.activate
-    @mock.patch('changes.tasks.PushMomconnectOptoutToJembi.get_today')
-    def test_momconnect_loss_optout_via_management_task(self, mock_today):
+    def test_momconnect_loss_optout_via_management_task(self):
         # Setup
         # make registration
         self.make_registration_momconnect_prebirth()
@@ -2077,9 +2026,6 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 },
             })
 
-        # mock datetime
-        mock_today.return_value = datetime.date(2016, 1, 1)
-
         def format_timestamp(ts):
             return ts.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -2098,7 +2044,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
 
         # Check Jembi POST
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
-            'encdate': '20160101000000',
+            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
             'mha': 1,
             'swt': 1,
             'cmsisdn': '+27111111111',
@@ -2113,8 +2059,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         ]))
 
     @responses.activate
-    @mock.patch('changes.tasks.PushMomconnectOptoutToJembi.get_today')
-    def test_momconnect_nonloss_optout(self, mock_today):
+    def test_momconnect_nonloss_optout(self):
         # Setup
         # make registration
         self.make_registration_momconnect_prebirth()
@@ -2146,9 +2091,6 @@ class TestChangeActions(AuthenticatedAPITestCase):
             "subscriptionid-pmtct-prebirth-000000"
         ])
 
-        # mock datetime
-        mock_today.return_value = datetime.date(2016, 1, 1)
-
         # mock identity lookup
         utils_tests.mock_get_identity_by_id(
             "mother01-63e2-4acc-9b94-26663b9bc267", {
@@ -2170,7 +2112,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
 
         # Check Jembi POST
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
-            'encdate': '20160101000000',
+            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
             'mha': 1,
             'swt': 1,
             'cmsisdn': '+27111111111',
