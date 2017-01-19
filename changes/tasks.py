@@ -571,8 +571,8 @@ class BasePushOptoutToJembi(object):
     def get_today(self):
         return datetime.datetime.today()
 
-    def get_timestamp(self):
-        return self.get_today().strftime("%Y%m%d%H%M%S")
+    def get_timestamp(self, change):
+        return change.created_at.strftime("%Y%m%d%H%M%S")
 
     def get_optout_reason(self, reason):
         """
@@ -643,7 +643,7 @@ class PushMomconnectOptoutToJembi(BasePushOptoutToJembi, Task):
         identity = is_client.get_identity(change.registrant_id) or {}
         address = self.get_identity_address(identity)
         return {
-            'encdate': self.get_timestamp(),
+            'encdate': self.get_timestamp(change),
             'mha': 1,
             'swt': 1,
             'cmsisdn': address,
@@ -666,7 +666,7 @@ class PushPMTCTOptoutToJembi(PushMomconnectOptoutToJembi, Task):
         identity = is_client.get_identity(change.registrant_id) or {}
         address = self.get_identity_address(identity)
         return {
-            'encdate': self.get_timestamp(),
+            'encdate': self.get_timestamp(change),
             'mha': 1,
             'swt': 1,
             'cmsisdn': address,
@@ -703,7 +703,7 @@ class PushMomconnectBabyLossToJembi(BasePushOptoutToJembi, Task):
         identity = is_client.get_identity(change.registrant_id) or {}
         address = self.get_identity_address(identity)
         return {
-            'encdate': self.get_timestamp(),
+            'encdate': self.get_timestamp(change),
             'mha': 1,
             'swt': 1,
             'cmsisdn': address,
@@ -739,7 +739,7 @@ class PushMomconnectBabySwitchToJembi(BasePushOptoutToJembi, Task):
         identity = is_client.get_identity(change.registrant_id) or {}
         address = self.get_identity_address(identity)
         return {
-            'encdate': self.get_timestamp(),
+            'encdate': self.get_timestamp(change),
             'mha': 1,
             'swt': 1,
             'cmsisdn': address,
@@ -787,7 +787,7 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
                 'Cannot find registration for change {}'.format(change.pk))
             return
         return {
-            'encdate': self.get_timestamp(),
+            'encdate': self.get_timestamp(change),
             'mha': 1,
             'swt': 1,
             'type': 8,

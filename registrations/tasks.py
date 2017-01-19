@@ -427,8 +427,8 @@ class BasePushRegistrationToJembi(object):
     def get_today(self):
         return datetime.today()
 
-    def get_timestamp(self):
-        return self.get_today().strftime("%Y%m%d%H%M%S")
+    def get_timestamp(self, registration):
+        return registration.created_at.strftime("%Y%m%d%H%M%S")
 
     @staticmethod
     def get_jembi_task_for_registration(registration):
@@ -559,7 +559,8 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
             "type": self.get_subscription_type(authority),
             "lang": self.transform_language_code(
                 registration.data['language']),
-            "encdate": registration.data.get('encdate', self.get_timestamp()),
+            "encdate": registration.data.get('encdate',
+                                             self.get_timestamp(registration)),
             "faccode": registration.data.get('faccode'),
             "dob": (self.get_dob(
                 datetime.strptime(registration.data['mom_dob'], '%Y-%m-%d'))
@@ -636,7 +637,7 @@ class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
                     else None),
             "persal": self.get_persal(identity),
             "sanc": self.get_sanc(identity),
-            "encdate": self.get_timestamp(),
+            "encdate": self.get_timestamp(registration),
         }
 
         return json_template

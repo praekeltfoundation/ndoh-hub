@@ -18,7 +18,6 @@ from django.conf import settings
 from django.test import TestCase, override_settings
 from django.db.models.signals import post_save
 from django.utils import timezone
-from mock import patch
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
@@ -2163,8 +2162,7 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
 class TestRegistrationCreation(AuthenticatedAPITestCase):
 
     @responses.activate
-    @patch('registrations.tasks.PushRegistrationToJembi.get_today')
-    def test_registration_process_pmtct_good(self, mock_date):
+    def test_registration_process_pmtct_good(self):
         """ Test a full registration process with good data """
         # Setup
         registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
@@ -2199,7 +2197,6 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         utils_tests.mock_get_schedule(schedule_id)
         utils_tests.mock_get_identity_by_id(registrant_uuid)
         utils_tests.mock_patch_identity(registrant_uuid)
-        mock_date.return_value = datetime.date(2016, 1, 1)
 
         # Execute
         registration = Registration.objects.create(**registration_data)
@@ -2218,7 +2215,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             'dmsisdn': '+27821113333',
             'faccode': '123456',
             'id': '8108015001051^^^ZAF^NI',
-            'encdate': '20160101000000',
+            'encdate': registration.created_at.strftime("%Y%m%d%H%M%S"),
             'type': 9,
             'swt': 1,
             'mha': 1,
@@ -2244,8 +2241,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         post_save.disconnect(psh_validate_subscribe, sender=Registration)
 
     @responses.activate
-    @patch('registrations.tasks.PushRegistrationToJembi.get_today')
-    def test_registration_process_pmtct_minimal_data(self, mock_date):
+    def test_registration_process_pmtct_minimal_data(self):
         """ Test a full registration process with good data """
         # Setup
         registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
@@ -2281,7 +2277,6 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             'default_addr_type': 'msisdn',
         })
         utils_tests.mock_patch_identity(registrant_uuid)
-        mock_date.return_value = datetime.date(2016, 1, 1)
 
         # Execute
         registration = Registration.objects.create(**registration_data)
@@ -2300,7 +2295,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             'dmsisdn': '+8108015001051',
             'faccode': '123456',
             'id': '8108015001051^^^ZAF^TEL',
-            'encdate': '20160101000000',
+            'encdate': registration.created_at.strftime("%Y%m%d%H%M%S"),
             'type': 9,
             'swt': 1,
             'mha': 1,
