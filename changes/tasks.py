@@ -471,7 +471,7 @@ class ValidateImplement(Task):
             return []
 
     def check_momconnect_nonloss_optout_reason(self, data_fields, change):
-        nonloss_reasons = ["not_useful", "other", "unknown"]
+        nonloss_reasons = ["not_useful", "other", "unknown", "sms_failure"]
         if "reason" not in data_fields:
             return ["Optout reason is missing"]
         elif change.data["reason"] not in nonloss_reasons:
@@ -588,6 +588,7 @@ class BasePushOptoutToJembi(object):
             'job_change': 7,
             'number_owner_change': 8,
             'not_hiv_pos': 9,
+            'sms_failure': 10,
         }.get(reason)
 
     def run(self, change_id, **kwargs):
