@@ -29,6 +29,7 @@ setup(
         'drfdocs==0.0.11',
         'demands==3.0.0',
         'go-http==0.3.1',
+        'structlog==16.1.0',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
