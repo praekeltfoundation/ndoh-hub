@@ -102,21 +102,21 @@ class Command(BaseCommand):
             next(csv_reader)
 
         for idx, row in enumerate(rows, start=row_count):
-            log = log.bind(row=idx)
+            loop_log = log.bind(row=idx)
             msisdn = '+{0}'.format(row[1])
-            log = log.bind(msisdn=msisdn)
+            loop_log = loop_log.bind(msisdn=msisdn)
             result = ids_client.get_identity_by_address('msisdn', msisdn)
             if not result or 'count' not in result or result['count'] == 0:
-                log.error('Could not load identity for msisdn.')
+                loop_log.error('Could not load identity for msisdn.')
                 continue
 
             if result['count'] > 1:
                 msg = 'Warning: Found {0} identities'
                 msg = msg.format(result['count'])
-                log.warn(msg)
+                loop_log.warn(msg)
             identity = result['results'][0]
             # Use this logger only for this iteration of the loop
-            id_log = log.bind(identity=identity['id'])
+            id_log = loop_log.bind(identity=identity['id'])
             change = {
                 'registrant_id': identity['id'],
                 'action': 'momconnect_nonloss_optout',
