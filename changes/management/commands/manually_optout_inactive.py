@@ -115,7 +115,8 @@ class Command(BaseCommand):
                 msg = msg.format(result['count'])
                 log.warn(msg)
             identity = result['results'][0]
-            log = log.bind(identity=identity['id'])
+            # Use this logger only for this iteration of the loop
+            id_log = log.bind(identity=identity['id'])
             change = {
                 'registrant_id': identity['id'],
                 'action': 'momconnect_nonloss_optout',
@@ -126,15 +127,15 @@ class Command(BaseCommand):
             try:
                 result = hub_client.create_change(change)
             except exceptions.ConnectionError as exc:
-                log.error('Connection error to Hub API: {}'
-                          .format(exc.message))
+                id_log.error('Connection error to Hub API: {}'
+                             .format(exc.message))
                 break
             except HTTPServiceError as exc:
-                log.error('Invalid Hub API response', url=exc.response.url,
-                          status_code=exc.response.status_code)
+                id_log.error('Invalid Hub API response', url=exc.response.url,
+                             status_code=exc.response.status_code)
                 break
 
-            if result.is_ok:
-                log.info('Successfully submitted changed.')
+            if result:
+                id_log.info('Successfully submitted changed.')
             else:
-                log.error('Change failed', response=result)
+                id_log.error('Change failed', response=result)
