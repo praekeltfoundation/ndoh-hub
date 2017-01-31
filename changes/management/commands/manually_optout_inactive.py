@@ -38,6 +38,10 @@ class Command(BaseCommand):
             default=os.environ.get('HUB_URL'),
             help=('The URL for the NDoH Hub API'))
         parser.add_argument(
+            '--no-is-lookup', action='store_true', default=False,
+            help=("Don't use the Identity Store API, expects CSV with inline "
+                  "Identity UUIDs"))
+        parser.add_argument(
             '--identity-store-token', type=str,
             default=os.environ.get('IDENTITY_STORE_TOKEN'),
             help='The token for the ID Store')
@@ -61,6 +65,7 @@ class Command(BaseCommand):
         file_name = options['csv']
         start = options['start']
         end = options['end']
+        no_is = options['no_is_lookup']
         log = get_logger()
 
         if not file_name:
@@ -75,15 +80,18 @@ class Command(BaseCommand):
         if not hub_token:
             raise CommandError('--hub-token is a required parameter')
 
-        if not identity_store_url:
-            raise CommandError('--identity-store-url is a required parameter')
+        if not no_is:
+            if not identity_store_url:
+                raise CommandError('--identity-store-url is a required '
+                                   'parameter')
 
-        if not identity_store_token:
-            raise CommandError('--identity-store-token is a required '
-                               'parameter')
+            if not identity_store_token:
+                raise CommandError('--identity-store-token is a required '
+                                   'parameter')
 
-        ids_client = IdentityStoreApiClient(identity_store_token,
-                                            identity_store_url)
+            ids_client = IdentityStoreApiClient(identity_store_token,
+                                                identity_store_url)
+
         hub_client = HubApiClient(hub_token, hub_url)
 
         with open(file_name) as csv_file:
@@ -108,20 +116,30 @@ class Command(BaseCommand):
                 loop_log = log.bind(row=idx)
                 msisdn = '+{0}'.format(row[1])
                 loop_log = loop_log.bind(msisdn=msisdn)
-                result = ids_client.get_identity_by_address('msisdn', msisdn)
-                if not result or 'count' not in result or result['count'] == 0:
-                    loop_log.error('Could not load identity for msisdn.')
-                    continue
+                if no_is:
+                    identity = row[3]
+                    if not identity:
+                        loop_log.error('Could not load identity for msisdn.')
+                        continue
 
-                if result['count'] > 1:
-                    msg = 'Warning: Found {0} identities'
-                    msg = msg.format(result['count'])
-                    loop_log.warn(msg)
-                identity = result['results'][0]
+                else:
+                    result = ids_client.get_identity_by_address(
+                        'msisdn', msisdn)
+                    if (not result or 'count' not in result or
+                            result['count'] == 0):
+                        loop_log.error('Could not load identity for msisdn.')
+                        continue
+
+                    if result['count'] > 1:
+                        msg = 'Warning: Found {0} identities'
+                        msg = msg.format(result['count'])
+                        loop_log.warn(msg)
+                    identity = result['results'][0]['id']
+
                 # Use this logger only for this iteration of the loop
-                id_log = loop_log.bind(identity=identity['id'])
+                id_log = loop_log.bind(identity=identity)
                 change = {
-                    'registrant_id': identity['id'],
+                    'registrant_id': identity,
                     'action': 'momconnect_nonloss_optout',
                     'data': {
                         'reason': 'sms_failure'
