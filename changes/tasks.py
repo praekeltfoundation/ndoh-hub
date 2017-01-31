@@ -346,7 +346,8 @@ class ValidateImplement(Task):
         """
         self.l.info("Starting MomConnect non-loss optout")
 
-        if change.data["reason"] == 'unknown':  # SMS optout
+        if (change.data["reason"] == 'unknown' or
+                change.data["reason"] == 'sms_failure'):  # SMS optout
             self.deactivate_all(change)
         else:
             self.deactivate_all_except_nurseconnect(change)
