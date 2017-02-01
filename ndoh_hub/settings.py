@@ -126,7 +126,6 @@ RAVEN_CONFIG = {
 
 # REST Framework conf defaults
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
     'PAGE_SIZE': 1000,
     'DEFAULT_PAGINATION_CLASS':
         'rest_framework.pagination.LimitOffsetPagination',
@@ -176,11 +175,11 @@ CELERY_ROUTES = {
     'celery.backend_cleanup': {
         'queue': 'mediumpriority',
     },
-    'registrations.tasks.validate_subscribe': {
-        'queue': 'priority',
+    'ndoh_hub.registrations.tasks.validate_subscribe': {
+        'queue': 'mediumpriority',
     },
-    'changes.tasks.validate_implement': {
-        'queue': 'priority',
+    'ndoh_hub.changes.tasks.validate_implement': {
+        'queue': 'mediumpriority',
     },
     'registrations.tasks.DeliverHook': {
         'queue': 'priority',
