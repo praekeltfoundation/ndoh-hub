@@ -38,6 +38,6 @@ with open(fn) as csv_file, open('output.csv', 'w') as out_file:
         if res:
             new_row.append(res['id'])
         else:
-            print('no msisdn match')
+            print('no msisdn match for {}'.format(msisdn))
             new_row.append('')
         writer.writerow(new_row)
