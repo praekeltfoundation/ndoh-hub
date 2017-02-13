@@ -2219,6 +2219,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             'type': 9,
             'swt': 1,
             'mha': 1,
+            'risk_status': 'high'
         })
         self.assertEqual(
             jembi_call.request.url,
@@ -2299,6 +2300,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             'type': 9,
             'swt': 1,
             'mha': 1,
+            'risk_status': 'high'
         })
         self.assertEqual(
             jembi_call.request.url,
