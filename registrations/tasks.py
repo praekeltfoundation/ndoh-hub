@@ -589,6 +589,17 @@ class PushPmtctRegistrationToJembi(PushRegistrationToJembi, Task):
     name = "ndoh_hub.registrations.tasks.push_pmtct_registration_to_jembi"
     URL = "%s/pmtctSubscription" % settings.JEMBI_BASE_URL
 
+    def build_jembi_json(self, registration):
+        json_template = super(PushPmtctRegistrationToJembi, self).\
+            build_jembi_json(registration)
+
+        json_template["risk_status"] = get_risk_status(
+            registration.reg_type,
+            registration.data["mom_dob"],
+            registration.data["edd"])
+
+        return json_template
+
 push_pmtct_registration_to_jembi = PushPmtctRegistrationToJembi()
 
 
