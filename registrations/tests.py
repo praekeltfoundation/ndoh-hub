@@ -14,6 +14,7 @@ except ImportError:
 
 from django.contrib.auth.models import User
 from django.core.management import call_command
+from django.core import management
 from django.conf import settings
 from django.test import TestCase, override_settings
 from django.db.models.signals import post_save
@@ -3127,3 +3128,107 @@ class TestMetrics(AuthenticatedAPITestCase):
             psh_fire_created_metric,
             sender=Registration,
             dispatch_uid='psh_fire_created_metric')
+
+
+class UpdateInitialSequenceCommand(AuthenticatedAPITestCase):
+    def test_command_requires_sbm_url(self):
+        with self.assertRaises(management.CommandError) as ce:
+            management.call_command("update_initial_sequence")
+        self.assertEqual(
+            str(ce.exception), "Please make sure either the "
+            "STAGE_BASED_MESSAGING_URL environment variable or --sbm-url is "
+            "set.")
+
+    def test_command_requires_sbm_token(self):
+        with self.assertRaises(management.CommandError) as ce:
+            management.call_command("update_initial_sequence",
+                                    sbm_url="http://example.com")
+        self.assertEqual(
+            str(ce.exception), "Please make sure either the "
+            "STAGE_BASED_MESSAGING_TOKEN environment variable or --sbm-token "
+            "is set.")
+
+    @responses.activate
+    def test_update_initial_sequence(self):
+        stdout, stderr = StringIO(), StringIO()
+
+        registration = self.make_registration_normaluser()
+
+        SubscriptionRequest.objects.create(
+            identity=str(registration.registrant_id), messageset=3,
+            next_sequence_number=2, lang="eng_ZA")
+
+        responses.add(
+            responses.GET,
+            'http://localhost:8005/api/v1/subscriptions/',
+            json={
+                "count": 1,
+                "next": None,
+                "previous": None,
+                "results": [{
+                    "id": "b0afe9fb-0b4d-478e-974e-6b794e69cc6e",
+                    "version": 1,
+                    "identity": "mother00-9d89-4aa6-99ff-13c225365b5d",
+                    "messageset": 1,
+                    "next_sequence_number": 1,
+                    "lang": "eng",
+                    "active": True,
+                    "completed": False,
+                    "schedule": 1,
+                    "process_status": 0,
+                    "metadata": None,
+                    "created_at": "2017-01-16",
+                }]
+            },
+            status=200, content_type='application/json',
+            match_querystring=False
+        )
+
+        responses.add(
+            responses.PATCH,
+            'http://localhost:8005/api/v1/subscriptions/b0afe9fb-0b4d-478e-974e-6b794e69cc6e/',  # noqa
+            json={"active": False},
+            status=200, content_type='application/json',
+            match_querystring=True
+        )
+
+        management.call_command("update_initial_sequence",
+                                sbm_url="http://localhost:8005/api/v1",
+                                sbm_token="test_token",
+                                stdout=stdout, stderr=stderr)
+
+        self.assertEqual(stderr.getvalue(), '')
+        self.assertEqual(stdout.getvalue().strip(), 'Updated 1 subscriptions.')
+
+    @responses.activate
+    def test_update_initial_sequence_no_sub(self):
+        stdout, stderr = StringIO(), StringIO()
+
+        registration = self.make_registration_normaluser()
+
+        SubscriptionRequest.objects.create(
+            identity=str(registration.registrant_id), messageset=3,
+            next_sequence_number=2, lang="eng_ZA")
+
+        responses.add(
+            responses.GET,
+            'http://localhost:8005/api/v1/subscriptions/',
+            json={
+                "count": 0,
+                "next": None,
+                "previous": None,
+                "results": []
+            },
+            status=200, content_type='application/json',
+            match_querystring=False
+        )
+
+        management.call_command("update_initial_sequence",
+                                sbm_url="http://localhost:8005/api/v1",
+                                sbm_token="test_token",
+                                stdout=stdout, stderr=stderr)
+
+        self.assertEqual(stderr.getvalue(), '')
+        self.assertEqual(stdout.getvalue().strip(),
+                         'Subscription not found: {}\nUpdated 0 subscriptions.'
+                         .format(registration.registrant_id))
