@@ -48,7 +48,7 @@ class Command(BaseCommand):
         for sub_request in sub_requests:
             subscriptions = sbm_client.get_subscriptions({
                 'identity': sub_request.identity,
-                'created_at__gt': sub_request.created_at,
+                'created_after': sub_request.created_at,
                 'messageset': sub_request.messageset,
             })
 
