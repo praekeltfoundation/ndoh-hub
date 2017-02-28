@@ -3010,6 +3010,10 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
         registration.validated = True
         registration.save()
 
+        # Add a registration that is not validated
+        registration = Registration.objects.create(**registration_data)
+        registration.save()
+
         stdout = StringIO()
         call_command('report_pmtct_risks', stdout=stdout)
 
