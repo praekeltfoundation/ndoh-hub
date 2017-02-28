@@ -3018,6 +3018,129 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             'high,1'
         ]))
 
+    @responses.activate
+    def test_report_pmtct_risks_hub(self):
+
+        registrations = [{
+                'created_at': 'created-at',
+                'registrant_id': "mother01-63e2-4acc-9b94-26663b9bc267",
+                'reg_type': 'pmtct_postbirth',
+                'data': {
+                    'mom_dob': 'dob',
+                    'edd': 'edd',
+                }
+            }] * 2
+
+        responses.add(
+            responses.GET,
+            'http://hub.example.com/api/v1/registrations/?source=1&validated=True',  # noqa
+            match_querystring=True,
+            json={
+                'count': 2,
+                'next': None,
+                'results': registrations,
+            },
+            status=200,
+            content_type='application/json')
+
+        responses.add(
+            responses.GET,
+            'http://hub.example.com/api/v1/registrations/?source=3&validated=True',  # noqa
+            match_querystring=True,
+            json={
+                'count': 0,
+                'next': None,
+                'results': [],
+            },
+            status=200,
+            content_type='application/json')
+
+        stdout = StringIO()
+        call_command('report_pmtct_risks', '--hub-url',
+                     'http://hub.example.com/api/v1/', '--hub-token',
+                     'hub_token', stdout=stdout)
+
+        self.assertEqual(stdout.getvalue().strip(), '\r\n'.join([
+            'risk,count',
+            'high,2'
+        ]))
+
+    @responses.activate
+    def test_report_pmtct_risks_by_msisdn(self):
+        # Mock API call to SBM for message set
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            'pmtct_prebirth.patient.1')
+        utils_tests.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_patch_identity(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_push_registration_to_jembi(
+            ok_response="jembi-is-ok",
+            err_response="jembi-is-unhappy",
+            fields={"cmsisdn": "+27111111111"})
+
+        # Setup
+        source = Source.objects.create(
+            name="PUBLIC USSD App",
+            authority="patient",
+            user=User.objects.get(username='testnormaluser'))
+
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": source,
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "id_type": "sa_id",
+                "sa_id_no": "0000000000",
+                "edd": "2016-11-30",
+                "faccode": "123456",
+                "msisdn_device": "+2700000000",
+                "msisdn_registrant": "+27111111111",
+            },
+        }
+
+        registration = Registration.objects.create(**registration_data)
+        # NOTE: we're faking validation step here
+        registration.validated = True
+        registration.save()
+
+        responses.add(
+            responses.GET,
+            'http://idstore.example.com/api/v1/identities/{}/'.format(
+                registration.registrant_id),
+            json={
+                'identity': registration.registrant_id,
+                'details': {
+                    'personnel_code': 'personnel_code',
+                    'facility_name': 'facility_name',
+                    'default_addr_type': 'msisdn',
+                    'receiver_role': 'role',
+                    'state': 'state',
+                    'addresses': {
+                        'msisdn': {
+                            '+27111111111': {}
+                        }
+                    }
+                }
+            },
+            status=200,
+            content_type='application/json')
+
+        stdout = StringIO()
+        call_command(
+            'report_pmtct_risks', '--group', 'msisdn',  '--identity-store-url',
+            'http://idstore.example.com/api/v1/', '--identity-store-token',
+            'identitystore_token', stdout=stdout)
+
+        self.assertEqual(stdout.getvalue().strip(), '\r\n'.join([
+            'msisdn,risk',
+            '+27111111111,1'
+        ]))
+
 
 class TestMetricsAPI(AuthenticatedAPITestCase):
 
