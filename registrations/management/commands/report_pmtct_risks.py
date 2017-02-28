@@ -114,7 +114,7 @@ class Command(BaseCommand):
                 Q(reg_type='pmtct_postbirth') | Q(reg_type='pmtct_prebirth'),
                 validated=True)
 
-            for registration in registrations:
+            for registration in registrations.iterator():
 
                 risk = get_risk_status(registration.reg_type,
                                        registration.data["mom_dob"],
