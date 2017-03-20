@@ -12,6 +12,7 @@ from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.service_rating import ServiceRatingApiClient
 
 from ndoh_hub import utils
+from models import Registration
 
 
 is_client = IdentityStoreApiClient(
@@ -597,6 +598,17 @@ class PushPmtctRegistrationToJembi(PushRegistrationToJembi, Task):
             registration.reg_type,
             registration.data["mom_dob"],
             registration.data["edd"])
+
+        if not json_template.get('faccode'):
+            related_reg = Registration.objects.filter(
+                    validated=True,
+                    registrant_id=registration.registrant_id,
+                    data__has_key='faccode').\
+                exclude(reg_type__in=("pmtct_prebirth", "pmtct_postbirth")).\
+                order_by('-created_at').first()
+
+            if related_reg:
+                json_template['faccode'] = related_reg.data['faccode']
 
         return json_template
 
