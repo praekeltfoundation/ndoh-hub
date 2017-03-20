@@ -12,7 +12,7 @@ from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.service_rating import ServiceRatingApiClient
 
 from ndoh_hub import utils
-from models import Registration
+from .models import Registration
 
 
 is_client = IdentityStoreApiClient(
