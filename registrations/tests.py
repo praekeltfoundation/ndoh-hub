@@ -2243,6 +2243,83 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         post_save.disconnect(psh_validate_subscribe, sender=Registration)
 
     @responses.activate
+    def test_registration_process_pmtct_no_facility(self):
+        """ Test a full registration process with good data """
+        # Setup
+        registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
+        # . reactivate post-save hook
+        post_save.connect(psh_validate_subscribe, sender=Registration)
+
+        source = self.make_source_adminuser()
+        source.name = 'CLINIC USSD App'
+        source.save()
+
+        # Create linked momconnect registration
+        registration_data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": source,
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "msisdn_registrant": "+27821113333",
+                "msisdn_device": "+27821113333",
+                "id_type": "sa_id",
+                "sa_id_no": "8108015001051",
+                "mom_dob": "1982-08-01",
+                "language": "eng_ZA",
+                "edd": "2016-05-01",  # in week 23 of pregnancy
+                "faccode": "123456",
+                "consent": True
+            },
+        }
+        # . setup fixture responses
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_prebirth.hw_full.1")
+        utils_tests.mock_get_schedule(schedule_id)
+
+        Registration.objects.create(**registration_data)
+
+        source = self.make_source_normaluser()
+        source.name = 'PMTCT USSD App'
+        source.save()
+
+        # . setup pmtct_prebirth registration
+        registration_data = {
+            "reg_type": "pmtct_prebirth",
+            "registrant_id": registrant_uuid,
+            "source": source,
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "edd": "2016-05-01",  # in week 23 of pregnancy
+            },
+        }
+
+        # . setup fixture responses
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "pmtct_prebirth.patient.1")
+        utils_tests.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_identity_by_id(registrant_uuid, {
+            'addresses': {
+                'msisdn': {'+8108015001051': {'default': True}}
+            },
+            'default_addr_type': 'msisdn',
+        })
+        utils_tests.mock_patch_identity(registrant_uuid)
+
+        # Execute
+        Registration.objects.create(**registration_data)
+
+        # check jembi registration
+        jembi_call = responses.calls[-1]  # jembi should be the last one
+        self.assertEqual(
+            json.loads(jembi_call.request.body)['faccode'], '123456')
+
+        # Teardown
+        post_save.disconnect(psh_validate_subscribe, sender=Registration)
+
+    @responses.activate
     def test_registration_process_pmtct_minimal_data(self):
         """ Test a full registration process with good data """
         # Setup
