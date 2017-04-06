@@ -2562,6 +2562,62 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             psh_validate_subscribe, sender=Registration)
 
     @responses.activate
+    def test_push_registration_to_jembi_no_mom_dob(self):
+        post_save.connect(
+            psh_validate_subscribe, sender=Registration)
+
+        # Mock API call to SBM for message set
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            'momconnect_prebirth.patient.1')
+        utils_tests.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_identity_by_id(
+            "39b073a1-68b5-44e6-9b6a-db4282085c36")
+        utils_tests.mock_patch_identity(
+            "39b073a1-68b5-44e6-9b6a-db4282085c36")
+        utils_tests.mock_push_registration_to_jembi(
+            ok_response="jembi-is-ok",
+            err_response="jembi-is-unhappy",
+            fields={
+                "cmsisdn": "+27710967611",
+                "lang": "en",
+            })
+
+        # Setup
+        source = Source.objects.create(
+            name="PUBLIC USSD App",
+            authority="patient",
+            user=User.objects.get(username='testnormaluser'))
+
+        registration_data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "39b073a1-68b5-44e6-9b6a-db4282085c36",
+            "source": source,
+            "data": {
+                "operator_id": "39b073a1-68b5-44e6-9b6a-db4282085c36",
+                "edd": "2017-09-03",
+                "language": "eng_ZA",
+                "consent": True,
+                "msisdn_registrant": "+27710967611",
+                "id_type": "sa_id",
+                "faccode": "269833",
+                "msisdn_device": "+27710967611",
+                "sa_id_no": "7708050793083"
+            }
+        }
+
+        registration = Registration.objects.create(**registration_data)
+        self.assertFalse(registration.validated)
+        registration.save()
+
+        jembi_call = responses.calls[-1]  # jembi should be the last one
+        self.assertEqual(json.loads(jembi_call.response.text), {
+            "result": "jembi-is-ok"
+        })
+
+        post_save.disconnect(
+            psh_validate_subscribe, sender=Registration)
+
+    @responses.activate
     def test_push_momconnect_registration_to_jembi_via_management_task(self):
         # Mock API call to SBM for message set
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
