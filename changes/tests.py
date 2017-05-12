@@ -502,7 +502,8 @@ class TestChangeAPI(AuthenticatedAPITestCase):
         # Setup
         self.make_source_normaluser()
         post_data = {
-            "identity_id": "846877e6-afaa-43de-acb1-09f61ad4de99"
+            "data": {
+                "identity_id": "846877e6-afaa-43de-acb1-09f61ad4de99"}
         }
         # Execute
         response = self.normalclient.post('/api/v1/change/inactive/',

@@ -58,9 +58,13 @@ class OptOutInactiveIdentity(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
-        data = request.data
+        try:
+            # The hooks send the request data as {"hook":{}, "data":{}}
+            data = request.data['data']
+        except KeyError:
+            raise ValidationError('"data" must be supplied')
         identity_id = data.get('identity_id', None)
-        if identity_id is None:
+        if identity_id is None or identity_id == "":
             raise ValidationError(
                 '"identity_id" must be supplied')
         source = Source.objects.get(user=request.user)
