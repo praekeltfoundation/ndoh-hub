@@ -1,4 +1,8 @@
-FROM praekeltfoundation/django-bootstrap:onbuild
+FROM praekeltfoundation/django-bootstrap:py2
+
+COPY . /app
+RUN pip install -e .
+
 ENV DJANGO_SETTINGS_MODULE "ndoh_hub.settings"
 RUN ./manage.py collectstatic --noinput
-ENV APP_MODULE "ndoh_hub.wsgi:application"
+CMD ["ndoh_hub.wsgi:application"]
