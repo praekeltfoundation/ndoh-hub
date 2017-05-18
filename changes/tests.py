@@ -498,6 +498,26 @@ class TestChangeAPI(AuthenticatedAPITestCase):
         self.assertEqual(d.validated, False)  # Should ignore True post_data
         self.assertEqual(d.data, {"test_key1": "test_value1"})
 
+    def test_optout_inactive_identity(self):
+        # Setup
+        self.make_source_normaluser()
+        post_data = {
+            "data": {
+                "identity_id": "846877e6-afaa-43de-acb1-09f61ad4de99"}
+        }
+        # Execute
+        response = self.normalclient.post('/api/v1/change/inactive/',
+                                          json.dumps(post_data),
+                                          content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        d = Change.objects.last()
+        self.assertEqual(d.source.name, 'test_source_normaluser')
+        self.assertEqual(d.action, 'momconnect_nonloss_optout')
+        self.assertEqual(d.validated, False)
+        self.assertEqual(d.data, {"reason": "sms_failure"})
+
 
 class TestChangeListAPI(AuthenticatedAPITestCase):
 
