@@ -357,6 +357,38 @@ class ValidateImplement(Task):
         push_momconnect_optout_to_jembi.delay(str(change.pk))
         return "Completed MomConnect non-loss optout"
 
+    def momconnect_change_language(self, change):
+        """
+        Language change should change the language of the identity, as well
+        as the language of that identity's subscriptions.
+        """
+        self.l.info("Starting MomConnect language change")
+
+        language = change.data['language']
+
+        active_subs = sbm_client.get_subscriptions(
+            {'identity': change.registrant_id, 'active': True})
+        for sub in active_subs['results']:
+            self.l.info(
+                "Getting messageset for subscription {}".format(sub['id']))
+            messageset = sbm_client.get_messageset(sub['messageset'])
+            if 'momconnect' not in messageset['short_name']:
+                continue
+            self.l.info(
+                "Changing language for subscription {}".format(sub['id']))
+            sbm_client.update_subscription(sub['id'], {
+                'lang': language,
+                })
+
+        self.l.info("Fetching identity {}".format(change.registrant_id))
+        identity = is_client.get_identity(change.registrant_id)
+        self.l.info(
+            "Changing language for identity {}".format(change.registrant_id))
+        identity['details']['lang_code'] = language
+        is_client.update_identity(identity['id'], {
+            'details': identity['details']
+            })
+
     # Validation checks
     def check_pmtct_loss_optout_reason(self, data_fields, change):
         loss_reasons = ["miscarriage", "stillbirth", "babyloss"]
@@ -480,6 +512,17 @@ class ValidateImplement(Task):
         else:
             return []
 
+    def check_momconnect_change_language(self, data_fields, change):
+        """
+        Ensures that the provided language is a valid language choice.
+        """
+        if "language" not in data_fields:
+            return ["language field is missing"]
+        elif not utils.is_valid_lang(change.data['language']):
+            return ["Not a valid language choice"]
+        else:
+            return []
+
     # Validate
     def validate(self, change):
         """ Validates that all the required info is provided for a
@@ -524,6 +567,10 @@ class ValidateImplement(Task):
             validation_errors += self.check_momconnect_nonloss_optout_reason(
                 data_fields, change)
 
+        elif change.action == 'momconnect_change_language':
+            validation_errors += self.check_momconnect_change_language(
+                data_fields, change)
+
         # Evaluate if there were any problems, save and return
         if len(validation_errors) == 0:
             self.l.info("Change validated successfully - updating change "
@@ -558,6 +605,7 @@ class ValidateImplement(Task):
                 'momconnect_loss_switch': self.momconnect_loss_switch,
                 'momconnect_loss_optout': self.momconnect_loss_optout,
                 'momconnect_nonloss_optout': self.momconnect_nonloss_optout,
+                'momconnect_change_language': self.momconnect_change_language,
             }.get(change.action, None)(change)
             self.l.info("Task executed successfully")
             return True
