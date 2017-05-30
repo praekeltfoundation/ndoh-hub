@@ -388,6 +388,7 @@ class ValidateImplement(Task):
         is_client.update_identity(identity['id'], {
             'details': identity['details']
             })
+        return "Completed Momconnect language change"
 
     # Validation checks
     def check_pmtct_loss_optout_reason(self, data_fields, change):
