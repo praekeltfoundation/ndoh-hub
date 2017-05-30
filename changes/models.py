@@ -32,6 +32,8 @@ class Change(models.Model):
         ('momconnect_loss_optout', "Optout due to loss via momconnect app"),
         ('momconnect_nonloss_optout',
             "Optout not due to loss via momconnect app"),
+        ('momconnect_change_language',
+            "Change the language of the messages via momconnect app"),
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
