@@ -120,6 +120,24 @@ def mock_get_active_subs_mcpre_mcpost_pmtct_nc(registrant_id):
             nurseconnect_sub_id, momconnect_postbirth_sub_id]
 
 
+def mock_get_messageset(messageset_id, short_name):
+    responses.add(
+        responses.GET,
+        'http://sbm/api/v1/messageset/{}/'.format(messageset_id),
+        json={
+            'id': messageset_id,
+            'short_name': short_name,
+            'content_type': 'text',
+            'notes': "",
+            'next_set': 7,
+            'default_schedule': 1,
+            'created_at': "2015-07-10T06:13:29.693272Z",
+            'updated_at': "2015-07-10T06:13:29.693272Z"
+        },
+        status=200, content_type='application/json',
+    )
+
+
 def mock_get_active_subs_mc(registrant_id):
     momconnect_prebirth_sub_id = "subscriptionid-momconnect-prebirth-0"
     responses.add(
@@ -171,6 +189,31 @@ def mock_get_active_subscriptions_none(registrant_id):
     )
 
     return []
+
+
+def mock_update_subscription(subscription_id, identity_id=None):
+    responses.add(
+        responses.PATCH,
+        'http://sbm/api/v1/subscriptions/{}/'.format(subscription_id),
+        json={
+            "id": subscription_id,
+            "identity": identity_id,
+            "active": True,
+            "completed": False,
+            "lang": "eng_ZA",
+            "url": "http://sbm/api/v1/subscriptions/{}".format(
+                subscription_id),
+            "messageset": 32,
+            "next_sequence_number": 32,
+            "schedule": 132,
+            "process_status": 0,
+            "version": 1,
+            "metadata": {},
+            "created_at": "2015-07-10T06:13:29.693272Z",
+            "updated_at": "2015-07-10T06:13:29.693272Z"
+        },
+        status=200, content_type='application/json'
+    )
 
 
 def mock_get_active_nurseconnect_subscriptions(registrant_id):
@@ -2139,4 +2182,128 @@ class TestChangeActions(AuthenticatedAPITestCase):
             'dmsisdn': '+27111111111',
             'type': 4,
             'optoutreason': 5,
+        })
+
+    def test_momconnect_change_language_missing_language(self):
+        """
+        If there is no language field when trying to change language,
+        the validation should fail.
+        """
+        change = Change.objects.create(
+            registrant_id="mother01-63e2-4acc-9b94-26663b9bc267",
+            action="momconnect_change_language",
+            data={},
+            source=self.make_source_normaluser()
+        )
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertFalse(change.validated)
+        self.assertEqual(
+            change.data['invalid_fields'], ['language field is missing'])
+
+    def test_momconnect_change_language_incorrect_language(self):
+        """
+        If the specified language is not a valid and recognised languaged, the
+        validation should fail.
+        """
+        change = Change.objects.create(
+            registrant_id="mother01-63e2-4acc-9b94-26663b9bc267",
+            action="momconnect_change_language",
+            data={
+                'language': "foo_bar"
+            },
+            source=self.make_source_normaluser()
+        )
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertFalse(change.validated)
+        self.assertEqual(
+            change.data['invalid_fields'], ['Not a valid language choice'])
+
+    @responses.activate
+    def test_momconnect_change_language_identity(self):
+        """
+        The language change should change the language on the lang_code field
+        on the identity.
+        """
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        utils_tests.mock_get_identity_by_id(
+            registrant_id, {
+                'lang_code': "eng_ZA",
+                'foo': "bar",
+            })
+        utils_tests.mock_patch_identity(registrant_id)
+
+        mock_get_active_subscriptions_none(registrant_id)
+
+        change = Change.objects.create(
+            registrant_id=registrant_id,
+            action="momconnect_change_language",
+            data={
+                'language': "xho_ZA"
+            },
+            source=self.make_source_normaluser()
+        )
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertTrue(change.validated)
+        _, get_identity, patch_identity = responses.calls
+        self.assertIn(registrant_id, get_identity.request.url)
+        self.assertEqual(json.loads(get_identity.response.text)['details'], {
+            'lang_code': "eng_ZA",
+            'foo': "bar",
+        })
+        self.assertEqual(json.loads(patch_identity.request.body), {
+            'details': {
+                'lang_code': "xho_ZA",
+                'foo': "bar",
+            }
+        })
+
+    @responses.activate
+    def test_momconnect_change_language_subscriptions(self):
+        """
+        The language change should change the language of all of the momconnect
+        subscriptions.
+        """
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        utils_tests.mock_get_identity_by_id(registrant_id)
+
+        [_, prebirth, _, postbirth] = (
+            mock_get_active_subs_mcpre_mcpost_pmtct_nc(registrant_id))
+        mock_update_subscription(prebirth)
+        mock_update_subscription(postbirth)
+        mock_get_messageset(11, 'pmtct_prebirth.patient.1')
+        mock_get_messageset(21, 'momconnect_prebirth.hw_full.1')
+        mock_get_messageset(61, 'nurseconnect.hw_full.1')
+        mock_get_messageset(32, 'momconnect_postbirth.hw_full.1')
+        utils_tests.mock_patch_identity(registrant_id)
+
+        change = Change.objects.create(
+            registrant_id=registrant_id,
+            action="momconnect_change_language",
+            data={
+                'language': "xho_ZA"
+            },
+            source=self.make_source_normaluser()
+        )
+        validate_implement(change.id)
+        change.refresh_from_db()
+
+        (
+            _, ms_11, ms_21, prebirth_update, ms_61, ms_32, postbirth_update,
+            _, _
+        ) = responses.calls
+        self.assertNotIn('momconnect', ms_11.response.text)
+        self.assertIn('momconnect', ms_21.response.text)
+        self.assertEqual(json.loads(prebirth_update.request.body), {
+            'lang': "xho_ZA"
+        })
+        self.assertNotIn('momconnect', ms_61.response.text)
+        self.assertIn('momconnect', ms_32.response.text)
+        self.assertEqual(json.loads(postbirth_update.request.body), {
+            'lang': "xho_ZA"
         })
