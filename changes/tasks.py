@@ -390,6 +390,42 @@ class ValidateImplement(Task):
             })
         return "Completed Momconnect language change"
 
+    def momconnect_change_msisdn(self, change):
+        """
+        MSISDN change should change the default msisdn of the identity.
+        """
+        self.l.info("Starting MomConnect MSISDN change")
+
+        new_msisdn = change.data['msisdn']
+
+        self.l.info("Fetching identity")
+        identity = is_client.get_identity(change.registrant_id)
+
+        self.l.info("Updating identity msisdn")
+        details = identity['details']
+        if 'addresses' not in details:
+            details['addresses'] = {}
+        addresses = details['addresses']
+        if 'msisdn' not in addresses:
+            addresses['msisdn'] = {}
+        msisdns = addresses['msisdn']
+
+        for address, addr_details in msisdns.items():
+            if 'default' in addr_details and addr_details['default']:
+                addr_details['default'] = False
+
+        if new_msisdn not in msisdns:
+            msisdns[new_msisdn] = {
+                "default": True,
+            }
+        else:
+            msisdns[new_msisdn]['default'] = True
+
+        is_client.update_identity(identity['id'], {
+            'details': details,
+            })
+        return "Completed MomConnect MSISDN change"
+
     # Validation checks
     def check_pmtct_loss_optout_reason(self, data_fields, change):
         loss_reasons = ["miscarriage", "stillbirth", "babyloss"]
@@ -524,6 +560,17 @@ class ValidateImplement(Task):
         else:
             return []
 
+    def check_momconnect_change_msisdn(self, data_fields, change):
+        """
+        Ensures that a new msisdn is provided, and that it is a valid msisdn.
+        """
+        if "msisdn" not in data_fields:
+            return ["msisdn field is missing"]
+        elif not utils.is_valid_msisdn(change.data['msisdn']):
+            return ["Not a valid MSISDN"]
+        else:
+            return []
+
     # Validate
     def validate(self, change):
         """ Validates that all the required info is provided for a
@@ -572,6 +619,10 @@ class ValidateImplement(Task):
             validation_errors += self.check_momconnect_change_language(
                 data_fields, change)
 
+        elif change.action == 'momconnect_change_msisdn':
+            validation_errors += self.check_momconnect_change_msisdn(
+                data_fields, change)
+
         # Evaluate if there were any problems, save and return
         if len(validation_errors) == 0:
             self.l.info("Change validated successfully - updating change "
@@ -607,6 +658,7 @@ class ValidateImplement(Task):
                 'momconnect_loss_optout': self.momconnect_loss_optout,
                 'momconnect_nonloss_optout': self.momconnect_nonloss_optout,
                 'momconnect_change_language': self.momconnect_change_language,
+                'momconnect_change_msisdn': self.momconnect_change_msisdn,
             }.get(change.action, None)(change)
             self.l.info("Task executed successfully")
             return True

@@ -1214,6 +1214,79 @@ class TestChangeValidation(AuthenticatedAPITestCase):
             'Optout reason is missing']
         )
 
+    def test_momconnect_change_language_missing_language(self):
+        """
+        If there is no language field when trying to change language,
+        the validation should fail.
+        """
+        change = Change.objects.create(
+            registrant_id="mother01-63e2-4acc-9b94-26663b9bc267",
+            action="momconnect_change_language",
+            data={},
+            source=self.make_source_normaluser()
+        )
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertFalse(change.validated)
+        self.assertEqual(
+            change.data['invalid_fields'], ['language field is missing'])
+
+    def test_momconnect_change_language_incorrect_language(self):
+        """
+        If the specified language is not a valid and recognised languaged, the
+        validation should fail.
+        """
+        change = Change.objects.create(
+            registrant_id="mother01-63e2-4acc-9b94-26663b9bc267",
+            action="momconnect_change_language",
+            data={
+                'language': "foo_bar"
+            },
+            source=self.make_source_normaluser()
+        )
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertFalse(change.validated)
+        self.assertEqual(
+            change.data['invalid_fields'], ['Not a valid language choice'])
+
+    def test_momconnect_change_msisdn_missing_msisdn(self):
+        """
+        If the change request is missing the msisdn field, then the validation
+        should fail.
+        """
+        change = Change.objects.create(
+            registrant_id="mother01-63e2-4acc-9b94-26663b9bc267",
+            action="momconnect_change_msisdn",
+            data={},
+            source=self.make_source_normaluser()
+        )
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertFalse(change.validated)
+        self.assertEqual(
+            change.data['invalid_fields'], ['msisdn field is missing'])
+
+    def test_momconnect_change_msisdn_invalid_msisdn(self):
+        """
+        If an invalid msisdn is provided, then validation should fail.
+        """
+        change = Change.objects.create(
+            registrant_id="mother01-63e2-4acc-9b94-26663b9bc267",
+            action="momconnect_change_msisdn",
+            data={'msisdn': "foo"},
+            source=self.make_source_normaluser()
+        )
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertFalse(change.validated)
+        self.assertEqual(
+            change.data['invalid_fields'], ["Not a valid MSISDN"])
+
 
 class TestChangeActions(AuthenticatedAPITestCase):
 
@@ -2184,44 +2257,6 @@ class TestChangeActions(AuthenticatedAPITestCase):
             'optoutreason': 5,
         })
 
-    def test_momconnect_change_language_missing_language(self):
-        """
-        If there is no language field when trying to change language,
-        the validation should fail.
-        """
-        change = Change.objects.create(
-            registrant_id="mother01-63e2-4acc-9b94-26663b9bc267",
-            action="momconnect_change_language",
-            data={},
-            source=self.make_source_normaluser()
-        )
-
-        validate_implement(change.id)
-        change.refresh_from_db()
-        self.assertFalse(change.validated)
-        self.assertEqual(
-            change.data['invalid_fields'], ['language field is missing'])
-
-    def test_momconnect_change_language_incorrect_language(self):
-        """
-        If the specified language is not a valid and recognised languaged, the
-        validation should fail.
-        """
-        change = Change.objects.create(
-            registrant_id="mother01-63e2-4acc-9b94-26663b9bc267",
-            action="momconnect_change_language",
-            data={
-                'language': "foo_bar"
-            },
-            source=self.make_source_normaluser()
-        )
-
-        validate_implement(change.id)
-        change.refresh_from_db()
-        self.assertFalse(change.validated)
-        self.assertEqual(
-            change.data['invalid_fields'], ['Not a valid language choice'])
-
     @responses.activate
     def test_momconnect_change_language_identity(self):
         """
@@ -2306,4 +2341,129 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertIn('momconnect', ms_32.response.text)
         self.assertEqual(json.loads(postbirth_update.request.body), {
             'lang': "xho_ZA"
+        })
+
+    @responses.activate
+    def test_momconnect_change_msisdn_new_msisdn(self):
+        """
+        if the new msisdn doesn't exist in the contacts existing msisdns, then
+        all existing msisdns should be marked as not default, and the new
+        msisdn should be added and made default.
+        """
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        utils_tests.mock_get_identity_by_id(registrant_id, details={
+            'addresses': {
+                'msisdn': {
+                    '+27123456789': {'default': True},
+                    '+27123456788': {},
+                }
+            }
+        })
+        utils_tests.mock_patch_identity(registrant_id)
+
+        change = Change.objects.create(
+            registrant_id=registrant_id,
+            action="momconnect_change_msisdn",
+            data={
+                'msisdn': "+27987654321"
+            },
+            source=self.make_source_normaluser()
+        )
+        validate_implement(change.id)
+        change.refresh_from_db()
+
+        self.assertTrue(change.validated)
+        [_, identity_update] = responses.calls
+        self.assertEqual(json.loads(identity_update.request.body), {
+            'details': {
+                'lang_code': "afr_ZA",
+                'foo': "bar",
+                'addresses': {
+                    'msisdn': {
+                        '+27123456789': {'default': False},
+                        '+27123456788': {},
+                        '+27987654321': {'default': True},
+                    }
+                }
+            }
+        })
+
+    @responses.activate
+    def test_momconnect_change_msisdn_no_addresses(self):
+        """
+        If the addresses field, or any of the nested field are missing from
+        the identity, they should be added, along with the details of the
+        new address.
+        """
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        utils_tests.mock_get_identity_by_id(registrant_id, details={})
+        utils_tests.mock_patch_identity(registrant_id)
+
+        change = Change.objects.create(
+            registrant_id=registrant_id,
+            action="momconnect_change_msisdn",
+            data={
+                'msisdn': "+27987654321"
+            },
+            source=self.make_source_normaluser()
+        )
+        validate_implement(change.id)
+        change.refresh_from_db()
+
+        self.assertTrue(change.validated)
+        [_, identity_update] = responses.calls
+        self.assertEqual(json.loads(identity_update.request.body), {
+            'details': {
+                'lang_code': "afr_ZA",
+                'foo': "bar",
+                'addresses': {
+                    'msisdn': {
+                        '+27987654321': {'default': True},
+                    }
+                }
+            }
+        })
+
+    @responses.activate
+    def test_momconnect_change_msisdn_existing_msisdn(self):
+        """
+        If the new msisdn already exists on the identity, then all other
+        msisdns should be marked as not default, and the new msisdn marked
+        as default.
+        """
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        utils_tests.mock_get_identity_by_id(registrant_id, details={
+            'addresses': {
+                'msisdn': {
+                    '+27123456789': {'default': True},
+                    '+27987654321': {},
+                }
+            }
+        })
+        utils_tests.mock_patch_identity(registrant_id)
+
+        change = Change.objects.create(
+            registrant_id=registrant_id,
+            action="momconnect_change_msisdn",
+            data={
+                'msisdn': "+27987654321"
+            },
+            source=self.make_source_normaluser()
+        )
+        validate_implement(change.id)
+        change.refresh_from_db()
+
+        self.assertTrue(change.validated)
+        [_, identity_update] = responses.calls
+        self.assertEqual(json.loads(identity_update.request.body), {
+            'details': {
+                'lang_code': "afr_ZA",
+                'foo': "bar",
+                'addresses': {
+                    'msisdn': {
+                        '+27987654321': {'default': True},
+                        '+27123456789': {'default': False},
+                    }
+                }
+            }
         })
