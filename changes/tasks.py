@@ -444,6 +444,38 @@ class ValidateImplement(Task):
 
         return "Completed MomConnect MSISDN change"
 
+    def momconnect_change_identification(self, change):
+        """
+        Identification change should change the identification information on
+        the identity, while storing the historical information on the identity.
+        """
+        self.l.info("Starting MomConnect Identification change")
+
+        self.l.info("Fetching Identity")
+        identity = is_client.get_identity(change.registrant_id)
+        details = identity['details']
+        old_identification = {'change': change.id}
+        for field in ('sa_id_no', 'passport_no', 'passport_origin'):
+            if field in details:
+                old_identification[field] = details.pop(field)
+        utils.append_or_create(
+            details, 'identification_history', old_identification)
+
+        id_type = change.data.pop('id_type')
+        if id_type == 'sa_id':
+            details['sa_id_no'] = change.data.pop('sa_id_no')
+        else:
+            details['passport_no'] = change.data.pop('passport_no')
+            details['passport_origin'] = change.data.pop('passport_origin')
+
+        self.l.info("Updating Identity")
+        is_client.update_identity(identity['id'], {'details': details})
+
+        self.l.info("Updating Change")
+        change.save()
+
+        return "Completed MomConnect Identity change"
+
     # Validation checks
     def check_pmtct_loss_optout_reason(self, data_fields, change):
         loss_reasons = ["miscarriage", "stillbirth", "babyloss"]
@@ -710,6 +742,8 @@ class ValidateImplement(Task):
                 'momconnect_nonloss_optout': self.momconnect_nonloss_optout,
                 'momconnect_change_language': self.momconnect_change_language,
                 'momconnect_change_msisdn': self.momconnect_change_msisdn,
+                'momconnect_change_identification': (
+                    self.momconnect_change_identification),
             }.get(change.action, None)(change)
             self.l.info("Task executed successfully")
             return True

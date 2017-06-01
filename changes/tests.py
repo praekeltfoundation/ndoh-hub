@@ -2512,6 +2512,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         change.refresh_from_db()
 
         self.assertTrue(change.validated)
+        self.assertEqual(change.data, {})
         [_, identity_update] = responses.calls
         self.assertEqual(json.loads(identity_update.request.body), {
             'details': {
@@ -2556,6 +2557,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         change.refresh_from_db()
 
         self.assertTrue(change.validated)
+        self.assertEqual(change.data, {})
         [_, identity_update] = responses.calls
         self.assertEqual(json.loads(identity_update.request.body), {
             'details': {
@@ -2602,6 +2604,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         change.refresh_from_db()
 
         self.assertTrue(change.validated)
+        self.assertEqual(change.data, {})
         [_, identity_update] = responses.calls
         self.assertEqual(json.loads(identity_update.request.body), {
             'details': {
@@ -2656,6 +2659,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         change.refresh_from_db()
 
         self.assertTrue(change.validated)
+        self.assertEqual(change.data, {})
         [_, identity_update] = responses.calls
         self.assertEqual(json.loads(identity_update.request.body), {
             'details': {
@@ -2707,6 +2711,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         change.refresh_from_db()
 
         self.assertTrue(change.validated)
+        self.assertEqual(change.data, {})
         [_, identity_update] = responses.calls
         self.assertEqual(json.loads(identity_update.request.body), {
             'details': {
@@ -2726,5 +2731,89 @@ class TestChangeActions(AuthenticatedAPITestCase):
                         },
                     }
                 }
+            }
+        })
+
+    @responses.activate
+    def test_momconnect_change_identification_sa_id(self):
+        """
+        If the new type of identification is of type sa_id, it should update
+        the sa_id_no field and place the old identification data in the
+        identification history.
+        """
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        utils_tests.mock_get_identity_by_id(registrant_id, {
+            'passport_no': '1234',
+            'passport_origin': 'other',
+        })
+        utils_tests.mock_patch_identity(registrant_id)
+
+        change = Change.objects.create(
+            registrant_id=registrant_id,
+            action="momconnect_change_identification",
+            data={
+                'id_type': "sa_id",
+                'sa_id_no': "1234567890123",
+            },
+            source=self.make_source_normaluser()
+        )
+        validate_implement(change.id)
+        change.refresh_from_db()
+
+        self.assertTrue(change.validated)
+        self.assertEqual(change.data, {})
+        [_, identity_update] = responses.calls
+        self.assertEqual(json.loads(identity_update.request.body), {
+            'details': {
+                'lang_code': "afr_ZA",
+                'foo': "bar",
+                'sa_id_no': "1234567890123",
+                'identification_history': [{
+                    'change': str(change.id),
+                    'passport_no': '1234',
+                    'passport_origin': 'other',
+                }]
+            }
+        })
+
+    @responses.activate
+    def test_momconnect_change_identification_passport(self):
+        """
+        If the new type of identification is of type sa_id, it should update
+        the passport_no and passport_origin fields and place the old
+        identification data in the identification history.
+        """
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        utils_tests.mock_get_identity_by_id(registrant_id, {
+            'sa_id_no': '1234',
+        })
+        utils_tests.mock_patch_identity(registrant_id)
+
+        change = Change.objects.create(
+            registrant_id=registrant_id,
+            action="momconnect_change_identification",
+            data={
+                'id_type': "passport",
+                'passport_no': "1234567890123",
+                'passport_origin': "other",
+            },
+            source=self.make_source_normaluser()
+        )
+        validate_implement(change.id)
+        change.refresh_from_db()
+
+        self.assertTrue(change.validated)
+        self.assertEqual(change.data, {})
+        [_, identity_update] = responses.calls
+        self.assertEqual(json.loads(identity_update.request.body), {
+            'details': {
+                'lang_code': "afr_ZA",
+                'foo': "bar",
+                'passport_no': "1234567890123",
+                'passport_origin': "other",
+                'identification_history': [{
+                    'change': str(change.id),
+                    'sa_id_no': '1234',
+                }]
             }
         })
