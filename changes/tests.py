@@ -2411,9 +2411,15 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 'foo': "bar",
                 'addresses': {
                     'msisdn': {
-                        '+27123456789': {'default': False},
+                        '+27123456789': {
+                            'default': False,
+                            'changes_from': [str(change.id)],
+                        },
                         '+27123456788': {},
-                        '+27987654321': {'default': True},
+                        '+27987654321': {
+                            'default': True,
+                            'changes_to': [str(change.id)],
+                        },
                     }
                 }
             }
@@ -2449,7 +2455,10 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 'foo': "bar",
                 'addresses': {
                     'msisdn': {
-                        '+27987654321': {'default': True},
+                        '+27987654321': {
+                            'default': True,
+                            'changes_to': [str(change.id)],
+                        },
                     }
                 }
             }
@@ -2492,8 +2501,121 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 'foo': "bar",
                 'addresses': {
                     'msisdn': {
-                        '+27987654321': {'default': True},
-                        '+27123456789': {'default': False},
+                        '+27987654321': {
+                            'default': True,
+                            'changes_to': [str(change.id)],
+                        },
+                        '+27123456789': {
+                            'default': False,
+                            'changes_from': [str(change.id)]
+                        },
+                    }
+                }
+            }
+        })
+
+    @responses.activate
+    def test_momconnect_change_msisdn_existing_changes(self):
+        """
+        If there are previous changes to this identity, we should append the
+        change ID to the list of existing changes.
+        """
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        utils_tests.mock_get_identity_by_id(registrant_id, details={
+            'addresses': {
+                'msisdn': {
+                    '+27123456789': {
+                        'default': True,
+                        'changes_from': ['test-change-id1'],
+                    },
+                    '+27987654321': {
+                        'changes_to': ['test-change-id2'],
+                    },
+                }
+            }
+        })
+        utils_tests.mock_patch_identity(registrant_id)
+
+        change = Change.objects.create(
+            registrant_id=registrant_id,
+            action="momconnect_change_msisdn",
+            data={
+                'msisdn': "+27987654321"
+            },
+            source=self.make_source_normaluser()
+        )
+        validate_implement(change.id)
+        change.refresh_from_db()
+
+        self.assertTrue(change.validated)
+        [_, identity_update] = responses.calls
+        self.assertEqual(json.loads(identity_update.request.body), {
+            'details': {
+                'lang_code': "afr_ZA",
+                'foo': "bar",
+                'addresses': {
+                    'msisdn': {
+                        '+27987654321': {
+                            'default': True,
+                            'changes_to': ['test-change-id2', str(change.id)],
+                        },
+                        '+27123456789': {
+                            'default': False,
+                            'changes_from': ['test-change-id1', str(change.id)]
+                        },
+                    }
+                }
+            }
+        })
+
+    @responses.activate
+    def test_momconnect_change_msisdn_no_existing_defaults(self):
+        """
+        If there are no existing defaults for an identity, then the change_from
+        field should be set on all msisdn addresses.
+        """
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        utils_tests.mock_get_identity_by_id(registrant_id, details={
+            'addresses': {
+                'msisdn': {
+                    '+27123456789': {
+                        'changes_from': ['test-change-id1'],
+                    },
+                    '+27123456788': {},
+                }
+            }
+        })
+        utils_tests.mock_patch_identity(registrant_id)
+
+        change = Change.objects.create(
+            registrant_id=registrant_id,
+            action="momconnect_change_msisdn",
+            data={
+                'msisdn': "+27987654321",
+            },
+            source=self.make_source_normaluser()
+        )
+        validate_implement(change.id)
+        change.refresh_from_db()
+
+        self.assertTrue(change.validated)
+        [_, identity_update] = responses.calls
+        self.assertEqual(json.loads(identity_update.request.body), {
+            'details': {
+                'lang_code': "afr_ZA",
+                'foo': "bar",
+                'addresses': {
+                    'msisdn': {
+                        '+27987654321': {
+                            'default': True,
+                            'changes_to': [str(change.id)],
+                        },
+                        '+27123456789': {
+                            'changes_from': ['test-change-id1', str(change.id)]
+                        },
+                        '+27123456788': {
+                            'changes_from': [str(change.id)]
+                        },
                     }
                 }
             }

@@ -398,11 +398,13 @@ class ValidateImplement(Task):
 
     def momconnect_change_msisdn(self, change):
         """
-        MSISDN change should change the default msisdn of the identity.
+        MSISDN change should change the default msisdn of the identity, while
+        storing information on the identity to allow us to see the history
+        of the change.
         """
         self.l.info("Starting MomConnect MSISDN change")
 
-        new_msisdn = change.data['msisdn']
+        new_msisdn = change.data.pop('msisdn')
 
         self.l.info("Fetching identity")
         identity = is_client.get_identity(change.registrant_id)
@@ -416,9 +418,14 @@ class ValidateImplement(Task):
             addresses['msisdn'] = {}
         msisdns = addresses['msisdn']
 
+        if not any(details.get('default') for _, details in msisdns.items()):
+            for address, addr_details in msisdns.items():
+                utils.append_or_create(addr_details, 'changes_from', change.id)
+
         for address, addr_details in msisdns.items():
             if 'default' in addr_details and addr_details['default']:
                 addr_details['default'] = False
+                utils.append_or_create(addr_details, 'changes_from', change.id)
 
         if new_msisdn not in msisdns:
             msisdns[new_msisdn] = {
@@ -426,10 +433,15 @@ class ValidateImplement(Task):
             }
         else:
             msisdns[new_msisdn]['default'] = True
+        utils.append_or_create(msisdns[new_msisdn], 'changes_to', change.id)
 
         is_client.update_identity(identity['id'], {
             'details': details,
             })
+
+        self.l.info("Updating Change object")
+        change.save()
+
         return "Completed MomConnect MSISDN change"
 
     # Validation checks
