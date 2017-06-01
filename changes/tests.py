@@ -2344,6 +2344,37 @@ class TestChangeActions(AuthenticatedAPITestCase):
         })
 
     @responses.activate
+    def test_momconnect_change_language_old_language(self):
+        """
+        The action should update the change data with the previous language
+        that was set on the identity before the change.
+        """
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        utils_tests.mock_get_identity_by_id(
+            registrant_id, {
+                'lang_code': "eng_ZA",
+                'foo': "bar",
+            })
+        utils_tests.mock_patch_identity(registrant_id)
+
+        mock_get_active_subscriptions_none(registrant_id)
+
+        change = Change.objects.create(
+            registrant_id=registrant_id,
+            action="momconnect_change_language",
+            data={
+                'language': "xho_ZA"
+            },
+            source=self.make_source_normaluser()
+        )
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertTrue(change.validated)
+        self.assertEqual(change.data['language'], 'xho_ZA')
+        self.assertEqual(change.data['old_language'], 'eng_ZA')
+
+    @responses.activate
     def test_momconnect_change_msisdn_new_msisdn(self):
         """
         if the new msisdn doesn't exist in the contacts existing msisdns, then

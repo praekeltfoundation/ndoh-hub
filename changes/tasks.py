@@ -382,12 +382,18 @@ class ValidateImplement(Task):
 
         self.l.info("Fetching identity {}".format(change.registrant_id))
         identity = is_client.get_identity(change.registrant_id)
+
+        self.l.info("Updating Change object")
+        change.data['old_language'] = identity['details'].get('lang_code')
+        change.save()
+
         self.l.info(
             "Changing language for identity {}".format(change.registrant_id))
         identity['details']['lang_code'] = language
         is_client.update_identity(identity['id'], {
             'details': identity['details']
             })
+
         return "Completed Momconnect language change"
 
     def momconnect_change_msisdn(self, change):
