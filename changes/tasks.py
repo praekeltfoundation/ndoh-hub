@@ -589,6 +589,35 @@ class ValidateImplement(Task):
         else:
             return []
 
+    def check_momconnect_change_identification(self, data_fields, change):
+        if "id_type" not in data_fields:
+            return ["ID type missing"]
+
+        if change.data["id_type"] == "sa_id":
+            if "sa_id_no" not in data_fields:
+                return ["SA ID number missing"]
+            elif not utils.is_valid_sa_id_no(change.data["sa_id_no"]):
+                return ["SA ID number invalid"]
+            else:
+                return []
+        elif change.data["id_type"] == "passport":
+            errors = []
+
+            if "passport_no" not in data_fields:
+                errors += ["Passport number missing"]
+            elif not utils.is_valid_passport_no(change.data["passport_no"]):
+                errors += ["Passport number invalid"]
+
+            if "passport_origin" not in data_fields:
+                errors += ["Passport origin missing"]
+            elif not utils.is_valid_passport_origin(
+                    change.data["passport_origin"]):
+                errors += ["Passport origin invalid"]
+
+            return errors
+        else:
+            return ["ID type should be 'sa_id' or 'passport'"]
+
     # Validate
     def validate(self, change):
         """ Validates that all the required info is provided for a
@@ -639,6 +668,10 @@ class ValidateImplement(Task):
 
         elif change.action == 'momconnect_change_msisdn':
             validation_errors += self.check_momconnect_change_msisdn(
+                data_fields, change)
+
+        elif change.action == 'momconnect_change_identification':
+            validation_errors += self.check_momconnect_change_identification(
                 data_fields, change)
 
         # Evaluate if there were any problems, save and return

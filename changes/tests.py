@@ -1287,6 +1287,114 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         self.assertEqual(
             change.data['invalid_fields'], ["Not a valid MSISDN"])
 
+    def test_momconnect_change_identification_id_type_missing(self):
+        """
+        If the id type is missing, validation should fail.
+        """
+        change = Change.objects.create(
+            registrant_id="mother01-63e2-4acc-9b94-26663b9bc267",
+            action="momconnect_change_identification",
+            data={},
+            source=self.make_source_normaluser()
+        )
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertFalse(change.validated)
+        self.assertEqual(
+            change.data['invalid_fields'], ["ID type missing"])
+
+    def test_momconnect_change_identification_incorrect_id_type(self):
+        """
+        If the id type is not a valid choice, validation should fail.
+        """
+        change = Change.objects.create(
+            registrant_id="mother01-63e2-4acc-9b94-26663b9bc267",
+            action="momconnect_change_identification",
+            data={'id_type': "foo"},
+            source=self.make_source_normaluser()
+        )
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertFalse(change.validated)
+        self.assertEqual(
+            change.data['invalid_fields'],
+            ["ID type should be 'sa_id' or 'passport'"])
+
+    def test_momconnect_change_identification_id_number_missing(self):
+        """
+        If the id type is sa_id, but there's no ID number, validation should
+        fail.
+        """
+        change = Change.objects.create(
+            registrant_id="mother01-63e2-4acc-9b94-26663b9bc267",
+            action="momconnect_change_identification",
+            data={'id_type': "sa_id"},
+            source=self.make_source_normaluser()
+        )
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertFalse(change.validated)
+        self.assertEqual(
+            change.data['invalid_fields'],
+            ["SA ID number missing"])
+
+    def test_momconnect_change_identification_id_number_invalid(self):
+        """
+        If the id type is sa_id, but the ID number is not valid, validation
+        should fail.
+        """
+        change = Change.objects.create(
+            registrant_id="mother01-63e2-4acc-9b94-26663b9bc267",
+            action="momconnect_change_identification",
+            data={'id_type': "sa_id", 'sa_id_no': "foo"},
+            source=self.make_source_normaluser()
+        )
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertFalse(change.validated)
+        self.assertEqual(
+            change.data['invalid_fields'],
+            ["SA ID number invalid"])
+
+    def test_momconnect_change_identification_passport_details_missing(self):
+        """
+        If the id type is passport, but the passport details aren't given, the
+        validation should fail.
+        """
+        change = Change.objects.create(
+            registrant_id="mother01-63e2-4acc-9b94-26663b9bc267",
+            action="momconnect_change_identification",
+            data={'id_type': "passport"},
+            source=self.make_source_normaluser()
+        )
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertFalse(change.validated)
+        self.assertEqual(
+            change.data['invalid_fields'],
+            ["Passport number missing", "Passport origin missing"])
+
+    def test_momconnect_change_identification_passport_details_invalid(self):
+        """
+        If the id type is passport, but the passport details are invalid, the
+        validation should fail.
+        """
+        change = Change.objects.create(
+            registrant_id="mother01-63e2-4acc-9b94-26663b9bc267",
+            action="momconnect_change_identification",
+            data={
+                'id_type': "passport",
+                "passport_no": "",
+                "passport_origin": "foo"},
+            source=self.make_source_normaluser()
+        )
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertFalse(change.validated)
+        self.assertEqual(
+            change.data['invalid_fields'],
+            ["Passport number invalid", "Passport origin invalid"])
+
 
 class TestChangeActions(AuthenticatedAPITestCase):
 
