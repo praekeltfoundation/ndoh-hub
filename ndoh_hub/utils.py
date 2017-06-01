@@ -201,6 +201,17 @@ def get_messageset_schedule_sequence(short_name, weeks):
             next_sequence_number)
 
 
+def append_or_create(dictionary, field, value):
+    """
+    If 'field' exists in 'dictionary', it appends 'value' to the existing
+    list, else it creates the field with a list that comprises of 'value'
+    """
+    if field in dictionary:
+        dictionary[field].append(value)
+    else:
+        dictionary[field] = [value]
+
+
 def get_available_metrics():
     available_metrics = []
     available_metrics.extend(settings.METRICS_REALTIME)
