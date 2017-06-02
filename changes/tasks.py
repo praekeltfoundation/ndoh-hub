@@ -444,6 +444,38 @@ class ValidateImplement(Task):
 
         return "Completed MomConnect MSISDN change"
 
+    def momconnect_change_identification(self, change):
+        """
+        Identification change should change the identification information on
+        the identity, while storing the historical information on the identity.
+        """
+        self.l.info("Starting MomConnect Identification change")
+
+        self.l.info("Fetching Identity")
+        identity = is_client.get_identity(change.registrant_id)
+        details = identity['details']
+        old_identification = {'change': change.id}
+        for field in ('sa_id_no', 'passport_no', 'passport_origin'):
+            if field in details:
+                old_identification[field] = details.pop(field)
+        utils.append_or_create(
+            details, 'identification_history', old_identification)
+
+        id_type = change.data.pop('id_type')
+        if id_type == 'sa_id':
+            details['sa_id_no'] = change.data.pop('sa_id_no')
+        else:
+            details['passport_no'] = change.data.pop('passport_no')
+            details['passport_origin'] = change.data.pop('passport_origin')
+
+        self.l.info("Updating Identity")
+        is_client.update_identity(identity['id'], {'details': details})
+
+        self.l.info("Updating Change")
+        change.save()
+
+        return "Completed MomConnect Identity change"
+
     # Validation checks
     def check_pmtct_loss_optout_reason(self, data_fields, change):
         loss_reasons = ["miscarriage", "stillbirth", "babyloss"]
@@ -589,6 +621,35 @@ class ValidateImplement(Task):
         else:
             return []
 
+    def check_momconnect_change_identification(self, data_fields, change):
+        if "id_type" not in data_fields:
+            return ["ID type missing"]
+
+        if change.data["id_type"] == "sa_id":
+            if "sa_id_no" not in data_fields:
+                return ["SA ID number missing"]
+            elif not utils.is_valid_sa_id_no(change.data["sa_id_no"]):
+                return ["SA ID number invalid"]
+            else:
+                return []
+        elif change.data["id_type"] == "passport":
+            errors = []
+
+            if "passport_no" not in data_fields:
+                errors += ["Passport number missing"]
+            elif not utils.is_valid_passport_no(change.data["passport_no"]):
+                errors += ["Passport number invalid"]
+
+            if "passport_origin" not in data_fields:
+                errors += ["Passport origin missing"]
+            elif not utils.is_valid_passport_origin(
+                    change.data["passport_origin"]):
+                errors += ["Passport origin invalid"]
+
+            return errors
+        else:
+            return ["ID type should be 'sa_id' or 'passport'"]
+
     # Validate
     def validate(self, change):
         """ Validates that all the required info is provided for a
@@ -641,6 +702,10 @@ class ValidateImplement(Task):
             validation_errors += self.check_momconnect_change_msisdn(
                 data_fields, change)
 
+        elif change.action == 'momconnect_change_identification':
+            validation_errors += self.check_momconnect_change_identification(
+                data_fields, change)
+
         # Evaluate if there were any problems, save and return
         if len(validation_errors) == 0:
             self.l.info("Change validated successfully - updating change "
@@ -677,6 +742,8 @@ class ValidateImplement(Task):
                 'momconnect_nonloss_optout': self.momconnect_nonloss_optout,
                 'momconnect_change_language': self.momconnect_change_language,
                 'momconnect_change_msisdn': self.momconnect_change_msisdn,
+                'momconnect_change_identification': (
+                    self.momconnect_change_identification),
             }.get(change.action, None)(change)
             self.l.info("Task executed successfully")
             return True
