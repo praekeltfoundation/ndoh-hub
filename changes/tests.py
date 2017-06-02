@@ -2779,7 +2779,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
     @responses.activate
     def test_momconnect_change_identification_passport(self):
         """
-        If the new type of identification is of type sa_id, it should update
+        If the new type of identification is of type passport, it should update
         the passport_no and passport_origin fields and place the old
         identification data in the identification history.
         """
