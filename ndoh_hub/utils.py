@@ -76,7 +76,8 @@ def is_valid_passport_no(passport_no):
 
 def is_valid_passport_origin(passport_origin):
     """ A passport_origin validation check """
-    valid_origins = ["na", "bw", "mz", "sz", "ls", "cu", "other"]
+    valid_origins = ["na", "bw", "mz", "sz", "ls", "cu", "zw", "mw", "ng",
+                     "cd", "so", "other"]
     return passport_origin in valid_origins
 
 
