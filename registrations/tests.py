@@ -2323,8 +2323,6 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         Registration.objects.create(**registration_data)
 
         # check jembi registration
-        for r in responses.calls:
-            print r.request.url
         jembi_call = responses.calls[12]  # jembi should be the thirteenth one
         self.assertEqual(
             json.loads(jembi_call.request.body)['faccode'], '123456')
@@ -2380,8 +2378,6 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         self.assertEqual(len(responses.calls), 8)
 
         # check jembi registration
-        for r in responses.calls:
-            print r.request.url
         jembi_call = responses.calls[5]  # jembi should be the sixth one
         self.assertEqual(json.loads(jembi_call.request.body), {
             'lang': 'en',
@@ -2577,8 +2573,6 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         self.assertFalse(registration.validated)
         registration.save()
 
-        for r in responses.calls:
-            print r.response.text
         jembi_call = responses.calls[2]  # jembi should be the third one
         self.assertEqual(json.loads(jembi_call.response.text), {
             "result": "jembi-is-ok"

@@ -1,6 +1,9 @@
 import responses
 import json
-import urllib
+try:
+    from urllib import urlencode
+except ImportError:
+    from urllib.parse import urlencode
 
 
 # Mocks used in testing
@@ -49,7 +52,7 @@ def mock_get_identity_by_msisdn(msisdn, identity_id='identity-uuid', num=1):
 
     responses.add(
         responses.GET,
-        'http://is/api/v1/identities/search/?%s' % urllib.urlencode({
+        'http://is/api/v1/identities/search/?%s' % urlencode({
             'details__addresses__msisdn': msisdn}),
         json=response, status=200, content_type='application/json',
         match_querystring=True)
