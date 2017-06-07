@@ -402,9 +402,14 @@ def remove_personally_identifiable_fields(registration_id):
     fields = set((
         'id_type', 'mom_dob', 'passport_no', 'passport_origin', 'sa_id_no',
         'language', 'consent')).intersection(registration.data.keys())
-    identity = is_client.get_identity(registration.registrant_id)
-    for field in fields:
-        identity['details'][field] = registration.data.pop(field)
+    if fields:
+        identity = is_client.get_identity(registration.registrant_id)
+
+        for field in fields:
+            identity['details'][field] = registration.data.pop(field)
+
+        is_client.update_identity(
+            identity['id'], {'details': identity['details']})
 
     msisdn_fields = set((
         'msisdn_device', 'msisdn_registrant')
@@ -425,8 +430,6 @@ def remove_personally_identifiable_fields(registration_id):
         field = field.replace('msisdn', 'uuid')
         registration.data[field] = field_identity['id']
 
-    is_client.update_identity(
-        identity['id'], {'details': identity['details']})
     registration.save()
 
 

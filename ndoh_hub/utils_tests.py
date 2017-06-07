@@ -82,6 +82,24 @@ def mock_patch_identity(identity_id):
     )
 
 
+def mock_create_identity(identity_id='identity-uuid', details={}):
+    identity = {
+        "id": identity_id,
+        "version": 1,
+        "details": details,
+        "communicate_through": None,
+        "operator": None,
+        "created_at": "2016-03-31T09:28:29.506591Z",
+        "created_by": None,
+        "updated_at": "2016-08-17T09:44:31.812532Z",
+        "updated_by": 1
+    }
+    responses.add(
+        responses.POST,
+        'http://is/api/v1/identities/', json=identity, status=200,
+        content_type='application_json')
+
+
 def mock_get_messageset_by_shortname(short_name):
     messageset_id = {
         "pmtct_prebirth.patient.1": 11,

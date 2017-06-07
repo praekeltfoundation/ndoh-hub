@@ -28,7 +28,8 @@ from go_http.metrics import MetricsApiClient
 
 from .models import Source, Registration, SubscriptionRequest
 from .signals import psh_validate_subscribe, psh_fire_created_metric
-from .tasks import validate_subscribe, get_risk_status
+from .tasks import (
+    validate_subscribe, get_risk_status, remove_personally_identifiable_fields)
 from ndoh_hub import utils, utils_tests
 
 
@@ -3513,3 +3514,114 @@ class UpdateInitialSequenceCommand(AuthenticatedAPITestCase):
         self.assertEqual(stdout.getvalue().strip(),
                          'Subscription not found: {}\nUpdated 0 subscriptions.'
                          .format(registration.registrant_id))
+
+
+class TestRemovePersonallyIdentifiableFieldsTask(AuthenticatedAPITestCase):
+    @responses.activate
+    def test_fields_are_removed(self):
+        """
+        Confirms that all fields that are considered as personal information
+        fields are removed from the registration, and placed on the identity.
+
+        Any fields on the registration that are not considered personal
+        information should remain, and not be placed on the identity.
+        """
+        registration = Registration.objects.create(
+            reg_type='momconnect_prebirth',
+            registrant_id='mother-uuid',
+            source=self.make_source_normaluser(),
+            validated=True,
+            data={
+                'id_type': "passport",
+                'passport_origin': "na",
+                'passport_no': '1234',
+                'sa_id_no': '4321',
+                'language': 'eng_ZA',
+                'consent': True,
+                'foo': "baz",
+            })
+
+        utils_tests.mock_get_identity_by_id('mother-uuid')
+        utils_tests.mock_patch_identity('mother-uuid')
+
+        remove_personally_identifiable_fields(str(registration.pk))
+
+        identity_update = json.loads(responses.calls[-1].request.body)
+        self.assertEqual(identity_update, {'details': {
+            'id_type': "passport",
+            'passport_origin': "na",
+            'passport_no': '1234',
+            'sa_id_no': '4321',
+            'lang_code': 'afr_ZA',
+            'language': 'eng_ZA',
+            'consent': True,
+            'foo': "bar"
+        }})
+
+        registration.refresh_from_db()
+        self.assertEqual(registration.data, {
+            'foo': "baz",
+        })
+
+    @responses.activate
+    def test_msisdns_are_replaced_with_uuid(self):
+        """
+        Confirms that all msisdn fields are replaced with the relevant UUIDs
+        for the identity that represents that msisdn.
+        """
+        registration = Registration.objects.create(
+            reg_type='momconnect_prebirth',
+            registrant_id='mother-uuid',
+            source=self.make_source_normaluser(),
+            validated=True,
+            data={
+                'msisdn_device': '+1234',
+                'msisdn_registrant': '+4321',
+            })
+
+        utils_tests.mock_get_identity_by_msisdn('+1234', 'device-uuid')
+        utils_tests.mock_get_identity_by_msisdn('+4321', 'registrant-uuid')
+
+        remove_personally_identifiable_fields(str(registration.pk))
+
+        registration.refresh_from_db()
+        self.assertEqual(registration.data, {
+            'uuid_device': 'device-uuid',
+            'uuid_registrant': 'registrant-uuid',
+        })
+
+    @responses.activate
+    def test_msisdns_are_replaced_with_uuid_no_identity(self):
+        """
+        If no identity exists for a given msisdn, then one should be created,
+        and that UUID should be used to replace the msisdn.
+        """
+        registration = Registration.objects.create(
+            reg_type='momconnect_prebirth',
+            registrant_id='mother-uuid',
+            source=self.make_source_normaluser(),
+            validated=True,
+            data={
+                'msisdn_device': '+1234',
+            })
+
+        utils_tests.mock_get_identity_by_msisdn('+1234', num=0)
+        utils_tests.mock_create_identity('uuid-1234')
+
+        remove_personally_identifiable_fields(str(registration.pk))
+
+        identity_creation = json.loads(responses.calls[-1].request.body)
+        self.assertEqual(identity_creation, {
+            'details': {
+                'addresses': {
+                    'msisdn': {
+                        '+1234': {},
+                    },
+                },
+            },
+        })
+
+        registration.refresh_from_db()
+        self.assertEqual(registration.data, {
+            'uuid_device': 'uuid-1234',
+        })
