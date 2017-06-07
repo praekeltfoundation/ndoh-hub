@@ -2167,6 +2167,11 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         """ Test a full registration process with good data """
         # Setup
         registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_patch_identity(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_get_identity_by_msisdn('+27821113333')
         # . reactivate post-save hook
         post_save.connect(psh_validate_subscribe, sender=Registration)
 
@@ -2205,10 +2210,11 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         # Check
         # . check number of calls made:
         #   messageset, schedule, identity, patch identity, jembi registration
-        self.assertEqual(len(responses.calls), 5)
+        #   identity, reverse identity, reverse identity, patch identity
+        self.assertEqual(len(responses.calls), 9)
 
         # check jembi registration
-        jembi_call = responses.calls[-1]  # jembi should be the last one
+        jembi_call = responses.calls[4]  # jembi should be the fifth one
         self.assertEqual(json.loads(jembi_call.request.body), {
             'lang': 'en',
             'dob': '19990127',
@@ -2247,6 +2253,11 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         """ Test a full registration process with good data """
         # Setup
         registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_patch_identity(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_get_identity_by_msisdn('+27821113333')
         # . reactivate post-save hook
         post_save.connect(psh_validate_subscribe, sender=Registration)
 
@@ -2312,7 +2323,9 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         Registration.objects.create(**registration_data)
 
         # check jembi registration
-        jembi_call = responses.calls[-1]  # jembi should be the last one
+        for r in responses.calls:
+            print r.request.url
+        jembi_call = responses.calls[12]  # jembi should be the thirteenth one
         self.assertEqual(
             json.loads(jembi_call.request.body)['faccode'], '123456')
 
@@ -2363,10 +2376,13 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         # Check
         # . check number of calls made:
         #   messageset, schedule, identity, patch identity, jembi registration
-        self.assertEqual(len(responses.calls), 6)
+        #   get identity, patch identity
+        self.assertEqual(len(responses.calls), 8)
 
         # check jembi registration
-        jembi_call = responses.calls[-1]  # jembi should be the last one
+        for r in responses.calls:
+            print r.request.url
+        jembi_call = responses.calls[5]  # jembi should be the sixth one
         self.assertEqual(json.loads(jembi_call.request.body), {
             'lang': 'en',
             'dob': '19990127',
@@ -2405,6 +2421,11 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         """ Test a full registration process with good data """
         # Setup
         # registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_patch_identity(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_get_identity_by_msisdn('+27821113333')
         # . reactivate post-save hook
         post_save.connect(psh_validate_subscribe, sender=Registration)
 
@@ -2447,8 +2468,9 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 
         # Check
         # . check number of calls made:
-        #   message set, schedule, service rating, jembi registration
-        self.assertEqual(len(responses.calls), 3)
+        #   message set, schedule, jembi registration, id_store mother,
+        #   id_store mother_reverse, id_store registrant_rever, id_store patch
+        self.assertEqual(len(responses.calls), 7)
 
         # . check registration validated
         registration.refresh_from_db()
@@ -2524,6 +2546,8 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "cmsisdn": "+27111111111",
                 "lang": "en",
             })
+        utils_tests.mock_get_identity_by_msisdn('+27000000000')
+        utils_tests.mock_get_identity_by_msisdn('+27111111111')
 
         # Setup
         source = Source.objects.create(
@@ -2553,7 +2577,9 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         self.assertFalse(registration.validated)
         registration.save()
 
-        jembi_call = responses.calls[-1]  # jembi should be the last one
+        for r in responses.calls:
+            print r.response.text
+        jembi_call = responses.calls[2]  # jembi should be the third one
         self.assertEqual(json.loads(jembi_call.response.text), {
             "result": "jembi-is-ok"
         })
@@ -2581,6 +2607,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "cmsisdn": "+27710967611",
                 "lang": "en",
             })
+        utils_tests.mock_get_identity_by_msisdn('+27710967611')
 
         # Setup
         source = Source.objects.create(
@@ -2609,7 +2636,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         self.assertFalse(registration.validated)
         registration.save()
 
-        jembi_call = responses.calls[-1]  # jembi should be the last one
+        jembi_call = responses.calls[2]  # jembi should be the third one
         self.assertEqual(json.loads(jembi_call.response.text), {
             "result": "jembi-is-ok"
         })

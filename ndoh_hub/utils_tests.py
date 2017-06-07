@@ -1,5 +1,6 @@
 import responses
 import json
+import urllib
 
 
 # Mocks used in testing
@@ -29,6 +30,29 @@ def mock_get_identity_by_id(identity_id, details={}):
         json=identity,
         status=200, content_type='application/json'
     )
+
+
+def mock_get_identity_by_msisdn(msisdn, identity_id='identity-uuid', num=1):
+    """
+    Mocks the request to the identity store to get identities by msisdn.
+    """
+    response = {'results': [{
+        "id": identity_id,
+        "version": 1,
+        "details": {'addresses': {'msisdn': {msisdn: {}}}},
+        "communicate_through": None,
+        "operator": None,
+        "created_at": "2016-03-31T09:28:29.506591Z",
+        "created_by": None,
+        "updated_at": "2016-08-17T09:44:31.812532Z",
+    }] * num}
+
+    responses.add(
+        responses.GET,
+        'http://is/api/v1/identities/search/?%s' % urllib.urlencode({
+            'details__addresses__msisdn': msisdn}),
+        json=response, status=200, content_type='application/json',
+        match_querystring=True)
 
 
 def mock_patch_identity(identity_id):
