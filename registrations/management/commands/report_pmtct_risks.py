@@ -12,7 +12,8 @@ from django.core.validators import URLValidator
 from django.db.models import Q
 
 from registrations.models import Registration
-from registrations.tasks import get_risk_status
+from registrations.tasks import (
+    add_personally_identifiable_fields, get_risk_status)
 
 from seed_services_client import HubApiClient, IdentityStoreApiClient
 
@@ -103,8 +104,14 @@ class Command(BaseCommand):
                     validated=True)
 
                 for registration in registrations:
+                    mom_dob = registration["data"].get("mom_dob")
+                    if not mom_dob:
+                        identity = self.get_identity(
+                            ids_client, registration["registrant_id"])
+                        mom_dob = identity["details"].get("mom_dob")
+
                     risk = get_risk_status(registration["reg_type"],
-                                           registration["data"]["mom_dob"],
+                                           mom_dob,
                                            registration["data"].get("edd"))
 
                     add_to_result(risk, registration['registrant_id'])
@@ -115,7 +122,7 @@ class Command(BaseCommand):
                 validated=True)
 
             for registration in registrations.iterator():
-
+                add_personally_identifiable_fields(registration)
                 risk = get_risk_status(registration.reg_type,
                                        registration.data["mom_dob"],
                                        registration.data.get("edd"))
