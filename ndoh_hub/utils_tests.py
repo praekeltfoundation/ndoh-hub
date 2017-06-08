@@ -35,6 +35,15 @@ def mock_get_identity_by_id(identity_id, details={}):
     )
 
 
+def mock_get_nonexistant_identity_by_id(identity_id):
+    responses.add(
+        responses.GET,
+        'http://is/api/v1/identities/%s/' % identity_id,
+        json={'detail': 'Not found.'},
+        status=404, content_type='application/json'
+    )
+
+
 def mock_get_identity_by_msisdn(msisdn, identity_id='identity-uuid', num=1):
     """
     Mocks the request to the identity store to get identities by msisdn.
