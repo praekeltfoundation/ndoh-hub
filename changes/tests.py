@@ -2857,7 +2857,7 @@ class ControlInterfaceOptoutViewTest(AuthenticatedAPITestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(
-            len(utils.json_decode(response.content)["results"]), 3)
+            len(utils.json_decode(response.content)), 3)
 
         changes = Change.objects.filter(registrant_id=identity)
         self.assertEqual(changes.count(), 3)

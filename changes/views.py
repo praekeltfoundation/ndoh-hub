@@ -5,9 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Source, Change
-from .serializers import (
-    ChangeSerializer, AdminOptoutSerializer, MultipleChangeSerializer)
-from django.forms.models import model_to_dict
+from .serializers import ChangeSerializer, AdminOptoutSerializer
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
 from django.conf import settings
 
@@ -106,13 +104,13 @@ class ReceiveAdminOptout(generics.GenericAPIView):
                 actions.add("nurse_optout")
             elif "pmtct" in messageset["short_name"]:
                 actions.add("pmtct_nonloss_optout")
-            else:
+            elif "momconnect" in messageset["short_name"]:
                 actions.add("momconnect_nonloss_optout")
 
         source = Source.objects.get(user=self.request.user)
         request.data["source"] = source.id
 
-        data = {"changes": []}
+        changes = []
         for action in actions:
             change = {
                 "registrant_id": identity_id,
@@ -120,18 +118,15 @@ class ReceiveAdminOptout(generics.GenericAPIView):
                 "data": {"reason": "other"},
                 "source": source.id,
             }
-            data["changes"].append(change)
+            changes.append(change)
 
-        serializer = MultipleChangeSerializer(data=data)
+        serializer = ChangeSerializer(data=changes, many=True)
 
         if serializer.is_valid():
-            change_objects = serializer.save()
+            serializer.save()
 
-            result = {"results": []}
-            for change in change_objects:
-                result["results"].append(model_to_dict(change))
-
-            return Response(data=result, status=status.HTTP_201_CREATED)
+            return Response(data=serializer.data,
+                            status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
