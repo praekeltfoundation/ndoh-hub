@@ -6,6 +6,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Source, Change
 from .serializers import ChangeSerializer
+from django.http import JsonResponse
+from ndoh_hub import utils
+from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
+from django.conf import settings
+
+import six
 
 
 class ChangePost(mixins.CreateModelMixin, generics.GenericAPIView):
@@ -72,3 +78,54 @@ class OptOutInactiveIdentity(APIView):
                               action='momconnect_nonloss_optout',
                               data={'reason': 'sms_failure'})
         return Response(status=status.HTTP_201_CREATED)
+
+
+class ReceiveAdminOptout(mixins.CreateModelMixin,
+                         generics.GenericAPIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+
+        try:
+            data = utils.json_decode(request.body)
+        except ValueError as e:
+            return JsonResponse({'reason': "JSON decode error",
+                                'details': six.text_type(e)}, status=400)
+
+        try:
+            identity_id = data['identity']
+        except KeyError as e:
+            return JsonResponse({'reason': '"identity" must be specified.'},
+                                status=400)
+
+        sbm_client = StageBasedMessagingApiClient(
+            api_url=settings.STAGE_BASED_MESSAGING_URL,
+            auth_token=settings.STAGE_BASED_MESSAGING_TOKEN
+        )
+
+        active_subs = sbm_client.get_subscriptions(
+            {'identity': identity_id, 'active': True}
+        )["results"]
+
+        actions = []
+        for sub in active_subs:
+            messageset = sbm_client.get_messageset(sub["messageset"])
+            if "nurseconnect" in messageset["short_name"]:
+                actions.append("nurse_optout")
+            elif "pmtct" in messageset["short_name"]:
+                actions.append("pmtct_nonloss_optout")
+            else:
+                actions.append("momconnect_nonloss_optout")
+
+        source = Source.objects.get(user=self.request.user)
+        request.data["source"] = source.id
+
+        for action in set(actions):
+            Change.objects.create(**{
+                "registrant_id": identity_id,
+                "action": action,
+                "data": {"reason": "other"},
+                "source": source,
+            })
+
+        return JsonResponse({})

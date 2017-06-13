@@ -2817,3 +2817,52 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 }]
             }
         })
+
+
+class ControlInterfaceOptoutViewTest(AuthenticatedAPITestCase):
+
+    """
+    Tests related to the optout control interface view.
+    """
+
+    def test_ci_optout_invalid(self):
+        request = {}
+
+        response = self.adminclient.post('/api/v1/optout_admin/',
+                                         json.dumps(request),
+                                         content_type='application/json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(utils.json_decode(response.content),
+                         {'reason': '"identity" must be specified.'})
+        self.assertEqual(len(responses.calls), 0)
+
+    @responses.activate
+    def test_ci_optout(self):
+        request = {
+            "identity": "mother-id-123"
+        }
+
+        mock_get_active_subs_mcpre_mcpost_pmtct_nc("mother-id-123")
+        mock_get_messageset(11, 'pmtct_prebirth.patient.1')
+        mock_get_messageset(21, 'momconnect_prebirth.hw_full.1')
+        mock_get_messageset(61, 'nurseconnect.hw_full.1')
+        mock_get_messageset(32, 'momconnect_postbirth.hw_full.1')
+
+        self.make_source_adminuser()
+        response = self.adminclient.post('/api/v1/optout_admin/',
+                                         json.dumps(request),
+                                         content_type='application/json')
+
+        self.assertEqual(response.status_code, 200)
+        changes = Change.objects.filter(registrant_id="mother-id-123")
+        self.assertEqual(changes.count(), 3)
+        changes = Change.objects.filter(registrant_id="mother-id-123",
+                                        action="momconnect_nonloss_optout")
+        self.assertEqual(changes.count(), 1)
+        changes = Change.objects.filter(registrant_id="mother-id-123",
+                                        action="pmtct_nonloss_optout")
+        self.assertEqual(changes.count(), 1)
+        changes = Change.objects.filter(registrant_id="mother-id-123",
+                                        action="nurse_optout")
+        self.assertEqual(changes.count(), 1)
