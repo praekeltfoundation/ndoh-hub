@@ -19,7 +19,7 @@ from rest_hooks.models import model_saved
 from ndoh_hub import utils, utils_tests
 from .models import Change
 from .signals import psh_validate_implement
-from .tasks import validate_implement
+from .tasks import validate_implement, remove_personally_identifiable_fields
 from registrations.models import Source, Registration, SubscriptionRequest
 from registrations.signals import (psh_validate_subscribe,
                                    psh_fire_created_metric)
@@ -2816,4 +2816,116 @@ class TestChangeActions(AuthenticatedAPITestCase):
                     'sa_id_no': '1234',
                 }]
             }
+        })
+
+
+class TestRemovePersonallyIdentifiableInformation(AuthenticatedAPITestCase):
+    @responses.activate
+    def test_removes_personal_information_fields(self):
+        """
+        For each of the personal information fields, the task should remove
+        them from the Change object, and instead place them on the identity
+        that the Change is for.
+        """
+        change = Change.objects.create(
+            registrant_id='mother-uuid',
+            action='baby_switch',
+            source=self.make_source_normaluser(),
+            validated=True,
+            data={
+                'id_type': 'passport',
+                'dob': '1990-01-01',
+                'passport_no': '12345',
+                'passport_origin': 'na',
+                'sa_id_no': '4321',
+                'persal_no': '111',
+                'sanc_no': '222',
+                'foo': 'baz',
+            })
+
+        utils_tests.mock_get_identity_by_id('mother-uuid')
+        utils_tests.mock_patch_identity('mother-uuid')
+
+        remove_personally_identifiable_fields(str(change.pk))
+
+        identity_update = json.loads(responses.calls[-1].request.body)
+        self.assertEqual(identity_update['details'], {
+            'id_type': 'passport',
+            'dob': '1990-01-01',
+            'passport_no': '12345',
+            'passport_origin': 'na',
+            'sa_id_no': '4321',
+            'persal_no': '111',
+            'sanc_no': '222',
+            'lang_code': 'afr_ZA',
+            'foo': 'bar',
+        })
+
+        change.refresh_from_db()
+        self.assertEqual(change.data, {
+            'foo': 'baz',
+        })
+
+    @responses.activate
+    def test_changes_msisdns_to_uuids(self):
+        """
+        For each of the msisdn fields, the task should remove them from the
+        Change object, and put back the UUID field instead.
+        """
+        change = Change.objects.create(
+            registrant_id='mother-uuid',
+            action='baby_switch',
+            source=self.make_source_normaluser(),
+            validated=True,
+            data={
+                'msisdn_device': "+27111",
+                'msisdn_new': "+27222",
+                'msisdn_old': "+27333",
+                'msisdn_foo': "+27444",
+            })
+
+        utils_tests.mock_get_identity_by_msisdn('+27111', 'device-uuid')
+        utils_tests.mock_get_identity_by_msisdn('+27222', 'new-uuid')
+        utils_tests.mock_get_identity_by_msisdn('+27333', 'old-uuid')
+
+        remove_personally_identifiable_fields(str(change.pk))
+
+        change.refresh_from_db()
+        self.assertEqual(change.data, {
+            'uuid_device': 'device-uuid',
+            'uuid_new': 'new-uuid',
+            'uuid_old': 'old-uuid',
+            'msisdn_foo': '+27444',
+        })
+
+    @responses.activate
+    def test_creates_missing_identities(self):
+        """
+        For each of the msisdn fields, if the identity doesn't exist, then
+        it should be created.
+        """
+        change = Change.objects.create(
+            registrant_id='mother-uuid',
+            action='baby_switch',
+            source=self.make_source_normaluser(),
+            validated=True,
+            data={
+                'msisdn_device': "+27111",
+            })
+
+        utils_tests.mock_get_identity_by_msisdn('+27111', num=0)
+        utils_tests.mock_create_identity('device-uuid')
+
+        remove_personally_identifiable_fields(str(change.pk))
+
+        identity_creation = json.loads(responses.calls[-1].request.body)
+        self.assertEqual(identity_creation['details'], {
+            'addresses': {
+                'msisdn': {'+27111': {}},
+            },
+        })
+
+        change.refresh_from_db()
+        self.assertEqual(change.data, {
+            'uuid_device': 'device-uuid',
         })
