@@ -784,6 +784,38 @@ def remove_personally_identifiable_fields(change_id):
     change.save()
 
 
+def restore_personally_identifiable_fields(change):
+    """
+    Looks up the required information from the identity store, and places it
+    back on the change object.
+
+    This function doesn't save the changes to the database, but instead
+    returns that Change object with the required information on it.
+    """
+    identity = is_client.get_identity(change.registrant_id)
+    if not identity:
+        return change
+
+    fields = set((
+        'id_type', 'dob', 'passport_no', 'passport_origin', 'sa_id_no',
+        'persal_no', 'sanc_no'))\
+        .intersection(identity['details'].keys())\
+        .difference(change.data.keys())
+    for field in fields:
+        change.data[field] = identity['details'][field]
+
+    uuid_fields = set((
+        'uuid_device', 'uuid_new', 'uuid_old')
+        ).intersection(change.data.keys())
+    for field in uuid_fields:
+        msisdn = utils.get_identity_msisdn(change.data[field])
+        if msisdn:
+            field = field.replace('uuid', 'msisdn')
+            change.data[field] = msisdn
+
+    return change
+
+
 class BasePushOptoutToJembi(object):
     def get_today(self):
         return datetime.datetime.today()
