@@ -108,6 +108,8 @@ class Command(BaseCommand):
                     if not mom_dob:
                         identity = self.get_identity(
                             ids_client, registration["registrant_id"])
+                        if not identity:
+                            continue
                         mom_dob = identity["details"].get("mom_dob")
 
                     risk = get_risk_status(registration["reg_type"],
