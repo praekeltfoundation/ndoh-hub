@@ -433,6 +433,56 @@ def remove_personally_identifiable_fields(registration_id):
     registration.save()
 
 
+def add_personally_identifiable_fields(registration):
+    """
+    Sometimes we might want to rerun the validation and subscription, and for
+    that we want to put back any fields that we placed on the identity when
+    anonymising the registration.
+
+    This function just adds those fields to the 'registration' object, it
+    doesn't save those fields to the database.
+    """
+    identity = is_client.get_identity(registration.registrant_id)
+    if not identity:
+        return registration
+
+    fields = set((
+        'id_type', 'mom_dob', 'passport_no', 'passport_origin', 'sa_id_no',
+        'language', 'consent'))\
+        .intersection(identity['details'].keys())\
+        .difference(registration.data.keys())
+    for field in fields:
+        registration.data[field] = identity['details'][field]
+
+    uuid_fields = set((
+        'uuid_device', 'uuid_registrant')
+        ).intersection(registration.data.keys())
+    for field in uuid_fields:
+        msisdn = get_identity_msisdn(registration.data[field])
+        if msisdn:
+            field = field.replace('uuid', 'msisdn')
+            registration.data[field] = msisdn
+
+    return registration
+
+
+def get_identity_msisdn(registrant_id):
+    identity = is_client.get_identity(registrant_id)
+    if not identity:
+        return
+
+    msisdns = \
+        identity['details'].get('addresses', {}).get('msisdn', {})
+
+    identity_msisdn = None
+    for msisdn, details in msisdns.items():
+        if 'default' in details and details['default']:
+            return msisdn
+        if not ('optedout' in details and details['optedout']):
+            identity_msisdn = msisdn
+    return identity_msisdn
+
+
 class BasePushRegistrationToJembi(object):
     """
     Base class that contains helper functions for pushing registration data
@@ -440,16 +490,6 @@ class BasePushRegistrationToJembi(object):
     """
     name = "ndoh_hub.registrations.tasks.base_push_registration_to_jembi"
     l = get_task_logger(__name__)
-
-    def get_identity_msisdn(self, registrant_id):
-        identity = is_client.get_identity(registrant_id)
-        if identity:
-            msisdns = \
-                identity['details'].get('addresses', {}).get('msisdn', {})
-
-            for key in msisdns:
-                if not msisdns[key].get('optedout', False):
-                    return key
 
     def get_patient_id(self, id_type, id_no=None, passport_origin=None,
                        mom_msisdn=None):
@@ -583,7 +623,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
 
         id_msisdn = None
         if not registration.data.get('msisdn_registrant'):
-            id_msisdn = self.get_identity_msisdn(registration.registrant_id)
+            id_msisdn = get_identity_msisdn(registration.registrant_id)
 
         json_template = {
             "mha": registration.data.get('mha', 1),

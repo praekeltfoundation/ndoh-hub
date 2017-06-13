@@ -29,7 +29,8 @@ from go_http.metrics import MetricsApiClient
 from .models import Source, Registration, SubscriptionRequest
 from .signals import psh_validate_subscribe, psh_fire_created_metric
 from .tasks import (
-    validate_subscribe, get_risk_status, remove_personally_identifiable_fields)
+    validate_subscribe, get_risk_status, remove_personally_identifiable_fields,
+    add_personally_identifiable_fields)
 from ndoh_hub import utils, utils_tests
 
 
@@ -2645,6 +2646,8 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
             'pmtct_prebirth.patient.1')
         utils_tests.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_identity_by_msisdn('+2700000000')
+        utils_tests.mock_get_identity_by_msisdn('+27111111111')
         utils_tests.mock_get_identity_by_id(
             "mother01-63e2-4acc-9b94-26663b9bc267")
         utils_tests.mock_patch_identity(
@@ -2700,7 +2703,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             'Done.',
         ]))
 
-        [jembi_call] = responses.calls  # jembi should be the only one
+        jembi_call = responses.calls[1]  # jembi should be the second request
         self.assertEqual(json.loads(jembi_call.response.text), {
             "result": "jembi-is-ok"
         })
@@ -2711,6 +2714,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
             'nurseconnect.hw_full.1')
         utils_tests.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_identity_by_msisdn('+27821112222')
         utils_tests.mock_get_identity_by_id(
             "nurseconnect-identity", {
                 'nurseconnect': {
@@ -2771,7 +2775,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             'Done.',
         ]))
 
-        [identity_store_call, jembi_call] = responses.calls
+        jembi_call = responses.calls[2]
         self.assertEqual(
             jembi_call.request.url,
             'http://jembi/ws/rest/v1/nc/subscription')
@@ -3624,4 +3628,130 @@ class TestRemovePersonallyIdentifiableFieldsTask(AuthenticatedAPITestCase):
         registration.refresh_from_db()
         self.assertEqual(registration.data, {
             'uuid_device': 'uuid-1234',
+        })
+
+
+class TestAddPersonallyIdentifiableFields(AuthenticatedAPITestCase):
+    @responses.activate
+    def test_identity_doesnt_exist(self):
+        """
+        If the identity for a registration doesn't exist, then we can't pull
+        any information from it, so we have to return the registration
+        unchanged.
+        """
+        registration = Registration.objects.create(
+            reg_type='momconnect_prebirth',
+            registrant_id='mother-uuid',
+            source=self.make_source_normaluser(),
+            validated=True,
+            data={})
+
+        utils_tests.mock_get_nonexistant_identity_by_id('mother-uuid')
+
+        registration = add_personally_identifiable_fields(registration)
+
+        self.assertEqual(
+            registration.data,
+            Registration.objects.get(pk=str(registration.id)).data)
+
+    @responses.activate
+    def test_identity_fields_get_set(self):
+        """
+        If the fields are on the identity, they should get set on the returned
+        registration object.
+        """
+        registration = Registration.objects.create(
+            reg_type='momconnect_prebirth',
+            registrant_id='mother-uuid',
+            source=self.make_source_normaluser(),
+            validated=True,
+            data={})
+
+        utils_tests.mock_get_identity_by_id('mother-uuid', {
+            'id_type': "passport",
+            'passport_origin': "na",
+            'passport_no': '1234',
+            'sa_id_no': '4321',
+            'language': 'eng_ZA',
+            'consent': True,
+            'foo': "baz",
+        })
+
+        registration = add_personally_identifiable_fields(registration)
+
+        self.assertEqual(registration.data, {
+            'id_type': "passport",
+            'passport_origin': "na",
+            'passport_no': '1234',
+            'sa_id_no': '4321',
+            'language': 'eng_ZA',
+            'consent': True,
+        })
+
+    @responses.activate
+    def test_identity_uuid_fields_get_set(self):
+        """
+        The msisdn fields that were replaced with UUID fields, should now
+        be replaced with the original MSISDN fields.
+        """
+        registration = Registration.objects.create(
+            reg_type='momconnect_prebirth',
+            registrant_id='mother-uuid',
+            source=self.make_source_normaluser(),
+            validated=True,
+            data={
+                'uuid_device': 'uuid-device',
+                'uuid_registrant': 'uuid-registrant'
+            })
+
+        utils_tests.mock_get_identity_by_id('mother-uuid')
+        utils_tests.mock_get_identity_by_id('uuid-device', {
+            'addresses': {
+                'msisdn': {
+                    'msisdn-device': {},
+                    'msisdn-incorrect': {'optedout': True},
+                },
+            },
+        })
+        utils_tests.mock_get_identity_by_id('uuid-registrant', {
+            'addresses': {
+                'msisdn': {
+                    'msisdn-incorrect-1': {},
+                    'msisdn-registrant': {'default': True},
+                    'msisdn-incorrect-2': {},
+                },
+            },
+        })
+
+        registration = add_personally_identifiable_fields(registration)
+
+        self.assertEqual(registration.data, {
+            'uuid_device': 'uuid-device',
+            'uuid_registrant': 'uuid-registrant',
+            'msisdn_device': 'msisdn-device',
+            'msisdn_registrant': 'msisdn-registrant',
+        })
+
+    @responses.activate
+    def test_identity_uuid_fields_missing_identity(self):
+        """
+        If one of the UUID fields's identity is missing, then we cannot set
+        the msisdn field.
+        """
+        registration = Registration.objects.create(
+            reg_type='momconnect_prebirth',
+            registrant_id='mother-uuid',
+            source=self.make_source_normaluser(),
+            validated=True,
+            data={
+                'uuid_device': 'uuid-device',
+            })
+
+        utils_tests.mock_get_identity_by_id('mother-uuid')
+        utils_tests.mock_get_nonexistant_identity_by_id('uuid-device')
+
+        registration = add_personally_identifiable_fields(registration)
+
+        self.assertEqual(registration.data, {
+            'uuid_device': 'uuid-device',
         })

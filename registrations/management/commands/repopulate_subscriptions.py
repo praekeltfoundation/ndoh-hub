@@ -3,7 +3,8 @@ from os import environ
 from django.core.management.base import BaseCommand, CommandError
 
 from registrations.models import Registration
-from registrations.tasks import validate_subscribe
+from registrations.tasks import (
+    add_personally_identifiable_fields, validate_subscribe)
 
 from seed_services_client import StageBasedMessagingApiClient
 
@@ -88,6 +89,8 @@ class Command(BaseCommand):
             validate_subscribe() ensures no invalid registrations get
             subscriptions and creates the Subscription Request
             """
+            add_personally_identifiable_fields(reg)
+            reg.save()
             validate_subscribe.apply_async(
                 kwargs={"registration_id": str(reg.id)})
             self.log("Attempted to repopulate subscriptions for registration "
