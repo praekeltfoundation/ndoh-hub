@@ -438,6 +438,9 @@ def add_personally_identifiable_fields(registration):
     Sometimes we might want to rerun the validation and subscription, and for
     that we want to put back any fields that we placed on the identity when
     anonymising the registration.
+
+    This function just adds those fields to the 'registration' object, it
+    doesn't save those fields to the database.
     """
     identity = is_client.get_identity(registration.registrant_id)
     if not identity:
