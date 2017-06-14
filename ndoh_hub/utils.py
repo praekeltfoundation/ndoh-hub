@@ -2,6 +2,8 @@ from __future__ import division
 from __future__ import absolute_import
 
 import datetime
+import json
+import six
 
 from celery.task import Task
 from django.conf import settings
@@ -273,3 +275,13 @@ class FireMetric(Task):
             metric_name, metric_value)
 
 fire_metric = FireMetric()
+
+
+def json_decode(data):
+    """
+    Decodes the given JSON as primitives
+    """
+    if isinstance(data, six.binary_type):
+        data = data.decode('utf-8')
+
+    return json.loads(data)

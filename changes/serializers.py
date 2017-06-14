@@ -11,3 +11,7 @@ class ChangeSerializer(serializers.ModelSerializer):
         fields = ('id', 'action', 'registrant_id', 'data', 'validated',
                   'source', 'created_at', 'updated_at', 'created_by',
                   'updated_by')
+
+
+class AdminOptoutSerializer(serializers.Serializer):
+    registrant_id = serializers.UUIDField(allow_null=False)

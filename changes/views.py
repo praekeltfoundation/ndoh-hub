@@ -5,7 +5,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Source, Change
-from .serializers import ChangeSerializer
+from .serializers import ChangeSerializer, AdminOptoutSerializer
+from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
+from django.conf import settings
 
 
 class ChangePost(mixins.CreateModelMixin, generics.GenericAPIView):
@@ -72,3 +74,59 @@ class OptOutInactiveIdentity(APIView):
                               action='momconnect_nonloss_optout',
                               data={'reason': 'sms_failure'})
         return Response(status=status.HTTP_201_CREATED)
+
+
+class ReceiveAdminOptout(generics.GenericAPIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+
+        admin_serializer = AdminOptoutSerializer(data=request.data)
+        if admin_serializer.is_valid():
+            identity_id = admin_serializer.validated_data["registrant_id"]
+        else:
+            return Response(admin_serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        sbm_client = StageBasedMessagingApiClient(
+            api_url=settings.STAGE_BASED_MESSAGING_URL,
+            auth_token=settings.STAGE_BASED_MESSAGING_TOKEN
+        )
+
+        active_subs = sbm_client.get_subscriptions(
+            {'identity': identity_id, 'active': True}
+        )["results"]
+
+        actions = set()
+        for sub in active_subs:
+            messageset = sbm_client.get_messageset(sub["messageset"])
+            if "nurseconnect" in messageset["short_name"]:
+                actions.add("nurse_optout")
+            elif "pmtct" in messageset["short_name"]:
+                actions.add("pmtct_nonloss_optout")
+            elif "momconnect" in messageset["short_name"]:
+                actions.add("momconnect_nonloss_optout")
+
+        source = Source.objects.get(user=self.request.user)
+        request.data["source"] = source.id
+
+        changes = []
+        for action in actions:
+            change = {
+                "registrant_id": identity_id,
+                "action": action,
+                "data": {"reason": "other"},
+                "source": source.id,
+            }
+            changes.append(change)
+
+        serializer = ChangeSerializer(data=changes, many=True)
+
+        if serializer.is_valid():
+            serializer.save()
+
+            return Response(data=serializer.data,
+                            status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
