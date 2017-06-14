@@ -19,7 +19,9 @@ from rest_hooks.models import model_saved
 from ndoh_hub import utils, utils_tests
 from .models import Change
 from .signals import psh_validate_implement
-from .tasks import validate_implement, remove_personally_identifiable_fields
+from .tasks import (
+    validate_implement, remove_personally_identifiable_fields,
+    restore_personally_identifiable_fields)
 from registrations.models import Source, Registration, SubscriptionRequest
 from registrations.signals import (psh_validate_subscribe,
                                    psh_fire_created_metric)
@@ -1929,6 +1931,9 @@ class TestChangeActions(AuthenticatedAPITestCase):
         }
         change = Change.objects.create(**change_data)
 
+        utils_tests.mock_get_identity_by_id(
+            'nurse001-63e2-4acc-9b94-26663b9bc267')
+
         def format_timestamp(ts):
             return ts.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -2105,7 +2110,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             stdout=stdout)
 
         # Check
-        self.assertEqual(len(responses.calls), 2)
+        self.assertEqual(len(responses.calls), 3)
 
         # Check Jembi POST
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
@@ -2162,7 +2167,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             stdout=stdout)
 
         # Check
-        self.assertEqual(len(responses.calls), 2)
+        self.assertEqual(len(responses.calls), 3)
 
         # Check Jembi POST
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
@@ -2284,7 +2289,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             stdout=stdout)
 
         # Check
-        self.assertEqual(len(responses.calls), 2)
+        self.assertEqual(len(responses.calls), 3)
 
         # Check Jembi POST
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
@@ -2928,4 +2933,81 @@ class TestRemovePersonallyIdentifiableInformation(AuthenticatedAPITestCase):
         change.refresh_from_db()
         self.assertEqual(change.data, {
             'uuid_device': 'device-uuid',
+        })
+
+
+class TestRestorePersonallyIdentifiableInformation(AuthenticatedAPITestCase):
+    @responses.activate
+    def test_restores_personal_information_fields(self):
+        """
+        Any personal information fields that exist on the identity, but
+        not on the change object, should be placed on the change object.
+        """
+        change = Change.objects.create(
+            registrant_id='mother-uuid',
+            action='baby_switch',
+            source=self.make_source_normaluser(),
+            validated=True,
+            data={
+                'id_type': 'passport',
+            })
+
+        utils_tests.mock_get_identity_by_id('mother-uuid', {
+            'id_type': 'sa_id',
+            'dob': '1990-01-01',
+            'passport_no': '1234',
+            'passport_origin': 'na',
+            'sa_id_no': '4321',
+            'persal_no': '111',
+            'sanc_no': '222',
+        })
+
+        restore_personally_identifiable_fields(change)
+        self.assertEqual(change.data, {
+            'id_type': 'passport',
+            'dob': '1990-01-01',
+            'passport_no': '1234',
+            'passport_origin': 'na',
+            'sa_id_no': '4321',
+            'persal_no': '111',
+            'sanc_no': '222',
+        })
+
+    @responses.activate
+    def test_restores_msisdn_fields(self):
+        """
+        If any of the uuid fields exist on the change object, then an msisdn
+        lookup should be done for those msisdns, and the msisdn should be
+        placed on the change object.
+        """
+        change = Change.objects.create(
+            registrant_id='mother-uuid',
+            action='baby_switch',
+            source=self.make_source_normaluser(),
+            validated=True,
+            data={
+                'uuid_device': 'device-uuid',
+                'uuid_new': 'new-uuid',
+                'uuid_old': 'old-uuid',
+            })
+
+        utils_tests.mock_get_identity_by_id('mother-uuid')
+        utils_tests.mock_get_identity_by_id('device-uuid', {
+            'addresses': {'msisdn': {'+1111': {}}},
+        })
+        utils_tests.mock_get_identity_by_id('new-uuid', {
+            'addresses': {'msisdn': {
+                '+2222': {'default': True},
+                '+3333': {},
+            }},
+        })
+        utils_tests.mock_get_identity_by_id('old-uuid')
+
+        restore_personally_identifiable_fields(change)
+        self.assertEqual(change.data, {
+            'uuid_device': 'device-uuid',
+            'uuid_new': 'new-uuid',
+            'uuid_old': 'old-uuid',
+            'msisdn_device': '+1111',
+            'msisdn_new': '+2222',
         })

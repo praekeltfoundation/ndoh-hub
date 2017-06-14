@@ -458,29 +458,12 @@ def add_personally_identifiable_fields(registration):
         'uuid_device', 'uuid_registrant')
         ).intersection(registration.data.keys())
     for field in uuid_fields:
-        msisdn = get_identity_msisdn(registration.data[field])
+        msisdn = utils.get_identity_msisdn(registration.data[field])
         if msisdn:
             field = field.replace('uuid', 'msisdn')
             registration.data[field] = msisdn
 
     return registration
-
-
-def get_identity_msisdn(registrant_id):
-    identity = is_client.get_identity(registrant_id)
-    if not identity:
-        return
-
-    msisdns = \
-        identity['details'].get('addresses', {}).get('msisdn', {})
-
-    identity_msisdn = None
-    for msisdn, details in msisdns.items():
-        if 'default' in details and details['default']:
-            return msisdn
-        if not ('optedout' in details and details['optedout']):
-            identity_msisdn = msisdn
-    return identity_msisdn
 
 
 class BasePushRegistrationToJembi(object):
@@ -623,7 +606,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
 
         id_msisdn = None
         if not registration.data.get('msisdn_registrant'):
-            id_msisdn = get_identity_msisdn(registration.registrant_id)
+            id_msisdn = utils.get_identity_msisdn(registration.registrant_id)
 
         json_template = {
             "mha": registration.data.get('mha', 1),

@@ -1,6 +1,11 @@
+from celery import chain
 from uuid import UUID
 from django.core.management import BaseCommand, CommandError
 from django.utils.dateparse import parse_datetime
+
+from changes.tasks import (
+    remove_personally_identifiable_fields,
+    restore_personally_identifiable_fields)
 
 
 class Command(BaseCommand):
@@ -53,6 +58,11 @@ class Command(BaseCommand):
         self.stdout.write(
             'Submitting %s changes.' % (changes.count(),))
         for change in changes.filter(action="baby_switch"):
-            push_momconnect_babyswitch_to_jembi.delay(str(change.pk))
+            restore_personally_identifiable_fields(change)
+            change.save()
+            push_task = push_momconnect_babyswitch_to_jembi.si(str(change.pk))
+            remove_info_task = remove_personally_identifiable_fields.si(
+                str(change.pk))
+            chain(push_task, remove_info_task).delay()
             self.stdout.write(str(change.pk))
         self.stdout.write('Done.')
