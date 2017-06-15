@@ -2870,3 +2870,87 @@ class ControlInterfaceOptoutViewTest(AuthenticatedAPITestCase):
         changes = Change.objects.filter(registrant_id=identity,
                                         action="nurse_optout")
         self.assertEqual(changes.count(), 1)
+        self.assertEqual(changes[0].source.name, "test_source_adminuser")
+
+    @responses.activate
+    def test_ci_optout_no_source_username(self):
+        identity = "846877e6-afaa-43de-acb1-09f61ad4de99"
+        request = {
+            "registrant_id": identity
+        }
+
+        mock_get_active_subs_mcpre_mcpost_pmtct_nc(identity)
+        mock_get_messageset(11, 'pmtct_prebirth.patient.1')
+        mock_get_messageset(21, 'momconnect_prebirth.hw_full.1')
+        mock_get_messageset(61, 'nurseconnect.hw_full.1')
+        mock_get_messageset(32, 'momconnect_postbirth.hw_full.1')
+
+        user = User.objects.get(username="testnormaluser")
+
+        response = self.normalclient.post('/api/v1/optout_admin/',
+                                          json.dumps(request),
+                                          content_type='application/json')
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            len(utils.json_decode(response.content)), 3)
+
+        changes = Change.objects.filter(registrant_id=identity)
+        self.assertEqual(changes.count(), 3)
+        changes = Change.objects.filter(registrant_id=identity,
+                                        action="momconnect_nonloss_optout")
+        self.assertEqual(changes.count(), 1)
+        changes = Change.objects.filter(registrant_id=identity,
+                                        action="pmtct_nonloss_optout")
+        self.assertEqual(changes.count(), 1)
+        changes = Change.objects.filter(registrant_id=identity,
+                                        action="nurse_optout")
+        self.assertEqual(changes.count(), 1)
+
+        source = Source.objects.last()
+        self.assertEqual(source.name, user.username)
+        self.assertEqual(source.user, user)
+        self.assertEqual(source.authority, "advisor")
+
+    @responses.activate
+    def test_ci_optout_no_source(self):
+        identity = "846877e6-afaa-43de-acb1-09f61ad4de99"
+        request = {
+            "registrant_id": identity
+        }
+
+        mock_get_active_subs_mcpre_mcpost_pmtct_nc(identity)
+        mock_get_messageset(11, 'pmtct_prebirth.patient.1')
+        mock_get_messageset(21, 'momconnect_prebirth.hw_full.1')
+        mock_get_messageset(61, 'nurseconnect.hw_full.1')
+        mock_get_messageset(32, 'momconnect_postbirth.hw_full.1')
+
+        user = User.objects.get(username="testnormaluser")
+        user.first_name = "John"
+        user.last_name = "Doe"
+        user.save()
+
+        response = self.normalclient.post('/api/v1/optout_admin/',
+                                          json.dumps(request),
+                                          content_type='application/json')
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            len(utils.json_decode(response.content)), 3)
+
+        changes = Change.objects.filter(registrant_id=identity)
+        self.assertEqual(changes.count(), 3)
+        changes = Change.objects.filter(registrant_id=identity,
+                                        action="momconnect_nonloss_optout")
+        self.assertEqual(changes.count(), 1)
+        changes = Change.objects.filter(registrant_id=identity,
+                                        action="pmtct_nonloss_optout")
+        self.assertEqual(changes.count(), 1)
+        changes = Change.objects.filter(registrant_id=identity,
+                                        action="nurse_optout")
+        self.assertEqual(changes.count(), 1)
+
+        source = Source.objects.last()
+        self.assertEqual(source.name, user.get_full_name())
+        self.assertEqual(source.user, user)
+        self.assertEqual(source.authority, "advisor")
