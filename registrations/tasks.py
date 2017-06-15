@@ -274,10 +274,8 @@ class ValidateSubscribe(Task):
         weeks = 1  # default week number
 
         # . calculate weeks along
-        if (registration.reg_type in [
-                "momconnect_prebirth", "whatsapp_prebirth"] and
-                registration.source.authority not in [
-                    "hw_partial", "patient"]):
+        if (registration.reg_type == "momconnect_prebirth" and
+           registration.source.authority not in ["hw_partial", "patient"]):
             weeks = utils.get_pregnancy_week(utils.get_today(),
                                              registration.data["edd"])
 
