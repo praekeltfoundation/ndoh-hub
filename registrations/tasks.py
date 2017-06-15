@@ -215,7 +215,8 @@ class ValidateSubscribe(Task):
             validation_errors += self.check_lang(
                 data_fields, registration)
 
-        elif registration.reg_type == "momconnect_prebirth":
+        elif registration.reg_type in [
+                "momconnect_prebirth", "whatsapp_prebirth"]:
             # Checks that apply to clinic, chw, public
             validation_errors += self.check_operator_id(
                 data_fields, registration)
@@ -273,8 +274,10 @@ class ValidateSubscribe(Task):
         weeks = 1  # default week number
 
         # . calculate weeks along
-        if (registration.reg_type == "momconnect_prebirth" and
-           registration.source.authority not in ["hw_partial", "patient"]):
+        if (registration.reg_type in [
+                "momconnect_prebirth", "whatsapp_prebirth"] and
+                registration.source.authority not in [
+                    "hw_partial", "patient"]):
             weeks = utils.get_pregnancy_week(utils.get_today(),
                                              registration.data["edd"])
 
