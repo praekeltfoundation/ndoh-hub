@@ -107,7 +107,13 @@ class ReceiveAdminOptout(generics.GenericAPIView):
             elif "momconnect" in messageset["short_name"]:
                 actions.add("momconnect_nonloss_optout")
 
-        source = Source.objects.get(user=self.request.user)
+        source, created = Source.objects.get_or_create(
+            user=self.request.user,
+            defaults={
+                "authority": "advisor",
+                "name": self.request.user.get_full_name()
+                })
+
         request.data["source"] = source.id
 
         changes = []
