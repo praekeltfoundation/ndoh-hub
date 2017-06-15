@@ -215,7 +215,8 @@ class ValidateSubscribe(Task):
             validation_errors += self.check_lang(
                 data_fields, registration)
 
-        elif registration.reg_type == "momconnect_prebirth":
+        elif registration.reg_type in [
+                "momconnect_prebirth", "whatsapp_prebirth"]:
             # Checks that apply to clinic, chw, public
             validation_errors += self.check_operator_id(
                 data_fields, registration)

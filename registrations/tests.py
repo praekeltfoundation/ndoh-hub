@@ -1759,6 +1759,27 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
             "Consent is missing",
         ])
 
+    def test_validate_whatsapp_prebirth_public_good(self):
+        """ public whatsapp_prebirth """
+        # Setup
+        registration_data = {
+            "reg_type": "whatsapp_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_normaluser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "msisdn_registrant": "+27821113333",
+                "msisdn_device": "+27821113333",
+                "language": "zul_ZA",
+                "consent": True
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        # Execute
+        v = validate_subscribe.validate(registration)
+        # Check
+        self.assertEqual(v, True)
+
 
 class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
 

@@ -49,6 +49,7 @@ class Registration(models.Model):
     REG_TYPE_CHOICES = (
         ('momconnect_prebirth', "MomConnect pregnancy registration"),
         ('momconnect_postbirth', "MomConnect baby registration"),
+        ('whatsapp_prebirth', "WhatsApp MomConnect pregnancy registration"),
         ('nurseconnect', "Nurseconnect registration"),
         ('pmtct_prebirth', "PMTCT pregnancy registration"),
         ('pmtct_postbirth', "PMTCT baby registration"),
