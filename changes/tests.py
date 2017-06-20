@@ -138,6 +138,50 @@ def mock_get_messageset(messageset_id, short_name):
     )
 
 
+def mock_get_all_messagesets():
+    responses.add(
+        responses.GET,
+        'http://sbm/api/v1/messageset/',
+        json={
+            "count": 3,
+            "next": None,
+            "previous": None,
+            "results": [
+                {
+                    'id': 21,
+                    'short_name': 'momconnect_prebirth.hw_full.1',
+                    'content_type': 'text',
+                    'notes': "",
+                    'next_set': 7,
+                    'default_schedule': 1,
+                    'created_at': "2015-07-10T06:13:29.693272Z",
+                    'updated_at': "2015-07-10T06:13:29.693272Z"
+                }, {
+                    'id': 61,
+                    'short_name': 'nurseconnect.hw_full.1',
+                    'content_type': 'text',
+                    'notes': "",
+                    'next_set': 7,
+                    'default_schedule': 1,
+                    'created_at': "2015-07-10T06:13:29.693272Z",
+                    'updated_at': "2015-07-10T06:13:29.693272Z"
+                }, {
+                    'id': 11,
+                    'short_name': 'pmtct_prebirth.patient.1',
+                    'content_type': 'text',
+                    'notes': "",
+                    'next_set': 7,
+                    'default_schedule': 1,
+                    'created_at': "2015-07-10T06:13:29.693272Z",
+                    'updated_at': "2015-07-10T06:13:29.693272Z"
+                }
+            ]
+        },
+        status=200, content_type='application/json',
+        match_querystring=True
+    )
+
+
 def mock_get_active_subs_mc(registrant_id):
     momconnect_prebirth_sub_id = "subscriptionid-momconnect-prebirth-0"
     responses.add(
@@ -1567,8 +1611,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         mock_get_active_subs_mcpre_mcpost_pmtct_nc(
             change_data["registrant_id"])
 
-        # . mock get messageset by shortname
-        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+        # . mock get messagesets
+        mock_get_all_messagesets()
 
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions([
@@ -1635,8 +1679,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         mock_get_active_subs_mcpre_mcpost_pmtct_nc(
             change_data["registrant_id"])
 
-        # . mock get messageset by shortname
-        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+        # . mock get messagesets
+        mock_get_all_messagesets()
 
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions([
@@ -1872,8 +1916,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         }
         change = Change.objects.create(**change_data)
 
-        # mock get messageset by shortname
-        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+        # mock get messagesets
+        mock_get_all_messagesets()
 
         # . mock get nurseconnect subscription request
         mock_get_active_nurseconnect_subscriptions(
@@ -1987,8 +2031,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
             "subscriptionid-pmtct-prebirth-000000"
         ])
 
-        # . mock get messageset by shortname
-        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+        # . mock get messagesets
+        mock_get_all_messagesets()
 
         # . mock get messageset by shortname
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
@@ -2202,8 +2246,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         mock_get_active_subs_mcpre_mcpost_pmtct_nc(
             change_data["registrant_id"])
 
-        # . mock get messageset by shortname
-        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+        # . mock get all messagesets
+        mock_get_all_messagesets()
 
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions([
@@ -2325,8 +2369,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         mock_get_active_subs_mcpre_mcpost_pmtct_nc(
             change_data["registrant_id"])
 
-        # . mock get messageset by shortname
-        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+        # . mock get messagesets
+        mock_get_all_messagesets()
 
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions([

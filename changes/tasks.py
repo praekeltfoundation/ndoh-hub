@@ -59,13 +59,16 @@ class ValidateImplement(Task):
             {'identity': change.registrant_id, 'active': True}
         )["results"]
 
-        self.l.info("Retrieving nurseconnect messageset")
-        nc_messageset = sbm_client.get_messagesets(
-            {"short_name": "nurseconnect.hw_full.1"})["results"][0]
+        self.l.info("Retrieving nurseconnect messagesets")
+        messagesets = sbm_client.get_messagesets()["results"]
+        nc_messageset_ids = []
+        for messageset in messagesets:
+            if "nurseconnect" in messageset['short_name']:
+                nc_messageset_ids.append(messageset["id"])
 
         self.l.info("Deactivating active non-nurseconnect subscriptions")
         for active_sub in active_subs:
-            if nc_messageset["id"] != active_sub["messageset"]:
+            if active_sub["messageset"] not in nc_messageset_ids:
                 sbm_client.update_subscription(
                     active_sub["id"], {"active": False})
 
@@ -75,15 +78,17 @@ class ValidateImplement(Task):
     def deactivate_nurseconnect(self, change):
         """ Deactivates nurseconnect subscription only
         """
-        self.l.info("Retrieving nurseconnect messageset")
-        nc_messageset = sbm_client.get_messagesets(
-            {"short_name": "nurseconnect.hw_full.1"})["results"][0]
+        self.l.info("Retrieving messagesets")
+        messagesets = sbm_client.get_messagesets()["results"]
 
         self.l.info("Retrieving active nurseconnect subscriptions")
-        active_subs = sbm_client.get_subscriptions(
-            {'identity': change.registrant_id, 'active': True,
-             'messageset': nc_messageset["id"]}
-        )["results"]
+        active_subs = []
+        for messageset in messagesets:
+            if "nurseconnect" in messageset['short_name']:
+                active_subs.extend(sbm_client.get_subscriptions(
+                    {'identity': change.registrant_id, 'active': True,
+                     'messageset': messageset["id"]}
+                )["results"])
 
         self.l.info("Deactivating active nurseconnect subscriptions")
         for active_sub in active_subs:
