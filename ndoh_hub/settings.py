@@ -203,8 +203,11 @@ METRICS_SCHEDULED = [
 METRICS_SCHEDULED_TASKS = [
 ]
 
-METRICS_AUTH_TOKEN = os.environ.get('METRICS_AUTH_TOKEN', 'REPLACEME')
 METRICS_URL = os.environ.get('METRICS_URL', 'http://metrics/api/v1')
+METRICS_AUTH = (
+    os.environ.get('METRICS_AUTH_USER', 'REPLACEME'),
+    os.environ.get('METRICS_AUTH_PASSWORD', 'REPLACEME'),
+)
 
 PREBIRTH_MIN_WEEKS = int(os.environ.get('PREBIRTH_MIN_WEEKS', '4'))
 
