@@ -75,7 +75,7 @@ class ValidateImplement(Task):
         return True
 
     def deactivate_nurseconnect(self, change):
-        """ Deactivates nurseconnect subscription only
+        """ Deactivates nurseconnect subscriptions only
         """
         self.l.info("Retrieving messagesets")
         messagesets = sbm_client.get_messagesets()["results"]
@@ -93,6 +93,9 @@ class ValidateImplement(Task):
         self.l.info("Deactivating active nurseconnect subscriptions")
         for active_sub in active_subs:
             sbm_client.update_subscription(active_sub["id"], {"active": False})
+            # Record the last messageset deactivated to send to jembi
+            change.data["last_messageset"] = active_sub["messageset"]
+            change.save()
 
     def deactivate_pmtct(self, change):
         """ Deactivates any pmtct subscriptions
@@ -973,6 +976,18 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
             .order_by('-created_at')\
             .first()
 
+    def get_nurse_optout_type(self, change):
+        """
+        Different nurseconnect messagesets have different optout types.
+        We determine which type to send by looking at the deactivated sub
+        """
+        messageset_id = change.data.get("last_messageset", None)
+        if messageset_id is not None:
+            messageset = sbm_client.get_messageset(messageset_id)['short_name']
+            if messageset == "nurseconnect_childm.hw_full.1":
+                return 11
+        return 8
+
     def build_jembi_json(self, change):
         registration = self.get_nurse_registration(change)
         if registration is None:
@@ -983,7 +998,7 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
             'encdate': self.get_timestamp(change),
             'mha': 1,
             'swt': 1,
-            'type': 8,
+            'type': self.get_nurse_optout_type(change),
             "cmsisdn": registration.data['msisdn_registrant'],
             "dmsisdn": registration.data['msisdn_device'],
             'rmsisdn': None,

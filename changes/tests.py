@@ -296,6 +296,42 @@ def mock_get_active_nurseconnect_subscriptions(registrant_id):
     return [nurseconnect_sub_id]
 
 
+def mock_get_active_nurseconnect_childm_subscriptions(registrant_id):
+    nurseconnect_sub_id = "subscriptionid-nurseconnect-00000000"
+    responses.add(
+        responses.GET,
+        'http://sbm/api/v1/subscriptions/?active=True&messageset=61&identity=%s' % registrant_id,  # noqa
+        json={
+            "count": 1,
+            "next": None,
+            "previous": None,
+            "results": [
+                {   # nurseconnect.hw_full.1 subscription
+                    "id": nurseconnect_sub_id,
+                    "identity": registrant_id,
+                    "active": True,
+                    "completed": False,
+                    "lang": "eng_ZA",
+                    "url": "http://sbm/api/v1/subscriptions/%s" % (
+                        nurseconnect_sub_id),
+                    "messageset": 62,
+                    "next_sequence_number": 11,
+                    "schedule": 161,
+                    "process_status": 0,
+                    "version": 1,
+                    "metadata": {},
+                    "created_at": "2015-07-10T06:13:29.693272Z",
+                    "updated_at": "2015-07-10T06:13:29.693272Z"
+                }
+            ]
+        },
+        status=200, content_type='application/json',
+        match_querystring=True
+    )
+
+    return [nurseconnect_sub_id]
+
+
 def mock_deactivate_subscriptions(subscription_ids):
     for subscription_id in subscription_ids:
         responses.add(
@@ -1927,6 +1963,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         mock_deactivate_subscriptions([
             "subscriptionid-nurseconnect-00000000"
         ])
+        mock_get_messageset(61, "nurseconnect.hw_full.1")
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
@@ -1937,7 +1974,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 1)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
-        self.assertEqual(len(responses.calls), 4)
+        self.assertEqual(len(responses.calls), 5)
 
         # Check Jembi send
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
@@ -1945,6 +1982,63 @@ class TestChangeActions(AuthenticatedAPITestCase):
             'mha': 1,
             'swt': 1,
             'type': 8,
+            'cmsisdn': '+27821112222',
+            'dmsisdn': '+27821112222',
+            'rmsisdn': None,
+            'faccode': '123456',
+            'id': '27821112222^^^ZAF^TEL',
+            'dob': None,
+            'optoutreason': 7
+        })
+
+    @responses.activate
+    def test_nurse_optout_childcare_set(self):
+        # Setup
+        # make registration
+        self.make_registration_nurseconnect()
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        # make change object
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_optout",
+            "data": {
+                "reason": "job_change"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+
+        # mock get messagesets
+        mock_get_all_messagesets()
+
+        # . mock get nurseconnect subscription request
+        mock_get_active_nurseconnect_childm_subscriptions(
+            change_data["registrant_id"])
+
+        # . mock deactivate active subscriptions
+        mock_deactivate_subscriptions([
+            "subscriptionid-nurseconnect-00000000"
+        ])
+        mock_get_messageset(62, "nurseconnect_childm.hw_full.1")
+
+        # Execute
+        result = validate_implement.apply_async(args=[change.id])
+
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        self.assertEqual(len(responses.calls), 5)
+
+        # Check Jembi send
+        self.assertEqual(json.loads(responses.calls[-1].request.body), {
+            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
+            'mha': 1,
+            'swt': 1,
+            'type': 11,
             'cmsisdn': '+27821112222',
             'dmsisdn': '+27821112222',
             'rmsisdn': None,
