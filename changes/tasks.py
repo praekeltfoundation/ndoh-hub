@@ -61,9 +61,8 @@ class ValidateImplement(Task):
 
         self.l.info("Retrieving nurseconnect messagesets")
         messagesets = sbm_client.get_messagesets()["results"]
-        nc_messagesets = filter(lambda ms: 'nurseconnect' in ms['short_name'],
-                                messagesets)
-        nc_messageset_ids = [ms['id'] for ms in nc_messagesets]
+        nc_messageset_ids = [ms['id'] for ms in messagesets
+                             if 'nurseconnect' in ms['short_name']]
 
         self.l.info("Deactivating active non-nurseconnect subscriptions")
         for active_sub in active_subs:
@@ -79,8 +78,8 @@ class ValidateImplement(Task):
         """
         self.l.info("Retrieving messagesets")
         messagesets = sbm_client.get_messagesets()["results"]
-        nc_messagesets = filter(lambda ms: 'nurseconnect' in ms['short_name'],
-                                messagesets)
+        nc_messagesets = [ms for ms in messagesets
+                          if 'nurseconnect' in ms['short_name']]
 
         self.l.info("Retrieving active nurseconnect subscriptions")
         active_subs = []
