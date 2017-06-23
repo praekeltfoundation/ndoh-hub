@@ -1,6 +1,10 @@
 from uuid import UUID
+from celery import chain
 from django.core.management import BaseCommand, CommandError
 from django.utils.dateparse import parse_datetime
+
+from registrations.tasks import (
+    add_personally_identifiable_fields, remove_personally_identifiable_fields)
 
 
 class Command(BaseCommand):
@@ -54,10 +58,14 @@ class Command(BaseCommand):
         self.stdout.write(
             'Submitting %s registrations.' % (registrations.count(),))
         for registration in registrations:
-            task = BasePushRegistrationToJembi.get_jembi_task_for_registration(
-                registration)
-            task.apply_async(kwargs={
-                'registration_id': str(registration.pk),
-            })
+            add_personally_identifiable_fields(registration)
+            registration.save()
+            jembi_task = BasePushRegistrationToJembi\
+                .get_jembi_task_for_registration(registration)
+            task = chain(
+                jembi_task.si(str(registration.pk)),
+                remove_personally_identifiable_fields.si(str(registration.pk))
+            )
+            task.delay()
             self.stdout.write(str(registration.pk))
         self.stdout.write('Done.')

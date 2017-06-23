@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import Source, Registration, SubscriptionRequest
+from .tasks import remove_personally_identifiable_fields
 
 
 class RegistrationAdmin(admin.ModelAdmin):
@@ -8,6 +9,11 @@ class RegistrationAdmin(admin.ModelAdmin):
         "created_at", "updated_at", "created_by", "updated_by"]
     list_filter = ["source", "validated", "created_at"]
     search_fields = ["registrant_id", "data"]
+    actions = ['remove_personal_information']
+
+    def remove_personal_information(modeladmin, request, queryset):
+        for q in queryset.iterator():
+            remove_personally_identifiable_fields.delay(str(q.pk))
 
 
 class SubscriptionRequestAdmin(admin.ModelAdmin):
