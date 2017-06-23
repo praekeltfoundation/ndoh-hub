@@ -91,11 +91,15 @@ class ValidateImplement(Task):
             )["results"])
 
         self.l.info("Deactivating active nurseconnect subscriptions")
+        last_messageset_id = None
         for active_sub in active_subs:
             sbm_client.update_subscription(active_sub["id"], {"active": False})
-            # Record the last messageset deactivated to send to jembi
-            change.data["last_messageset"] = active_sub["messageset"]
-            change.save()
+            last_messageset_id = active_sub["messageset"]
+        # Record name of the last messageset deactivated to send to jembi
+        [change.data['last_messageset']] = [
+            ms['short_name'] for ms in nc_messagesets
+            if ms['id'] == last_messageset_id]
+        change.save()
 
     def deactivate_pmtct(self, change):
         """ Deactivates any pmtct subscriptions
@@ -953,6 +957,10 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
     name = "ndoh_hub.changes.tasks.push_nurseconnect_optout_to_jembi"
     l = get_task_logger(__name__)
     URL = "%s/nc/optout" % settings.JEMBI_BASE_URL
+    messageset_optout_types = {
+        "nurseconnect.hw_full.1": 8,
+        "nurseconnect_childm.hw_full.1": 11
+    }
 
     def get_nurse_id(
             self, id_type, id_no=None, passport_origin=None, mom_msisdn=None):
@@ -976,18 +984,6 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
             .order_by('-created_at')\
             .first()
 
-    def get_nurse_optout_type(self, change):
-        """
-        Different nurseconnect messagesets have different optout types.
-        We determine which type to send by looking at the deactivated sub
-        """
-        messageset_id = change.data.get("last_messageset", None)
-        if messageset_id is not None:
-            messageset = sbm_client.get_messageset(messageset_id)['short_name']
-            if messageset == "nurseconnect_childm.hw_full.1":
-                return 11
-        return 8
-
     def build_jembi_json(self, change):
         registration = self.get_nurse_registration(change)
         if registration is None:
@@ -998,7 +994,8 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
             'encdate': self.get_timestamp(change),
             'mha': 1,
             'swt': 1,
-            'type': self.get_nurse_optout_type(change),
+            'type': self.messageset_optout_types.get(
+                change.data.get("last_messageset", None), 8),
             "cmsisdn": registration.data['msisdn_registrant'],
             "dmsisdn": registration.data['msisdn_device'],
             'rmsisdn': None,

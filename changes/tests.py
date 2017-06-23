@@ -166,6 +166,15 @@ def mock_get_all_messagesets():
                     'created_at': "2015-07-10T06:13:29.693272Z",
                     'updated_at': "2015-07-10T06:13:29.693272Z"
                 }, {
+                    'id': 62,
+                    'short_name': 'nurseconnect_childm.hw_full.1',
+                    'content_type': 'text',
+                    'notes': "",
+                    'next_set': 7,
+                    'default_schedule': 1,
+                    'created_at': "2015-07-10T06:13:29.693272Z",
+                    'updated_at': "2015-07-10T06:13:29.693272Z"
+                }, {
                     'id': 11,
                     'short_name': 'pmtct_prebirth.patient.1',
                     'content_type': 'text',
@@ -218,10 +227,13 @@ def mock_get_active_subs_mc(registrant_id):
     return [momconnect_prebirth_sub_id]
 
 
-def mock_get_active_subscriptions_none(registrant_id):
+def mock_get_active_subscriptions_none(registrant_id, messageset=None):
+    url = 'http://sbm/api/v1/subscriptions/?active=True&identity=%s' % registrant_id  # noqa
+    if messageset is not None:
+        url = '%s&messageset=%s' % (url, messageset)
     responses.add(
         responses.GET,
-        'http://sbm/api/v1/subscriptions/?active=True&identity=%s' % registrant_id,  # noqa
+        url,
         json={
             "count": 0,
             "next": None,
@@ -300,7 +312,7 @@ def mock_get_active_nurseconnect_childm_subscriptions(registrant_id):
     nurseconnect_sub_id = "subscriptionid-nurseconnect-00000000"
     responses.add(
         responses.GET,
-        'http://sbm/api/v1/subscriptions/?active=True&messageset=61&identity=%s' % registrant_id,  # noqa
+        'http://sbm/api/v1/subscriptions/?active=True&messageset=62&identity=%s' % registrant_id,  # noqa
         json={
             "count": 1,
             "next": None,
@@ -1958,6 +1970,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # . mock get nurseconnect subscription request
         mock_get_active_nurseconnect_subscriptions(
             change_data["registrant_id"])
+        mock_get_active_subscriptions_none(change_data["registrant_id"],
+                                           messageset=62)
 
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions([
@@ -2015,12 +2029,14 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # . mock get nurseconnect subscription request
         mock_get_active_nurseconnect_childm_subscriptions(
             change_data["registrant_id"])
+        mock_get_active_subscriptions_none(change_data["registrant_id"],
+                                           messageset=61)
 
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions([
             "subscriptionid-nurseconnect-00000000"
         ])
-        mock_get_messageset(62, "nurseconnect_childm.hw_full.1")
+        mock_get_messageset(61, "nurseconnect_childm.hw_full.1")
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
