@@ -1,7 +1,8 @@
 from django.core.management.base import BaseCommand
 
 from registrations.models import Registration
-from registrations.tasks import validate_subscribe
+from registrations.tasks import (
+    validate_subscribe, add_personally_identifiable_fields)
 
 
 class Command(BaseCommand):
@@ -23,7 +24,7 @@ class Command(BaseCommand):
         }
 
         for registration in registrations:
-
+            add_personally_identifiable_fields(registration)
             related_regs = Registration.objects.filter(
                     validated=True,
                     registrant_id=registration.registrant_id
