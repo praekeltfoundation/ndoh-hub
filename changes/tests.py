@@ -3302,3 +3302,107 @@ class ControlInterfaceOptoutViewTest(AuthenticatedAPITestCase):
         self.assertEqual(source.name, user.get_full_name())
         self.assertEqual(source.user, user)
         self.assertEqual(source.authority, "advisor")
+
+    def test_ci_change_no_identity(self):
+        request = {}
+
+        self.make_source_adminuser()
+        response = self.adminclient.post('/api/v1/change_admin/',
+                                         json.dumps(request),
+                                         content_type='application/json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(utils.json_decode(response.content),
+                         {"registrant_id": ["This field is required."],
+                          "subscription": ["This field is required."]})
+        self.assertEqual(len(responses.calls), 0)
+
+    def test_ci_change_invalid(self):
+        request = {
+            "registrant_id": "846877e6-afaa-43de-acb1-09f61ad4de99",
+            "subscription": "846877e6-afaa-43de-acb1-111111111111"
+        }
+
+        self.make_source_adminuser()
+        response = self.adminclient.post('/api/v1/change_admin/',
+                                         json.dumps(request),
+                                         content_type='application/json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            utils.json_decode(response.content),
+            {"non_field_errors": ["One of these fields must be populated: messageset, language"]})  # noqa
+
+    def test_ci_change_language(self):
+        request = {
+            "registrant_id": "846877e6-afaa-43de-acb1-09f61ad4de99",
+            "subscription": "846877e6-afaa-43de-acb1-111111111111",
+            "language": "eng_ZA"
+        }
+
+        self.make_source_adminuser()
+        response = self.adminclient.post('/api/v1/change_admin/',
+                                         json.dumps(request),
+                                         content_type='application/json')
+
+        self.assertEqual(response.status_code, 201)
+        change = Change.objects.last()
+        self.assertEqual(change.registrant_id,
+                         "846877e6-afaa-43de-acb1-09f61ad4de99")
+        self.assertEqual(change.action, "momconnect_change_language")
+        self.assertEqual(change.data, {"language": "eng_ZA"})
+
+    def test_ci_change_messaging(self):
+        request = {
+            "registrant_id": "846877e6-afaa-43de-acb1-09f61ad4de99",
+            "subscription": "846877e6-afaa-43de-acb1-111111111111",
+            "messageset": "messageset_one"
+        }
+
+        self.make_source_adminuser()
+        response = self.adminclient.post('/api/v1/change_admin/',
+                                         json.dumps(request),
+                                         content_type='application/json')
+
+        self.assertEqual(response.status_code, 201)
+        change = Change.objects.last()
+        self.assertEqual(change.registrant_id,
+                         "846877e6-afaa-43de-acb1-09f61ad4de99")
+        self.assertEqual(change.action, "momconnect_change_messaging")
+        self.assertEqual(change.data, {
+            "messageset": "messageset_one",
+            "subscription": "846877e6-afaa-43de-acb1-111111111111"
+        })
+
+    def test_ci_change_language_and_messaging(self):
+        identity = "846877e6-afaa-43de-acb1-09f61ad4de99"
+        subscription = "846877e6-afaa-43de-acb1-111111111111"
+        request = {
+            "registrant_id": identity,
+            "subscription": subscription,
+            "messageset": "messageset_one",
+            "language": "eng_ZA"
+        }
+
+        self.make_source_adminuser()
+        response = self.adminclient.post('/api/v1/change_admin/',
+                                         json.dumps(request),
+                                         content_type='application/json')
+
+        self.assertEqual(response.status_code, 201)
+
+        changes = Change.objects.filter(registrant_id=identity)
+        self.assertEqual(changes.count(), 2)
+
+        changes = Change.objects.filter(registrant_id=identity,
+                                        action="momconnect_change_messaging")
+        self.assertEqual(changes.count(), 1)
+        self.assertEqual(changes[0].data, {
+            "messageset": "messageset_one",
+            "subscription": subscription
+        })
+
+        changes = Change.objects.filter(registrant_id=identity,
+                                        action="momconnect_change_language")
+        self.assertEqual(changes.count(), 1)
+        self.assertEqual(changes[0].data, {"language": "eng_ZA"})

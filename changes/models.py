@@ -38,6 +38,8 @@ class Change(models.Model):
             "Change the MSISDN to send messages to via momconnect app"),
         ('momconnect_change_identification',
             "Change the identification type and number via momconnect app"),
+        ('momconnect_change_messaging',
+            "Change the message set of the specified subscription via admin")
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

@@ -160,18 +160,22 @@ class ReceiveAdminChange(generics.CreateAPIView):
         source = get_or_create_source(self.request)
 
         changes = []
-        # if data.get('messageset'):
-        #     change = {
-        #         "mother_id": data['mother_id'],
-        #         "action": "momconnect_change_messaging",
-        #         "data": {"new_short_name": data['messageset']},
-        #         "source": source.id,
-        #     }
-        #     changes.append(change)
+        if data.get('messageset'):
+            change = {
+                "registrant_id": data['registrant_id'],
+                "action": "momconnect_change_messaging",
+                "data": {
+                    "messageset": data['messageset'],
+                    "subscription": str(data["subscription"])
+                },
+                "source": source.id,
+            }
+            print change
+            changes.append(change)
 
         if data.get('language'):
             change = {
-                "mother_id": data['mother_id'],
+                "registrant_id": data['registrant_id'],
                 "action": "momconnect_change_language",
                 "data": {"language": data['language']},
                 "source": source.id,
