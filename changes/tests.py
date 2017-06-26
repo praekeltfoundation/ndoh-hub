@@ -2008,65 +2008,6 @@ class TestChangeActions(AuthenticatedAPITestCase):
         })
 
     @responses.activate
-    def test_nurse_optout_childcare_set(self):
-        # Setup
-        # make registration
-        self.make_registration_nurseconnect()
-        self.assertEqual(Registration.objects.all().count(), 1)
-        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
-        # make change object
-        change_data = {
-            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
-            "action": "nurse_optout",
-            "data": {
-                "reason": "job_change"
-            },
-            "source": self.make_source_adminuser()
-        }
-        change = Change.objects.create(**change_data)
-
-        # mock get messagesets
-        mock_get_all_messagesets()
-
-        # . mock get nurseconnect subscription request
-        mock_get_active_nurseconnect_childm_subscriptions(
-            change_data["registrant_id"])
-        mock_get_active_subscriptions_none(change_data["registrant_id"],
-                                           messageset=61)
-
-        # . mock deactivate active subscriptions
-        mock_deactivate_subscriptions([
-            "subscriptionid-nurseconnect-00000000"
-        ])
-        mock_get_messageset(61, "nurseconnect_childm.hw_full.1")
-
-        # Execute
-        result = validate_implement.apply_async(args=[change.id])
-
-        # Check
-        change.refresh_from_db()
-        self.assertEqual(result.get(), True)
-        self.assertEqual(change.validated, True)
-        self.assertEqual(Registration.objects.all().count(), 1)
-        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
-        self.assertEqual(len(responses.calls), 5)
-
-        # Check Jembi send
-        self.assertEqual(json.loads(responses.calls[-1].request.body), {
-            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
-            'mha': 1,
-            'swt': 1,
-            'type': 11,
-            'cmsisdn': '+27821112222',
-            'dmsisdn': '+27821112222',
-            'rmsisdn': None,
-            'faccode': '123456',
-            'id': '27821112222^^^ZAF^TEL',
-            'dob': None,
-            'optoutreason': 7
-        })
-
-    @responses.activate
     def test_nurse_optout_through_management_command(self):
         # Setup
         # make registration
