@@ -1,5 +1,9 @@
 import responses
 import json
+try:
+    from urllib import urlencode
+except ImportError:
+    from urllib.parse import urlencode
 
 
 # Mocks used in testing
@@ -31,6 +35,38 @@ def mock_get_identity_by_id(identity_id, details={}):
     )
 
 
+def mock_get_nonexistant_identity_by_id(identity_id):
+    responses.add(
+        responses.GET,
+        'http://is/api/v1/identities/%s/' % identity_id,
+        json={'detail': 'Not found.'},
+        status=404, content_type='application/json'
+    )
+
+
+def mock_get_identity_by_msisdn(msisdn, identity_id='identity-uuid', num=1):
+    """
+    Mocks the request to the identity store to get identities by msisdn.
+    """
+    response = {'results': [{
+        "id": identity_id,
+        "version": 1,
+        "details": {'addresses': {'msisdn': {msisdn: {}}}},
+        "communicate_through": None,
+        "operator": None,
+        "created_at": "2016-03-31T09:28:29.506591Z",
+        "created_by": None,
+        "updated_at": "2016-08-17T09:44:31.812532Z",
+    }] * num}
+
+    responses.add(
+        responses.GET,
+        'http://is/api/v1/identities/search/?%s' % urlencode({
+            'details__addresses__msisdn': msisdn}),
+        json=response, status=200, content_type='application/json',
+        match_querystring=True)
+
+
 def mock_patch_identity(identity_id):
     patched_identity = {
         "id": identity_id,
@@ -53,6 +89,24 @@ def mock_patch_identity(identity_id):
         json=patched_identity,
         status=200, content_type='application/json'
     )
+
+
+def mock_create_identity(identity_id='identity-uuid', details={}):
+    identity = {
+        "id": identity_id,
+        "version": 1,
+        "details": details,
+        "communicate_through": None,
+        "operator": None,
+        "created_at": "2016-03-31T09:28:29.506591Z",
+        "created_by": None,
+        "updated_at": "2016-08-17T09:44:31.812532Z",
+        "updated_by": 1
+    }
+    responses.add(
+        responses.POST,
+        'http://is/api/v1/identities/', json=identity, status=200,
+        content_type='application_json')
 
 
 def mock_get_messageset_by_shortname(short_name):

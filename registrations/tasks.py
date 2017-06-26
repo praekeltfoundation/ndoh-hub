@@ -6,12 +6,14 @@ import requests
 from requests.exceptions import HTTPError
 
 from django.conf import settings
+from celery import chain
 from celery.task import Task
 from celery.utils.log import get_task_logger
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.service_rating import ServiceRatingApiClient
 
 from ndoh_hub import utils
+from ndoh_hub.celery import app
 from .models import Registration
 
 
@@ -349,15 +351,6 @@ class ValidateSubscribe(Task):
         self.l.info("Identity updated with risk level")
         return risk
 
-    def send_to_jembi(self, registration):
-        """
-        Runs the correct task to send the registration information to
-        Jembi.
-        """
-        task = BasePushRegistrationToJembi.get_jembi_task_for_registration(
-            registration)
-        return task.delay(registration_id=str(registration.pk))
-
     # Run
     def run(self, registration_id, **kwargs):
         """ Sets the registration's validated field to True if
@@ -381,7 +374,13 @@ class ValidateSubscribe(Task):
                 self.set_risk_status(registration)
 
             self.l.info("Scheduling registration push to Jembi")
-            self.send_to_jembi(registration)
+            jembi_task = BasePushRegistrationToJembi.\
+                get_jembi_task_for_registration(registration)
+            task = chain(
+                jembi_task.si(str(registration.pk)),
+                remove_personally_identifiable_fields.si(str(registration.pk))
+            )
+            task.delay()
 
             self.l.info("Task executed successfully")
             return True
@@ -393,6 +392,81 @@ class ValidateSubscribe(Task):
 validate_subscribe = ValidateSubscribe()
 
 
+@app.task()
+def remove_personally_identifiable_fields(registration_id):
+    """
+    Saves the personally identifiable fields to the identity, and then
+    removes them from the registration object.
+    """
+    registration = Registration.objects.get(id=registration_id)
+
+    fields = set((
+        'id_type', 'mom_dob', 'passport_no', 'passport_origin', 'sa_id_no',
+        'language', 'consent')).intersection(registration.data.keys())
+    if fields:
+        identity = is_client.get_identity(registration.registrant_id)
+
+        for field in fields:
+            identity['details'][field] = registration.data.pop(field)
+
+        is_client.update_identity(
+            identity['id'], {'details': identity['details']})
+
+    msisdn_fields = set((
+        'msisdn_device', 'msisdn_registrant')
+        ).intersection(registration.data.keys())
+    for field in msisdn_fields:
+        msisdn = registration.data.pop(field)
+        identities = is_client.get_identity_by_address('msisdn', msisdn)
+        if identities['results']:
+            field_identity = identities['results'][0]
+        else:
+            field_identity = is_client.create_identity({
+                'details': {
+                    'addresses': {
+                        'msisdn': {msisdn: {}},
+                    },
+                },
+            })
+        field = field.replace('msisdn', 'uuid')
+        registration.data[field] = field_identity['id']
+
+    registration.save()
+
+
+def add_personally_identifiable_fields(registration):
+    """
+    Sometimes we might want to rerun the validation and subscription, and for
+    that we want to put back any fields that we placed on the identity when
+    anonymising the registration.
+
+    This function just adds those fields to the 'registration' object, it
+    doesn't save those fields to the database.
+    """
+    identity = is_client.get_identity(registration.registrant_id)
+    if not identity:
+        return registration
+
+    fields = set((
+        'id_type', 'mom_dob', 'passport_no', 'passport_origin', 'sa_id_no',
+        'language', 'consent'))\
+        .intersection(identity['details'].keys())\
+        .difference(registration.data.keys())
+    for field in fields:
+        registration.data[field] = identity['details'][field]
+
+    uuid_fields = set((
+        'uuid_device', 'uuid_registrant')
+        ).intersection(registration.data.keys())
+    for field in uuid_fields:
+        msisdn = utils.get_identity_msisdn(registration.data[field])
+        if msisdn:
+            field = field.replace('uuid', 'msisdn')
+            registration.data[field] = msisdn
+
+    return registration
+
+
 class BasePushRegistrationToJembi(object):
     """
     Base class that contains helper functions for pushing registration data
@@ -400,16 +474,6 @@ class BasePushRegistrationToJembi(object):
     """
     name = "ndoh_hub.registrations.tasks.base_push_registration_to_jembi"
     l = get_task_logger(__name__)
-
-    def get_identity_msisdn(self, registrant_id):
-        identity = is_client.get_identity(registrant_id)
-        if identity:
-            msisdns = \
-                identity['details'].get('addresses', {}).get('msisdn', {})
-
-            for key in msisdns:
-                if not msisdns[key].get('optedout', False):
-                    return key
 
     def get_patient_id(self, id_type, id_no=None, passport_origin=None,
                        mom_msisdn=None):
@@ -543,7 +607,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
 
         id_msisdn = None
         if not registration.data.get('msisdn_registrant'):
-            id_msisdn = self.get_identity_msisdn(registration.registrant_id)
+            id_msisdn = utils.get_identity_msisdn(registration.registrant_id)
 
         json_template = {
             "mha": registration.data.get('mha', 1),

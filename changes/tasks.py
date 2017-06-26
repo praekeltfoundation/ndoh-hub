@@ -2,6 +2,7 @@ import datetime
 import json
 import requests
 
+from celery import chain
 from celery.task import Task
 from celery.utils.log import get_task_logger
 from django.conf import settings
@@ -11,6 +12,7 @@ from seed_services_client.stage_based_messaging import StageBasedMessagingApiCli
 from six import iteritems
 
 from ndoh_hub import utils
+from ndoh_hub.celery import app
 from registrations.models import Registration
 from .models import Change
 from registrations.models import SubscriptionRequest
@@ -59,13 +61,14 @@ class ValidateImplement(Task):
             {'identity': change.registrant_id, 'active': True}
         )["results"]
 
-        self.l.info("Retrieving nurseconnect messageset")
-        nc_messageset = sbm_client.get_messagesets(
-            {"short_name": "nurseconnect.hw_full.1"})["results"][0]
+        self.l.info("Retrieving nurseconnect messagesets")
+        messagesets = sbm_client.get_messagesets()["results"]
+        nc_messageset_ids = [ms['id'] for ms in messagesets
+                             if 'nurseconnect' in ms['short_name']]
 
         self.l.info("Deactivating active non-nurseconnect subscriptions")
         for active_sub in active_subs:
-            if nc_messageset["id"] != active_sub["messageset"]:
+            if active_sub["messageset"] not in nc_messageset_ids:
                 sbm_client.update_subscription(
                     active_sub["id"], {"active": False})
 
@@ -73,21 +76,31 @@ class ValidateImplement(Task):
         return True
 
     def deactivate_nurseconnect(self, change):
-        """ Deactivates nurseconnect subscription only
+        """ Deactivates nurseconnect subscriptions only
         """
-        self.l.info("Retrieving nurseconnect messageset")
-        nc_messageset = sbm_client.get_messagesets(
-            {"short_name": "nurseconnect.hw_full.1"})["results"][0]
+        self.l.info("Retrieving messagesets")
+        messagesets = sbm_client.get_messagesets()["results"]
+        nc_messagesets = [ms for ms in messagesets
+                          if 'nurseconnect' in ms['short_name']]
 
         self.l.info("Retrieving active nurseconnect subscriptions")
-        active_subs = sbm_client.get_subscriptions(
-            {'identity': change.registrant_id, 'active': True,
-             'messageset': nc_messageset["id"]}
-        )["results"]
+        active_subs = []
+        for messageset in nc_messagesets:
+            active_subs.extend(sbm_client.get_subscriptions(
+                {'identity': change.registrant_id, 'active': True,
+                 'messageset': messageset["id"]}
+            )["results"])
 
         self.l.info("Deactivating active nurseconnect subscriptions")
+        last_messageset_id = None
         for active_sub in active_subs:
             sbm_client.update_subscription(active_sub["id"], {"active": False})
+            last_messageset_id = active_sub["messageset"]
+        # Record name of the last messageset deactivated to send to jembi
+        [change.data['last_messageset']] = [
+            ms['short_name'] for ms in nc_messagesets
+            if ms['id'] == last_messageset_id]
+        change.save()
 
     def deactivate_pmtct(self, change):
         """ Deactivates any pmtct subscriptions
@@ -240,9 +253,7 @@ class ValidateImplement(Task):
             change.registrant_id, {"details": details})
         self.l.info("Saved the date of birth to the identity")
 
-        push_momconnect_babyswitch_to_jembi.delay(str(change.pk))
-
-        return "Switch to baby completed"
+        return push_momconnect_babyswitch_to_jembi.si(str(change.pk))
 
     def pmtct_loss_switch(self, change):
         """ Deactivate any active momconnect & pmtct subscriptions, then
@@ -253,11 +264,9 @@ class ValidateImplement(Task):
 
         if switched is True:
             self.l.info("Completed PMTCT switch to loss")
-            push_momconnect_babyloss_to_jembi.delay(str(change.pk))
-            return "Completed PMTCT switch to loss"
+            return push_momconnect_babyloss_to_jembi.si(str(change.pk))
         else:
             self.l.info("Aborted PMTCT switch to loss")
-            return "Aborted PMTCT switch to loss"
 
     def pmtct_loss_optout(self, change):
         """ This only deactivates non-nurseconnect subscriptions
@@ -266,8 +275,7 @@ class ValidateImplement(Task):
         self.deactivate_all_except_nurseconnect(change)
         self.l.info("Completed PMTCT loss optout")
         self.l.info("Sending optout to Jembi")
-        push_pmtct_optout_to_jembi.delay(str(change.pk))
-        return "Completed PMTCT loss optout"
+        return push_pmtct_optout_to_jembi.si(str(change.pk))
 
     def pmtct_nonloss_optout(self, change):
         """ Identity optout only happens for SMS optout and is done
@@ -283,8 +291,7 @@ class ValidateImplement(Task):
 
         self.l.info("Completed PMTCT non-loss optout")
         self.l.info("Sending optout to Jembi")
-        push_pmtct_optout_to_jembi.delay(str(change.pk))
-        return "Completed PMTCT non-loss optout"
+        return push_pmtct_optout_to_jembi.si(str(change.pk))
 
     def nurse_update_detail(self, change):
         """ This currently does nothing, but in a seperate issue this will
@@ -292,7 +299,6 @@ class ValidateImplement(Task):
         """
         self.l.info("Starting nurseconnect detail update")
         self.l.info("Completed nurseconnect detail update")
-        return "Completed nurseconnect detail update"
 
     def nurse_change_msisdn(self, change):
         """ This currently does nothing, but in a seperate issue this will
@@ -300,7 +306,6 @@ class ValidateImplement(Task):
         """
         self.l.info("Starting nurseconnect msisdn change")
         self.l.info("Completed nurseconnect msisdn change")
-        return "NurseConnect msisdn changed"
 
     def nurse_optout(self, change):
         """ The rest of the action required (opting out the identity on the
@@ -310,9 +315,7 @@ class ValidateImplement(Task):
         self.l.info("Starting NurseConnect optout")
         self.deactivate_nurseconnect(change)
         self.l.info("Pushing optout to Jembi")
-        push_nurseconnect_optout_to_jembi.delay(str(change.pk))
-        self.l.info("Completed NurseConnect optout")
-        return "Completed NurseConnect optout"
+        return push_nurseconnect_optout_to_jembi.si(str(change.pk))
 
     def momconnect_loss_switch(self, change):
         """ Deactivate any active momconnect & pmtct subscriptions, then
@@ -323,11 +326,9 @@ class ValidateImplement(Task):
 
         if switched is True:
             self.l.info("Completed MomConnect switch to loss")
-            push_momconnect_babyloss_to_jembi.delay(str(change.pk))
-            return "Completed MomConnect switch to loss"
+            return push_momconnect_babyloss_to_jembi.si(str(change.pk))
         else:
             self.l.info("Aborted MomConnect switch to loss")
-            return "Aborted MomConnect switch to loss"
 
     def momconnect_loss_optout(self, change):
         """ This only deactivates non-nurseconnect subscriptions
@@ -336,8 +337,7 @@ class ValidateImplement(Task):
         self.deactivate_all_except_nurseconnect(change)
         self.l.info("Completed MomConnect loss optout")
         self.l.info("Sending optout to Jembi")
-        push_momconnect_optout_to_jembi.delay(str(change.pk))
-        return "Completed MomConnect loss optout"
+        return push_momconnect_optout_to_jembi.si(str(change.pk))
 
     def momconnect_nonloss_optout(self, change):
         """ Identity optout only happens for SMS optout and is done
@@ -354,8 +354,7 @@ class ValidateImplement(Task):
 
         self.l.info("Completed MomConnect non-loss optout")
         self.l.info("Sending optout to Jembi")
-        push_momconnect_optout_to_jembi.delay(str(change.pk))
-        return "Completed MomConnect non-loss optout"
+        return push_momconnect_optout_to_jembi.si(str(change.pk))
 
     def momconnect_change_language(self, change):
         """
@@ -393,8 +392,6 @@ class ValidateImplement(Task):
         is_client.update_identity(identity['id'], {
             'details': identity['details']
             })
-
-        return "Completed Momconnect language change"
 
     def momconnect_change_msisdn(self, change):
         """
@@ -441,8 +438,6 @@ class ValidateImplement(Task):
 
         self.l.info("Updating Change object")
         change.save()
-
-        return "Completed MomConnect MSISDN change"
 
     def momconnect_change_identification(self, change):
         """
@@ -767,7 +762,7 @@ class ValidateImplement(Task):
         change_validates = self.validate(change)
 
         if change_validates:
-            {
+            submit_task = {
                 'baby_switch': self.baby_switch,
                 'pmtct_loss_switch': self.pmtct_loss_switch,
                 'pmtct_loss_optout': self.pmtct_loss_optout,
@@ -784,6 +779,12 @@ class ValidateImplement(Task):
                     self.momconnect_change_identification),
                 'momconnect_change_messaging': self.momconnect_change_messaging
             }.get(change.action, None)(change)
+
+            if submit_task is not None:
+                task = chain(
+                    submit_task,
+                    remove_personally_identifiable_fields.si(str(change.pk)))
+                task.delay()
             self.l.info("Task executed successfully")
             return True
         else:
@@ -791,6 +792,80 @@ class ValidateImplement(Task):
             return False
 
 validate_implement = ValidateImplement()
+
+
+@app.task()
+def remove_personally_identifiable_fields(change_id):
+    """
+    Saves the personally identifiable fields to the identity, and then
+    removes them from the change object.
+    """
+    change = Change.objects.get(id=change_id)
+
+    fields = set((
+        'id_type', 'dob', 'passport_no', 'passport_origin', 'sa_id_no',
+        'persal_no', 'sanc_no')).intersection(change.data.keys())
+    if fields:
+        identity = is_client.get_identity(change.registrant_id)
+
+        for field in fields:
+            identity['details'][field] = change.data.pop(field)
+
+        is_client.update_identity(
+            identity['id'], {'details': identity['details']})
+
+    msisdn_fields = set((
+        'msisdn_device', 'msisdn_new', 'msisdn_old')
+        ).intersection(change.data.keys())
+    for field in msisdn_fields:
+        msisdn = change.data.pop(field)
+        identities = is_client.get_identity_by_address('msisdn', msisdn)
+        if identities['results']:
+            field_identity = identities['results'][0]
+        else:
+            field_identity = is_client.create_identity({
+                'details': {
+                    'addresses': {
+                        'msisdn': {msisdn: {}},
+                    },
+                },
+            })
+        field = field.replace('msisdn', 'uuid')
+        change.data[field] = field_identity['id']
+
+    change.save()
+
+
+def restore_personally_identifiable_fields(change):
+    """
+    Looks up the required information from the identity store, and places it
+    back on the change object.
+
+    This function doesn't save the changes to the database, but instead
+    returns that Change object with the required information on it.
+    """
+    identity = is_client.get_identity(change.registrant_id)
+    if not identity:
+        return change
+
+    fields = set((
+        'id_type', 'dob', 'passport_no', 'passport_origin', 'sa_id_no',
+        'persal_no', 'sanc_no'))\
+        .intersection(identity['details'].keys())\
+        .difference(change.data.keys())
+    for field in fields:
+        change.data[field] = identity['details'][field]
+
+    uuid_fields = set((
+        'uuid_device', 'uuid_new', 'uuid_old')
+        ).intersection(change.data.keys())
+    for field in uuid_fields:
+        msisdn = utils.get_identity_msisdn(change.data[field])
+        if msisdn:
+            field = field.replace('uuid', 'msisdn')
+            change.data[field] = msisdn
+
+    return change
 
 
 class BasePushOptoutToJembi(object):
@@ -984,6 +1059,10 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
     name = "ndoh_hub.changes.tasks.push_nurseconnect_optout_to_jembi"
     l = get_task_logger(__name__)
     URL = "%s/nc/optout" % settings.JEMBI_BASE_URL
+    messageset_optout_types = {
+        "nurseconnect.hw_full.1": 8,
+        "nurseconnect_childm.hw_full.1": 11
+    }
 
     def get_nurse_id(
             self, id_type, id_no=None, passport_origin=None, mom_msisdn=None):
@@ -1017,7 +1096,8 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
             'encdate': self.get_timestamp(change),
             'mha': 1,
             'swt': 1,
-            'type': 8,
+            'type': self.messageset_optout_types.get(
+                change.data.get("last_messageset", None), 8),
             "cmsisdn": registration.data['msisdn_registrant'],
             "dmsisdn": registration.data['msisdn_device'],
             'rmsisdn': None,

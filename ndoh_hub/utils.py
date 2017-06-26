@@ -8,13 +8,42 @@ import six
 from celery.task import Task
 from django.conf import settings
 from go_http.metrics import MetricsApiClient
-from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
+from seed_services_client.stage_based_messaging import (
+    StageBasedMessagingApiClient)
+from seed_services_client.identity_store import IdentityStoreApiClient
 
 
 sbm_client = StageBasedMessagingApiClient(
     api_url=settings.STAGE_BASED_MESSAGING_URL,
     auth_token=settings.STAGE_BASED_MESSAGING_TOKEN
 )
+
+is_client = IdentityStoreApiClient(
+    api_url=settings.IDENTITY_STORE_URL,
+    auth_token=settings.IDENTITY_STORE_TOKEN
+)
+
+
+def get_identity_msisdn(registrant_id):
+    """
+    Given an identity UUID, returns the msisdn for the identity. Takes into
+    account default addresses, opted out addresses, and missing identities
+    or addresses. Returns None when it cannot find an MSISDN address.
+    """
+    identity = is_client.get_identity(registrant_id)
+    if not identity:
+        return
+
+    msisdns = \
+        identity['details'].get('addresses', {}).get('msisdn', {})
+
+    identity_msisdn = None
+    for msisdn, details in msisdns.items():
+        if 'default' in details and details['default']:
+            return msisdn
+        if not ('optedout' in details and details['optedout']):
+            identity_msisdn = msisdn
+    return identity_msisdn
 
 
 def is_valid_uuid(id):

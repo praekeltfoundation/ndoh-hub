@@ -19,7 +19,9 @@ from rest_hooks.models import model_saved
 from ndoh_hub import utils, utils_tests
 from .models import Change
 from .signals import psh_validate_implement
-from .tasks import validate_implement
+from .tasks import (
+    validate_implement, remove_personally_identifiable_fields,
+    restore_personally_identifiable_fields)
 from registrations.models import Source, Registration, SubscriptionRequest
 from registrations.signals import (psh_validate_subscribe,
                                    psh_fire_created_metric)
@@ -138,6 +140,59 @@ def mock_get_messageset(messageset_id, short_name):
     )
 
 
+def mock_get_all_messagesets():
+    responses.add(
+        responses.GET,
+        'http://sbm/api/v1/messageset/',
+        json={
+            "count": 3,
+            "next": None,
+            "previous": None,
+            "results": [
+                {
+                    'id': 21,
+                    'short_name': 'momconnect_prebirth.hw_full.1',
+                    'content_type': 'text',
+                    'notes': "",
+                    'next_set': 7,
+                    'default_schedule': 1,
+                    'created_at': "2015-07-10T06:13:29.693272Z",
+                    'updated_at': "2015-07-10T06:13:29.693272Z"
+                }, {
+                    'id': 61,
+                    'short_name': 'nurseconnect.hw_full.1',
+                    'content_type': 'text',
+                    'notes': "",
+                    'next_set': 7,
+                    'default_schedule': 1,
+                    'created_at': "2015-07-10T06:13:29.693272Z",
+                    'updated_at': "2015-07-10T06:13:29.693272Z"
+                }, {
+                    'id': 62,
+                    'short_name': 'nurseconnect_childm.hw_full.1',
+                    'content_type': 'text',
+                    'notes': "",
+                    'next_set': 7,
+                    'default_schedule': 1,
+                    'created_at': "2015-07-10T06:13:29.693272Z",
+                    'updated_at': "2015-07-10T06:13:29.693272Z"
+                }, {
+                    'id': 11,
+                    'short_name': 'pmtct_prebirth.patient.1',
+                    'content_type': 'text',
+                    'notes': "",
+                    'next_set': 7,
+                    'default_schedule': 1,
+                    'created_at': "2015-07-10T06:13:29.693272Z",
+                    'updated_at': "2015-07-10T06:13:29.693272Z"
+                }
+            ]
+        },
+        status=200, content_type='application/json',
+        match_querystring=True
+    )
+
+
 def mock_get_active_subs_mc(registrant_id):
     momconnect_prebirth_sub_id = "subscriptionid-momconnect-prebirth-0"
     responses.add(
@@ -174,10 +229,13 @@ def mock_get_active_subs_mc(registrant_id):
     return [momconnect_prebirth_sub_id]
 
 
-def mock_get_active_subscriptions_none(registrant_id):
+def mock_get_active_subscriptions_none(registrant_id, messageset=None):
+    url = 'http://sbm/api/v1/subscriptions/?active=True&identity=%s' % registrant_id  # noqa
+    if messageset is not None:
+        url = '%s&messageset=%s' % (url, messageset)
     responses.add(
         responses.GET,
-        'http://sbm/api/v1/subscriptions/?active=True&identity=%s' % registrant_id,  # noqa
+        url,
         json={
             "count": 0,
             "next": None,
@@ -235,6 +293,42 @@ def mock_get_active_nurseconnect_subscriptions(registrant_id):
                     "url": "http://sbm/api/v1/subscriptions/%s" % (
                         nurseconnect_sub_id),
                     "messageset": 61,
+                    "next_sequence_number": 11,
+                    "schedule": 161,
+                    "process_status": 0,
+                    "version": 1,
+                    "metadata": {},
+                    "created_at": "2015-07-10T06:13:29.693272Z",
+                    "updated_at": "2015-07-10T06:13:29.693272Z"
+                }
+            ]
+        },
+        status=200, content_type='application/json',
+        match_querystring=True
+    )
+
+    return [nurseconnect_sub_id]
+
+
+def mock_get_active_nurseconnect_childm_subscriptions(registrant_id):
+    nurseconnect_sub_id = "subscriptionid-nurseconnect-00000000"
+    responses.add(
+        responses.GET,
+        'http://sbm/api/v1/subscriptions/?active=True&messageset=62&identity=%s' % registrant_id,  # noqa
+        json={
+            "count": 1,
+            "next": None,
+            "previous": None,
+            "results": [
+                {   # nurseconnect.hw_full.1 subscription
+                    "id": nurseconnect_sub_id,
+                    "identity": registrant_id,
+                    "active": True,
+                    "completed": False,
+                    "lang": "eng_ZA",
+                    "url": "http://sbm/api/v1/subscriptions/%s" % (
+                        nurseconnect_sub_id),
+                    "messageset": 62,
                     "next_sequence_number": 11,
                     "schedule": 161,
                     "process_status": 0,
@@ -1567,8 +1661,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         mock_get_active_subs_mcpre_mcpost_pmtct_nc(
             change_data["registrant_id"])
 
-        # . mock get messageset by shortname
-        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+        # . mock get messagesets
+        mock_get_all_messagesets()
 
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions([
@@ -1635,8 +1729,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         mock_get_active_subs_mcpre_mcpost_pmtct_nc(
             change_data["registrant_id"])
 
-        # . mock get messageset by shortname
-        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+        # . mock get messagesets
+        mock_get_all_messagesets()
 
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions([
@@ -1872,17 +1966,20 @@ class TestChangeActions(AuthenticatedAPITestCase):
         }
         change = Change.objects.create(**change_data)
 
-        # mock get messageset by shortname
-        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+        # mock get messagesets
+        mock_get_all_messagesets()
 
         # . mock get nurseconnect subscription request
         mock_get_active_nurseconnect_subscriptions(
             change_data["registrant_id"])
+        mock_get_active_subscriptions_none(change_data["registrant_id"],
+                                           messageset=62)
 
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions([
             "subscriptionid-nurseconnect-00000000"
         ])
+        mock_get_messageset(61, "nurseconnect.hw_full.1")
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
@@ -1893,7 +1990,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 1)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
-        self.assertEqual(len(responses.calls), 4)
+        self.assertEqual(len(responses.calls), 5)
 
         # Check Jembi send
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
@@ -1901,6 +1998,65 @@ class TestChangeActions(AuthenticatedAPITestCase):
             'mha': 1,
             'swt': 1,
             'type': 8,
+            'cmsisdn': '+27821112222',
+            'dmsisdn': '+27821112222',
+            'rmsisdn': None,
+            'faccode': '123456',
+            'id': '27821112222^^^ZAF^TEL',
+            'dob': None,
+            'optoutreason': 7
+        })
+
+    @responses.activate
+    def test_nurse_optout_childcare_set(self):
+        # Setup
+        # make registration
+        self.make_registration_nurseconnect()
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        # make change object
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_optout",
+            "data": {
+                "reason": "job_change"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+
+        # mock get messagesets
+        mock_get_all_messagesets()
+
+        # . mock get nurseconnect subscription request
+        mock_get_active_nurseconnect_childm_subscriptions(
+            change_data["registrant_id"])
+        mock_get_active_subscriptions_none(change_data["registrant_id"],
+                                           messageset=61)
+
+        # . mock deactivate active subscriptions
+        mock_deactivate_subscriptions([
+            "subscriptionid-nurseconnect-00000000"
+        ])
+        mock_get_messageset(61, "nurseconnect_childm.hw_full.1")
+
+        # Execute
+        result = validate_implement.apply_async(args=[change.id])
+
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        self.assertEqual(len(responses.calls), 5)
+
+        # Check Jembi send
+        self.assertEqual(json.loads(responses.calls[-1].request.body), {
+            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
+            'mha': 1,
+            'swt': 1,
+            'type': 11,
             'cmsisdn': '+27821112222',
             'dmsisdn': '+27821112222',
             'rmsisdn': None,
@@ -1928,6 +2084,9 @@ class TestChangeActions(AuthenticatedAPITestCase):
             "validated": True,
         }
         change = Change.objects.create(**change_data)
+
+        utils_tests.mock_get_identity_by_id(
+            'nurse001-63e2-4acc-9b94-26663b9bc267')
 
         def format_timestamp(ts):
             return ts.strftime('%Y-%m-%d %H:%M:%S')
@@ -1987,8 +2146,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
             "subscriptionid-pmtct-prebirth-000000"
         ])
 
-        # . mock get messageset by shortname
-        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+        # . mock get messagesets
+        mock_get_all_messagesets()
 
         # . mock get messageset by shortname
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
@@ -2105,7 +2264,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             stdout=stdout)
 
         # Check
-        self.assertEqual(len(responses.calls), 2)
+        self.assertEqual(len(responses.calls), 3)
 
         # Check Jembi POST
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
@@ -2162,7 +2321,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             stdout=stdout)
 
         # Check
-        self.assertEqual(len(responses.calls), 2)
+        self.assertEqual(len(responses.calls), 3)
 
         # Check Jembi POST
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
@@ -2202,8 +2361,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         mock_get_active_subs_mcpre_mcpost_pmtct_nc(
             change_data["registrant_id"])
 
-        # . mock get messageset by shortname
-        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+        # . mock get all messagesets
+        mock_get_all_messagesets()
 
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions([
@@ -2284,7 +2443,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             stdout=stdout)
 
         # Check
-        self.assertEqual(len(responses.calls), 2)
+        self.assertEqual(len(responses.calls), 3)
 
         # Check Jembi POST
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
@@ -2325,8 +2484,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         mock_get_active_subs_mcpre_mcpost_pmtct_nc(
             change_data["registrant_id"])
 
-        # . mock get messageset by shortname
-        utils_tests.mock_get_messageset_by_shortname("nurseconnect.hw_full.1")
+        # . mock get messagesets
+        mock_get_all_messagesets()
 
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions([
@@ -2816,6 +2975,195 @@ class TestChangeActions(AuthenticatedAPITestCase):
                     'sa_id_no': '1234',
                 }]
             }
+        })
+
+
+class TestRemovePersonallyIdentifiableInformation(AuthenticatedAPITestCase):
+    @responses.activate
+    def test_removes_personal_information_fields(self):
+        """
+        For each of the personal information fields, the task should remove
+        them from the Change object, and instead place them on the identity
+        that the Change is for.
+        """
+        change = Change.objects.create(
+            registrant_id='mother-uuid',
+            action='baby_switch',
+            source=self.make_source_normaluser(),
+            validated=True,
+            data={
+                'id_type': 'passport',
+                'dob': '1990-01-01',
+                'passport_no': '12345',
+                'passport_origin': 'na',
+                'sa_id_no': '4321',
+                'persal_no': '111',
+                'sanc_no': '222',
+                'foo': 'baz',
+            })
+
+        utils_tests.mock_get_identity_by_id('mother-uuid')
+        utils_tests.mock_patch_identity('mother-uuid')
+
+        remove_personally_identifiable_fields(str(change.pk))
+
+        identity_update = json.loads(responses.calls[-1].request.body)
+        self.assertEqual(identity_update['details'], {
+            'id_type': 'passport',
+            'dob': '1990-01-01',
+            'passport_no': '12345',
+            'passport_origin': 'na',
+            'sa_id_no': '4321',
+            'persal_no': '111',
+            'sanc_no': '222',
+            'lang_code': 'afr_ZA',
+            'foo': 'bar',
+        })
+
+        change.refresh_from_db()
+        self.assertEqual(change.data, {
+            'foo': 'baz',
+        })
+
+    @responses.activate
+    def test_changes_msisdns_to_uuids(self):
+        """
+        For each of the msisdn fields, the task should remove them from the
+        Change object, and put back the UUID field instead.
+        """
+        change = Change.objects.create(
+            registrant_id='mother-uuid',
+            action='baby_switch',
+            source=self.make_source_normaluser(),
+            validated=True,
+            data={
+                'msisdn_device': "+27111",
+                'msisdn_new': "+27222",
+                'msisdn_old': "+27333",
+                'msisdn_foo': "+27444",
+            })
+
+        utils_tests.mock_get_identity_by_msisdn('+27111', 'device-uuid')
+        utils_tests.mock_get_identity_by_msisdn('+27222', 'new-uuid')
+        utils_tests.mock_get_identity_by_msisdn('+27333', 'old-uuid')
+
+        remove_personally_identifiable_fields(str(change.pk))
+
+        change.refresh_from_db()
+        self.assertEqual(change.data, {
+            'uuid_device': 'device-uuid',
+            'uuid_new': 'new-uuid',
+            'uuid_old': 'old-uuid',
+            'msisdn_foo': '+27444',
+        })
+
+    @responses.activate
+    def test_creates_missing_identities(self):
+        """
+        For each of the msisdn fields, if the identity doesn't exist, then
+        it should be created.
+        """
+        change = Change.objects.create(
+            registrant_id='mother-uuid',
+            action='baby_switch',
+            source=self.make_source_normaluser(),
+            validated=True,
+            data={
+                'msisdn_device': "+27111",
+            })
+
+        utils_tests.mock_get_identity_by_msisdn('+27111', num=0)
+        utils_tests.mock_create_identity('device-uuid')
+
+        remove_personally_identifiable_fields(str(change.pk))
+
+        identity_creation = json.loads(responses.calls[-1].request.body)
+        self.assertEqual(identity_creation['details'], {
+            'addresses': {
+                'msisdn': {'+27111': {}},
+            },
+        })
+
+        change.refresh_from_db()
+        self.assertEqual(change.data, {
+            'uuid_device': 'device-uuid',
+        })
+
+
+class TestRestorePersonallyIdentifiableInformation(AuthenticatedAPITestCase):
+    @responses.activate
+    def test_restores_personal_information_fields(self):
+        """
+        Any personal information fields that exist on the identity, but
+        not on the change object, should be placed on the change object.
+        """
+        change = Change.objects.create(
+            registrant_id='mother-uuid',
+            action='baby_switch',
+            source=self.make_source_normaluser(),
+            validated=True,
+            data={
+                'id_type': 'passport',
+            })
+
+        utils_tests.mock_get_identity_by_id('mother-uuid', {
+            'id_type': 'sa_id',
+            'dob': '1990-01-01',
+            'passport_no': '1234',
+            'passport_origin': 'na',
+            'sa_id_no': '4321',
+            'persal_no': '111',
+            'sanc_no': '222',
+        })
+
+        restore_personally_identifiable_fields(change)
+        self.assertEqual(change.data, {
+            'id_type': 'passport',
+            'dob': '1990-01-01',
+            'passport_no': '1234',
+            'passport_origin': 'na',
+            'sa_id_no': '4321',
+            'persal_no': '111',
+            'sanc_no': '222',
+        })
+
+    @responses.activate
+    def test_restores_msisdn_fields(self):
+        """
+        If any of the uuid fields exist on the change object, then an msisdn
+        lookup should be done for those msisdns, and the msisdn should be
+        placed on the change object.
+        """
+        change = Change.objects.create(
+            registrant_id='mother-uuid',
+            action='baby_switch',
+            source=self.make_source_normaluser(),
+            validated=True,
+            data={
+                'uuid_device': 'device-uuid',
+                'uuid_new': 'new-uuid',
+                'uuid_old': 'old-uuid',
+            })
+
+        utils_tests.mock_get_identity_by_id('mother-uuid')
+        utils_tests.mock_get_identity_by_id('device-uuid', {
+            'addresses': {'msisdn': {'+1111': {}}},
+        })
+        utils_tests.mock_get_identity_by_id('new-uuid', {
+            'addresses': {'msisdn': {
+                '+2222': {'default': True},
+                '+3333': {},
+            }},
+        })
+        utils_tests.mock_get_identity_by_id('old-uuid')
+
+        restore_personally_identifiable_fields(change)
+        self.assertEqual(change.data, {
+            'uuid_device': 'device-uuid',
+            'uuid_new': 'new-uuid',
+            'uuid_old': 'old-uuid',
+            'msisdn_device': '+1111',
+            'msisdn_new': '+2222',
         })
 
 
