@@ -170,7 +170,6 @@ class ReceiveAdminChange(generics.CreateAPIView):
                 },
                 "source": source.id,
             }
-            print change
             changes.append(change)
 
         if data.get('language'):

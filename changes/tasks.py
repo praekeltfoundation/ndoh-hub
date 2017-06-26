@@ -462,8 +462,6 @@ class ValidateImplement(Task):
         self.l.info("Updating Change")
         change.save()
 
-        return "Completed MomConnect Identity change"
-
     def momconnect_change_messaging(self, change):
         """
         Messaging change should disable current subscriptions and create a new
