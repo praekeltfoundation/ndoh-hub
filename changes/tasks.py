@@ -61,13 +61,14 @@ class ValidateImplement(Task):
             {'identity': change.registrant_id, 'active': True}
         )["results"]
 
-        self.l.info("Retrieving nurseconnect messageset")
-        nc_messageset = sbm_client.get_messagesets(
-            {"short_name": "nurseconnect.hw_full.1"})["results"][0]
+        self.l.info("Retrieving nurseconnect messagesets")
+        messagesets = sbm_client.get_messagesets()["results"]
+        nc_messageset_ids = [ms['id'] for ms in messagesets
+                             if 'nurseconnect' in ms['short_name']]
 
         self.l.info("Deactivating active non-nurseconnect subscriptions")
         for active_sub in active_subs:
-            if nc_messageset["id"] != active_sub["messageset"]:
+            if active_sub["messageset"] not in nc_messageset_ids:
                 sbm_client.update_subscription(
                     active_sub["id"], {"active": False})
 
@@ -75,21 +76,31 @@ class ValidateImplement(Task):
         return True
 
     def deactivate_nurseconnect(self, change):
-        """ Deactivates nurseconnect subscription only
+        """ Deactivates nurseconnect subscriptions only
         """
-        self.l.info("Retrieving nurseconnect messageset")
-        nc_messageset = sbm_client.get_messagesets(
-            {"short_name": "nurseconnect.hw_full.1"})["results"][0]
+        self.l.info("Retrieving messagesets")
+        messagesets = sbm_client.get_messagesets()["results"]
+        nc_messagesets = [ms for ms in messagesets
+                          if 'nurseconnect' in ms['short_name']]
 
         self.l.info("Retrieving active nurseconnect subscriptions")
-        active_subs = sbm_client.get_subscriptions(
-            {'identity': change.registrant_id, 'active': True,
-             'messageset': nc_messageset["id"]}
-        )["results"]
+        active_subs = []
+        for messageset in nc_messagesets:
+            active_subs.extend(sbm_client.get_subscriptions(
+                {'identity': change.registrant_id, 'active': True,
+                 'messageset': messageset["id"]}
+            )["results"])
 
         self.l.info("Deactivating active nurseconnect subscriptions")
+        last_messageset_id = None
         for active_sub in active_subs:
             sbm_client.update_subscription(active_sub["id"], {"active": False})
+            last_messageset_id = active_sub["messageset"]
+        # Record name of the last messageset deactivated to send to jembi
+        [change.data['last_messageset']] = [
+            ms['short_name'] for ms in nc_messagesets
+            if ms['id'] == last_messageset_id]
+        change.save()
 
     def deactivate_pmtct(self, change):
         """ Deactivates any pmtct subscriptions
@@ -1007,6 +1018,10 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
     name = "ndoh_hub.changes.tasks.push_nurseconnect_optout_to_jembi"
     l = get_task_logger(__name__)
     URL = "%s/nc/optout" % settings.JEMBI_BASE_URL
+    messageset_optout_types = {
+        "nurseconnect.hw_full.1": 8,
+        "nurseconnect_childm.hw_full.1": 11
+    }
 
     def get_nurse_id(
             self, id_type, id_no=None, passport_origin=None, mom_msisdn=None):
@@ -1040,7 +1055,8 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
             'encdate': self.get_timestamp(change),
             'mha': 1,
             'swt': 1,
-            'type': 8,
+            'type': self.messageset_optout_types.get(
+                change.data.get("last_messageset", None), 8),
             "cmsisdn": registration.data['msisdn_registrant'],
             "dmsisdn": registration.data['msisdn_device'],
             'rmsisdn': None,
