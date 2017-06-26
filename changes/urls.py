@@ -15,5 +15,8 @@ urlpatterns = [
     url(r'^api/v1/change/', views.ChangePost.as_view()),
     url(r'^api/v1/optout_admin/',
         views.ReceiveAdminOptout.as_view(),
-        name="optout_admin")
+        name="optout_admin"),
+    url(r'^api/v1/change_admin/',
+        views.ReceiveAdminChange.as_view(),
+        name="change_admin")
 ]

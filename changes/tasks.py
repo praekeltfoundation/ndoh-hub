@@ -476,6 +476,32 @@ class ValidateImplement(Task):
 
         return "Completed MomConnect Identity change"
 
+    def momconnect_change_messaging(self, change):
+        """
+        Messaging change should disable current subscriptions and create a new
+        one with new message set
+        """
+        subscription = sbm_client.get_subscription(change.data['subscription'])
+        current_nsn = subscription["next_sequence_number"]
+
+        # Deactivate subscription
+        utils.deactivate_subscription(subscription)
+
+        new_messageset = sbm_client.get_messagesets(
+            {"short_name": change.data['messageset']})["results"][0]
+
+        # Make new subscription request object
+        mother_sub = {
+            "identity": change.registrant_id,
+            "messageset": new_messageset['id'],
+            "next_sequence_number": current_nsn,
+            "lang": subscription["lang"],  # use first subscription's lang
+            "schedule": new_messageset['schedule_id']
+        }
+        SubscriptionRequest.objects.create(**mother_sub)
+
+        return "Change messaging completed"
+
     # Validation checks
     def check_pmtct_loss_optout_reason(self, data_fields, change):
         loss_reasons = ["miscarriage", "stillbirth", "babyloss"]
@@ -650,6 +676,14 @@ class ValidateImplement(Task):
         else:
             return ["ID type should be 'sa_id' or 'passport'"]
 
+    def check_momconnect_change_messaging(self, data_fields, change):
+        errors = []
+        if "messageset" not in data_fields:
+            errors.append("Messageset field is missing")
+        if "subscription" not in data_fields:
+            errors.append("Subscription field is missing")
+        return errors
+
     # Validate
     def validate(self, change):
         """ Validates that all the required info is provided for a
@@ -706,6 +740,10 @@ class ValidateImplement(Task):
             validation_errors += self.check_momconnect_change_identification(
                 data_fields, change)
 
+        elif change.action == 'momconnect_change_messaging':
+            validation_errors += self.check_momconnect_change_messaging(
+                data_fields, change)
+
         # Evaluate if there were any problems, save and return
         if len(validation_errors) == 0:
             self.l.info("Change validated successfully - updating change "
@@ -744,6 +782,7 @@ class ValidateImplement(Task):
                 'momconnect_change_msisdn': self.momconnect_change_msisdn,
                 'momconnect_change_identification': (
                     self.momconnect_change_identification),
+                'momconnect_change_messaging': self.momconnect_change_messaging
             }.get(change.action, None)(change)
             self.l.info("Task executed successfully")
             return True
