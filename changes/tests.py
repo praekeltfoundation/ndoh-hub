@@ -140,6 +140,32 @@ def mock_get_messageset(messageset_id, short_name):
     )
 
 
+def mock_search_messageset(messageset_id, short_name):
+    responses.add(
+        responses.GET,
+        'http://sbm/api/v1/messageset/?short_name=%s' % (short_name),
+        json={
+            "count": 1,
+            "next": None,
+            "previous": None,
+            "results": [
+                {
+                    'id': messageset_id,
+                    'short_name': short_name,
+                    'content_type': 'text',
+                    'notes': "",
+                    'next_set': 7,
+                    'default_schedule': 1,
+                    'created_at': "2015-07-10T06:13:29.693272Z",
+                    'updated_at': "2015-07-10T06:13:29.693272Z"
+                }
+            ]
+        },
+        status=200, content_type='application/json',
+        match_querystring=True
+    )
+
+
 def mock_get_all_messagesets():
     responses.add(
         responses.GET,
@@ -252,6 +278,31 @@ def mock_get_active_subscriptions_none(registrant_id, messageset=None):
 def mock_update_subscription(subscription_id, identity_id=None):
     responses.add(
         responses.PATCH,
+        'http://sbm/api/v1/subscriptions/{}/'.format(subscription_id),
+        json={
+            "id": subscription_id,
+            "identity": identity_id,
+            "active": True,
+            "completed": False,
+            "lang": "eng_ZA",
+            "url": "http://sbm/api/v1/subscriptions/{}".format(
+                subscription_id),
+            "messageset": 32,
+            "next_sequence_number": 32,
+            "schedule": 132,
+            "process_status": 0,
+            "version": 1,
+            "metadata": {},
+            "created_at": "2015-07-10T06:13:29.693272Z",
+            "updated_at": "2015-07-10T06:13:29.693272Z"
+        },
+        status=200, content_type='application/json'
+    )
+
+
+def mock_get_subscription(subscription_id, identity_id=None):
+    responses.add(
+        responses.GET,
         'http://sbm/api/v1/subscriptions/{}/'.format(subscription_id),
         json={
             "id": subscription_id,
@@ -1488,6 +1539,43 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         self.assertEqual(
             change.data['invalid_fields'],
             ["Passport number invalid", "Passport origin invalid"])
+
+    def test_momconnect_change_messaging(self):
+        """ Good data change messaging """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "momconnect_change_messaging",
+            "data": {
+                "messageset": "messageset_one",
+                "subscription": "sub12312-63e2-4acc-9b94-26663b9bc267",
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_momconnect_change_messaging_missing_fields(self):
+        """ Missing data change messaging """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "momconnect_change_messaging",
+            "data": {},
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertFalse(change.validated)
+        self.assertEqual(
+            change.data['invalid_fields'],
+            ['Messageset field is missing', 'Subscription field is missing'])
 
 
 class TestChangeActions(AuthenticatedAPITestCase):
@@ -2917,6 +3005,41 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 }]
             }
         })
+
+    @responses.activate
+    def test_momconnect_change_messaging_good(self):
+        """
+        Change messaging should disable the specified subscription and create a
+        new subscription request with the new messageset
+        """
+
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        subscription_id = "sub12312-63e2-4acc-9b94-26663b9bc267"
+        messageset_name = "momconnect_prebirth.hw_full.1"
+
+        mock_get_subscription(subscription_id, registrant_id)
+        mock_deactivate_subscriptions([subscription_id])
+        mock_search_messageset(32, messageset_name)
+
+        change_data = {
+            "registrant_id": registrant_id,
+            "action": "momconnect_change_messaging",
+            "data": {
+                "messageset": messageset_name,
+                "subscription": subscription_id,
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+
+        self.assertTrue(change.validated)
+
+        s = SubscriptionRequest.objects.last()
+        self.assertEqual(s.identity, registrant_id)
+        self.assertEqual(s.messageset, 32)
 
 
 class TestRemovePersonallyIdentifiableInformation(AuthenticatedAPITestCase):

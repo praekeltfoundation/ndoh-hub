@@ -471,7 +471,7 @@ class ValidateImplement(Task):
         current_nsn = subscription["next_sequence_number"]
 
         # Deactivate subscription
-        utils.deactivate_subscription(subscription)
+        sbm_client.update_subscription(subscription['id'], {"active": False})
 
         new_messageset = sbm_client.get_messagesets(
             {"short_name": change.data['messageset']})["results"][0]
@@ -482,11 +482,9 @@ class ValidateImplement(Task):
             "messageset": new_messageset['id'],
             "next_sequence_number": current_nsn,
             "lang": subscription["lang"],  # use first subscription's lang
-            "schedule": new_messageset['schedule_id']
+            "schedule": new_messageset['default_schedule']
         }
         SubscriptionRequest.objects.create(**mother_sub)
-
-        return "Change messaging completed"
 
     # Validation checks
     def check_pmtct_loss_optout_reason(self, data_fields, change):
