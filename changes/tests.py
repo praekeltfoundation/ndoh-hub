@@ -1540,12 +1540,12 @@ class TestChangeValidation(AuthenticatedAPITestCase):
             change.data['invalid_fields'],
             ["Passport number invalid", "Passport origin invalid"])
 
-    def test_momconnect_change_messaging(self):
+    def test_admin_change_subscription(self):
         """ Good data change messaging """
         # Setup
         change_data = {
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "action": "momconnect_change_messaging",
+            "action": "admin_change_subscription",
             "data": {
                 "messageset": "messageset_one",
                 "subscription": "sub12312-63e2-4acc-9b94-26663b9bc267",
@@ -1560,12 +1560,32 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         self.assertEqual(c, True)
         self.assertEqual(change.validated, True)
 
-    def test_momconnect_change_messaging_missing_fields(self):
+    def test_admin_change_subscription_language(self):
+        """ Good data change messaging """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "admin_change_subscription",
+            "data": {
+                "language": "eng_ZA",
+                "subscription": "sub12312-63e2-4acc-9b94-26663b9bc267",
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_admin_change_subscription_missing_fields(self):
         """ Missing data change messaging """
         # Setup
         change_data = {
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "action": "momconnect_change_messaging",
+            "action": "admin_change_subscription",
             "data": {},
             "source": self.make_source_normaluser()
         }
@@ -1575,7 +1595,8 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         self.assertFalse(change.validated)
         self.assertEqual(
             change.data['invalid_fields'],
-            ['Messageset field is missing', 'Subscription field is missing'])
+            ['One of these fields must be populated: messageset, language',
+             'Subscription field is missing'])
 
 
 class TestChangeActions(AuthenticatedAPITestCase):
@@ -3007,7 +3028,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         })
 
     @responses.activate
-    def test_momconnect_change_messaging_good(self):
+    def test_admin_change_subscription_messageset(self):
         """
         Change messaging should disable the specified subscription and create a
         new subscription request with the new messageset
@@ -3023,7 +3044,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
 
         change_data = {
             "registrant_id": registrant_id,
-            "action": "momconnect_change_messaging",
+            "action": "admin_change_subscription",
             "data": {
                 "messageset": messageset_name,
                 "subscription": subscription_id,
@@ -3040,6 +3061,75 @@ class TestChangeActions(AuthenticatedAPITestCase):
         s = SubscriptionRequest.objects.last()
         self.assertEqual(s.identity, registrant_id)
         self.assertEqual(s.messageset, 32)
+
+    @responses.activate
+    def test_admin_change_subscription_language(self):
+        """
+        Change language only should update the existing subscription language
+        """
+
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        subscription_id = "sub12312-63e2-4acc-9b94-26663b9bc267"
+        language = "zul_ZA"
+
+        mock_update_subscription(subscription_id, registrant_id)
+
+        change_data = {
+            "registrant_id": registrant_id,
+            "action": "admin_change_subscription",
+            "data": {
+                "subscription": subscription_id,
+                "language": language
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+
+        self.assertTrue(change.validated)
+
+        s = SubscriptionRequest.objects.count()
+        self.assertEqual(s, 0)
+
+    @responses.activate
+    def test_admin_change_subscription_both(self):
+        """
+        Change messaging should disable the specified subscription and create a
+        new subscription request with the new messageset and language
+        """
+
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        subscription_id = "sub12312-63e2-4acc-9b94-26663b9bc267"
+        messageset_name = "momconnect_prebirth.hw_full.1"
+        language = "zul_ZA"
+
+        mock_get_subscription(subscription_id, registrant_id)
+        mock_deactivate_subscriptions([subscription_id])
+        mock_search_messageset(32, messageset_name)
+
+        change_data = {
+            "registrant_id": registrant_id,
+            "action": "admin_change_subscription",
+            "data": {
+                "messageset": messageset_name,
+                "subscription": subscription_id,
+                "language": language
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+
+        self.assertTrue(change.validated)
+
+        s = SubscriptionRequest.objects.last()
+        self.assertEqual(s.identity, registrant_id)
+        self.assertEqual(s.messageset, 32)
+        self.assertEqual(s.lang, language)
 
 
 class TestRemovePersonallyIdentifiableInformation(AuthenticatedAPITestCase):
@@ -3413,8 +3503,11 @@ class ControlInterfaceOptoutViewTest(AuthenticatedAPITestCase):
         change = Change.objects.last()
         self.assertEqual(change.registrant_id,
                          "846877e6-afaa-43de-acb1-09f61ad4de99")
-        self.assertEqual(change.action, "momconnect_change_language")
-        self.assertEqual(change.data, {"language": "eng_ZA"})
+        self.assertEqual(change.action, "admin_change_subscription")
+        self.assertEqual(change.data, {
+            "language": "eng_ZA",
+            "subscription": "846877e6-afaa-43de-acb1-111111111111"
+        })
 
     def test_ci_change_messaging(self):
         request = {
@@ -3432,7 +3525,7 @@ class ControlInterfaceOptoutViewTest(AuthenticatedAPITestCase):
         change = Change.objects.last()
         self.assertEqual(change.registrant_id,
                          "846877e6-afaa-43de-acb1-09f61ad4de99")
-        self.assertEqual(change.action, "momconnect_change_messaging")
+        self.assertEqual(change.action, "admin_change_subscription")
         self.assertEqual(change.data, {
             "messageset": "messageset_one",
             "subscription": "846877e6-afaa-43de-acb1-111111111111"
@@ -3456,17 +3549,10 @@ class ControlInterfaceOptoutViewTest(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, 201)
 
         changes = Change.objects.filter(registrant_id=identity)
-        self.assertEqual(changes.count(), 2)
-
-        changes = Change.objects.filter(registrant_id=identity,
-                                        action="momconnect_change_messaging")
         self.assertEqual(changes.count(), 1)
+        self.assertEqual(changes[0].action, "admin_change_subscription")
         self.assertEqual(changes[0].data, {
             "messageset": "messageset_one",
-            "subscription": subscription
+            "subscription": subscription,
+            "language": "eng_ZA"
         })
-
-        changes = Change.objects.filter(registrant_id=identity,
-                                        action="momconnect_change_language")
-        self.assertEqual(changes.count(), 1)
-        self.assertEqual(changes[0].data, {"language": "eng_ZA"})

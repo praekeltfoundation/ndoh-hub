@@ -159,29 +159,22 @@ class ReceiveAdminChange(generics.CreateAPIView):
 
         source = get_or_create_source(self.request)
 
-        changes = []
+        change = {
+            "registrant_id": data['registrant_id'],
+            "action": "admin_change_subscription",
+            "data": {
+                "subscription": str(data["subscription"])
+            },
+            "source": source.id,
+        }
+
         if data.get('messageset'):
-            change = {
-                "registrant_id": data['registrant_id'],
-                "action": "momconnect_change_messaging",
-                "data": {
-                    "messageset": data['messageset'],
-                    "subscription": str(data["subscription"])
-                },
-                "source": source.id,
-            }
-            changes.append(change)
+            change['data']['messageset'] = data['messageset']
 
         if data.get('language'):
-            change = {
-                "registrant_id": data['registrant_id'],
-                "action": "momconnect_change_language",
-                "data": {"language": data['language']},
-                "source": source.id,
-            }
-            changes.append(change)
+            change['data']['language'] = data['language']
 
-        serializer = ChangeSerializer(data=changes, many=True)
+        serializer = ChangeSerializer(data=change)
 
         if serializer.is_valid():
             serializer.save()

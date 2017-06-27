@@ -462,29 +462,37 @@ class ValidateImplement(Task):
         self.l.info("Updating Change")
         change.save()
 
-    def momconnect_change_messaging(self, change):
+    def admin_change_subscription(self, change):
         """
         Messaging change should disable current subscriptions and create a new
         one with new message set
         """
-        subscription = sbm_client.get_subscription(change.data['subscription'])
-        current_nsn = subscription["next_sequence_number"]
+        if change.data.get("messageset"):
+            subscription = sbm_client.get_subscription(
+                change.data['subscription'])
+            current_nsn = subscription["next_sequence_number"]
 
-        # Deactivate subscription
-        sbm_client.update_subscription(subscription['id'], {"active": False})
+            # Deactivate subscription
+            sbm_client.update_subscription(subscription['id'],
+                                           {"active": False})
 
-        new_messageset = sbm_client.get_messagesets(
-            {"short_name": change.data['messageset']})["results"][0]
+            new_messageset = sbm_client.get_messagesets(
+                {"short_name": change.data['messageset']})["results"][0]
 
-        # Make new subscription request object
-        mother_sub = {
-            "identity": change.registrant_id,
-            "messageset": new_messageset['id'],
-            "next_sequence_number": current_nsn,
-            "lang": subscription["lang"],  # use first subscription's lang
-            "schedule": new_messageset['default_schedule']
-        }
-        SubscriptionRequest.objects.create(**mother_sub)
+            # Make new subscription request object
+            mother_sub = {
+                "identity": change.registrant_id,
+                "messageset": new_messageset['id'],
+                "next_sequence_number": current_nsn,
+                "lang": change.data.get("language", subscription["lang"]),
+                "schedule": new_messageset['default_schedule']
+            }
+            SubscriptionRequest.objects.create(**mother_sub)
+
+        elif change.data.get("language"):
+            sbm_client.update_subscription(change.data['subscription'], {
+                'lang': change.data["language"],
+            })
 
     # Validation checks
     def check_pmtct_loss_optout_reason(self, data_fields, change):
@@ -660,10 +668,11 @@ class ValidateImplement(Task):
         else:
             return ["ID type should be 'sa_id' or 'passport'"]
 
-    def check_momconnect_change_messaging(self, data_fields, change):
+    def check_admin_change_subscription(self, data_fields, change):
         errors = []
-        if "messageset" not in data_fields:
-            errors.append("Messageset field is missing")
+        if "messageset" not in data_fields and "language" not in data_fields:
+            errors.append(
+                "One of these fields must be populated: messageset, language")
         if "subscription" not in data_fields:
             errors.append("Subscription field is missing")
         return errors
@@ -724,8 +733,8 @@ class ValidateImplement(Task):
             validation_errors += self.check_momconnect_change_identification(
                 data_fields, change)
 
-        elif change.action == 'momconnect_change_messaging':
-            validation_errors += self.check_momconnect_change_messaging(
+        elif change.action == 'admin_change_subscription':
+            validation_errors += self.check_admin_change_subscription(
                 data_fields, change)
 
         # Evaluate if there were any problems, save and return
@@ -766,7 +775,7 @@ class ValidateImplement(Task):
                 'momconnect_change_msisdn': self.momconnect_change_msisdn,
                 'momconnect_change_identification': (
                     self.momconnect_change_identification),
-                'momconnect_change_messaging': self.momconnect_change_messaging
+                'admin_change_subscription': self.admin_change_subscription
             }.get(change.action, None)(change)
 
             if submit_task is not None:
