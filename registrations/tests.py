@@ -15,7 +15,6 @@ except ImportError:
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.core import management
-from django.conf import settings
 from django.test import TestCase, override_settings
 from django.db.models.signals import post_save
 from django.utils import timezone
@@ -24,7 +23,6 @@ from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
 from rest_hooks.models import model_saved
 from requests_testadapter import TestAdapter, TestSession
-from go_http.metrics import MetricsApiClient
 
 from .models import Source, Registration, SubscriptionRequest
 from .signals import psh_validate_subscribe, psh_fire_created_metric
@@ -413,18 +411,6 @@ class AuthenticatedAPITestCase(APITestCase):
         post_save.connect(psh_fire_created_metric, sender=Registration,
                           dispatch_uid='psh_fire_created_metric')
 
-    def _replace_get_metric_client(self, session=None):
-        return MetricsApiClient(
-            auth_token=settings.METRICS_AUTH_TOKEN,
-            api_url=settings.METRICS_URL,
-            session=self.session)
-
-    def _restore_get_metric_client(self, session=None):
-        return MetricsApiClient(
-            auth_token=settings.METRICS_AUTH_TOKEN,
-            api_url=settings.METRICS_URL,
-            session=session)
-
     def make_source_adminuser(self):
         data = {
             "name": "test_source_adminuser",
@@ -516,7 +502,6 @@ class AuthenticatedAPITestCase(APITestCase):
     def setUp(self):
         super(AuthenticatedAPITestCase, self).setUp()
         self._replace_post_save_hooks()
-        utils.get_metric_client = self._replace_get_metric_client
 
         # Normal User setup
         self.normalusername = 'testnormaluser'
@@ -556,7 +541,6 @@ class AuthenticatedAPITestCase(APITestCase):
 
     def tearDown(self):
         self._restore_post_save_hooks()
-        utils.get_metric_client = self._restore_get_metric_client
 
 
 class TestLogin(AuthenticatedAPITestCase):
@@ -3362,6 +3346,13 @@ class TestMetricsAPI(AuthenticatedAPITestCase):
 
 class TestMetrics(AuthenticatedAPITestCase):
 
+    def setUp(self):
+        responses.add(
+            responses.POST,
+            'http://metrics/api/v1/metrics/',
+            json={})
+        return super(TestMetrics, self).setUp()
+
     def _check_request(
             self, request, method, params=None, data=None, headers=None):
         self.assertEqual(request.method, method)
@@ -3377,38 +3368,24 @@ class TestMetrics(AuthenticatedAPITestCase):
         else:
             self.assertEqual(json.loads(request.body), data)
 
-    def _mount_session(self):
-        response = [{
-            'name': 'foo',
-            'value': 9000,
-            'aggregator': 'bar',
-        }]
-        adapter = RecordingAdapter(json.dumps(response).encode('utf-8'))
-        self.session.mount(
-            "http://metrics/api/v1/metrics/", adapter)
-        return adapter
-
+    @responses.activate
     def test_direct_fire(self):
-        # Setup
-        adapter = self._mount_session()
         # Execute
         result = utils.fire_metric.apply_async(kwargs={
             "metric_name": 'foo.last',
             "metric_value": 1,
-            "session": self.session
         })
         # Check
-        [request] = adapter.requests
+        [request] = responses.calls
         self._check_request(
-            request, 'POST',
+            request.request, 'POST',
             data={"foo.last": 1.0}
         )
         self.assertEqual(result.get(),
                          "Fired metric <foo.last> with value <1.0>")
 
+    @responses.activate
     def test_created_metric(self):
-        # Setup
-        adapter = self._mount_session()
         # reconnect metric post_save hook
         post_save.connect(
             psh_fire_created_metric,
@@ -3420,13 +3397,13 @@ class TestMetrics(AuthenticatedAPITestCase):
         self.make_registration_adminuser()
 
         # Check
-        [request1, request3] = adapter.requests
+        [request1, request3] = responses.calls
         self._check_request(
-            request1, 'POST',
+            request1.request, 'POST',
             data={"registrations.created.sum": 1.0}
         )
         self._check_request(
-            request3, 'POST',
+            request3.request, 'POST',
             data={"registrations.created.sum": 1.0}
         )
 

@@ -7,7 +7,7 @@ import six
 
 from celery.task import Task
 from django.conf import settings
-from go_http.metrics import MetricsApiClient
+from seed_services_client.metrics import MetricsApiClient
 from seed_services_client.stage_based_messaging import (
     StageBasedMessagingApiClient)
 from seed_services_client.identity_store import IdentityStoreApiClient
@@ -253,8 +253,8 @@ def get_available_metrics():
 
 def get_metric_client(session=None):
     return MetricsApiClient(
-        auth_token=settings.METRICS_AUTH_TOKEN,
-        api_url=settings.METRICS_URL,
+        url=settings.METRICS_URL,
+        auth=settings.METRICS_AUTH,
         session=session)
 
 
@@ -270,7 +270,7 @@ class FireMetric(Task):
             metric_name: metric_value
         }
         metric_client = get_metric_client(session=session)
-        metric_client.fire(metric)
+        metric_client.fire_metrics(**metric)
         return "Fired metric <%s> with value <%s>" % (
             metric_name, metric_value)
 
