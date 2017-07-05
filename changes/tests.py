@@ -140,6 +140,32 @@ def mock_get_messageset(messageset_id, short_name):
     )
 
 
+def mock_search_messageset(messageset_id, short_name):
+    responses.add(
+        responses.GET,
+        'http://sbm/api/v1/messageset/?short_name=%s' % (short_name),
+        json={
+            "count": 1,
+            "next": None,
+            "previous": None,
+            "results": [
+                {
+                    'id': messageset_id,
+                    'short_name': short_name,
+                    'content_type': 'text',
+                    'notes': "",
+                    'next_set': 7,
+                    'default_schedule': 1,
+                    'created_at': "2015-07-10T06:13:29.693272Z",
+                    'updated_at': "2015-07-10T06:13:29.693272Z"
+                }
+            ]
+        },
+        status=200, content_type='application/json',
+        match_querystring=True
+    )
+
+
 def mock_get_all_messagesets():
     responses.add(
         responses.GET,
@@ -252,6 +278,31 @@ def mock_get_active_subscriptions_none(registrant_id, messageset=None):
 def mock_update_subscription(subscription_id, identity_id=None):
     responses.add(
         responses.PATCH,
+        'http://sbm/api/v1/subscriptions/{}/'.format(subscription_id),
+        json={
+            "id": subscription_id,
+            "identity": identity_id,
+            "active": True,
+            "completed": False,
+            "lang": "eng_ZA",
+            "url": "http://sbm/api/v1/subscriptions/{}".format(
+                subscription_id),
+            "messageset": 32,
+            "next_sequence_number": 32,
+            "schedule": 132,
+            "process_status": 0,
+            "version": 1,
+            "metadata": {},
+            "created_at": "2015-07-10T06:13:29.693272Z",
+            "updated_at": "2015-07-10T06:13:29.693272Z"
+        },
+        status=200, content_type='application/json'
+    )
+
+
+def mock_get_subscription(subscription_id, identity_id=None):
+    responses.add(
+        responses.GET,
         'http://sbm/api/v1/subscriptions/{}/'.format(subscription_id),
         json={
             "id": subscription_id,
@@ -1488,6 +1539,64 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         self.assertEqual(
             change.data['invalid_fields'],
             ["Passport number invalid", "Passport origin invalid"])
+
+    def test_admin_change_subscription(self):
+        """ Good data change messaging """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "admin_change_subscription",
+            "data": {
+                "messageset": "messageset_one",
+                "subscription": "sub12312-63e2-4acc-9b94-26663b9bc267",
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_admin_change_subscription_language(self):
+        """ Good data change messaging """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "admin_change_subscription",
+            "data": {
+                "language": "eng_ZA",
+                "subscription": "sub12312-63e2-4acc-9b94-26663b9bc267",
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        # Execute
+        c = validate_implement.validate(change)
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(c, True)
+        self.assertEqual(change.validated, True)
+
+    def test_admin_change_subscription_missing_fields(self):
+        """ Missing data change messaging """
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "admin_change_subscription",
+            "data": {},
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertFalse(change.validated)
+        self.assertEqual(
+            change.data['invalid_fields'],
+            ['One of these fields must be populated: messageset, language',
+             'Subscription field is missing'])
 
 
 class TestChangeActions(AuthenticatedAPITestCase):
@@ -2918,6 +3027,110 @@ class TestChangeActions(AuthenticatedAPITestCase):
             }
         })
 
+    @responses.activate
+    def test_admin_change_subscription_messageset(self):
+        """
+        Change messaging should disable the specified subscription and create a
+        new subscription request with the new messageset
+        """
+
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        subscription_id = "sub12312-63e2-4acc-9b94-26663b9bc267"
+        messageset_name = "momconnect_prebirth.hw_full.1"
+
+        mock_get_subscription(subscription_id, registrant_id)
+        mock_deactivate_subscriptions([subscription_id])
+        mock_search_messageset(32, messageset_name)
+
+        change_data = {
+            "registrant_id": registrant_id,
+            "action": "admin_change_subscription",
+            "data": {
+                "messageset": messageset_name,
+                "subscription": subscription_id,
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+
+        self.assertTrue(change.validated)
+
+        s = SubscriptionRequest.objects.last()
+        self.assertEqual(s.identity, registrant_id)
+        self.assertEqual(s.messageset, 32)
+
+    @responses.activate
+    def test_admin_change_subscription_language(self):
+        """
+        Change language only should update the existing subscription language
+        """
+
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        subscription_id = "sub12312-63e2-4acc-9b94-26663b9bc267"
+        language = "zul_ZA"
+
+        mock_update_subscription(subscription_id, registrant_id)
+
+        change_data = {
+            "registrant_id": registrant_id,
+            "action": "admin_change_subscription",
+            "data": {
+                "subscription": subscription_id,
+                "language": language
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+
+        self.assertTrue(change.validated)
+
+        s = SubscriptionRequest.objects.count()
+        self.assertEqual(s, 0)
+
+    @responses.activate
+    def test_admin_change_subscription_both(self):
+        """
+        Change messaging should disable the specified subscription and create a
+        new subscription request with the new messageset and language
+        """
+
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        subscription_id = "sub12312-63e2-4acc-9b94-26663b9bc267"
+        messageset_name = "momconnect_prebirth.hw_full.1"
+        language = "zul_ZA"
+
+        mock_get_subscription(subscription_id, registrant_id)
+        mock_deactivate_subscriptions([subscription_id])
+        mock_search_messageset(32, messageset_name)
+
+        change_data = {
+            "registrant_id": registrant_id,
+            "action": "admin_change_subscription",
+            "data": {
+                "messageset": messageset_name,
+                "subscription": subscription_id,
+                "language": language
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+
+        self.assertTrue(change.validated)
+
+        s = SubscriptionRequest.objects.last()
+        self.assertEqual(s.identity, registrant_id)
+        self.assertEqual(s.messageset, 32)
+        self.assertEqual(s.lang, language)
+
 
 class TestRemovePersonallyIdentifiableInformation(AuthenticatedAPITestCase):
     @responses.activate
@@ -3243,3 +3456,103 @@ class ControlInterfaceOptoutViewTest(AuthenticatedAPITestCase):
         self.assertEqual(source.name, user.get_full_name())
         self.assertEqual(source.user, user)
         self.assertEqual(source.authority, "advisor")
+
+    def test_ci_change_no_identity(self):
+        request = {}
+
+        self.make_source_adminuser()
+        response = self.adminclient.post('/api/v1/change_admin/',
+                                         json.dumps(request),
+                                         content_type='application/json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(utils.json_decode(response.content),
+                         {"registrant_id": ["This field is required."],
+                          "subscription": ["This field is required."]})
+        self.assertEqual(len(responses.calls), 0)
+
+    def test_ci_change_invalid(self):
+        request = {
+            "registrant_id": "846877e6-afaa-43de-acb1-09f61ad4de99",
+            "subscription": "846877e6-afaa-43de-acb1-111111111111"
+        }
+
+        self.make_source_adminuser()
+        response = self.adminclient.post('/api/v1/change_admin/',
+                                         json.dumps(request),
+                                         content_type='application/json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            utils.json_decode(response.content),
+            {"non_field_errors": ["One of these fields must be populated: messageset, language"]})  # noqa
+
+    def test_ci_change_language(self):
+        request = {
+            "registrant_id": "846877e6-afaa-43de-acb1-09f61ad4de99",
+            "subscription": "846877e6-afaa-43de-acb1-111111111111",
+            "language": "eng_ZA"
+        }
+
+        self.make_source_adminuser()
+        response = self.adminclient.post('/api/v1/change_admin/',
+                                         json.dumps(request),
+                                         content_type='application/json')
+
+        self.assertEqual(response.status_code, 201)
+        change = Change.objects.last()
+        self.assertEqual(change.registrant_id,
+                         "846877e6-afaa-43de-acb1-09f61ad4de99")
+        self.assertEqual(change.action, "admin_change_subscription")
+        self.assertEqual(change.data, {
+            "language": "eng_ZA",
+            "subscription": "846877e6-afaa-43de-acb1-111111111111"
+        })
+
+    def test_ci_change_messaging(self):
+        request = {
+            "registrant_id": "846877e6-afaa-43de-acb1-09f61ad4de99",
+            "subscription": "846877e6-afaa-43de-acb1-111111111111",
+            "messageset": "messageset_one"
+        }
+
+        self.make_source_adminuser()
+        response = self.adminclient.post('/api/v1/change_admin/',
+                                         json.dumps(request),
+                                         content_type='application/json')
+
+        self.assertEqual(response.status_code, 201)
+        change = Change.objects.last()
+        self.assertEqual(change.registrant_id,
+                         "846877e6-afaa-43de-acb1-09f61ad4de99")
+        self.assertEqual(change.action, "admin_change_subscription")
+        self.assertEqual(change.data, {
+            "messageset": "messageset_one",
+            "subscription": "846877e6-afaa-43de-acb1-111111111111"
+        })
+
+    def test_ci_change_language_and_messaging(self):
+        identity = "846877e6-afaa-43de-acb1-09f61ad4de99"
+        subscription = "846877e6-afaa-43de-acb1-111111111111"
+        request = {
+            "registrant_id": identity,
+            "subscription": subscription,
+            "messageset": "messageset_one",
+            "language": "eng_ZA"
+        }
+
+        self.make_source_adminuser()
+        response = self.adminclient.post('/api/v1/change_admin/',
+                                         json.dumps(request),
+                                         content_type='application/json')
+
+        self.assertEqual(response.status_code, 201)
+
+        changes = Change.objects.filter(registrant_id=identity)
+        self.assertEqual(changes.count(), 1)
+        self.assertEqual(changes[0].action, "admin_change_subscription")
+        self.assertEqual(changes[0].data, {
+            "messageset": "messageset_one",
+            "subscription": subscription,
+            "language": "eng_ZA"
+        })

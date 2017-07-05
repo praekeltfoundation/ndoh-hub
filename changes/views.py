@@ -5,7 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Source, Change
-from .serializers import ChangeSerializer, AdminOptoutSerializer
+from .serializers import (ChangeSerializer, AdminOptoutSerializer,
+                          AdminChangeSerializer)
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
 from django.conf import settings
 
@@ -76,6 +77,17 @@ class OptOutInactiveIdentity(APIView):
         return Response(status=status.HTTP_201_CREATED)
 
 
+def get_or_create_source(request):
+    source, created = Source.objects.get_or_create(
+        user=request.user,
+        defaults={
+            "authority": "advisor",
+            "name": (request.user.get_full_name() or
+                     request.user.username)
+            })
+    return source
+
+
 class ReceiveAdminOptout(generics.GenericAPIView):
     permission_classes = (IsAuthenticated,)
 
@@ -107,13 +119,7 @@ class ReceiveAdminOptout(generics.GenericAPIView):
             elif "momconnect" in messageset["short_name"]:
                 actions.add("momconnect_nonloss_optout")
 
-        source, created = Source.objects.get_or_create(
-            user=self.request.user,
-            defaults={
-                "authority": "advisor",
-                "name": (self.request.user.get_full_name() or
-                         self.request.user.username)
-                })
+        source = get_or_create_source(self.request)
 
         request.data["source"] = source.id
 
@@ -128,6 +134,47 @@ class ReceiveAdminOptout(generics.GenericAPIView):
             changes.append(change)
 
         serializer = ChangeSerializer(data=changes, many=True)
+
+        if serializer.is_valid():
+            serializer.save()
+
+            return Response(data=serializer.data,
+                            status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+
+class ReceiveAdminChange(generics.CreateAPIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+
+        admin_serializer = AdminChangeSerializer(data=request.data)
+        if admin_serializer.is_valid():
+            data = admin_serializer.validated_data
+        else:
+            return Response(admin_serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        source = get_or_create_source(self.request)
+
+        change = {
+            "registrant_id": data['registrant_id'],
+            "action": "admin_change_subscription",
+            "data": {
+                "subscription": str(data["subscription"])
+            },
+            "source": source.id,
+        }
+
+        if data.get('messageset'):
+            change['data']['messageset'] = data['messageset']
+
+        if data.get('language'):
+            change['data']['language'] = data['language']
+
+        serializer = ChangeSerializer(data=change)
 
         if serializer.is_valid():
             serializer.save()
