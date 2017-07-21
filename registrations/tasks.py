@@ -407,6 +407,10 @@ def remove_personally_identifiable_fields(registration_id):
         identity = is_client.get_identity(registration.registrant_id)
 
         for field in fields:
+            #  Language is stored as 'lang_code' in the Identity Store
+            if field == 'language':
+                identity['details']['lang_code'] = registration.data.pop(field)
+                continue
             identity['details'][field] = registration.data.pop(field)
 
         is_client.update_identity(
@@ -449,10 +453,13 @@ def add_personally_identifiable_fields(registration):
 
     fields = set((
         'id_type', 'mom_dob', 'passport_no', 'passport_origin', 'sa_id_no',
-        'language', 'consent'))\
+        'lang_code', 'consent'))\
         .intersection(identity['details'].keys())\
         .difference(registration.data.keys())
     for field in fields:
+        if field == 'lang_code':
+            registration.data['language'] = identity['details'][field]
+            continue
         registration.data[field] = identity['details'][field]
 
     uuid_fields = set((

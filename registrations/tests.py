@@ -3554,8 +3554,7 @@ class TestRemovePersonallyIdentifiableFieldsTask(AuthenticatedAPITestCase):
             'passport_origin': "na",
             'passport_no': '1234',
             'sa_id_no': '4321',
-            'lang_code': 'afr_ZA',
-            'language': 'eng_ZA',
+            'lang_code': 'eng_ZA',
             'consent': True,
             'foo': "bar"
         }})
@@ -3670,7 +3669,7 @@ class TestAddPersonallyIdentifiableFields(AuthenticatedAPITestCase):
             'passport_origin': "na",
             'passport_no': '1234',
             'sa_id_no': '4321',
-            'language': 'eng_ZA',
+            'lang_code': 'eng_ZA',
             'consent': True,
             'foo': "baz",
         })
@@ -3728,6 +3727,7 @@ class TestAddPersonallyIdentifiableFields(AuthenticatedAPITestCase):
             'uuid_registrant': 'uuid-registrant',
             'msisdn_device': 'msisdn-device',
             'msisdn_registrant': 'msisdn-registrant',
+            'language': 'afr_ZA',
         })
 
     @responses.activate
@@ -3751,5 +3751,5 @@ class TestAddPersonallyIdentifiableFields(AuthenticatedAPITestCase):
         registration = add_personally_identifiable_fields(registration)
 
         self.assertEqual(registration.data, {
-            'uuid_device': 'uuid-device',
+            'uuid_device': 'uuid-device', 'language': 'afr_ZA'
         })
