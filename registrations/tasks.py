@@ -265,6 +265,34 @@ class ValidateSubscribe(Task):
             self.l.info("Registration object updated.")
             return False
 
+    def create_popi_subscriptionrequest(self, registration):
+        """
+        Creates a new subscription request for the POPI message set. This
+        message set tells the user how to access the POPI required services.
+        This sould only be sent for Clinic or CHW registrations.
+        """
+        if ('prebirth' not in registration.reg_type or
+           registration.source.authority not in ['hw_partial', 'hw_full']):
+            return "POPI Subscription request not created"
+
+        self.l.info("Fetching messageset")
+        msgset_short_name = utils.get_messageset_short_name(
+            'popi', registration.source.authority, None)
+        msgset_id, msgset_schedule, next_sequence_number =\
+            utils.get_messageset_schedule_sequence(msgset_short_name, None)
+
+        self.l.info("Creating subscription request")
+        from .models import SubscriptionRequest
+        SubscriptionRequest.objects.create(
+            identity=registration.registrant_id,
+            messageset=msgset_id,
+            next_sequence_number=next_sequence_number,
+            lang=registration.data['language'],
+            schedule=msgset_schedule,
+        )
+        self.l.info("POPI Subscription request created")
+        return "POPI Subscription Request created"
+
     # Create SubscriptionRequest
     def create_subscriptionrequests(self, registration):
         """ Create SubscriptionRequest(s) based on the
@@ -364,6 +392,7 @@ class ValidateSubscribe(Task):
         reg_validates = self.validate(registration)
         if reg_validates:
             self.create_subscriptionrequests(registration)
+            self.create_popi_subscriptionrequest(registration)
 
             # NOTE: disable service rating for now
             # if registration.reg_type == "momconnect_prebirth" and\
