@@ -2473,8 +2473,9 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 
         # Check
         # . check number of calls made:
-        #   message set, schedule, jembi registration, id_store mother,
-        #   id_store mother_reverse, id_store registrant_rever, id_store patch
+        #   message set, schedule, popi message set, jembi registration,
+        #   id_store mother, id_store mother_reverse,
+        #   id_store registrant_rever, id_store patch
         self.assertEqual(len(responses.calls), 8)
 
         # . check registration validated
