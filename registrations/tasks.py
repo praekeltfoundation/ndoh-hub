@@ -269,7 +269,7 @@ class ValidateSubscribe(Task):
         """
         Creates a new subscription request for the POPI message set. This
         message set tells the user how to access the POPI required services.
-        This sould only be sent for Clinic or CHW registrations.
+        This should only be sent for Clinic or CHW registrations.
         """
         if ('prebirth' not in registration.reg_type or
            registration.source.authority not in ['hw_partial', 'hw_full']):
