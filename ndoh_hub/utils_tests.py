@@ -129,7 +129,8 @@ def mock_get_messageset_by_shortname(short_name):
         "loss_miscarriage.patient.1": 51,
         "loss_stillbirth.patient.1": 52,
         "loss_babyloss.patient.1": 53,
-        "nurseconnect.hw_full.1": 61
+        "nurseconnect.hw_full.1": 61,
+        "popi.hw_full.1": 71,
     }[short_name]
 
     default_schedule = {
@@ -151,7 +152,8 @@ def mock_get_messageset_by_shortname(short_name):
         "loss_miscarriage.patient.1": 151,
         "loss_stillbirth.patient.1": 152,
         "loss_babyloss.patient.1": 153,
-        "nurseconnect.hw_full.1": 161
+        "nurseconnect.hw_full.1": 161,
+        "popi.hw_full.1": 171,
     }[short_name]
 
     responses.add(
@@ -193,7 +195,8 @@ def mock_get_messageset(messageset_id):
         51: "loss_miscarriage.patient.1",
         52: "loss_stillbirth.patient.1",
         53: "loss_babyloss.patient.1",
-        61: "nurseconnect.hw_full.1"
+        61: "nurseconnect.hw_full.1",
+        71: "popi.hw_full.1",
     }[messageset_id]
 
     default_schedule = {
@@ -215,7 +218,8 @@ def mock_get_messageset(messageset_id):
         "loss_miscarriage.patient.1": 151,
         "loss_stillbirth.patient.1": 152,
         "loss_babyloss.patient.1": 153,
-        "nurseconnect.hw_full.1": 161
+        "nurseconnect.hw_full.1": 161,
+        "popi.hw_full.1": 171,
     }[short_name]
 
     responses.add(

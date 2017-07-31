@@ -2265,6 +2265,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         utils_tests.mock_patch_identity(
             "mother01-63e2-4acc-9b94-26663b9bc267")
         utils_tests.mock_get_identity_by_msisdn('+27821113333')
+        utils_tests.mock_get_messageset_by_shortname('popi.hw_full.1')
         # . reactivate post-save hook
         post_save.connect(psh_validate_subscribe, sender=Registration)
 
@@ -2330,7 +2331,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         Registration.objects.create(**registration_data)
 
         # check jembi registration
-        jembi_call = responses.calls[12]  # jembi should be the thirteenth one
+        jembi_call = responses.calls[13]  # jembi should be the fourteenth one
         self.assertEqual(
             json.loads(jembi_call.request.body)['faccode'], '123456')
 
@@ -2429,6 +2430,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         utils_tests.mock_patch_identity(
             "mother01-63e2-4acc-9b94-26663b9bc267")
         utils_tests.mock_get_identity_by_msisdn('+27821113333')
+        utils_tests.mock_get_messageset_by_shortname('popi.hw_full.1')
         # . reactivate post-save hook
         post_save.connect(psh_validate_subscribe, sender=Registration)
 
@@ -2471,21 +2473,30 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 
         # Check
         # . check number of calls made:
-        #   message set, schedule, jembi registration, id_store mother,
-        #   id_store mother_reverse, id_store registrant_rever, id_store patch
-        self.assertEqual(len(responses.calls), 7)
+        #   message set, schedule, popi message set, jembi registration,
+        #   id_store mother, id_store mother_reverse,
+        #   id_store registrant_rever, id_store patch
+        self.assertEqual(len(responses.calls), 8)
 
         # . check registration validated
         registration.refresh_from_db()
         self.assertEqual(registration.validated, True)
 
         # . check subscriptionrequest object
-        sr = SubscriptionRequest.objects.last()
+        sr = SubscriptionRequest.objects.filter(messageset=21).first()
         self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
         self.assertEqual(sr.messageset, 21)
         self.assertEqual(sr.next_sequence_number, 37)  # ((23 - 4) * 2) - 1
         self.assertEqual(sr.lang, "eng_ZA")
         self.assertEqual(sr.schedule, 121)
+
+        # check popi subscription request object
+        sr = SubscriptionRequest.objects.filter(messageset=71).first()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 71)
+        self.assertEqual(sr.next_sequence_number, 1)
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 171)
 
         # Teardown
         post_save.disconnect(psh_validate_subscribe, sender=Registration)
