@@ -11,6 +11,7 @@ try:
     from urllib.parse import urlparse
 except ImportError:
     from urlparse import urlparse
+import mock
 
 from django.contrib.auth.models import User
 from django.core.management import call_command
@@ -61,6 +62,20 @@ class TestUtils(TestCase):
         self.assertEqual(utils.is_valid_date(good_date), True)
         self.assertEqual(utils.is_valid_date(invalid_date), False)
         self.assertEqual(utils.is_valid_date(bad_date), False)
+
+    def test_is_valid_edd(self):
+        # Setup
+        good_edd = "2016-03-01"
+        past_edd = "2015-12-31"
+        far_future_edd = "2017-01-01"
+        not_date = "1234"
+        # Execute
+        # Check
+        with mock.patch('ndoh_hub.utils.get_today', override_get_today):
+            self.assertEqual(utils.is_valid_edd(good_edd), True)
+            self.assertEqual(utils.is_valid_edd(past_edd), False)
+            self.assertEqual(utils.is_valid_edd(far_future_edd), False)
+            self.assertEqual(utils.is_valid_edd(not_date), False)
 
     def test_is_valid_uuid(self):
         # Setup
