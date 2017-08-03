@@ -1345,12 +1345,13 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "language": "eng_ZA",
                 "mom_dob": "1999-01-27",
-                "edd": "2016-11-30",
+                "edd": "2016-08-30",
             },
         }
         registration = Registration.objects.create(**registration_data)
-        # Execute
-        v = validate_subscribe.validate(registration)
+        with mock.patch('ndoh_hub.utils.get_today', override_get_today):
+            # Execute
+            v = validate_subscribe.validate(registration)
         # Check
         self.assertEqual(v, True)
 
@@ -2818,7 +2819,8 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 class TestFixPmtctRegistrationsCommand(AuthenticatedAPITestCase):
 
     @responses.activate
-    def test_fix_pmtct_registrations(self):
+    @mock.patch('ndoh_hub.utils.get_today', return_value=override_get_today())
+    def test_fix_pmtct_registrations(self, mock_today):
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
             'pmtct_prebirth.patient.1')
         utils_tests.mock_get_schedule(schedule_id)
@@ -2836,7 +2838,7 @@ class TestFixPmtctRegistrationsCommand(AuthenticatedAPITestCase):
             "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "data": {
-                "edd": "2017-08-01",
+                "edd": "2016-08-01",
                 "mom_dob": "1982-08-01",
                 "language": "eng_ZA",
                 "operator_id": "operator-123456",
@@ -2872,7 +2874,7 @@ class TestFixPmtctRegistrationsCommand(AuthenticatedAPITestCase):
 
         self.assertEqual(stdout.getvalue().strip(),
                          '2 registrations fixed and validated.')
-        self.assertEqual(check_registration.data.get("edd"), "2017-08-01")
+        self.assertEqual(check_registration.data.get("edd"), "2016-08-01")
         self.assertEqual(check_registration.validated, True)
 
 
