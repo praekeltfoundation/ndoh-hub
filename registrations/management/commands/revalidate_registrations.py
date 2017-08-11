@@ -14,7 +14,7 @@ from ._utils import validate_and_return_url
 class Command(BaseCommand):
     help = ("Validates all invalid Registrations that failed with the given "
             "error. This should also lead to the creation of a  Subscription "
-            "in the SMB service")
+            "in the SBM service")
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -76,10 +76,9 @@ class Command(BaseCommand):
                 self.log(('Identity %s already has subscription. Skipping.')
                          % (reg.registrant_id))
                 continue
-            """
-            validate_subscribe() checks all data for the registration is valid
-            and creates the Subscription Request
-            """
+
+            # validate_subscribe() checks all data for the registration is
+            # valid and creates the Subscription Request
             if not reg.data.get('msisdn_device', ''):
                 add_personally_identifiable_fields(reg)
             reg.save()

@@ -61,7 +61,7 @@ def is_valid_date(date):
 def is_valid_edd(date):
     """
     Checks given Estimated Due Date is in the future but not more than
-    9 months always
+    9 months away
     """
     if is_valid_date(date):
         edd = datetime.datetime.strptime(date, "%Y-%m-%d")
