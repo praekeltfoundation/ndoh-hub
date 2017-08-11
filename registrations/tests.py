@@ -3820,11 +3820,13 @@ class TestRevalidateRegistrationsCommand(AuthenticatedAPITestCase):
         utils_tests.mock_get_schedule(schedule_id)
         utils_tests.mock_get_identity_by_id(registrant_uuid)
         utils_tests.mock_patch_identity(registrant_uuid)
+        utils_tests.mock_get_active_subscriptions(registrant_uuid, count=0)
 
         stdout = StringIO()
         call_command(
             'revalidate_registrations',
-            '--invalid-field', "Estimated Due Date missing", '--blind',
+            '--invalid-field', "Estimated Due Date missing", '--sbm-url',
+            'http://sbm.org/api/v1/', '--sbm-token', 'the_token',
             stdout=stdout)
 
         check_registration.refresh_from_db()
@@ -3874,11 +3876,13 @@ class TestRevalidateRegistrationsCommand(AuthenticatedAPITestCase):
         utils_tests.mock_get_schedule(schedule_id)
         utils_tests.mock_get_identity_by_id(registrant_uuid)
         utils_tests.mock_patch_identity(registrant_uuid)
+        utils_tests.mock_get_active_subscriptions(registrant_uuid, count=0)
 
         stdout = StringIO()
         call_command(
             'revalidate_registrations',
-            '--invalid-field', "Estimated Due Date missing", '--blind',
+            '--invalid-field', "Estimated Due Date missing", '--sbm-url',
+            'http://sbm.org/api/v1/', '--sbm-token', 'the_token',
             stdout=stdout)
 
         check_registration.refresh_from_db()
@@ -3928,12 +3932,14 @@ class TestRevalidateRegistrationsCommand(AuthenticatedAPITestCase):
         utils_tests.mock_get_schedule(schedule_id)
         utils_tests.mock_get_identity_by_id(registrant_uuid)
         utils_tests.mock_patch_identity(registrant_uuid)
+        utils_tests.mock_get_active_subscriptions(registrant_uuid, count=0)
 
         # run command with batch-size 1
         stdout = StringIO()
         call_command(
             'revalidate_registrations', '--invalid-field',
-            "Estimated Due Date missing", '--batch-size', '1', '--blind',
+            "Estimated Due Date missing", '--batch-size', '1', '--sbm-url',
+            'http://sbm.org/api/v1/', '--sbm-token', 'the_token',
             stdout=stdout)
 
         # check only one registration validated
@@ -3946,7 +3952,8 @@ class TestRevalidateRegistrationsCommand(AuthenticatedAPITestCase):
         # run command with batch-size 1
         call_command(
             'revalidate_registrations', '--invalid-field',
-            "Estimated Due Date missing", '--batch-size', '1', '--blind',
+            "Estimated Due Date missing", '--batch-size', '1', '--sbm-url',
+            'http://sbm.org/api/v1/', '--sbm-token', 'the_token',
             stdout=stdout)
 
         check_registration_2.refresh_from_db()
@@ -3965,64 +3972,7 @@ class TestRevalidateRegistrationsCommand(AuthenticatedAPITestCase):
                          "Successfully revalidated 1 registrations")
 
     @responses.activate
-    @mock.patch('ndoh_hub.utils.get_today', return_value=override_get_today())
-    def test_revalidate_registrations_not_blind_no_sub(self, mock_today):
-        # create a valid momconnect registration that was incorrectly marked
-        # as invalid
-        data = {
-            "reg_type": "momconnect_prebirth",
-            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "data": {
-                "uuid_device": "mother01-63e2-4acc-9b94-26663b9bc267",
-                "uuid_registrant": "mother01-63e2-4acc-9b94-26663b9bc267",
-                "edd": "2016-08-01",
-                "operator_id": "operator-63e2-4acc-9b94-26663b9bc267",
-                "invalid_fields": ["Estimated Due Date missing"]
-            },
-            "source": self.make_source_normaluser(),
-            "validated": False
-        }
-        check_registration = Registration.objects.create(**data)
-
-        # Setup fixture responses
-        registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
-        utils_tests.mock_get_identity_by_id(
-            "mother01-63e2-4acc-9b94-26663b9bc267", details={
-                'consent': True, 'addresses': {
-                    'msisdn': {"+27821112222": {}}}
-            })
-        utils_tests.mock_patch_identity(
-            "mother01-63e2-4acc-9b94-26663b9bc267")
-        utils_tests.mock_get_identity_by_msisdn('+27821112222')
-        schedule_id = utils_tests.mock_get_messageset_by_shortname(
-            "momconnect_prebirth.patient.1")
-        utils_tests.mock_get_schedule(schedule_id)
-        utils_tests.mock_get_identity_by_id(registrant_uuid)
-        utils_tests.mock_patch_identity(registrant_uuid)
-
-        # When the identity doesn't have a sub the reg should be revalidated
-        utils_tests.mock_get_active_subscriptions(registrant_uuid, count=0)
-
-        stdout = StringIO()
-        call_command(
-            'revalidate_registrations',
-            '--invalid-field', "Estimated Due Date missing", '--sbm-url',
-            'http://sbm.org/api/v1/', '--sbm-token', 'the_token',
-            stdout=stdout)
-
-        check_registration.refresh_from_db()
-        self.assertEqual(check_registration.validated, True)
-
-        output = stdout.getvalue().strip().split('\n')
-
-        self.assertEqual(len(output), 2)
-        self.assertEqual(output[0],
-                         "Validating registration %s" % check_registration.id)
-        self.assertEqual(output[1],
-                         "Successfully revalidated 1 registrations")
-
-    @responses.activate
-    def test_revalidate_registrations_not_blind_with_sub(self):
+    def test_revalidate_registrations_with_sub(self):
         # create a valid momconnect registration that was incorrectly marked
         # as invalid
         data = {

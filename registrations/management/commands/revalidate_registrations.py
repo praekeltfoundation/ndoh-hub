@@ -18,12 +18,6 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--blind', action='store_false', default=True,
-            dest='check_subscription',
-            help=('Do not check with the stage based messaging API whether'
-                  'or not a subscription for the identity already exists.'
-                  'NOT RECOMMENDED AT ALL'))
-        parser.add_argument(
             '--sbm-url', dest='sbm_url', type=validate_and_return_url,
             default=environ.get('STAGE_BASED_MESSAGING_URL'),
             help=('The Stage Based Messaging Service to verify '
@@ -47,21 +41,19 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         sbm_url = kwargs['sbm_url']
         sbm_token = kwargs['sbm_token']
-        check_subscription = kwargs['check_subscription']
         invalid_field = kwargs['invalid_field']
         batch_size = kwargs['batch_size']
 
-        if check_subscription:
-            if not sbm_url:
-                raise CommandError(
-                    'Please make sure either the STAGE_BASED_MESSAGING_URL '
-                    'environment variable or --sbm-url is set.')
+        if not sbm_url:
+            raise CommandError(
+                'Please make sure either the STAGE_BASED_MESSAGING_URL '
+                'environment variable or --sbm-url is set.')
 
-            if not sbm_token:
-                raise CommandError(
-                    'Please make sure either the STAGE_BASED_MESSAGING_TOKEN '
-                    'environment variable or --sbm-token is set.')
-            client = StageBasedMessagingApiClient(sbm_token, sbm_url)
+        if not sbm_token:
+            raise CommandError(
+                'Please make sure either the STAGE_BASED_MESSAGING_TOKEN '
+                'environment variable or --sbm-token is set.')
+        client = StageBasedMessagingApiClient(sbm_token, sbm_url)
 
         registrations = Registration.objects.filter(
             validated=False, data__invalid_fields__contains=[invalid_field])
@@ -72,7 +64,7 @@ class Command(BaseCommand):
         count = 0
         for reg in registrations.iterator():
             self.log("Validating registration %s" % reg.id)
-            if check_subscription and self.count_subscriptions(client, reg):
+            if self.count_subscriptions(client, reg):
                 self.log(('Identity %s already has subscription. Skipping.')
                          % (reg.registrant_id))
                 continue
