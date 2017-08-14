@@ -76,7 +76,7 @@ class ValidateSubscribe(Task):
     def check_edd(self, data_fields, registration):
         if "edd" not in data_fields:
             return ["Estimated Due Date missing"]
-        elif not utils.is_valid_date(registration.data["edd"]):
+        elif not utils.is_valid_edd(registration.data["edd"]):
             return ["Estimated Due Date invalid"]
         else:
             return []

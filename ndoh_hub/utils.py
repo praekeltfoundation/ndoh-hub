@@ -58,6 +58,19 @@ def is_valid_date(date):
         return False
 
 
+def is_valid_edd(date):
+    """
+    Checks given Estimated Due Date is in the future but not more than
+    9 months away
+    """
+    if is_valid_date(date):
+        edd = datetime.datetime.strptime(date, "%Y-%m-%d")
+        if (edd > get_today() and
+                edd < get_today() + datetime.timedelta(weeks=43)):
+            return True
+    return False
+
+
 def is_valid_lang(lang):
     return lang in [
         "zul_ZA",  # isiZulu

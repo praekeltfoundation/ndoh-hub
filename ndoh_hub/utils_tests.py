@@ -300,3 +300,24 @@ def mock_jembi_json_api_call(url, ok_response="ok", err_response="err",
         return (201, {}, json.dumps({"result": ok_response}))
 
     responses.add_callback(responses.POST, url, callback=request_callback)
+
+
+def mock_get_active_subscriptions(identity, count=0):
+    subscriptions = []
+    for i in range(count):
+        subscriptions.insert(i, {
+                "id": "sub-3401-63e2-4acc-9b94-26663b9bc267",
+                "identity": identity,
+                "messageset": 1,
+                "next_sequence_number": 1,
+                "lang": "eng_ZA",
+                "active": True
+        })
+
+    responses.add(
+        responses.GET,
+        'http://sbm.org/api/v1/subscriptions/?active=True&identity=%s' %
+        identity,
+        json={"results": subscriptions}, match_querystring=True,
+        status=200, content_type='application/json',
+    )

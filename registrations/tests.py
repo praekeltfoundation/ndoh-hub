@@ -11,6 +11,7 @@ try:
     from urllib.parse import urlparse
 except ImportError:
     from urlparse import urlparse
+import mock
 
 from django.contrib.auth.models import User
 from django.core.management import call_command
@@ -61,6 +62,20 @@ class TestUtils(TestCase):
         self.assertEqual(utils.is_valid_date(good_date), True)
         self.assertEqual(utils.is_valid_date(invalid_date), False)
         self.assertEqual(utils.is_valid_date(bad_date), False)
+
+    def test_is_valid_edd(self):
+        # Setup
+        good_edd = "2016-03-01"
+        past_edd = "2015-12-31"
+        far_future_edd = "2017-01-01"
+        not_date = "1234"
+        # Execute
+        # Check
+        with mock.patch('ndoh_hub.utils.get_today', override_get_today):
+            self.assertEqual(utils.is_valid_edd(good_edd), True)
+            self.assertEqual(utils.is_valid_edd(past_edd), False)
+            self.assertEqual(utils.is_valid_edd(far_future_edd), False)
+            self.assertEqual(utils.is_valid_edd(not_date), False)
 
     def test_is_valid_uuid(self):
         # Setup
@@ -1330,12 +1345,13 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
                 "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "language": "eng_ZA",
                 "mom_dob": "1999-01-27",
-                "edd": "2016-11-30",
+                "edd": "2016-08-30",
             },
         }
         registration = Registration.objects.create(**registration_data)
-        # Execute
-        v = validate_subscribe.validate(registration)
+        with mock.patch('ndoh_hub.utils.get_today', override_get_today):
+            # Execute
+            v = validate_subscribe.validate(registration)
         # Check
         self.assertEqual(v, True)
 
@@ -2803,7 +2819,8 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 class TestFixPmtctRegistrationsCommand(AuthenticatedAPITestCase):
 
     @responses.activate
-    def test_fix_pmtct_registrations(self):
+    @mock.patch('ndoh_hub.utils.get_today', return_value=override_get_today())
+    def test_fix_pmtct_registrations(self, mock_today):
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
             'pmtct_prebirth.patient.1')
         utils_tests.mock_get_schedule(schedule_id)
@@ -2821,7 +2838,7 @@ class TestFixPmtctRegistrationsCommand(AuthenticatedAPITestCase):
             "reg_type": "momconnect_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "data": {
-                "edd": "2017-08-01",
+                "edd": "2016-08-01",
                 "mom_dob": "1982-08-01",
                 "language": "eng_ZA",
                 "operator_id": "operator-123456",
@@ -2857,7 +2874,7 @@ class TestFixPmtctRegistrationsCommand(AuthenticatedAPITestCase):
 
         self.assertEqual(stdout.getvalue().strip(),
                          '2 registrations fixed and validated.')
-        self.assertEqual(check_registration.data.get("edd"), "2017-08-01")
+        self.assertEqual(check_registration.data.get("edd"), "2016-08-01")
         self.assertEqual(check_registration.validated, True)
 
 
@@ -3764,3 +3781,236 @@ class TestAddPersonallyIdentifiableFields(AuthenticatedAPITestCase):
         self.assertEqual(registration.data, {
             'uuid_device': 'uuid-device', 'language': 'afr_ZA'
         })
+
+
+class TestRevalidateRegistrationsCommand(AuthenticatedAPITestCase):
+    @responses.activate
+    @mock.patch('ndoh_hub.utils.get_today', return_value=override_get_today())
+    def test_revalidate_registrations_info_not_removed(self, mock_today):
+        # create a valid momconnect registration that was incorrectly marked
+        # as invalid and the personal information has not yet been removed
+        data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "data": {
+                "consent": True,
+                "msisdn_device": "+27821112222",
+                "msisdn_registrant": "+27821112222",
+                "edd": "2016-08-01",
+                "mom_dob": "1982-08-01",
+                "language": "eng_ZA",
+                "operator_id": "operator-63e2-4acc-9b94-26663b9bc267",
+                "test": "test",
+                "invalid_fields": ["Estimated Due Date missing"]
+            },
+            "source": self.make_source_normaluser(),
+            "validated": False
+        }
+        check_registration = Registration.objects.create(**data)
+
+        # Setup fixture responses
+        registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_patch_identity(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_get_identity_by_msisdn('+27821112222')
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_prebirth.patient.1")
+        utils_tests.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_identity_by_id(registrant_uuid)
+        utils_tests.mock_patch_identity(registrant_uuid)
+        utils_tests.mock_get_active_subscriptions(registrant_uuid, count=0)
+
+        stdout = StringIO()
+        call_command(
+            'revalidate_registrations',
+            '--invalid-field', "Estimated Due Date missing", '--sbm-url',
+            'http://sbm.org/api/v1/', '--sbm-token', 'the_token',
+            stdout=stdout)
+
+        check_registration.refresh_from_db()
+        self.assertEqual(check_registration.validated, True)
+
+        output = stdout.getvalue().strip().split('\n')
+
+        self.assertEqual(len(output), 2)
+        self.assertEqual(output[0],
+                         "Validating registration %s" % check_registration.id)
+        self.assertEqual(output[1],
+                         "Successfully revalidated 1 registrations")
+
+    @responses.activate
+    @mock.patch('ndoh_hub.utils.get_today', return_value=override_get_today())
+    def test_revalidate_registrations_info_removed(self, mock_today):
+        # create a valid momconnect registration that was incorrectly marked
+        # as invalid and the personal information has already been removed
+
+        data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "data": {
+                "uuid_device": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "uuid_registrant": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "edd": "2016-08-01",
+                "operator_id": "operator-63e2-4acc-9b94-26663b9bc267",
+                "invalid_fields": ["Estimated Due Date missing"]
+            },
+            "source": self.make_source_normaluser(),
+            "validated": False
+        }
+        check_registration = Registration.objects.create(**data)
+
+        # Setup fixture responses
+        registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267", details={
+                'consent': True, 'addresses': {
+                    'msisdn': {"+27821112222": {}}}
+            })
+        utils_tests.mock_patch_identity(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_get_identity_by_msisdn('+27821112222')
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_prebirth.patient.1")
+        utils_tests.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_identity_by_id(registrant_uuid)
+        utils_tests.mock_patch_identity(registrant_uuid)
+        utils_tests.mock_get_active_subscriptions(registrant_uuid, count=0)
+
+        stdout = StringIO()
+        call_command(
+            'revalidate_registrations',
+            '--invalid-field', "Estimated Due Date missing", '--sbm-url',
+            'http://sbm.org/api/v1/', '--sbm-token', 'the_token',
+            stdout=stdout)
+
+        check_registration.refresh_from_db()
+        self.assertEqual(check_registration.validated, True)
+
+        output = stdout.getvalue().strip().split('\n')
+
+        self.assertEqual(len(output), 2)
+        self.assertEqual(output[0],
+                         "Validating registration %s" % check_registration.id)
+        self.assertEqual(output[1],
+                         "Successfully revalidated 1 registrations")
+
+    @responses.activate
+    @mock.patch('ndoh_hub.utils.get_today', return_value=override_get_today())
+    def test_revalidate_registrations_in_batches(self, mock_today):
+        # create 2 valid momconnect registrations that were incorrectly marked
+        # as invalid
+        data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "data": {
+                "uuid_device": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "uuid_registrant": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "edd": "2016-08-01",
+                "operator_id": "operator-63e2-4acc-9b94-26663b9bc267",
+                "invalid_fields": ["Estimated Due Date missing"]
+            },
+            "source": self.make_source_normaluser(),
+            "validated": False
+        }
+        check_registration_1 = Registration.objects.create(**data)
+        check_registration_2 = Registration.objects.create(**data)
+
+        # Setup fixture responses
+        registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267", details={
+                'consent': True, 'addresses': {
+                    'msisdn': {"+27821112222": {}}}
+            })
+        utils_tests.mock_patch_identity(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_get_identity_by_msisdn('+27821112222')
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_prebirth.patient.1")
+        utils_tests.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_identity_by_id(registrant_uuid)
+        utils_tests.mock_patch_identity(registrant_uuid)
+        utils_tests.mock_get_active_subscriptions(registrant_uuid, count=0)
+
+        # run command with batch-size 1
+        stdout = StringIO()
+        call_command(
+            'revalidate_registrations', '--invalid-field',
+            "Estimated Due Date missing", '--batch-size', '1', '--sbm-url',
+            'http://sbm.org/api/v1/', '--sbm-token', 'the_token',
+            stdout=stdout)
+
+        # check only one registration validated
+        check_registration_1.refresh_from_db()
+        self.assertEqual(check_registration_1.validated, True)
+
+        check_registration_2.refresh_from_db()
+        self.assertEqual(check_registration_2.validated, False)
+
+        # run command with batch-size 1
+        call_command(
+            'revalidate_registrations', '--invalid-field',
+            "Estimated Due Date missing", '--batch-size', '1', '--sbm-url',
+            'http://sbm.org/api/v1/', '--sbm-token', 'the_token',
+            stdout=stdout)
+
+        check_registration_2.refresh_from_db()
+        self.assertEqual(check_registration_2.validated, True)
+
+        output = stdout.getvalue().strip().split('\n')
+
+        self.assertEqual(len(output), 4)
+        self.assertEqual(
+            output[0], "Validating registration %s" % check_registration_1.id)
+        self.assertEqual(output[1],
+                         "Successfully revalidated 1 registrations")
+        self.assertEqual(
+            output[2], "Validating registration %s" % check_registration_2.id)
+        self.assertEqual(output[3],
+                         "Successfully revalidated 1 registrations")
+
+    @responses.activate
+    def test_revalidate_registrations_with_sub(self):
+        # create a valid momconnect registration that was incorrectly marked
+        # as invalid
+        data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "data": {
+                "uuid_device": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "uuid_registrant": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "edd": "2016-08-01",
+                "operator_id": "operator-63e2-4acc-9b94-26663b9bc267",
+                "invalid_fields": ["Estimated Due Date missing"]
+            },
+            "source": self.make_source_normaluser(),
+            "validated": False
+        }
+        check_registration = Registration.objects.create(**data)
+        registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
+
+        # When the identity has a sub the reg shouldn't be revalidated
+        utils_tests.mock_get_active_subscriptions(registrant_uuid, count=1)
+
+        stdout = StringIO()
+        call_command(
+            'revalidate_registrations',
+            '--invalid-field', "Estimated Due Date missing", '--sbm-url',
+            'http://sbm.org/api/v1/', '--sbm-token', 'the_token',
+            stdout=stdout)
+
+        check_registration.refresh_from_db()
+        self.assertEqual(check_registration.validated, False)
+
+        output = stdout.getvalue().strip().split('\n')
+
+        self.assertEqual(len(output), 3)
+        self.assertEqual(output[0],
+                         "Validating registration %s" % check_registration.id)
+        self.assertEqual(output[1],
+                         "Identity %s already has subscription. Skipping." %
+                         registrant_uuid)
+        self.assertEqual(output[2],
+                         "Successfully revalidated 0 registrations")
