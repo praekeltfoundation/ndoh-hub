@@ -16,6 +16,7 @@ from ndoh_hub.celery import app
 from registrations.models import Registration
 from .models import Change
 from registrations.models import SubscriptionRequest
+from registrations.tasks import add_personally_identifiable_fields
 
 
 sbm_client = StageBasedMessagingApiClient(
@@ -1075,10 +1076,13 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
         A lot of the data that we need to send for the optout is contained
         in the registration, so we need to get the latest registration.
         """
-        return Registration.objects\
+        reg = Registration.objects\
             .filter(registrant_id=change.registrant_id)\
             .order_by('-created_at')\
             .first()
+        if reg.data.get("msisdn_registrant", None) is None:
+            reg = add_personally_identifiable_fields(reg)
+        return reg
 
     def build_jembi_json(self, change):
         registration = self.get_nurse_registration(change)
