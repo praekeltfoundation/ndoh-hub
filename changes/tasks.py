@@ -118,7 +118,7 @@ class ValidateImplement(Task):
             {'identity': change.registrant_id, 'active': True}
         )["results"]
 
-        if (len(active_subs) == 0):
+        if (len(list(active_subs)) == 0):
             self.l.info("No active subscriptions - aborting")
             return False
 
@@ -477,8 +477,8 @@ class ValidateImplement(Task):
             sbm_client.update_subscription(subscription['id'],
                                            {"active": False})
 
-            new_messageset = sbm_client.get_messagesets(
-                {"short_name": change.data['messageset']})["results"][0]
+            new_messageset = next(sbm_client.get_messagesets(
+                {"short_name": change.data['messageset']})["results"])
 
             # Make new subscription request object
             mother_sub = {
@@ -819,9 +819,9 @@ def remove_personally_identifiable_fields(change_id):
     for field in msisdn_fields:
         msisdn = change.data.pop(field)
         identities = is_client.get_identity_by_address('msisdn', msisdn)
-        if identities['results']:
-            field_identity = identities['results'][0]
-        else:
+        try:
+            field_identity = next(identities['results'])
+        except StopIteration:
             field_identity = is_client.create_identity({
                 'details': {
                     'addresses': {

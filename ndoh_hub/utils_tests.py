@@ -160,7 +160,6 @@ def mock_get_messageset_by_shortname(short_name):
         responses.GET,
         'http://sbm/api/v1/messageset/?short_name=%s' % short_name,
         json={
-            "count": 1,
             "next": None,
             "previous": None,
             "results": [{

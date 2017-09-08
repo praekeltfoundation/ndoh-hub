@@ -40,7 +40,6 @@ def mock_get_active_subs_mcpre_mcpost_pmtct_nc(registrant_id):
         responses.GET,
         'http://sbm/api/v1/subscriptions/?active=True&identity=%s' % registrant_id,  # noqa
         json={
-            "count": 4,
             "next": None,
             "previous": None,
             "results": [
@@ -145,7 +144,6 @@ def mock_search_messageset(messageset_id, short_name):
         responses.GET,
         'http://sbm/api/v1/messageset/?short_name=%s' % (short_name),
         json={
-            "count": 1,
             "next": None,
             "previous": None,
             "results": [
@@ -171,7 +169,6 @@ def mock_get_all_messagesets():
         responses.GET,
         'http://sbm/api/v1/messageset/',
         json={
-            "count": 3,
             "next": None,
             "previous": None,
             "results": [
@@ -225,7 +222,6 @@ def mock_get_active_subs_mc(registrant_id):
         responses.GET,
         'http://sbm/api/v1/subscriptions/?active=True&identity=%s' % registrant_id,  # noqa
         json={
-            "count": 1,
             "next": None,
             "previous": None,
             "results": [
@@ -263,7 +259,6 @@ def mock_get_active_subscriptions_none(registrant_id, messageset=None):
         responses.GET,
         url,
         json={
-            "count": 0,
             "next": None,
             "previous": None,
             "results": [],
@@ -331,7 +326,6 @@ def mock_get_active_nurseconnect_subscriptions(registrant_id):
         responses.GET,
         'http://sbm/api/v1/subscriptions/?active=True&messageset=61&identity=%s' % registrant_id,  # noqa
         json={
-            "count": 1,
             "next": None,
             "previous": None,
             "results": [
@@ -367,7 +361,6 @@ def mock_get_active_nurseconnect_childm_subscriptions(registrant_id):
         responses.GET,
         'http://sbm/api/v1/subscriptions/?active=True&messageset=62&identity=%s' % registrant_id,  # noqa
         json={
-            "count": 1,
             "next": None,
             "previous": None,
             "results": [
@@ -728,7 +721,7 @@ class TestChangeListAPI(AuthenticatedAPITestCase):
             content_type='application/json')
         # Check
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["count"], 2)
+        self.assertEqual(len(response.data["results"]), 2)
         result1, result2 = response.data["results"]
         self.assertEqual(result1["id"], str(change1.id))
         self.assertEqual(result2["id"], str(change2.id))
@@ -743,7 +736,7 @@ class TestChangeListAPI(AuthenticatedAPITestCase):
             content_type='application/json')
         # Check
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(len(response.data["results"]), 1)
         result = response.data["results"][0]
         self.assertEqual(result["id"], str(change2.id))
 

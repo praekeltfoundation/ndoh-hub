@@ -856,7 +856,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
             '/api/v1/registrations/', content_type='application/json')
         # Check
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["count"], 2)
+        self.assertEqual(len(response.data["results"]), 2)
         result1, result2 = response.data["results"]
         self.assertEqual(result1["id"], str(registration1.id))
         self.assertEqual(result2["id"], str(registration2.id))
@@ -871,7 +871,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
             content_type='application/json')
         # Check
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(len(response.data["results"]), 1)
         result = response.data["results"][0]
         self.assertEqual(result["id"], str(registration1.id))
 
@@ -884,7 +884,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
             content_type='application/json')
         # Check
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(len(response.data["results"]), 1)
         result = response.data["results"][0]
         self.assertEqual(result["id"], str(registration2.id))
 
@@ -897,7 +897,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
             content_type='application/json')
         # Check
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(len(response.data["results"]), 1)
         result = response.data["results"][0]
         self.assertEqual(result["id"], str(registration1.id))
 
@@ -910,7 +910,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
             content_type='application/json')
         # Check
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(len(response.data["results"]), 1)
         result = response.data["results"][0]
         self.assertEqual(result["id"], str(registration2.id))
 
@@ -927,7 +927,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
             content_type='application/json')
         # Check
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(len(response.data["results"]), 1)
         result = response.data["results"][0]
         self.assertEqual(result["id"], str(registration2.id))
 
@@ -944,7 +944,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
             content_type='application/json')
         # Check
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(len(response.data["results"]), 1)
         result = response.data["results"][0]
         self.assertEqual(result["id"], str(registration1.id))
 
@@ -957,7 +957,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
             content_type='application/json')
         # Check
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["count"], 0)
+        self.assertEqual(len(response.data["results"]), 0)
 
     def test_filter_registration_unknown_filter(self):
         # Setup
@@ -968,7 +968,7 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
             content_type='application/json')
         # Check
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["count"], 2)
+        self.assertEqual(len(response.data["results"]), 2)
 
 
 @override_settings(
@@ -986,7 +986,6 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
             responses.GET,
             'http://identitystore/identities/search/?details__addresses__msisdn=%2B27831111111',  # noqa
             json={
-                'count': 1,
                 'next': None,
                 'previous': None,
                 'results': [{
@@ -1011,7 +1010,6 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
             responses.GET,
             'http://identitystore/identities/search/?details__addresses__msisdn=%2B27824440000',  # noqa
             json={
-                'count': 1,
                 'next': None,
                 'previous': None,
                 'results': [{
@@ -1107,7 +1105,6 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
             responses.GET,
             'http://identitystore/identities/search/?details__addresses__msisdn=%2B27831111111',  # noqa
             json={
-                'count': 1,
                 'next': None,
                 'previous': None,
                 'results': [{
@@ -1132,7 +1129,6 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
             responses.GET,
             'http://identitystore/identities/search/?details__addresses__msisdn=%2B27824440000',  # noqa
             json={
-                'count': 0,
                 'next': None,
                 'previous': None,
                 'results': []
@@ -1206,7 +1202,6 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
             responses.GET,
             'http://identitystore/identities/search/?details__addresses__msisdn=%2B27831111111',  # noqa
             json={
-                'count': 1,
                 'next': None,
                 'previous': None,
                 'results': [{
@@ -1231,7 +1226,6 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
             responses.GET,
             'http://identitystore/identities/search/?details__addresses__msisdn=%2B27824440000',  # noqa
             json={
-                'count': 1,
                 'next': None,
                 'previous': None,
                 'results': [{
@@ -3232,7 +3226,6 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             'http://hub.example.com/api/v1/registrations/?source=1&validated=True',  # noqa
             match_querystring=True,
             json={
-                'count': 2,
                 'next': None,
                 'results': registrations,
             },
@@ -3244,7 +3237,6 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             'http://hub.example.com/api/v1/registrations/?source=3&validated=True',  # noqa
             match_querystring=True,
             json={
-                'count': 0,
                 'next': None,
                 'results': [],
             },
@@ -3474,7 +3466,6 @@ class UpdateInitialSequenceCommand(AuthenticatedAPITestCase):
             responses.GET,
             'http://localhost:8005/api/v1/subscriptions/',
             json={
-                "count": 1,
                 "next": None,
                 "previous": None,
                 "results": [{
@@ -3526,7 +3517,6 @@ class UpdateInitialSequenceCommand(AuthenticatedAPITestCase):
             responses.GET,
             'http://localhost:8005/api/v1/subscriptions/',
             json={
-                "count": 0,
                 "next": None,
                 "previous": None,
                 "results": []
