@@ -451,9 +451,9 @@ def remove_personally_identifiable_fields(registration_id):
     for field in msisdn_fields:
         msisdn = registration.data.pop(field)
         identities = is_client.get_identity_by_address('msisdn', msisdn)
-        if identities['results']:
-            field_identity = identities['results'][0]
-        else:
+        try:
+            field_identity = next(identities['results'])
+        except StopIteration:
             field_identity = is_client.create_identity({
                 'details': {
                     'addresses': {
