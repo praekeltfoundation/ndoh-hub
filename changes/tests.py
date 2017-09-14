@@ -40,7 +40,6 @@ def mock_get_active_subs_mcpre_mcpost_pmtct_nc(registrant_id):
         responses.GET,
         'http://sbm/api/v1/subscriptions/?active=True&identity=%s' % registrant_id,  # noqa
         json={
-            "count": 4,
             "next": None,
             "previous": None,
             "results": [
@@ -145,7 +144,6 @@ def mock_search_messageset(messageset_id, short_name):
         responses.GET,
         'http://sbm/api/v1/messageset/?short_name=%s' % (short_name),
         json={
-            "count": 1,
             "next": None,
             "previous": None,
             "results": [
@@ -171,7 +169,6 @@ def mock_get_all_messagesets():
         responses.GET,
         'http://sbm/api/v1/messageset/',
         json={
-            "count": 3,
             "next": None,
             "previous": None,
             "results": [
@@ -225,7 +222,6 @@ def mock_get_active_subs_mc(registrant_id):
         responses.GET,
         'http://sbm/api/v1/subscriptions/?active=True&identity=%s' % registrant_id,  # noqa
         json={
-            "count": 1,
             "next": None,
             "previous": None,
             "results": [
@@ -263,7 +259,6 @@ def mock_get_active_subscriptions_none(registrant_id, messageset=None):
         responses.GET,
         url,
         json={
-            "count": 0,
             "next": None,
             "previous": None,
             "results": [],
@@ -331,7 +326,6 @@ def mock_get_active_nurseconnect_subscriptions(registrant_id):
         responses.GET,
         'http://sbm/api/v1/subscriptions/?active=True&messageset=61&identity=%s' % registrant_id,  # noqa
         json={
-            "count": 1,
             "next": None,
             "previous": None,
             "results": [
@@ -367,7 +361,6 @@ def mock_get_active_nurseconnect_childm_subscriptions(registrant_id):
         responses.GET,
         'http://sbm/api/v1/subscriptions/?active=True&messageset=62&identity=%s' % registrant_id,  # noqa
         json={
-            "count": 1,
             "next": None,
             "previous": None,
             "results": [
@@ -532,17 +525,26 @@ class AuthenticatedAPITestCase(APITestCase):
         }
         return Registration.objects.create(**registration_data)
 
-    def make_registration_nurseconnect(self):
-        registration_data = {
-            "reg_type": "nurseconnect",
-            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
-            "source": self.make_source_adminuser(),
-            "data": {
+    def make_registration_nurseconnect(self, anonymised=False):
+        if anonymised:
+            data = {
+                "operator_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+                "uuid_registrant": "nurse001-63e2-4acc-9b94-26663b9bc267",
+                "uuid_device": "nurse001-63e2-4acc-9b94-26663b9bc267",
+                "faccode": "123456",
+            }
+        else:
+            data = {
                 "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "msisdn_registrant": "+27821112222",
                 "msisdn_device": "+27821112222",
                 "faccode": "123456",
-            },
+            }
+        registration_data = {
+            "reg_type": "nurseconnect",
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": data,
         }
         return Registration.objects.create(**registration_data)
 
@@ -2117,6 +2119,75 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(Registration.objects.all().count(), 1)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         self.assertEqual(len(responses.calls), 5)
+
+        # Check Jembi send
+        self.assertEqual(json.loads(responses.calls[-1].request.body), {
+            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
+            'mha': 1,
+            'swt': 1,
+            'type': 8,
+            'cmsisdn': '+27821112222',
+            'dmsisdn': '+27821112222',
+            'rmsisdn': None,
+            'faccode': '123456',
+            'id': '27821112222^^^ZAF^TEL',
+            'dob': None,
+            'optoutreason': 7
+        })
+
+    @responses.activate
+    def test_nurse_optout_reg_data_removed(self):
+        # Setup
+        # make registration
+        self.make_registration_nurseconnect(True)
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        # make change object
+        change_data = {
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "action": "nurse_optout",
+            "data": {
+                "reason": "job_change"
+            },
+            "source": self.make_source_adminuser()
+        }
+        change = Change.objects.create(**change_data)
+
+        # mock get identity
+        utils_tests.mock_get_identity_by_id(
+            'nurse001-63e2-4acc-9b94-26663b9bc267', details={
+                "addresses": {
+                    "msisdn": {
+                        "+27821112222": {}
+                    }
+                },
+            })
+
+        # mock get messagesets
+        mock_get_all_messagesets()
+
+        # . mock get nurseconnect subscription request
+        mock_get_active_nurseconnect_subscriptions(
+            change_data["registrant_id"])
+        mock_get_active_subscriptions_none(change_data["registrant_id"],
+                                           messageset=62)
+
+        # . mock deactivate active subscriptions
+        mock_deactivate_subscriptions([
+            "subscriptionid-nurseconnect-00000000"
+        ])
+        mock_get_messageset(61, "nurseconnect.hw_full.1")
+
+        # Execute
+        result = validate_implement.apply_async(args=[change.id])
+
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        self.assertEqual(len(responses.calls), 8)
 
         # Check Jembi send
         self.assertEqual(json.loads(responses.calls[-1].request.body), {

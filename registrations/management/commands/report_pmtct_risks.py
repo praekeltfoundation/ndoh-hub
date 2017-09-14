@@ -98,10 +98,8 @@ class Command(BaseCommand):
             hub_client = HubApiClient(hub_token, hub_url)
 
             for source in (1, 3):
-                registrations = self.get_registrations(
-                    hub_client,
-                    source=source,
-                    validated=True)
+                registrations = hub_client.get_registrations(
+                    {"source": source, "validated": True})['results']
 
                 for registration in registrations:
                     mom_dob = registration["data"].get("mom_dob")
@@ -135,18 +133,6 @@ class Command(BaseCommand):
         writer.writeheader()
         for risk, count in results.items():
             writer.writerow({headers[0]: risk, headers[1]: count})
-
-    def get_registrations(self, hub_client, **kwargs):
-        registrations = hub_client.get_registrations(kwargs)
-        cursor = registrations['next']
-        while cursor:
-            for result in registrations['results']:
-                yield result
-            params = parse_cursor_params(cursor)
-            registrations = hub_client.get_registrations(params)
-            cursor = registrations['next']
-        for result in registrations['results']:
-            yield result
 
     def get_identity(self, ids_client, identity):
         if identity in self.identity_cache:

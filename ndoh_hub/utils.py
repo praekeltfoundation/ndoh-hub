@@ -190,8 +190,8 @@ def get_messageset_short_name(reg_type, authority, weeks):
 
 def get_messageset_schedule_sequence(short_name, weeks):
     # get messageset
-    messageset = sbm_client.get_messagesets(
-        {"short_name": short_name})["results"][0]
+    messageset = next(sbm_client.get_messagesets(
+        {"short_name": short_name})["results"])
 
     if "prebirth" in short_name:
         # get schedule

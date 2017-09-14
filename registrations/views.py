@@ -271,13 +271,9 @@ class ThirdPartyRegistration(APIView):
                                         authority=source_auth)
             if mom_msisdn != hcw_msisdn:
                 # Get or create HCW Identity
-                result = is_client.get_identity_by_address('msisdn',
-                                                           hcw_msisdn)
-                # The get_identity_by_address API call does not parse the
-                # response in any way, so to check if we have gotten a result
-                # we need to look for a results key in the response dict and
-                # check that it is not an empty list.
-                if 'results' in result and not result['results']:
+                result = list(is_client.get_identity_by_address(
+                        'msisdn', hcw_msisdn)['results'])
+                if len(result) < 1:
                     identity = {
                         'details': {
                             'default_addr_type': 'msisdn',
@@ -290,7 +286,7 @@ class ThirdPartyRegistration(APIView):
                     }
                     hcw_identity = is_client.create_identity(identity)
                 else:
-                    hcw_identity = result['results'][0]
+                    hcw_identity = result[0]
             else:
                 hcw_identity = None
 
@@ -304,8 +300,9 @@ class ThirdPartyRegistration(APIView):
 
             # auth: chw, clinic,
             # Get or create Mom Identity
-            result = is_client.get_identity_by_address('msisdn', mom_msisdn)
-            if 'results' in result and not result['results']:
+            result = list(is_client.get_identity_by_address(
+                    'msisdn', mom_msisdn)['results'])
+            if len(result) < 1:
                 identity = {
                     'details': {
                         'default_addr_type': 'msisdn',
@@ -335,7 +332,7 @@ class ThirdPartyRegistration(APIView):
                         serializer.validated_data['mom_id_no'])
                 mom_identity = is_client.create_identity(identity)
             else:
-                mom_identity = result['results'][0]
+                mom_identity = result[0]
                 # Update Seed Identity record
                 details = mom_identity['details']
                 details['operator_id'] = operator

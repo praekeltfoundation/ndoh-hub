@@ -123,18 +123,17 @@ class Command(BaseCommand):
                         continue
 
                 else:
-                    result = ids_client.get_identity_by_address(
-                        'msisdn', msisdn)
-                    if (not result or 'count' not in result or
-                            result['count'] == 0):
+                    result = list(ids_client.get_identity_by_address(
+                        'msisdn', msisdn)['result'])
+                    if len(result) < 1:
                         loop_log.error('Could not load identity for msisdn.')
                         continue
 
-                    if result['count'] > 1:
+                    if len(result) > 1:
                         msg = 'Warning: Found {0} identities'
-                        msg = msg.format(result['count'])
+                        msg = msg.format(len(result))
                         loop_log.warn(msg)
-                    identity = result['results'][0]['id']
+                    identity = result[0]['id']
 
                 # Use this logger only for this iteration of the loop
                 id_log = loop_log.bind(identity=identity)

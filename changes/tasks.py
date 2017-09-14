@@ -16,6 +16,7 @@ from ndoh_hub.celery import app
 from registrations.models import Registration
 from .models import Change
 from registrations.models import SubscriptionRequest
+from registrations.tasks import add_personally_identifiable_fields
 
 
 sbm_client = StageBasedMessagingApiClient(
@@ -117,7 +118,7 @@ class ValidateImplement(Task):
             {'identity': change.registrant_id, 'active': True}
         )["results"]
 
-        if (len(active_subs) == 0):
+        if (len(list(active_subs)) == 0):
             self.l.info("No active subscriptions - aborting")
             return False
 
@@ -476,8 +477,8 @@ class ValidateImplement(Task):
             sbm_client.update_subscription(subscription['id'],
                                            {"active": False})
 
-            new_messageset = sbm_client.get_messagesets(
-                {"short_name": change.data['messageset']})["results"][0]
+            new_messageset = next(sbm_client.get_messagesets(
+                {"short_name": change.data['messageset']})["results"])
 
             # Make new subscription request object
             mother_sub = {
@@ -818,9 +819,9 @@ def remove_personally_identifiable_fields(change_id):
     for field in msisdn_fields:
         msisdn = change.data.pop(field)
         identities = is_client.get_identity_by_address('msisdn', msisdn)
-        if identities['results']:
-            field_identity = identities['results'][0]
-        else:
+        try:
+            field_identity = next(identities['results'])
+        except StopIteration:
             field_identity = is_client.create_identity({
                 'details': {
                     'addresses': {
@@ -1075,10 +1076,13 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
         A lot of the data that we need to send for the optout is contained
         in the registration, so we need to get the latest registration.
         """
-        return Registration.objects\
+        reg = Registration.objects\
             .filter(registrant_id=change.registrant_id)\
             .order_by('-created_at')\
             .first()
+        if reg.data.get("msisdn_registrant", None) is None:
+            reg = add_personally_identifiable_fields(reg)
+        return reg
 
     def build_jembi_json(self, change):
         registration = self.get_nurse_registration(change)
