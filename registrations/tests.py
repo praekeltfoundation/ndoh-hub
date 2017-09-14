@@ -13,7 +13,7 @@ except ImportError:
     from urlparse import urlparse
 import mock
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.core.management import call_command
 from django.core import management
 from django.test import TestCase, override_settings
@@ -691,6 +691,68 @@ class TestUserCreation(AuthenticatedAPITestCase):
             "Error message was unexpected: %s."
             % error)
 
+    def test_list_users(self):
+        # Execute
+        response = self.adminclient.get(
+            '/api/v1/user/', content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        body = response.json()
+        self.assertEqual(len(body["results"]), 2)
+        self.assertEqual(body["results"][0]["username"],
+                         self.normaluser.username)
+        self.assertEqual(body["results"][1]["username"],
+                         self.adminuser.username)
+        self.assertIsNone(body["previous"])
+        self.assertIsNotNone(body["next"])
+
+        # Check pagination
+        body = self.adminclient.get(body["next"]).json()
+        self.assertEqual(len(body["results"]), 1)
+        self.assertEqual(body["results"][0]["username"],
+                         self.partialuser.username)
+        self.assertIsNotNone(body["previous"])
+        self.assertIsNone(body["next"])
+
+        body = self.adminclient.get(body["previous"]).json()
+        self.assertEqual(len(body["results"]), 2)
+        self.assertEqual(body["results"][0]["username"],
+                         self.normaluser.username)
+        self.assertEqual(body["results"][1]["username"],
+                         self.adminuser.username)
+        self.assertIsNone(body["previous"])
+        self.assertIsNotNone(body["next"])
+
+    def test_list_groups(self):
+        groups = []
+        for i in range(1, 4):
+            groups.append(Group.objects.create(name='group_%s' % i))
+        # Execute
+        response = self.adminclient.get(
+            '/api/v1/group/', content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        body = response.json()
+        self.assertEqual(len(body["results"]), 2)
+        self.assertEqual(body["results"][0]["name"], groups[0].name)
+        self.assertEqual(body["results"][1]["name"], groups[1].name)
+        self.assertIsNone(body["previous"])
+        self.assertIsNotNone(body["next"])
+
+        # Check pagination
+        body = self.adminclient.get(body["next"]).json()
+        self.assertEqual(len(body["results"]), 1)
+        self.assertEqual(body["results"][0]["name"], groups[2].name)
+        self.assertIsNotNone(body["previous"])
+        self.assertIsNone(body["next"])
+
+        body = self.adminclient.get(body["previous"]).json()
+        self.assertEqual(len(body["results"]), 2)
+        self.assertEqual(body["results"][0]["name"], groups[0].name)
+        self.assertEqual(body["results"][1]["name"], groups[1].name)
+        self.assertIsNone(body["previous"])
+        self.assertIsNotNone(body["next"])
+
 
 class TestSourceAPI(AuthenticatedAPITestCase):
 
@@ -747,6 +809,37 @@ class TestSourceAPI(AuthenticatedAPITestCase):
                                           content_type='application/json')
         # Check
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_list_source(self):
+        source1 = self.make_source_adminuser()
+        source2 = self.make_source_normaluser()
+        source3 = self.make_source_normaluser()
+
+        # Execute
+        response = self.adminclient.get(
+            '/api/v1/source/', content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        body = response.json()
+        self.assertEqual(len(body["results"]), 2)
+        self.assertEqual(body["results"][0]["id"], source1.id)
+        self.assertEqual(body["results"][1]["id"], source2.id)
+        self.assertIsNone(body["previous"])
+        self.assertIsNotNone(body["next"])
+
+        # Check pagination
+        body = self.adminclient.get(body["next"]).json()
+        self.assertEqual(len(body["results"]), 1)
+        self.assertEqual(body["results"][0]["id"], source3.id)
+        self.assertIsNotNone(body["previous"])
+        self.assertIsNone(body["next"])
+
+        body = self.adminclient.get(body["previous"]).json()
+        self.assertEqual(len(body["results"]), 2)
+        self.assertEqual(body["results"][0]["id"], source1.id)
+        self.assertEqual(body["results"][1]["id"], source2.id)
+        self.assertIsNone(body["previous"])
+        self.assertIsNotNone(body["next"])
 
 
 class TestRegistrationAPI(AuthenticatedAPITestCase):
@@ -851,15 +944,32 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
         # Setup
         registration1 = self.make_registration_normaluser()
         registration2 = self.make_registration_adminuser()
+        registration3 = self.make_registration_normaluser()
         # Execute
         response = self.normalclient.get(
             '/api/v1/registrations/', content_type='application/json')
         # Check
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 2)
-        result1, result2 = response.data["results"]
-        self.assertEqual(result1["id"], str(registration1.id))
-        self.assertEqual(result2["id"], str(registration2.id))
+        body = response.json()
+        self.assertEqual(len(body["results"]), 2)
+        self.assertEqual(body["results"][0]["id"], str(registration3.id))
+        self.assertEqual(body["results"][1]["id"], str(registration2.id))
+        self.assertIsNone(body["previous"])
+        self.assertIsNotNone(body["next"])
+
+        # Check pagination
+        body = self.normalclient.get(body["next"]).json()
+        self.assertEqual(len(body["results"]), 1)
+        self.assertEqual(body["results"][0]["id"], str(registration1.id))
+        self.assertIsNotNone(body["previous"])
+        self.assertIsNone(body["next"])
+
+        body = self.normalclient.get(body["previous"]).json()
+        self.assertEqual(len(body["results"]), 2)
+        self.assertEqual(body["results"][0]["id"], str(registration3.id))
+        self.assertEqual(body["results"][1]["id"], str(registration2.id))
+        self.assertIsNone(body["previous"])
+        self.assertIsNotNone(body["next"])
 
     def test_filter_registration_registrant_id(self):
         # Setup

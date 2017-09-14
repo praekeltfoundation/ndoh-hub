@@ -7,6 +7,7 @@ from django.contrib.auth.models import User, Group
 
 from rest_hooks.models import Hook
 from rest_framework import viewsets, mixins, generics, filters, status
+from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
@@ -38,6 +39,14 @@ def transform_language_code(lang):
     }[lang]
 
 
+class IdCursorPagination(CursorPagination):
+    ordering = "id"
+
+
+class CreatedAtCursorPagination(CursorPagination):
+    ordering = "-created_at"
+
+
 class HookViewSet(viewsets.ModelViewSet):
     """
     Retrieve, create, update or destroy webhooks.
@@ -45,6 +54,7 @@ class HookViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
     queryset = Hook.objects.all()
     serializer_class = HookSerializer
+    pagination_class = IdCursorPagination
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -58,6 +68,7 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticated,)
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    pagination_class = IdCursorPagination
 
 
 class UserView(APIView):
@@ -91,6 +102,7 @@ class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticated,)
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
+    pagination_class = IdCursorPagination
 
 
 class SourceViewSet(viewsets.ModelViewSet):
@@ -101,6 +113,7 @@ class SourceViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminUser,)
     queryset = Source.objects.all()
     serializer_class = SourceSerializer
+    pagination_class = IdCursorPagination
 
 
 class RegistrationPost(mixins.CreateModelMixin, generics.GenericAPIView):
@@ -143,6 +156,7 @@ class RegistrationGetViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Registration.objects.all()
     serializer_class = RegistrationSerializer
     filter_class = RegistrationFilter
+    pagination_class = CreatedAtCursorPagination
 
 
 class JembiHelpdeskOutgoingView(APIView):

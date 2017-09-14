@@ -1,6 +1,7 @@
 import django_filters
 from rest_framework import viewsets, mixins, generics, filters, status
 from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,6 +10,10 @@ from .serializers import (ChangeSerializer, AdminOptoutSerializer,
                           AdminChangeSerializer)
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
 from django.conf import settings
+
+
+class CreatedAtCursorPagination(CursorPagination):
+    ordering = "-created_at"
 
 
 class ChangePost(mixins.CreateModelMixin, generics.GenericAPIView):
@@ -52,6 +57,7 @@ class ChangeGetViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Change.objects.all()
     serializer_class = ChangeSerializer
     filter_class = ChangeFilter
+    pagination_class = CreatedAtCursorPagination
 
 
 class OptOutInactiveIdentity(APIView):
