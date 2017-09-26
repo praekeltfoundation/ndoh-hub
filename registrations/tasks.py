@@ -554,6 +554,9 @@ class BasePushRegistrationToJembi(object):
         if source.name.startswith('EXTERNAL CHW'):
             # catch all external chw sources
             return 'chw'
+        elif source.name.startswith('EXTERNAL Clinic'):
+            # catch all external clinic sources
+            return 'clinic'
         else:
             return {
                 'PUBLIC USSD App': 'personal',
