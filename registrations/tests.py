@@ -2777,6 +2777,126 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             psh_validate_subscribe, sender=Registration)
 
     @responses.activate
+    def test_push_external_chw_registration_to_jembi(self):
+        post_save.connect(
+            psh_validate_subscribe, sender=Registration)
+
+        # Mock API call to SBM for message set
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            'momconnect_prebirth.hw_partial.1')
+        utils_tests.mock_get_messageset_by_shortname('popi.hw_partial.1')
+        utils_tests.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_patch_identity(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_push_registration_to_jembi(
+            ok_response="jembi-is-ok",
+            err_response="jembi-is-unhappy",
+            fields={
+                "cmsisdn": "+27111111111",
+                "lang": "en",
+            })
+        utils_tests.mock_get_identity_by_msisdn('+27000000000')
+        utils_tests.mock_get_identity_by_msisdn('+27111111111')
+
+        # Setup
+        source = Source.objects.create(
+            name="EXTERNAL CHW App",
+            authority="hw_partial",
+            user=User.objects.get(username='testpartialuser'))
+
+        registration_data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": source,
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "id_type": "sa_id",
+                "sa_id_no": "8108015001051",
+                "edd": "2016-11-30",
+                "faccode": "123456",
+                "msisdn_device": "+27000000000",
+                "msisdn_registrant": "+27111111111",
+                "consent": True,
+            },
+        }
+
+        registration = Registration.objects.create(**registration_data)
+        self.assertFalse(registration.validated)
+        registration.save()
+
+        jembi_call = responses.calls[3]  # jembi should be the fourth one
+        self.assertEqual(json.loads(jembi_call.response.text), {
+            "result": "jembi-is-ok"
+        })
+
+        post_save.disconnect(
+            psh_validate_subscribe, sender=Registration)
+
+    @responses.activate
+    def test_push_external_clinic_registration_to_jembi(self):
+        post_save.connect(
+            psh_validate_subscribe, sender=Registration)
+
+        # Mock API call to SBM for message set
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            'momconnect_prebirth.hw_full.1')
+        utils_tests.mock_get_messageset_by_shortname('popi.hw_full.1')
+        utils_tests.mock_get_schedule(schedule_id)
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_patch_identity(
+            "mother01-63e2-4acc-9b94-26663b9bc267")
+        utils_tests.mock_push_registration_to_jembi(
+            ok_response="jembi-is-ok",
+            err_response="jembi-is-unhappy",
+            fields={
+                "cmsisdn": "+27111111111",
+                "lang": "en",
+            })
+        utils_tests.mock_get_identity_by_msisdn('+27000000000')
+        utils_tests.mock_get_identity_by_msisdn('+27111111111')
+
+        # Setup
+        source = Source.objects.create(
+            name="EXTERNAL Clinic App",
+            authority="hw_full",
+            user=User.objects.get(username='testadminuser'))
+
+        registration_data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": source,
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "id_type": "sa_id",
+                "sa_id_no": "8108015001051",
+                "edd": "2016-05-01",
+                "faccode": "123456",
+                "msisdn_device": "+27000000000",
+                "msisdn_registrant": "+27111111111",
+                "consent": True,
+            },
+        }
+
+        registration = Registration.objects.create(**registration_data)
+        self.assertFalse(registration.validated)
+        registration.save()
+
+        jembi_call = responses.calls[3]  # jembi should be the forth one
+        self.assertEqual(json.loads(jembi_call.response.text), {
+            "result": "jembi-is-ok"
+        })
+
+        post_save.disconnect(
+            psh_validate_subscribe, sender=Registration)
+
+    @responses.activate
     def test_push_momconnect_registration_to_jembi_via_management_task(self):
         # Mock API call to SBM for message set
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
