@@ -1855,7 +1855,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions([sub])
 
-        # . mock get momconnect_postrbirh messageset by shortname
+        # . mock get momconnect_postbirth messageset by shortname
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "whatsapp_pmtct_postbirth.patient.1")
         utils_tests.mock_get_schedule(schedule_id)
@@ -1966,7 +1966,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
     def test_pmtct_loss_switch_whatsapp(self):
         """
         If the mother was on the whatsapp message set, she should be switched
-        to the whatsapp pmtct message set.
+        to the whatsapp loss message set.
         """
         # Setup
         # make registrations
