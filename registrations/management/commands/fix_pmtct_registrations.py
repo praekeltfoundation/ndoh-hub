@@ -13,7 +13,9 @@ class Command(BaseCommand):
 
         registrations = Registration.objects.filter(
             validated=False,
-            reg_type__in=("pmtct_prebirth", "pmtct_postbirth")).iterator()
+            reg_type__in=(
+                "whatsapp_pmtct_prebirth", "pmtct_prebirth",
+                "whatsapp_pmtct_postbirth", "pmtct_postbirth")).iterator()
 
         updates = 0
 
@@ -21,6 +23,8 @@ class Command(BaseCommand):
         fields = {
             'pmtct_prebirth': common_fields + ('edd',),
             'pmtct_postbirth': common_fields + ('baby_dob',),
+            'whatsapp_pmtct_prebirth': common_fields + ('edd',),
+            'whatsapp_pmtct_postbirth': common_fields + ('baby_dob',),
         }
 
         for registration in registrations:
@@ -28,7 +32,9 @@ class Command(BaseCommand):
             related_regs = Registration.objects.filter(
                     validated=True,
                     registrant_id=registration.registrant_id
-                ).exclude(reg_type__in=("pmtct_prebirth", "pmtct_postbirth")).\
+                ).exclude(reg_type__in=(
+                    "whatsapp_pmtct_prebirth", "pmtct_prebirth",
+                    "whatsapp_pmtct_postbirth", "pmtct_postbirth")).\
                 order_by('-created_at')
 
             resubmit = True

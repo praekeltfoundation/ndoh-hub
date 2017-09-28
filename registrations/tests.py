@@ -1886,6 +1886,47 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(v, True)
 
+    def test_validate_whatsapp_pmtct_postbirth_good(self):
+        """ Good minimal data whatsapp_pmtct_postbirth test """
+        # Setup
+        registration_data = {
+            "reg_type": "whatsapp_pmtct_postbirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_normaluser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "baby_dob": "2016-01-01"
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        # Execute
+        v = validate_subscribe.validate(registration)
+        # Check
+        self.assertEqual(v, True)
+
+    def test_validate_whatsapp_pmtct_prebirth_good(self):
+        """ Good minimal data whatsapp_pmtct_prebirth test """
+        # Setup
+        registration_data = {
+            "reg_type": "whatsapp_pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_normaluser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "edd": "2016-08-30",
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        with mock.patch('ndoh_hub.utils.get_today', override_get_today):
+            # Execute
+            v = validate_subscribe.validate(registration)
+        # Check
+        self.assertEqual(v, True)
+
 
 class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
 
@@ -2285,6 +2326,82 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         self.assertEqual(sr.next_sequence_number, 1)
         self.assertEqual(sr.lang, "eng_ZA")
         self.assertEqual(sr.schedule, 142)
+
+    @responses.activate
+    def test_src_whatsapp_pmtct_prebirth(self):
+        """ Test a whatsapp pmtct prebirth registration before 30 weeks """
+        # Setup
+        # . setup pmtct_prebirth registration and set validated to true
+        registration_data = {
+            "reg_type": "whatsapp_pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_normaluser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "edd": "2016-05-01"  # in week 23 of pregnancy
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        registration.validated = True
+        registration.save()
+
+        # . setup fixture responses
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "whatsapp_pmtct_prebirth.patient.1")
+        utils_tests.mock_get_schedule(schedule_id)
+
+        # Execute
+        cs = validate_subscribe.create_subscriptionrequests(registration)
+
+        # Check
+        self.assertEqual(cs, "SubscriptionRequest created")
+
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 92)
+        self.assertEqual(sr.next_sequence_number, 17)  # (23 - 6) * 1
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 192)
+
+    @responses.activate
+    def test_src_whatsapp_pmtct_postbirth(self):
+        """ Test a whatsapp pmtct postbirth registration """
+        # Setup
+        # . setup pmtct_postbirth registration and set validated to true
+        registration_data = {
+            "reg_type": "whatsapp_pmtct_postbirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_normaluser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "baby_dob": "2016-01-01"
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        registration.validated = True
+        registration.save()
+
+        # setup fixture responses
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "whatsapp_pmtct_postbirth.patient.1")
+        utils_tests.mock_get_schedule(schedule_id)
+
+        # Execute
+        cs = validate_subscribe.create_subscriptionrequests(registration)
+
+        # Check
+        self.assertEqual(cs, "SubscriptionRequest created")
+
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 91)
+        self.assertEqual(sr.next_sequence_number, 1)
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 191)
 
 
 class TestRegistrationCreation(AuthenticatedAPITestCase):

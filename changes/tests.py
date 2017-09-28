@@ -121,6 +121,41 @@ def mock_get_active_subs_mcpre_mcpost_pmtct_nc(registrant_id):
             nurseconnect_sub_id, momconnect_postbirth_sub_id]
 
 
+def mock_get_active_subs_whatsapp(registrant_id):
+    whatsapp_prebirth_sub_id = "subscriptionid-whatsapp-prebirth-0"
+    responses.add(
+        responses.GET,
+        'http://sbm/api/v1/subscriptions/?active=True&identity=%s' % registrant_id,  # noqa
+        json={
+            "next": None,
+            "previous": None,
+            "results": [
+                {   # whatsapp_prebirth.hw_full.1 subscription
+                    "id": whatsapp_prebirth_sub_id,
+                    "identity": registrant_id,
+                    "active": True,
+                    "completed": False,
+                    "lang": "eng_ZA",
+                    "url": "http://sbm/api/v1/subscriptions/%s" % (
+                        whatsapp_prebirth_sub_id),
+                    "messageset": 99,
+                    "next_sequence_number": 21,
+                    "schedule": 121,
+                    "process_status": 0,
+                    "version": 1,
+                    "metadata": {},
+                    "created_at": "2015-07-10T06:13:29.693272Z",
+                    "updated_at": "2015-07-10T06:13:29.693272Z"
+                },
+            ],
+        },
+        status=200, content_type='application/json',
+        match_querystring=True
+    )
+
+    return whatsapp_prebirth_sub_id
+
+
 def mock_get_messageset(messageset_id, short_name):
     responses.add(
         responses.GET,
@@ -202,6 +237,15 @@ def mock_get_all_messagesets():
                 }, {
                     'id': 11,
                     'short_name': 'pmtct_prebirth.patient.1',
+                    'content_type': 'text',
+                    'notes': "",
+                    'next_set': 7,
+                    'default_schedule': 1,
+                    'created_at': "2015-07-10T06:13:29.693272Z",
+                    'updated_at': "2015-07-10T06:13:29.693272Z"
+                }, {
+                    'id': 99,
+                    'short_name': 'whatsapp_prebirth.hw_full.1',
                     'content_type': 'text',
                     'notes': "",
                     'next_set': 7,
@@ -551,6 +595,20 @@ class AuthenticatedAPITestCase(APITestCase):
     def make_registration_momconnect_prebirth(self):
         registration_data = {
             "reg_type": "pmtct_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_normaluser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "edd": "2016-11-30",
+            },
+        }
+        return Registration.objects.create(**registration_data)
+
+    def make_registration_whatsapp_pmtct_prebirth(self):
+        registration_data = {
+            "reg_type": "whatsapp_pmtct_prebirth",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "source": self.make_source_normaluser(),
             "data": {
@@ -1767,6 +1825,75 @@ class TestChangeActions(AuthenticatedAPITestCase):
         })
 
     @responses.activate
+    def test_baby_switch_whatsapp(self):
+        """
+        If the mother is subscribed to pmtct whatsapp, then when switching to
+        baby messages, they should receive those through whatsapp as well.
+        """
+        # Pretest
+        self.assertEqual(Registration.objects.all().count(), 0)
+        # Setup
+        # make registrations
+        self.make_registration_whatsapp_pmtct_prebirth()
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        # make change object
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "baby_switch",
+            "data": {},
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+
+        # . mock get subscriptions request
+        sub = mock_get_active_subs_whatsapp(change_data['registrant_id'])
+
+        # . mock get messageset by id
+        utils_tests.mock_get_messageset(99)
+
+        # . mock deactivate active subscriptions
+        mock_deactivate_subscriptions([sub])
+
+        # . mock get momconnect_postbirth messageset by shortname
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "whatsapp_pmtct_postbirth.patient.1")
+        utils_tests.mock_get_schedule(schedule_id)
+
+        # . mock get identity by id
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267", {
+                 'addresses': {
+                     'msisdn': {'+27821112222': {}},
+                 },
+             })
+
+        # . mock update mock_patch_identity
+        # . this is a general patch - `responses` doesn't check the data
+        utils_tests.mock_patch_identity("mother01-63e2-4acc-9b94-26663b9bc267")
+
+        # Execute
+        result = validate_implement.apply_async(args=[change.id])
+
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 1)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 1)
+        self.assertEqual(len(responses.calls), 8)
+
+        # Check Jembi POST
+        self.assertEqual(json.loads(responses.calls[-1].request.body), {
+            'cmsisdn': '+27821112222',
+            'dmsisdn': '+27821112222',
+            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
+            'mha': 1,
+            'swt': 1,
+            'type': 11,
+        })
+
+    @responses.activate
     def test_pmtct_loss_switch(self):
         # Setup
         # make registrations
@@ -1823,7 +1950,79 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 2)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 1)
-        self.assertEqual(len(responses.calls), 10)
+        self.assertEqual(len(responses.calls), 11)
+
+        # Check Jembi POST
+        self.assertEqual(json.loads(responses.calls[-1].request.body), {
+            'cmsisdn': '+27821112222',
+            'dmsisdn': '+27821112222',
+            'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
+            'mha': 1,
+            'swt': 1,
+            'type': 5,
+        })
+
+    @responses.activate
+    def test_pmtct_loss_switch_whatsapp(self):
+        """
+        If the mother was on the whatsapp message set, she should be switched
+        to the whatsapp loss message set.
+        """
+        # Setup
+        # make registrations
+        self.make_registration_momconnect_prebirth()
+        self.make_registration_pmtct_prebirth()
+        self.assertEqual(Registration.objects.all().count(), 2)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        # make change object
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "pmtct_loss_switch",
+            "data": {
+                "reason": "miscarriage"
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+
+        # . mock get subscription request
+        whatsapp_sub = mock_get_active_subs_whatsapp(
+            change_data["registrant_id"])
+
+        # . mock get messagesets
+        mock_get_all_messagesets()
+
+        # . mock deactivate active subscriptions
+        mock_deactivate_subscriptions([whatsapp_sub])
+
+        # . mock get messageset by shortname
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "whatsapp_loss_miscarriage.patient.1")
+
+        # . mock get schedule
+        utils_tests.mock_get_schedule(schedule_id)
+
+        # . mock get identity by id
+        utils_tests.mock_get_identity_by_id(
+            'mother01-63e2-4acc-9b94-26663b9bc267', {
+                'addresses': {
+                    'msisdn': {'+27821112222': {}},
+                },
+            })
+
+        # Execute
+        result = validate_implement.apply_async(args=[change.id])
+
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 2)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 1)
+        self.assertEqual(len(responses.calls), 9)
+
+        [sub_req] = SubscriptionRequest.objects.all()
+        self.assertEqual(sub_req.messageset, 81)
 
         # Check Jembi POST
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
@@ -2311,7 +2510,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 2)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 1)
-        self.assertEqual(len(responses.calls), 10)
+        self.assertEqual(len(responses.calls), 11)
         subreq = SubscriptionRequest.objects.last()
         self.assertEqual(subreq.messageset, 51)
         self.assertEqual(subreq.schedule, 151)
