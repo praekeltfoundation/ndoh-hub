@@ -114,13 +114,22 @@ class ValidateImplement(Task):
 
     def loss_switch(self, change):
         self.l.info("Retrieving active subscriptions")
-        active_subs = sbm_client.get_subscriptions(
+        active_subs = list(sbm_client.get_subscriptions(
             {'identity': change.registrant_id, 'active': True}
-        )["results"]
+        )["results"])
 
-        if (len(list(active_subs)) == 0):
+        if (len(active_subs) == 0):
             self.l.info("No active subscriptions - aborting")
             return False
+
+        whatsapp = False
+        messagesets = list(sbm_client.get_messagesets()['results'])
+        for sub in active_subs:
+            for ms in messagesets:
+                if ms['id'] == sub['messageset']:
+                    short_name = ms['short_name']
+            if 'whatsapp' in short_name:
+                whatsapp = True
 
         # TODO: Provide temporary bridging code while both systems are
         # being used. The purpose of this would be to accommodate making
@@ -134,8 +143,11 @@ class ValidateImplement(Task):
             self.deactivate_all_except_nurseconnect(change)
 
             self.l.info("Determining messageset shortname")
+            set_name = 'loss_{}'.format(change.data['reason'])
+            if whatsapp:
+                set_name = 'whatsapp_{}'.format(set_name)
             short_name = utils.get_messageset_short_name(
-                "loss_%s" % change.data["reason"], "patient", 0)
+                set_name, "patient", 0)
 
             self.l.info("Determining SBM details")
             msgset_id, msgset_schedule, next_sequence_number =\
@@ -175,12 +187,15 @@ class ValidateImplement(Task):
         # deactivate active subscriptions
         self.l.info("Evaluating active subscriptions")
         has_active_pmtct_prebirth_sub = False
+        has_active_whatsapp_pmtct_prebirth_sub = False
         has_active_momconnect_prebirth_sub = False
 
         for active_sub in active_subs:
             self.l.info("Retrieving messageset")
             messageset = sbm_client.get_messageset(active_sub["messageset"])
             if "pmtct_prebirth" in messageset["short_name"]:
+                if "whatsapp" in messageset["short_name"]:
+                    has_active_whatsapp_pmtct_prebirth_sub = True
                 has_active_pmtct_prebirth_sub = True
                 lang = active_sub["lang"]
             if "momconnect_prebirth" in messageset["short_name"]:
@@ -220,8 +235,11 @@ class ValidateImplement(Task):
 
             self.l.info("Determining messageset shortname")
             # . determine messageset shortname
+            set_name = 'pmtct_postbirth'
+            if has_active_whatsapp_pmtct_prebirth_sub:
+                set_name = 'whatsapp_{}'.format(set_name)
             short_name = utils.get_messageset_short_name(
-                "pmtct_postbirth", "patient", 0)
+                set_name, "patient", 0)
 
             # . determine sbm details
             self.l.info("Determining SBM details")

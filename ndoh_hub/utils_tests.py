@@ -132,6 +132,8 @@ def mock_get_messageset_by_shortname(short_name):
         "nurseconnect.hw_full.1": 61,
         "popi.hw_full.1": 71,
         "popi.hw_partial.1": 71,
+        "whatsapp_loss_miscarriage.patient.1": 81,
+        "whatsapp_pmtct_postbirth.patient.1": 91,
     }[short_name]
 
     default_schedule = {
@@ -156,6 +158,8 @@ def mock_get_messageset_by_shortname(short_name):
         "nurseconnect.hw_full.1": 161,
         "popi.hw_full.1": 171,
         "popi.hw_partial.1": 171,
+        "whatsapp_loss_miscarriage.patient.1": 181,
+        "whatsapp_pmtct_postbirth.patient.1": 191,
     }[short_name]
 
     responses.add(
@@ -199,6 +203,7 @@ def mock_get_messageset(messageset_id):
         61: "nurseconnect.hw_full.1",
         71: "popi.hw_full.1",
         72: "popi.hw_partial.1",
+        99: "whatsapp_pmtct_prebirth.patient.1",
     }[messageset_id]
 
     default_schedule = {
@@ -223,6 +228,7 @@ def mock_get_messageset(messageset_id):
         "nurseconnect.hw_full.1": 161,
         "popi.hw_full.1": 171,
         "popi.hw_partial.1": 171,
+        "whatsapp_pmtct_prebirth.patient.1": 181,
     }[short_name]
 
     responses.add(
@@ -261,7 +267,9 @@ def mock_get_schedule(schedule_id):
         151: "1,4",
         152: "1,4",
         153: "1,4",
-        161: "1,3,5"
+        161: "1,3,5",
+        181: "1,4",
+        191: "1,4",
     }[schedule_id]
 
     responses.add(
