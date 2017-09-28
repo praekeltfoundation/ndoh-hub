@@ -191,14 +191,14 @@ class ValidateSubscribe(Task):
         # Check that required fields are provided and valid
         data_fields = registration.data.keys()
 
-        if registration.reg_type == "pmtct_prebirth":
+        if "pmtct_prebirth" in registration.reg_type:
             validation_errors += self.check_lang(data_fields, registration)
             validation_errors += self.check_mom_dob(data_fields, registration)
             validation_errors += self.check_edd(data_fields, registration)
             validation_errors += self.check_operator_id(
                 data_fields, registration)
 
-        elif registration.reg_type == "pmtct_postbirth":
+        elif "pmtct_postbirth" in registration.reg_type:
             validation_errors += self.check_lang(data_fields, registration)
             validation_errors += self.check_mom_dob(data_fields, registration)
             validation_errors += self.check_baby_dob(data_fields, registration)
@@ -309,11 +309,11 @@ class ValidateSubscribe(Task):
             weeks = utils.get_pregnancy_week(utils.get_today(),
                                              registration.data["edd"])
 
-        elif registration.reg_type == "pmtct_prebirth":
+        elif "pmtct_prebirth" in registration.reg_type:
             weeks = utils.get_pregnancy_week(utils.get_today(),
                                              registration.data["edd"])
 
-        elif registration.reg_type == "pmtct_postbirth":
+        elif "pmtct_postbirth" in registration.reg_type:
             weeks = utils.get_baby_age(utils.get_today(),
                                        registration.data["baby_dob"])
 
@@ -708,7 +708,9 @@ class PushPmtctRegistrationToJembi(PushRegistrationToJembi, Task):
                     validated=True,
                     registrant_id=registration.registrant_id,
                     data__has_key='faccode').\
-                exclude(reg_type__in=("pmtct_prebirth", "pmtct_postbirth")).\
+                exclude(reg_type__in=(
+                    "whatsapp_pmtct_prebirth", "pmtct_prebirth",
+                    "whatsapp_pmtct_postbirth", "pmtct_postbirth")).\
                 order_by('-created_at').first()
 
             if related_reg:
