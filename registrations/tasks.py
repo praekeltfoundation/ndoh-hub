@@ -625,6 +625,16 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
         }
         return authority_map[authority]
 
+    def get_software_type(self, registration):
+        """ Get the software type (swt) code Jembi expects """
+        if registration.data.get('swt', None):
+            return registration.data.get('swt')
+        if "whatsapp" in registration.reg_type:
+            registration.data['swt'] = 7  # USSD4WHATSAPP
+            registration.save()
+            return 7
+        return 1  # Default 1
+
     def transform_language_code(self, lang):
         return {
             'zul_ZA': 'zu',
@@ -651,7 +661,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
 
         json_template = {
             "mha": registration.data.get('mha', 1),
-            "swt": registration.data.get('swt', 1),
+            "swt": self.get_software_type(registration),
             "dmsisdn": registration.data.get('msisdn_device'),
             "cmsisdn": registration.data.get('msisdn_registrant', id_msisdn),
             "id": self.get_patient_id(

@@ -30,6 +30,7 @@ from .signals import psh_validate_subscribe, psh_fire_created_metric
 from .tasks import (
     validate_subscribe, get_risk_status, remove_personally_identifiable_fields,
     add_personally_identifiable_fields)
+from .tasks import PushRegistrationToJembi
 from ndoh_hub import utils, utils_tests
 
 
@@ -2737,6 +2738,82 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 
         # Teardown
         post_save.disconnect(psh_validate_subscribe, sender=Registration)
+
+    def test_get_software_type_from_reg(self):
+        # Setup
+        source = self.make_source_normaluser()
+        registration_data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": source,
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "id_type": "sa_id",
+                "sa_id_no": "8108015001051",
+                "edd": "2016-11-30",
+                "faccode": "123456",
+                "msisdn_device": "+27000000000",
+                "msisdn_registrant": "+27111111111",
+                "consent": True,
+                "swt": 5
+            },
+        }
+
+        registration = Registration.objects.create(**registration_data)
+        swt = PushRegistrationToJembi().get_software_type(registration)
+        self.assertEqual(swt, 5)
+
+    def test_get_software_type_normal_reg(self):
+        # Setup
+        source = self.make_source_normaluser()
+        registration_data = {
+            "reg_type": "momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": source,
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "id_type": "sa_id",
+                "sa_id_no": "8108015001051",
+                "edd": "2016-11-30",
+                "faccode": "123456",
+                "msisdn_device": "+27000000000",
+                "msisdn_registrant": "+27111111111",
+                "consent": True,
+            },
+        }
+
+        registration = Registration.objects.create(**registration_data)
+        swt = PushRegistrationToJembi().get_software_type(registration)
+        self.assertEqual(swt, 1)
+
+    def test_get_software_type_whatsapp_reg(self):
+        # Setup
+        source = self.make_source_normaluser()
+        registration_data = {
+            "reg_type": "whatsapp_momconnect_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": source,
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "language": "eng_ZA",
+                "mom_dob": "1999-01-27",
+                "id_type": "sa_id",
+                "sa_id_no": "8108015001051",
+                "edd": "2016-11-30",
+                "faccode": "123456",
+                "msisdn_device": "+27000000000",
+                "msisdn_registrant": "+27111111111",
+                "consent": True,
+            },
+        }
+
+        registration = Registration.objects.create(**registration_data)
+        swt = PushRegistrationToJembi().get_software_type(registration)
+        self.assertEqual(swt, 7)
 
     @responses.activate
     def test_registration_process_bad(self):
