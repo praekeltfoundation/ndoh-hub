@@ -170,10 +170,26 @@ class JembiHelpdeskOutgoingView(APIView):
         def jembi_format_date(date):
             return date.strftime("%Y%m%d%H%M%S")
 
+        def get_software_type(channel_id):
+            if not channel_id:
+                return 2
+            result = requests.get(
+                '%s/jb/channels/%s' % (settings.JUNEBUG_BASE_URL, channel_id),
+                headers={'Content-Type': 'application/json'},
+                auth=(settings.JUNEBUG_USERNAME, settings.JUNEBUG_PASSWORD))
+            result.raise_for_status()
+            channel_config = result.json()
+
+            if channel_config['result'].get('type', None) == \
+                    settings.WHATSAPP_CHANNEL_TYPE:
+                return 4
+            return 2
+
         registration = Registration.objects\
             .filter(registrant_id=validated_data.get('user_id'))\
             .order_by('-created_at')\
             .first()
+        swt = get_software_type(validated_data.get('inbound_channel_id', None))
 
         json_template = {
             "encdate": jembi_format_date(
@@ -181,7 +197,7 @@ class JembiHelpdeskOutgoingView(APIView):
             "repdate": jembi_format_date(
                 validated_data.get('outbound_created_on')),
             "mha": 1,
-            "swt": 2,  # 1 ussd, 2 sms
+            "swt": swt,  # 1 ussd, 2 sms
             "cmsisdn": validated_data.get('to'),
             "dmsisdn": validated_data.get('to'),
             "faccode":
