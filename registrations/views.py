@@ -171,6 +171,9 @@ class JembiHelpdeskOutgoingView(APIView):
             return date.strftime("%Y%m%d%H%M%S")
 
         def get_software_type(channel_id):
+            """ Returns the swt value based on the type of the Junebug channel.
+                Defaults to sms type
+            """
             if not channel_id:
                 return 2
             result = requests.get(
