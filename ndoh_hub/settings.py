@@ -231,3 +231,7 @@ JEMBI_BASE_URL = os.environ.get('JEMBI_BASE_URL',
                                 'http://jembi/ws/rest/v1')
 JEMBI_USERNAME = os.environ.get('JEMBI_USERNAME', 'test')
 JEMBI_PASSWORD = os.environ.get('JEMBI_PASSWORD', 'test')
+JUNEBUG_BASE_URL = os.environ.get('JUNEBUG_BASE_URL', 'http://junebug')
+JUNEBUG_USERNAME = os.environ.get('JUNEBUG_USERNAME', 'REPLACEME')
+JUNEBUG_PASSWORD = os.environ.get('JUNEBUG_PASSWORD', 'REPLACEME')
+WHATSAPP_CHANNEL_TYPE = os.environ.get('WHATSAPP_CHANNEL_TYPE', 'wassup')
