@@ -5,8 +5,6 @@ try:
 except ImportError:
     from urllib.parse import urlencode
 
-from django.conf import settings
-
 
 # Mocks used in testing
 def mock_get_identity_by_id(identity_id, details={}):
@@ -322,7 +320,7 @@ def mock_junebug_channel_call(url, channel_type):
     data = {
         "status": 200,
         "code": "OK",
-        "description": "channel created",
+        "description": "channel found",
         "result": {
             "status": {},
             "mo_url": "http://www.example.com/first_channel/mo",
