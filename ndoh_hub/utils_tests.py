@@ -316,6 +316,26 @@ def mock_jembi_json_api_call(url, ok_response="ok", err_response="err",
     responses.add_callback(responses.POST, url, callback=request_callback)
 
 
+def mock_junebug_channel_call(url, channel_type):
+    data = {
+        "status": 200,
+        "code": "OK",
+        "description": "channel found",
+        "result": {
+            "status": {},
+            "mo_url": "http://www.example.com/first_channel/mo",
+            "label": "My First Channel",
+            "type": channel_type,
+            "config": {"twisted_endpoint": "tcp:9001"}
+        }
+    }
+
+    responses.add(
+        responses.GET, url, json=data, status=200,
+        content_type='application/json',
+    )
+
+
 def mock_get_active_subscriptions(identity, count=0):
     subscriptions = []
     for i in range(count):
