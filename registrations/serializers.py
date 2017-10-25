@@ -73,4 +73,5 @@ class JembiHelpdeskOutgoingSerializer(serializers.Serializer):
     label = serializers.CharField(allow_blank=True)
     inbound_created_on = serializers.DateTimeField()
     outbound_created_on = serializers.DateTimeField()
-    inbound_channel_id = serializers.CharField(required=False)
+    inbound_channel_id = serializers.CharField(required=False,
+                                               allow_blank=True)

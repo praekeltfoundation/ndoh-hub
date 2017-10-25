@@ -174,7 +174,7 @@ class JembiHelpdeskOutgoingView(APIView):
             """ Returns the swt value based on the type of the Junebug channel.
                 Defaults to sms type
             """
-            if not channel_id:
+            if channel_id == "":
                 return 2
             result = requests.get(
                 '%s/jb/channels/%s' % (settings.JUNEBUG_BASE_URL, channel_id),
@@ -192,7 +192,7 @@ class JembiHelpdeskOutgoingView(APIView):
             .filter(registrant_id=validated_data.get('user_id'))\
             .order_by('-created_at')\
             .first()
-        swt = get_software_type(validated_data.get('inbound_channel_id', None))
+        swt = get_software_type(validated_data.get('inbound_channel_id', ''))
 
         json_template = {
             "encdate": jembi_format_date(
