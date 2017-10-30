@@ -238,7 +238,6 @@ class JembiHelpdeskOutgoingView(APIView):
             result.raise_for_status()
         except (requests.exceptions.HTTPError,) as e:
             print e.response.text
-            print e.response.json()
             print e.response.status_code
             return Response(
                 'Error when posting to Jembi. Body: %s Payload: %r' % (
