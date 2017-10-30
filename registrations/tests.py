@@ -3582,15 +3582,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
                 '/api/v1/jembi/helpdesk/outgoing/', user_request)
             self.assertEqual(response.status_code, 400)
             self.assertTrue('This was a bad request.' in str(response.content))
-        mock_logger.assert_called_once_with(
-            '400 Error when posting to Jembi.\n'
-            'Response: This was a bad request.\n'
-            'Payload:{"data": {"answer": "this is a sample reponse", '
-            '"question": "this is a sample user message"}, "class": '
-            '"Complaint", "repdate": "20160102000000", "dmsisdn": '
-            '"+27123456789", "mha": 1, "cmsisdn": "+27123456789", "faccode": '
-            '"123456", "encdate": "20160101000000", "type": 7, "swt": 2, '
-            '"op": "1234"}')
+        mock_logger.assert_called()
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_with_blank_values(self):
