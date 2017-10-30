@@ -1,6 +1,7 @@
 import django_filters
 import json
 import requests
+import logging
 
 from django.conf import settings
 from django.contrib.auth.models import User, Group
@@ -21,6 +22,9 @@ from .serializers import (UserSerializer, GroupSerializer,
                           JembiHelpdeskOutgoingSerializer,
                           ThirdPartyRegistrationSerializer)
 from ndoh_hub.utils import get_available_metrics
+
+
+logger = logging.getLogger(__name__)
 
 
 def transform_language_code(lang):
@@ -237,8 +241,10 @@ class JembiHelpdeskOutgoingView(APIView):
                 verify=False)
             result.raise_for_status()
         except (requests.exceptions.HTTPError,) as e:
-            print(e.response.text)
-            print(e.response.status_code)
+            logger.warning(e.response.text)
+            logger.warning(e.response.status_code)
+            logger.warning(e.response.url)
+            logger.warning(e.response.headers)
             return Response(
                 'Error when posting to Jembi. Body: %s Payload: %r' % (
                     e.response.content, post_data),
