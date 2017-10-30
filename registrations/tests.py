@@ -1593,6 +1593,30 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(v, True)
 
+    def test_validate_whatsapp_nurseconnect(self):
+        """
+        A valid nurseconnect registration should also be a valid whatsapp
+        nurseconnect registration.
+        """
+        # Setup
+        registration_data = {
+            "reg_type": "whatsapp_nurseconnect",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "msisdn_registrant": "+27821112222",
+                "msisdn_device": "+27821112222",
+                "faccode": "123456",
+                "language": "eng_ZA"
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        # Execute
+        v = validate_subscribe.validate(registration)
+        # Check
+        self.assertEqual(v, True)
+
     def test_validate_nurseconnect_malformed_data(self):
         """ Malformed data nurseconnect test """
         # Setup
@@ -2159,6 +2183,45 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         self.assertEqual(sr.next_sequence_number, 1)
         self.assertEqual(sr.lang, "eng_ZA")
         self.assertEqual(sr.schedule, 161)
+
+    @responses.activate
+    def test_src_whatsapp_nurseconnect(self):
+        """ Test a whatsapp nurseconnect registration """
+        # Setup
+        # . setup whatsapp nurseconnect registration and set validated to true
+        registration_data = {
+            "reg_type": "whatsapp_nurseconnect",
+            "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "msisdn_registrant": "+27821112222",
+                "msisdn_device": "+27821112222",
+                "faccode": "123456",
+                "language": "eng_ZA"
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        registration.validated = True
+        registration.save()
+
+        # setup fixture responses
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "whatsapp_nurseconnect.hw_full.1")
+        utils_tests.mock_get_schedule(schedule_id)
+
+        # Execute
+        cs = validate_subscribe.create_subscriptionrequests(registration)
+
+        # Check
+        self.assertEqual(cs, "SubscriptionRequest created")
+
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "nurse001-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 62)
+        self.assertEqual(sr.next_sequence_number, 1)
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 162)
 
     @responses.activate
     def test_src_momconnect_prebirth_clinic_1(self):

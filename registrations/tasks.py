@@ -205,7 +205,7 @@ class ValidateSubscribe(Task):
             validation_errors += self.check_operator_id(
                 data_fields, registration)
 
-        elif registration.reg_type == "nurseconnect":
+        elif 'nurseconnect' in registration.reg_type:
             validation_errors += self.check_faccode(
                 data_fields, registration)
             validation_errors += self.check_operator_id(
@@ -538,7 +538,7 @@ class BasePushRegistrationToJembi(object):
         NOTE:   this is a convenience method for getting the relevant
                 Jembi task to fire for a registration.
         """
-        if registration.reg_type in ('nurseconnect',):
+        if 'nurseconnect' in registration.reg_type:
             return push_nurse_registration_to_jembi
         if "pmtct" in registration.reg_type:
             return push_pmtct_registration_to_jembi
