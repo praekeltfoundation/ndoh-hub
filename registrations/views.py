@@ -244,7 +244,7 @@ class JembiHelpdeskOutgoingView(APIView):
             if e.response.status_code == 400:
                 logger.warning("400 Error when posting to Jembi.\n"
                                "Response: %s\nPayload:%s" %
-                               (str(e.response.content), post_data))
+                               (e.response.text, post_data))
                 return Response(
                     'Error when posting to Jembi. Body: %s Payload: %r' % (
                         e.response.content, post_data),
