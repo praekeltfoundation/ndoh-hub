@@ -241,14 +241,16 @@ class JembiHelpdeskOutgoingView(APIView):
                 verify=False)
             result.raise_for_status()
         except (requests.exceptions.HTTPError,) as e:
-            logger.warning(e.response.text)
-            logger.warning(e.response.status_code)
-            logger.warning(e.response.url)
-            logger.warning(e.response.headers)
-            return Response(
-                'Error when posting to Jembi. Body: %s Payload: %r' % (
-                    e.response.content, post_data),
-                status=status.HTTP_400_BAD_REQUEST)
+            if e.response.status_code == 400:
+                logger.warning("400 Error when posting to Jembi.\n"
+                               "Response: %s\nPayload:%s" %
+                               (e.response.text, json.dumps(post_data)))
+                return Response(
+                    'Error when posting to Jembi. Body: %s Payload: %r' % (
+                        e.response.content, post_data),
+                    status=status.HTTP_400_BAD_REQUEST)
+            else:
+                raise e
 
         return Response(
             status=status.HTTP_200_OK)
