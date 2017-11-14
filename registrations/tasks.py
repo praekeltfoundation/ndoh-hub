@@ -745,6 +745,16 @@ class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
         details = identity['details']
         return details.get('nurseconnect', {}).get('sanc_reg_no')
 
+    def get_software_type(self, registration):
+        """ Get the software type (swt) code Jembi expects """
+        if registration.data.get('swt', None):
+            return registration.data.get('swt')
+        if "whatsapp" in registration.reg_type:
+            registration.data['swt'] = 7  # USSD4WHATSAPP
+            registration.save(update_fields=('data',))
+            return 7
+        return 3  # Default 3
+
     def build_jembi_json(self, registration):
         """
         Compiles and returns a dictionary representing the JSON that should
@@ -755,7 +765,7 @@ class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
         identity = is_client.get_identity(registration.registrant_id)
         json_template = {
             "mha": 1,
-            "swt": 3,
+            "swt": self.get_software_type(registration),
             "type": 7,
             "dmsisdn": registration.data['msisdn_device'],
             "cmsisdn": registration.data['msisdn_registrant'],
