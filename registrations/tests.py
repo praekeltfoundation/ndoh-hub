@@ -30,7 +30,7 @@ from .models import Source, Registration, SubscriptionRequest
 from .signals import psh_validate_subscribe, psh_fire_created_metric
 from .tasks import (
     validate_subscribe, get_risk_status, remove_personally_identifiable_fields,
-    add_personally_identifiable_fields)
+    add_personally_identifiable_fields, push_nurse_registration_to_jembi)
 from .tasks import PushRegistrationToJembi
 from ndoh_hub import utils, utils_tests
 
@@ -3221,6 +3221,55 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         self.assertEqual(json.loads(jembi_call.response.text), {
             "result": "jembi-is-ok"
         })
+
+    def test_push_nurseconnect_registration_to_jembi_get_software_type(self):
+        """
+        If a software type is specified, that software type should be used.
+        If not, if it's a whatsapp registration, then a software type of 7
+        should be used.
+        If not, then the default software type of 3 should be used.
+        """
+        source = Source.objects.create(
+            name="NURSE USSD App",
+            authority="hw_full",
+            user=User.objects.get(username='testadminuser'))
+        registration_data = {
+            "reg_type": "nurseconnect",
+            "registrant_id": "nurseconnect-identity",
+            "source": source,
+            "data": {
+                "operator_id": "nurseconnect-identity",
+                "msisdn_registrant": "+27821112222",
+                "msisdn_device": "+27821112222",
+                "faccode": "123456",
+                "language": "eng_ZA",
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+
+        # Default software type
+        self.assertEqual(
+            push_nurse_registration_to_jembi.get_software_type(registration),
+            3
+        )
+
+        # WhatsApp registration software type
+        registration.reg_type = 'whatsapp_nurseconnect'
+        registration.save()
+
+        self.assertEqual(
+            push_nurse_registration_to_jembi.get_software_type(registration),
+            7
+        )
+
+        # Specified software type
+        registration.data['swt'] = 2
+        registration.save()
+
+        self.assertEqual(
+            push_nurse_registration_to_jembi.get_software_type(registration),
+            2
+        )
 
     @responses.activate
     def test_push_nurseconnect_registration_to_jembi_via_management_task(self):
