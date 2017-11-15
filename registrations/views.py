@@ -237,7 +237,7 @@ class JembiHelpdeskOutgoingView(APIView):
             source = Source.objects.get(user=self.request.user.id)
 
             endpoint = 'helpdesk'
-            if source.name == 'nc_helpdesk':
+            if source.name == 'NURSE Helpdesk App':
                 endpoint = 'nc/helpdesk'
 
             result = requests.post(

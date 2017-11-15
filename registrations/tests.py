@@ -3485,7 +3485,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_nurseconnect(self):
-        source = self.make_source_normaluser('nc_helpdesk')
+        source = self.make_source_normaluser('NURSE Helpdesk App')
         self.make_registration_for_jembi_helpdesk(source)
 
         utils_tests.mock_jembi_json_api_call(
