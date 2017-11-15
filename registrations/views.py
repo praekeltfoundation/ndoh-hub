@@ -204,7 +204,7 @@ class JembiHelpdeskOutgoingView(APIView):
             "repdate": jembi_format_date(
                 validated_data.get('outbound_created_on')),
             "mha": 1,
-            "swt": swt,  # 1 ussd, 2 sms
+            "swt": swt,  # 1 ussd, 2 sms, 4 whatsapp
             "cmsisdn": validated_data.get('to'),
             "dmsisdn": validated_data.get('to'),
             "faccode":
@@ -233,8 +233,15 @@ class JembiHelpdeskOutgoingView(APIView):
 
         post_data = self.build_jembi_helpdesk_json(serializer.validated_data)
         try:
+
+            source = Source.objects.get(user=self.request.user.id)
+
+            endpoint = 'helpdesk'
+            if source.name == 'nc_helpdesk':
+                endpoint = 'nc/helpdesk'
+
             result = requests.post(
-                '%s/helpdesk' % settings.JEMBI_BASE_URL,
+                '%s/%s' % (settings.JEMBI_BASE_URL, endpoint),
                 headers={'Content-Type': 'application/json'},
                 data=json.dumps(post_data),
                 auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
