@@ -3526,7 +3526,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             'question': u'this is a sample user message',
             'answer': u'this is a sample response'})
         self.assertEqual(request_json['class'], 'Complaint')
-        self.assertEqual(request_json['type'], 7)
+        self.assertEqual(request_json['type'], 12)
         self.assertEqual(request_json['op'], "1234")
 
     @responses.activate
