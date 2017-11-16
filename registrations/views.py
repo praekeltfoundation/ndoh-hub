@@ -239,6 +239,7 @@ class JembiHelpdeskOutgoingView(APIView):
             endpoint = 'helpdesk'
             if source.name == 'NURSE Helpdesk App':
                 endpoint = 'nc/helpdesk'
+                post_data['type'] = 12  # NC Helpdesk
 
             result = requests.post(
                 '%s/%s' % (settings.JEMBI_BASE_URL, endpoint),
