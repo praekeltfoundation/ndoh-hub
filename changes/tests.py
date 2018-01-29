@@ -1675,6 +1675,48 @@ class TestChangeValidation(AuthenticatedAPITestCase):
             ['One of these fields must be populated: messageset, language',
              'Subscription field is missing'])
 
+    def test_change_channel_missing_fields(self):
+        """
+        If a channel change request is missing the 'channel' field, it should
+        be marked as invalid
+        """
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "switch_channel",
+            "data": {},
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertFalse(change.validated)
+        self.assertEqual(
+            change.data['invalid_fields'],
+            ["'channel' is a required field"]
+        )
+
+    def test_change_channel_invalid_channel(self):
+        """
+        If a specified channel does not exist, the change should be marked as
+        invalid.
+        """
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "switch_channel",
+            "data": {
+                'channel': "foo",
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertFalse(change.validated)
+        self.assertEqual(
+            change.data['invalid_fields'],
+            ["'channel' must be one of ['sms', 'whatsapp']"]
+        )
+
 
 class TestChangeActions(AuthenticatedAPITestCase):
 

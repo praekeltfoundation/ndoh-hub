@@ -696,6 +696,18 @@ class ValidateImplement(Task):
             errors.append("Subscription field is missing")
         return errors
 
+    def check_switch_channel(self, data_fields, change):
+        """
+        Should have the "channel" field, and channel field should be a valid
+        channel type
+        """
+        channel_types = ['whatsapp', 'sms']
+        if "channel" not in data_fields:
+            return ["'channel' is a required field"]
+        elif change.data['channel'] not in channel_types:
+            return ["'channel' must be one of {}".format(
+                sorted(channel_types))]
+
     # Validate
     def validate(self, change):
         """ Validates that all the required info is provided for a
@@ -754,6 +766,10 @@ class ValidateImplement(Task):
 
         elif change.action == 'admin_change_subscription':
             validation_errors += self.check_admin_change_subscription(
+                data_fields, change)
+
+        elif change.action == 'switch_channel':
+            validation_errors += self.check_switch_channel(
                 data_fields, change)
 
         # Evaluate if there were any problems, save and return
