@@ -40,7 +40,9 @@ class Change(models.Model):
             "Change the identification type and number via momconnect app"),
         ('admin_change_subscription',
             "Change the message set and/or language of the specified "
-            "subscription from admin")
+            "subscription from admin"),
+        ('switch_channel',
+            "Switch which channel (eg. SMS, WhatsApp) to receive messages on"),
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
