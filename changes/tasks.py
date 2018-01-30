@@ -1,5 +1,6 @@
 import datetime
 import json
+import re
 import requests
 
 from celery import chain
@@ -513,6 +514,49 @@ class ValidateImplement(Task):
                 'lang': change.data["language"],
             })
 
+    def switch_channel(self, change):
+        """
+        Switch all active subscriptions to the desired channel
+        """
+        messagesets = {
+            ms['id']: ms['short_name'] for ms in
+            sbm_client.get_messagesets()['results']
+        }
+        messagesets_rev = {v: k for k, v in messagesets.items()}
+        params = {
+            'identity': change.registrant_id,
+            'active': True,
+        }
+        for sub in sbm_client.get_subscriptions(params)['results']:
+            if not sub['active']:
+                continue
+            short_name = messagesets[sub['messageset']]
+            if (
+                    change.data['channel'] == 'whatsapp' and
+                    'whatsapp' not in short_name):
+                # Change any SMS subscriptions to WhatsApp
+                sbm_client.update_subscription(sub['id'], {'active': False})
+                messageset = messagesets_rev['whatsapp_' + short_name]
+                SubscriptionRequest.objects.create(
+                    identity=sub['identity'],
+                    messageset=messageset,
+                    next_sequence_number=sub['next_sequence_number'],
+                    lang=sub['lang'],
+                    schedule=sub['schedule'],
+                )
+            elif change.data['channel'] == 'sms' and 'whatsapp' in short_name:
+                # Change any WhatsApp subscriptions to SMS
+                sbm_client.update_subscription(sub['id'], {'active': False})
+                messageset = messagesets_rev[
+                    re.sub('^whatsapp^', '', short_name)]
+                SubscriptionRequest.objects.create(
+                    identity=sub['identity'],
+                    messageset=messageset,
+                    next_sequence_number=sub['next_sequence_number'],
+                    lang=sub['lang'],
+                    schedule=sub['schedule'],
+                )
+
     # Validation checks
     def check_pmtct_loss_optout_reason(self, data_fields, change):
         loss_reasons = ["miscarriage", "stillbirth", "babyloss"]
@@ -707,6 +751,7 @@ class ValidateImplement(Task):
         elif change.data['channel'] not in channel_types:
             return ["'channel' must be one of {}".format(
                 sorted(channel_types))]
+        return []
 
     # Validate
     def validate(self, change):
@@ -810,7 +855,8 @@ class ValidateImplement(Task):
                 'momconnect_change_msisdn': self.momconnect_change_msisdn,
                 'momconnect_change_identification': (
                     self.momconnect_change_identification),
-                'admin_change_subscription': self.admin_change_subscription
+                'admin_change_subscription': self.admin_change_subscription,
+                'switch_channel': self.switch_channel,
             }.get(change.action, None)(change)
 
             if submit_task is not None:
