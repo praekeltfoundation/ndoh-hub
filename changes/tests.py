@@ -38,7 +38,8 @@ def mock_get_active_subs_mcpre_mcpost_pmtct_nc(registrant_id):
     momconnect_postbirth_sub_id = "subscriptionid-momconnect-postbirth-"
     responses.add(
         responses.GET,
-        'http://sbm/api/v1/subscriptions/?active=True&identity=%s' % registrant_id,  # noqa
+        'http://sbm/api/v1/subscriptions/?active=True&identity={}'.format(
+            registrant_id),
         json={
             "next": None,
             "previous": None,
@@ -49,7 +50,7 @@ def mock_get_active_subs_mcpre_mcpost_pmtct_nc(registrant_id):
                     "active": True,
                     "completed": False,
                     "lang": "eng_ZA",
-                    "url": "http://sbm/api/v1/subscriptions/%s" % (
+                    "url": "http://sbm/api/v1/subscriptions/{}".format(
                         pmtct_prebirth_sub_id),
                     "messageset": 11,
                     "next_sequence_number": 11,
@@ -66,7 +67,7 @@ def mock_get_active_subs_mcpre_mcpost_pmtct_nc(registrant_id):
                     "active": True,
                     "completed": False,
                     "lang": "eng_ZA",
-                    "url": "http://sbm/api/v1/subscriptions/%s" % (
+                    "url": "http://sbm/api/v1/subscriptions/{}".format(
                         momconnect_prebirth_sub_id),
                     "messageset": 21,
                     "next_sequence_number": 21,
@@ -83,7 +84,7 @@ def mock_get_active_subs_mcpre_mcpost_pmtct_nc(registrant_id):
                     "active": True,
                     "completed": False,
                     "lang": "eng_ZA",
-                    "url": "http://sbm/api/v1/subscriptions/%s" % (
+                    "url": "http://sbm/api/v1/subscriptions/{}".format(
                         nurseconnect_sub_id),
                     "messageset": 61,
                     "next_sequence_number": 6,
@@ -100,7 +101,7 @@ def mock_get_active_subs_mcpre_mcpost_pmtct_nc(registrant_id):
                     "active": True,
                     "completed": False,
                     "lang": "eng_ZA",
-                    "url": "http://sbm/api/v1/subscriptions/%s" % (
+                    "url": "http://sbm/api/v1/subscriptions/{}".format(
                         momconnect_postbirth_sub_id),
                     "messageset": 32,
                     "next_sequence_number": 32,
@@ -125,7 +126,8 @@ def mock_get_active_subs_whatsapp(registrant_id):
     whatsapp_prebirth_sub_id = "subscriptionid-whatsapp-prebirth-0"
     responses.add(
         responses.GET,
-        'http://sbm/api/v1/subscriptions/?active=True&identity=%s' % registrant_id,  # noqa
+        'http://sbm/api/v1/subscriptions/?active=True&identity={}'.format(
+            registrant_id),
         json={
             "next": None,
             "previous": None,
@@ -136,7 +138,7 @@ def mock_get_active_subs_whatsapp(registrant_id):
                     "active": True,
                     "completed": False,
                     "lang": "eng_ZA",
-                    "url": "http://sbm/api/v1/subscriptions/%s" % (
+                    "url": "http://sbm/api/v1/subscriptions/{}".format(
                         whatsapp_prebirth_sub_id),
                     "messageset": 99,
                     "next_sequence_number": 21,
@@ -154,6 +156,25 @@ def mock_get_active_subs_whatsapp(registrant_id):
     )
 
     return whatsapp_prebirth_sub_id
+
+
+def mock_get_messagesets(messagesets):
+    """
+    Mocks the request for getting the list of messagesets using responses.
+    `messagesets` is a list of short names for the messagesets that should be
+    returned.
+    """
+    response = [{
+        'id': i, 'short_name': short_name, 'content_type': "text", 'notes': "",
+        'next_set': 7, 'default_schedule': 1,
+        'created_at': "2015-07-10T06:13:29.693272Z",
+        'updated_at': "2015-07-10T06:13:29.693272Z"
+    } for i, short_name in enumerate(messagesets)]
+    responses.add(
+        responses.GET,
+        'http://sbm/api/v1/messageset/', status=200,
+        json={'next': None, 'previous': None, 'results': response},
+        content_type='application/json')
 
 
 def mock_get_messageset(messageset_id, short_name):
@@ -177,7 +198,7 @@ def mock_get_messageset(messageset_id, short_name):
 def mock_search_messageset(messageset_id, short_name):
     responses.add(
         responses.GET,
-        'http://sbm/api/v1/messageset/?short_name=%s' % (short_name),
+        'http://sbm/api/v1/messageset/?short_name={}'.format(short_name),
         json={
             "next": None,
             "previous": None,
@@ -260,56 +281,56 @@ def mock_get_all_messagesets():
     )
 
 
-def mock_get_active_subs_mc(registrant_id):
-    momconnect_prebirth_sub_id = "subscriptionid-momconnect-prebirth-0"
+def mock_get_subscriptions(querystring=None, results=[]):
+    """
+    Uses responses to mock the request for getting a list of subscriptions.
+    `querystring` is the querystring to use for filtering
+    `results` is the list of subscriptions returned in the response
+    """
+    url = 'http://sbm/api/v1/subscriptions/{}'.format(querystring)
     responses.add(
-        responses.GET,
-        'http://sbm/api/v1/subscriptions/?active=True&identity=%s' % registrant_id,  # noqa
+        responses.GET, url,
         json={
             "next": None,
             "previous": None,
-            "results": [
-                {   # momconnect_prebirth.hw_full.1 subscription
-                    "id": momconnect_prebirth_sub_id,
-                    "identity": registrant_id,
-                    "active": True,
-                    "completed": False,
-                    "lang": "eng_ZA",
-                    "url": "http://sbm/api/v1/subscriptions/%s" % (
-                        momconnect_prebirth_sub_id),
-                    "messageset": 21,
-                    "next_sequence_number": 21,
-                    "schedule": 121,
-                    "process_status": 0,
-                    "version": 1,
-                    "metadata": {},
-                    "created_at": "2015-07-10T06:13:29.693272Z",
-                    "updated_at": "2015-07-10T06:13:29.693272Z"
-                }
-            ],
-        },
-        status=200, content_type='application/json',
-        match_querystring=True
+            "results": results,
+        }, status=200, content_type='application/json',
+        match_querystring=bool(querystring))
+
+
+def mock_get_active_subs_mc(registrant_id):
+    momconnect_prebirth_sub_id = "subscriptionid-momconnect-prebirth-0"
+    mock_get_subscriptions(
+        '?active=True&identity={}'.format(registrant_id),
+        [
+            {   # momconnect_prebirth.hw_full.1 subscription
+                "id": momconnect_prebirth_sub_id,
+                "identity": registrant_id,
+                "active": True,
+                "completed": False,
+                "lang": "eng_ZA",
+                "url": "http://sbm/api/v1/subscriptions/{}".format(
+                    momconnect_prebirth_sub_id),
+                "messageset": 21,
+                "next_sequence_number": 21,
+                "schedule": 121,
+                "process_status": 0,
+                "version": 1,
+                "metadata": {},
+                "created_at": "2015-07-10T06:13:29.693272Z",
+                "updated_at": "2015-07-10T06:13:29.693272Z"
+            }
+        ]
     )
 
     return [momconnect_prebirth_sub_id]
 
 
 def mock_get_active_subscriptions_none(registrant_id, messageset=None):
-    url = 'http://sbm/api/v1/subscriptions/?active=True&identity=%s' % registrant_id  # noqa
+    qs = '?active=True&identity={}'.format(registrant_id)
     if messageset is not None:
-        url = '%s&messageset=%s' % (url, messageset)
-    responses.add(
-        responses.GET,
-        url,
-        json={
-            "next": None,
-            "previous": None,
-            "results": [],
-        },
-        status=200, content_type='application/json',
-        match_querystring=True
-    )
+        qs += '&messageset={}'.format(messageset)
+    mock_get_subscriptions(qs)
 
     return []
 
@@ -366,34 +387,27 @@ def mock_get_subscription(subscription_id, identity_id=None):
 
 def mock_get_active_nurseconnect_subscriptions(registrant_id):
     nurseconnect_sub_id = "subscriptionid-nurseconnect-00000000"
-    responses.add(
-        responses.GET,
-        'http://sbm/api/v1/subscriptions/?active=True&messageset=61&identity=%s' % registrant_id,  # noqa
-        json={
-            "next": None,
-            "previous": None,
-            "results": [
-                {   # nurseconnect.hw_full.1 subscription
-                    "id": nurseconnect_sub_id,
-                    "identity": registrant_id,
-                    "active": True,
-                    "completed": False,
-                    "lang": "eng_ZA",
-                    "url": "http://sbm/api/v1/subscriptions/%s" % (
-                        nurseconnect_sub_id),
-                    "messageset": 61,
-                    "next_sequence_number": 11,
-                    "schedule": 161,
-                    "process_status": 0,
-                    "version": 1,
-                    "metadata": {},
-                    "created_at": "2015-07-10T06:13:29.693272Z",
-                    "updated_at": "2015-07-10T06:13:29.693272Z"
-                }
-            ]
-        },
-        status=200, content_type='application/json',
-        match_querystring=True
+    mock_get_subscriptions(
+        '?active=True&messageset=61&identity={}'.format(registrant_id),
+        [
+            {   # nurseconnect.hw_full.1 subscription
+                "id": nurseconnect_sub_id,
+                "identity": registrant_id,
+                "active": True,
+                "completed": False,
+                "lang": "eng_ZA",
+                "url": "http://sbm/api/v1/subscriptions/{}".format(
+                    nurseconnect_sub_id),
+                "messageset": 61,
+                "next_sequence_number": 11,
+                "schedule": 161,
+                "process_status": 0,
+                "version": 1,
+                "metadata": {},
+                "created_at": "2015-07-10T06:13:29.693272Z",
+                "updated_at": "2015-07-10T06:13:29.693272Z"
+            }
+        ]
     )
 
     return [nurseconnect_sub_id]
@@ -401,34 +415,27 @@ def mock_get_active_nurseconnect_subscriptions(registrant_id):
 
 def mock_get_active_nurseconnect_childm_subscriptions(registrant_id):
     nurseconnect_sub_id = "subscriptionid-nurseconnect-00000000"
-    responses.add(
-        responses.GET,
-        'http://sbm/api/v1/subscriptions/?active=True&messageset=62&identity=%s' % registrant_id,  # noqa
-        json={
-            "next": None,
-            "previous": None,
-            "results": [
-                {   # nurseconnect.hw_full.1 subscription
-                    "id": nurseconnect_sub_id,
-                    "identity": registrant_id,
-                    "active": True,
-                    "completed": False,
-                    "lang": "eng_ZA",
-                    "url": "http://sbm/api/v1/subscriptions/%s" % (
-                        nurseconnect_sub_id),
-                    "messageset": 62,
-                    "next_sequence_number": 11,
-                    "schedule": 161,
-                    "process_status": 0,
-                    "version": 1,
-                    "metadata": {},
-                    "created_at": "2015-07-10T06:13:29.693272Z",
-                    "updated_at": "2015-07-10T06:13:29.693272Z"
-                }
-            ]
-        },
-        status=200, content_type='application/json',
-        match_querystring=True
+    mock_get_subscriptions(
+        '?active=True&messageset=62&identity={}'.format(registrant_id),
+        [
+            {   # nurseconnect.hw_full.1 subscription
+                "id": nurseconnect_sub_id,
+                "identity": registrant_id,
+                "active": True,
+                "completed": False,
+                "lang": "eng_ZA",
+                "url": "http://sbm/api/v1/subscriptions/{}".format(
+                    nurseconnect_sub_id),
+                "messageset": 62,
+                "next_sequence_number": 11,
+                "schedule": 161,
+                "process_status": 0,
+                "version": 1,
+                "metadata": {},
+                "created_at": "2015-07-10T06:13:29.693272Z",
+                "updated_at": "2015-07-10T06:13:29.693272Z"
+            }
+        ]
     )
 
     return [nurseconnect_sub_id]
@@ -438,7 +445,7 @@ def mock_deactivate_subscriptions(subscription_ids):
     for subscription_id in subscription_ids:
         responses.add(
             responses.PATCH,
-            'http://sbm/api/v1/subscriptions/%s/' % subscription_id,
+            'http://sbm/api/v1/subscriptions/{}/'.format(subscription_id),
             json={"active": False},
             status=200, content_type='application/json',
         )
@@ -661,7 +668,7 @@ class TestChangeAPI(AuthenticatedAPITestCase):
         change = self.make_change_adminuser()
         # Execute
         response = self.adminclient.get(
-            '/api/v1/change/%s/' % change.id,
+            '/api/v1/change/{}/'.format(change.id),
             content_type='application/json')
         # Check
         # Currently only posts are allowed
@@ -673,7 +680,7 @@ class TestChangeAPI(AuthenticatedAPITestCase):
         change = self.make_change_normaluser()
         # Execute
         response = self.normalclient.get(
-            '/api/v1/change/%s/' % change.id,
+            '/api/v1/change/{}/'.format(change.id),
             content_type='application/json')
         # Check
         # Currently only posts are allowed
@@ -807,7 +814,7 @@ class TestChangeListAPI(AuthenticatedAPITestCase):
         change2 = self.make_change_normaluser()
         # Execute
         response = self.adminclient.get(
-            '/api/v1/changes/?source=%s' % change2.source.id,
+            '/api/v1/changes/?source={}'.format(change2.source.id),
             content_type='application/json')
         # Check
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -1674,6 +1681,48 @@ class TestChangeValidation(AuthenticatedAPITestCase):
             change.data['invalid_fields'],
             ['One of these fields must be populated: messageset, language',
              'Subscription field is missing'])
+
+    def test_change_channel_missing_fields(self):
+        """
+        If a channel change request is missing the 'channel' field, it should
+        be marked as invalid
+        """
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "switch_channel",
+            "data": {},
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertFalse(change.validated)
+        self.assertEqual(
+            change.data['invalid_fields'],
+            ["'channel' is a required field"]
+        )
+
+    def test_change_channel_invalid_channel(self):
+        """
+        If a specified channel does not exist, the change should be marked as
+        invalid.
+        """
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "switch_channel",
+            "data": {
+                'channel': "foo",
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertFalse(change.validated)
+        self.assertEqual(
+            change.data['invalid_fields'],
+            ["'channel' must be one of ['sms', 'whatsapp']"]
+        )
 
 
 class TestChangeActions(AuthenticatedAPITestCase):
@@ -3417,6 +3466,115 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(s.identity, registrant_id)
         self.assertEqual(s.messageset, 32)
         self.assertEqual(s.lang, language)
+
+    @responses.activate
+    def test_switch_channel_skips_non_active(self):
+        """
+        Switching the channel should skip all inactive subscriptions.
+        """
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        mock_get_messagesets([])
+        mock_get_subscriptions(
+            "?identity={}&active=True".format(registrant_id),
+            [
+                {'active': False}
+            ]
+        )
+
+        change = Change.objects.create(
+            registrant_id=registrant_id, action="switch_channel",
+            data={"channel": "sms"}, source=self.make_source_normaluser()
+        )
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertTrue(change.validated)
+
+    @responses.activate
+    def test_switch_channel_to_sms(self):
+        """
+        Switching to SMS should change all other subscriptions to SMS
+        """
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        mock_get_messagesets(['whatsapp_prebirth', 'prebirth'])
+        mock_get_subscriptions(
+            "?identity={}&active=True".format(registrant_id),
+            [
+                {
+                    'id': 'sub1',
+                    'messageset': 0,
+                    'identity': registrant_id,
+                    'next_sequence_number': 7,
+                    'lang': 'eng',
+                    'schedule': 2,
+                    'active': True,
+                },
+                {
+                    'messageset': 1,
+                    'active': True,
+                }
+            ]
+        )
+        mock_deactivate_subscriptions(['sub1'])
+
+        change = Change.objects.create(
+            registrant_id=registrant_id, action="switch_channel",
+            data={"channel": "sms"}, source=self.make_source_normaluser()
+        )
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertTrue(change.validated)
+
+        [sub_req] = SubscriptionRequest.objects.all()
+        self.assertEqual(sub_req.identity, registrant_id)
+        self.assertEqual(sub_req.messageset, 0)
+        self.assertEqual(sub_req.next_sequence_number, 7)
+        self.assertEqual(sub_req.lang, 'eng')
+        self.assertEqual(sub_req.schedule, 2)
+
+    @responses.activate
+    def test_switch_channel_to_whatsapp(self):
+        """
+        Switching to WhatsApp should change all other subscriptions to WhatsApp
+        """
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        mock_get_messagesets(['whatsapp_prebirth', 'prebirth'])
+        mock_get_subscriptions(
+            "?identity={}&active=True".format(registrant_id),
+            [
+                {
+                    'id': 'sub1',
+                    'messageset': 1,
+                    'identity': registrant_id,
+                    'next_sequence_number': 7,
+                    'lang': 'eng',
+                    'schedule': 2,
+                    'active': True,
+                },
+                {
+                    'messageset': 0,
+                    'active': True,
+                }
+            ]
+        )
+        mock_deactivate_subscriptions(['sub1'])
+
+        change = Change.objects.create(
+            registrant_id=registrant_id, action="switch_channel",
+            data={"channel": "whatsapp"}, source=self.make_source_normaluser()
+        )
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertTrue(change.validated)
+
+        [sub_req] = SubscriptionRequest.objects.all()
+        self.assertEqual(sub_req.identity, registrant_id)
+        self.assertEqual(sub_req.messageset, 0)
+        self.assertEqual(sub_req.next_sequence_number, 7)
+        self.assertEqual(sub_req.lang, 'eng')
+        self.assertEqual(sub_req.schedule, 2)
 
 
 class TestRemovePersonallyIdentifiableInformation(AuthenticatedAPITestCase):
