@@ -38,7 +38,8 @@ def mock_get_active_subs_mcpre_mcpost_pmtct_nc(registrant_id):
     momconnect_postbirth_sub_id = "subscriptionid-momconnect-postbirth-"
     responses.add(
         responses.GET,
-        'http://sbm/api/v1/subscriptions/?active=True&identity=%s' % registrant_id,  # noqa
+        'http://sbm/api/v1/subscriptions/?active=True&identity={}'.format(
+            registrant_id),
         json={
             "next": None,
             "previous": None,
@@ -49,7 +50,7 @@ def mock_get_active_subs_mcpre_mcpost_pmtct_nc(registrant_id):
                     "active": True,
                     "completed": False,
                     "lang": "eng_ZA",
-                    "url": "http://sbm/api/v1/subscriptions/%s" % (
+                    "url": "http://sbm/api/v1/subscriptions/{}".format(
                         pmtct_prebirth_sub_id),
                     "messageset": 11,
                     "next_sequence_number": 11,
@@ -66,7 +67,7 @@ def mock_get_active_subs_mcpre_mcpost_pmtct_nc(registrant_id):
                     "active": True,
                     "completed": False,
                     "lang": "eng_ZA",
-                    "url": "http://sbm/api/v1/subscriptions/%s" % (
+                    "url": "http://sbm/api/v1/subscriptions/{}".format(
                         momconnect_prebirth_sub_id),
                     "messageset": 21,
                     "next_sequence_number": 21,
@@ -83,7 +84,7 @@ def mock_get_active_subs_mcpre_mcpost_pmtct_nc(registrant_id):
                     "active": True,
                     "completed": False,
                     "lang": "eng_ZA",
-                    "url": "http://sbm/api/v1/subscriptions/%s" % (
+                    "url": "http://sbm/api/v1/subscriptions/{}".format(
                         nurseconnect_sub_id),
                     "messageset": 61,
                     "next_sequence_number": 6,
@@ -100,7 +101,7 @@ def mock_get_active_subs_mcpre_mcpost_pmtct_nc(registrant_id):
                     "active": True,
                     "completed": False,
                     "lang": "eng_ZA",
-                    "url": "http://sbm/api/v1/subscriptions/%s" % (
+                    "url": "http://sbm/api/v1/subscriptions/{}".format(
                         momconnect_postbirth_sub_id),
                     "messageset": 32,
                     "next_sequence_number": 32,
@@ -125,7 +126,8 @@ def mock_get_active_subs_whatsapp(registrant_id):
     whatsapp_prebirth_sub_id = "subscriptionid-whatsapp-prebirth-0"
     responses.add(
         responses.GET,
-        'http://sbm/api/v1/subscriptions/?active=True&identity=%s' % registrant_id,  # noqa
+        'http://sbm/api/v1/subscriptions/?active=True&identity={}'.format(
+            registrant_id),
         json={
             "next": None,
             "previous": None,
@@ -136,7 +138,7 @@ def mock_get_active_subs_whatsapp(registrant_id):
                     "active": True,
                     "completed": False,
                     "lang": "eng_ZA",
-                    "url": "http://sbm/api/v1/subscriptions/%s" % (
+                    "url": "http://sbm/api/v1/subscriptions/{}".format(
                         whatsapp_prebirth_sub_id),
                     "messageset": 99,
                     "next_sequence_number": 21,
@@ -195,7 +197,7 @@ def mock_get_messageset(messageset_id, short_name):
 def mock_search_messageset(messageset_id, short_name):
     responses.add(
         responses.GET,
-        'http://sbm/api/v1/messageset/?short_name=%s' % (short_name),
+        'http://sbm/api/v1/messageset/?short_name={}'.format(short_name),
         json={
             "next": None,
             "previous": None,
@@ -296,7 +298,7 @@ def mock_get_subscriptions(querystring=None, results=[]):
 def mock_get_active_subs_mc(registrant_id):
     momconnect_prebirth_sub_id = "subscriptionid-momconnect-prebirth-0"
     mock_get_subscriptions(
-        '?active=True&identity=%s' % registrant_id,
+        '?active=True&identity={}'.format(registrant_id),
         [
             {   # momconnect_prebirth.hw_full.1 subscription
                 "id": momconnect_prebirth_sub_id,
@@ -304,7 +306,7 @@ def mock_get_active_subs_mc(registrant_id):
                 "active": True,
                 "completed": False,
                 "lang": "eng_ZA",
-                "url": "http://sbm/api/v1/subscriptions/%s" % (
+                "url": "http://sbm/api/v1/subscriptions/{}".format(
                     momconnect_prebirth_sub_id),
                 "messageset": 21,
                 "next_sequence_number": 21,
@@ -322,9 +324,9 @@ def mock_get_active_subs_mc(registrant_id):
 
 
 def mock_get_active_subscriptions_none(registrant_id, messageset=None):
-    qs = '?active=True&identity=%s' % registrant_id
+    qs = '?active=True&identity={}'.format(registrant_id)
     if messageset is not None:
-        qs = '%s&messageset=%s' % (qs, messageset)
+        qs += '&messageset={}'.format(messageset)
     mock_get_subscriptions(qs)
 
     return []
@@ -383,7 +385,7 @@ def mock_get_subscription(subscription_id, identity_id=None):
 def mock_get_active_nurseconnect_subscriptions(registrant_id):
     nurseconnect_sub_id = "subscriptionid-nurseconnect-00000000"
     mock_get_subscriptions(
-        '?active=True&messageset=61&identity=%s' % registrant_id,
+        '?active=True&messageset=61&identity={}'.format(registrant_id),
         [
             {   # nurseconnect.hw_full.1 subscription
                 "id": nurseconnect_sub_id,
@@ -391,7 +393,7 @@ def mock_get_active_nurseconnect_subscriptions(registrant_id):
                 "active": True,
                 "completed": False,
                 "lang": "eng_ZA",
-                "url": "http://sbm/api/v1/subscriptions/%s" % (
+                "url": "http://sbm/api/v1/subscriptions/{}".format(
                     nurseconnect_sub_id),
                 "messageset": 61,
                 "next_sequence_number": 11,
@@ -411,7 +413,7 @@ def mock_get_active_nurseconnect_subscriptions(registrant_id):
 def mock_get_active_nurseconnect_childm_subscriptions(registrant_id):
     nurseconnect_sub_id = "subscriptionid-nurseconnect-00000000"
     mock_get_subscriptions(
-        '?active=True&messageset=62&identity=%s' % registrant_id,
+        '?active=True&messageset=62&identity={}'.format(registrant_id),
         [
             {   # nurseconnect.hw_full.1 subscription
                 "id": nurseconnect_sub_id,
@@ -419,7 +421,7 @@ def mock_get_active_nurseconnect_childm_subscriptions(registrant_id):
                 "active": True,
                 "completed": False,
                 "lang": "eng_ZA",
-                "url": "http://sbm/api/v1/subscriptions/%s" % (
+                "url": "http://sbm/api/v1/subscriptions/{}".format(
                     nurseconnect_sub_id),
                 "messageset": 62,
                 "next_sequence_number": 11,
@@ -440,7 +442,7 @@ def mock_deactivate_subscriptions(subscription_ids):
     for subscription_id in subscription_ids:
         responses.add(
             responses.PATCH,
-            'http://sbm/api/v1/subscriptions/%s/' % subscription_id,
+            'http://sbm/api/v1/subscriptions/{}/'.format(subscription_id),
             json={"active": False},
             status=200, content_type='application/json',
         )
@@ -663,7 +665,7 @@ class TestChangeAPI(AuthenticatedAPITestCase):
         change = self.make_change_adminuser()
         # Execute
         response = self.adminclient.get(
-            '/api/v1/change/%s/' % change.id,
+            '/api/v1/change/{}/'.format(change.id),
             content_type='application/json')
         # Check
         # Currently only posts are allowed
@@ -675,7 +677,7 @@ class TestChangeAPI(AuthenticatedAPITestCase):
         change = self.make_change_normaluser()
         # Execute
         response = self.normalclient.get(
-            '/api/v1/change/%s/' % change.id,
+            '/api/v1/change/{}/'.format(change.id),
             content_type='application/json')
         # Check
         # Currently only posts are allowed
@@ -809,7 +811,7 @@ class TestChangeListAPI(AuthenticatedAPITestCase):
         change2 = self.make_change_normaluser()
         # Execute
         response = self.adminclient.get(
-            '/api/v1/changes/?source=%s' % change2.source.id,
+            '/api/v1/changes/?source={}'.format(change2.source.id),
             content_type='application/json')
         # Check
         self.assertEqual(response.status_code, status.HTTP_200_OK)
