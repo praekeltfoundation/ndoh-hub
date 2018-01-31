@@ -160,8 +160,9 @@ def mock_get_active_subs_whatsapp(registrant_id):
 
 def mock_get_messagesets(messagesets):
     """
-    Mocks getting the list of messagesets. messagesets is a list of short
-    names
+    Mocks the request for getting the list of messagesets using responses.
+    `messagesets` is a list of short names for the messagesets that should be
+    returned.
     """
     response = [{
         'id': i, 'short_name': short_name, 'content_type': "text", 'notes': "",
