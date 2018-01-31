@@ -282,6 +282,11 @@ def mock_get_all_messagesets():
 
 
 def mock_get_subscriptions(querystring=None, results=[]):
+    """
+    Uses responses to mock the request for getting a list of subscriptions.
+    `querystring` is the querystring to use for filtering
+    `results` is the list of subscriptions returned in the response
+    """
     url = 'http://sbm/api/v1/subscriptions/{}'.format(querystring)
     responses.add(
         responses.GET, url,
