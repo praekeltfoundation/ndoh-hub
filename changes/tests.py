@@ -281,10 +281,7 @@ def mock_get_all_messagesets():
 
 
 def mock_get_subscriptions(querystring=None, results=[]):
-    url = 'http://sbm/api/v1/subscriptions/'
-    if querystring is not None:
-        url = url + querystring
-
+    url = 'http://sbm/api/v1/subscriptions/{}'.format(querystring)
     responses.add(
         responses.GET, url,
         json={
