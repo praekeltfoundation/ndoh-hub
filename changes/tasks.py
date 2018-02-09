@@ -548,7 +548,7 @@ class ValidateImplement(Task):
                 # Change any WhatsApp subscriptions to SMS
                 sbm_client.update_subscription(sub['id'], {'active': False})
                 messageset = messagesets_rev[
-                    re.sub('^whatsapp^', '', short_name)]
+                    re.sub('^whatsapp_', '', short_name)]
                 SubscriptionRequest.objects.create(
                     identity=sub['identity'],
                     messageset=messageset,

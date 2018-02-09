@@ -3528,7 +3528,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
 
         [sub_req] = SubscriptionRequest.objects.all()
         self.assertEqual(sub_req.identity, registrant_id)
-        self.assertEqual(sub_req.messageset, 0)
+        self.assertEqual(sub_req.messageset, 1)
         self.assertEqual(sub_req.next_sequence_number, 7)
         self.assertEqual(sub_req.lang, 'eng')
         self.assertEqual(sub_req.schedule, 2)
