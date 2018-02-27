@@ -28,6 +28,7 @@ setup(
         'drfdocs==0.0.11',
         'demands==3.0.0',
         'structlog==16.1.0',
+        'phonenumberslite==8.9.0',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

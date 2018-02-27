@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User, Group
 from .models import Source, Registration
+import phonenumbers
 from rest_framework import serializers
 from rest_hooks.models import Hook
 
@@ -62,6 +63,32 @@ class ThirdPartyRegistrationSerializer(serializers.Serializer):
     mha = serializers.IntegerField(required=False)
     swt = serializers.IntegerField(required=False)
     encdate = serializers.CharField(required=False)
+
+
+class MSISDNField(serializers.Field):
+    """
+    A phone number, validated using the phonenumbers library
+    """
+    def __init__(self, *args, **kwargs):
+        self.country = kwargs.pop('country', None)
+        return super(MSISDNField, self).__init__(*args, **kwargs)
+
+    def to_representation(self, obj):
+        number = phonenumbers.parse(obj, self.country)
+        return phonenumbers.format_number(
+            number, phonenumbers.PhoneNumberFormat.E164)
+
+    def to_internal_value(self, data):
+        try:
+            number = phonenumbers.parse(data, self.country)
+        except phonenumbers.NumberParseException as e:
+            raise serializers.ValidationError(e.message)
+        if not phonenumbers.is_possible_number(number):
+            raise serializers.ValidationError('Not a possible phone number')
+        if not phonenumbers.is_valid_number(number):
+            raise serializers.ValidationError('Not a valid phone number')
+        return phonenumbers.format_number(
+            number, phonenumbers.PhoneNumberFormat.E164)
 
 
 class JembiHelpdeskOutgoingSerializer(serializers.Serializer):
