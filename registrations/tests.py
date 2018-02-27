@@ -36,7 +36,7 @@ from ndoh_hub import utils, utils_tests
 
 
 def override_get_today():
-    return datetime.datetime.strptime("2016-01-01", "%Y-%m-%d")
+    return datetime.datetime.strptime("2016-01-01", "%Y-%m-%d").date()
 
 
 class RecordingAdapter(TestAdapter):

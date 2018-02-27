@@ -160,8 +160,8 @@ class ValidateSubscribe(Task):
     def check_id(self, data_fields, registration):
         if "id_type" not in data_fields:
             return ["ID type missing"]
-        elif registration.data["id_type"] not in ["sa_id", "passport", "none"]:
-            return ["ID type should be 'sa_id', 'passport' or 'none'"]
+        elif not utils.is_valid_id_type(registration.data['id_type']):
+            return ["ID type should be one of {}".format(utils.ID_TYPES)]
         else:
             id_errors = []
             if registration.data["id_type"] == "sa_id":

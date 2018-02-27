@@ -13,6 +13,23 @@ from seed_services_client.stage_based_messaging import (
 from seed_services_client.identity_store import IdentityStoreApiClient
 
 
+ID_TYPES = ["sa_id", "passport", "none"]
+PASSPORT_ORIGINS = [
+    "na", "bw", "mz", "sz", "ls", "cu", "zw", "mw", "ng", "cd", "so", "other"]
+LANGUAGES = [
+        "zul_ZA",  # isiZulu
+        "xho_ZA",  # isiXhosa
+        "afr_ZA",  # Afrikaans
+        "eng_ZA",  # English
+        "nso_ZA",  # Sesotho sa Leboa / Pedi
+        "tsn_ZA",  # Setswana
+        "sot_ZA",  # Sesotho
+        "tso_ZA",  # Xitsonga
+        "ssw_ZA",  # siSwati
+        "ven_ZA",  # Tshivenda
+        "nbl_ZA",  # isiNdebele
+]
+
 sbm_client = StageBasedMessagingApiClient(
     api_url=settings.STAGE_BASED_MESSAGING_URL,
     auth_token=settings.STAGE_BASED_MESSAGING_TOKEN
@@ -58,33 +75,30 @@ def is_valid_date(date):
         return False
 
 
+def is_valid_edd_date(edd):
+    """
+    Checks given Estimated Due Date is in the future but not more than
+    9 months away
+    """
+    return (
+        edd > get_today() and
+        edd < get_today() + datetime.timedelta(weeks=43)
+    )
+
+
 def is_valid_edd(date):
     """
     Checks given Estimated Due Date is in the future but not more than
     9 months away
     """
     if is_valid_date(date):
-        edd = datetime.datetime.strptime(date, "%Y-%m-%d")
-        if (edd > get_today() and
-                edd < get_today() + datetime.timedelta(weeks=43)):
-            return True
+        edd = datetime.datetime.strptime(date, "%Y-%m-%d").date()
+        return is_valid_edd_date(edd)
     return False
 
 
 def is_valid_lang(lang):
-    return lang in [
-        "zul_ZA",  # isiZulu
-        "xho_ZA",  # isiXhosa
-        "afr_ZA",  # Afrikaans
-        "eng_ZA",  # English
-        "nso_ZA",  # Sesotho sa Leboa / Pedi
-        "tsn_ZA",  # Setswana
-        "sot_ZA",  # Sesotho
-        "tso_ZA",  # Xitsonga
-        "ssw_ZA",  # siSwati
-        "ven_ZA",  # Tshivenda
-        "nbl_ZA",  # isiNdebele
-    ]
+    return lang in LANGUAGES
 
 
 # TODO 15: Improve validation functions
@@ -120,13 +134,16 @@ def is_valid_passport_no(passport_no):
 
 def is_valid_passport_origin(passport_origin):
     """ A passport_origin validation check """
-    valid_origins = ["na", "bw", "mz", "sz", "ls", "cu", "zw", "mw", "ng",
-                     "cd", "so", "other"]
-    return passport_origin in valid_origins
+    return passport_origin in PASSPORT_ORIGINS
+
+
+def is_valid_id_type(id_type):
+    """ A ID type check """
+    return id_type in ID_TYPES
 
 
 def get_today():
-    return datetime.datetime.today()
+    return datetime.date.today()
 
 
 def get_mom_age(today, mom_dob):
@@ -138,7 +155,7 @@ def get_mom_age(today, mom_dob):
 
 def get_pregnancy_week(today, edd):
     """ Calculate how far along the mother's prenancy is in weeks. """
-    due_date = datetime.datetime.strptime(edd, "%Y-%m-%d")
+    due_date = datetime.datetime.strptime(edd, "%Y-%m-%d").date()
     time_diff = due_date - today
     time_diff_weeks = int(round(time_diff.days // 7))
     preg_weeks = 40 - time_diff_weeks
@@ -150,7 +167,7 @@ def get_pregnancy_week(today, edd):
 
 def get_baby_age(today, baby_dob):
     """ Calculate the baby's age in weeks """
-    birth_date = datetime.datetime.strptime(baby_dob, "%Y-%m-%d")
+    birth_date = datetime.datetime.strptime(baby_dob, "%Y-%m-%d").date()
     time_diff = today - birth_date
     baby_age_weeks = int(round(time_diff.days // 7))
     return baby_age_weeks
