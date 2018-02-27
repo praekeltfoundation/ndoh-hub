@@ -8,6 +8,10 @@ from registrations.serializers import (
     MSISDNField, JembiAppRegistrationSerializer)
 
 
+def override_get_today():
+    return datetime.date(2016, 1, 1)
+
+
 class MSISDNFieldTests(TestCase):
     def test_internal_value(self):
         """
@@ -54,3 +58,122 @@ class MSISDNFieldTests(TestCase):
         field = MSISDNField(country='ZA')
         self.assertEqual(
             field.to_representation('0821234567'), '+27821234567')
+
+
+class JembiAppRegistrationSerializerTests(TestCase):
+    @mock.patch('ndoh_hub.utils.get_today', override_get_today)
+    def test_valid_registration(self):
+        """
+        If the registration is valid, then the serializer should be valid
+        """
+        data = {
+            'mom_msisdn': '0820000001',
+            'hcw_msisdn': '0820000002',
+            'mom_id_type': 'none',
+            'mom_dob': '1988-01-01',
+            'mom_lang': 'eng_ZA',
+            'mom_edd': '2016-06-06',
+            'mom_consent': True,
+            'clinic_code': '123456',
+            'mha': 1,
+            'swt': 2,
+            'encdate': '2016-01-01 00:00:00',
+        }
+        serializer = JembiAppRegistrationSerializer(data=data)
+        serializer.is_valid()
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(dict(serializer.validated_data), {
+            'mom_msisdn': '+27820000001',
+            'hcw_msisdn': '+27820000002',
+            'mom_id_type': 'none',
+            'mom_dob': datetime.date(1988, 1, 1),
+            'mom_lang': 'eng_ZA',
+            'mom_edd': datetime.date(2016, 6, 6),
+            'mom_consent': True,
+            'clinic_code': '123456',
+            'mha': 1,
+            'swt': 2,
+            'encdate': datetime.datetime(2016, 1, 1, 0, 0, 0, 0, pytz.UTC),
+            'mom_whatsapp': False,
+            'mom_pmtct': False,
+            'mom_opt_in': False,
+        })
+
+    @mock.patch('ndoh_hub.utils.get_today', override_get_today)
+    def test_missing_sa_id_no(self):
+        """
+        If the ID type is SA ID, then the SA ID number must be present
+        """
+        data = {
+            'mom_msisdn': '0820000001',
+            'hcw_msisdn': '0820000002',
+            'mom_id_type': 'sa_id',
+            'mom_dob': '1988-01-01',
+            'mom_lang': 'eng_ZA',
+            'mom_edd': '2016-06-06',
+            'mom_consent': True,
+            'clinic_code': '123456',
+            'mha': 1,
+            'swt': 2,
+            'encdate': '2016-01-01 00:00:00',
+        }
+        serializer = JembiAppRegistrationSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertEqual(serializer.errors, {
+            'non_field_errors': [
+                'mom_sa_id_no field must be supplied if mom_id_type is sa_id'],
+        })
+
+    @mock.patch('ndoh_hub.utils.get_today', override_get_today)
+    def test_missing_passport_no(self):
+        """
+        If the ID type is passport, then the passport number must be present
+        """
+        data = {
+            'mom_msisdn': '0820000001',
+            'hcw_msisdn': '0820000002',
+            'mom_id_type': 'passport',
+            'mom_passport_origin': 'na',
+            'mom_dob': '1988-01-01',
+            'mom_lang': 'eng_ZA',
+            'mom_edd': '2016-06-06',
+            'mom_consent': True,
+            'clinic_code': '123456',
+            'mha': 1,
+            'swt': 2,
+            'encdate': '2016-01-01 00:00:00',
+        }
+        serializer = JembiAppRegistrationSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertEqual(serializer.errors, {
+            'non_field_errors': [
+                'mom_passport_no field must be supplied if mom_id_type is '
+                'passport'],
+        })
+
+    @mock.patch('ndoh_hub.utils.get_today', override_get_today)
+    def test_missing_passport_origin(self):
+        """
+        If the ID type is passport, then the passport origin must be present
+        """
+        data = {
+            'mom_msisdn': '0820000001',
+            'hcw_msisdn': '0820000002',
+            'mom_id_type': 'passport',
+            'mom_passport_no': '12345',
+            'mom_dob': '1988-01-01',
+            'mom_lang': 'eng_ZA',
+            'mom_edd': '2016-06-06',
+            'mom_consent': True,
+            'clinic_code': '123456',
+            'mha': 1,
+            'swt': 2,
+            'encdate': '2016-01-01 00:00:00',
+        }
+        serializer = JembiAppRegistrationSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertEqual(serializer.errors, {
+            'non_field_errors': [
+                'mom_passport_origin field must be supplied if mom_id_type is '
+                'passport'],
+        })
