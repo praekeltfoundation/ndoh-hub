@@ -57,12 +57,14 @@ class Registration(models.Model):
         ('pmtct_postbirth', "PMTCT baby registration"),
         ('whatsapp_pmtct_postbirth', "WhatsApp PMTCT baby registration"),
         ('loss_general', "Loss general registration"),
+        ('jembi_momconnect', "Jembi MomConnect registration. Set temporarily "
+         "until we calculate which registration it should be")
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     reg_type = models.CharField(max_length=30, null=False, blank=False,
                                 choices=REG_TYPE_CHOICES)
-    registrant_id = models.CharField(max_length=36, null=False, blank=False)
+    registrant_id = models.CharField(max_length=36, null=True, blank=False)
     data = JSONField(null=True, blank=True)
     validated = models.BooleanField(default=False)
     source = models.ForeignKey(Source, related_name='registrations',
