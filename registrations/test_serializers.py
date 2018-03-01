@@ -66,6 +66,7 @@ class JembiAppRegistrationSerializerTests(TestCase):
         """
         If the registration is valid, then the serializer should be valid
         """
+        self.maxDiff = None
         data = {
             'mom_msisdn': '0820000001',
             'hcw_msisdn': '0820000002',
@@ -76,24 +77,22 @@ class JembiAppRegistrationSerializerTests(TestCase):
             'mom_consent': True,
             'clinic_code': '123456',
             'mha': 1,
-            'swt': 2,
-            'encdate': '2016-01-01 00:00:00',
+            'created': '2016-01-01 00:00:00',
         }
         serializer = JembiAppRegistrationSerializer(data=data)
         serializer.is_valid()
         self.assertTrue(serializer.is_valid())
         self.assertEqual(dict(serializer.validated_data), {
-            'mom_msisdn': '+27820000001',
-            'hcw_msisdn': '+27820000002',
-            'mom_id_type': 'none',
+            'msisdn_registrant': '+27820000001',
+            'msisdn_device': '+27820000002',
+            'id_type': 'none',
             'mom_dob': datetime.date(1988, 1, 1),
-            'mom_lang': 'eng_ZA',
-            'mom_edd': datetime.date(2016, 6, 6),
-            'mom_consent': True,
-            'clinic_code': '123456',
+            'language': 'eng_ZA',
+            'edd': datetime.date(2016, 6, 6),
+            'consent': True,
+            'faccode': '123456',
             'mha': 1,
-            'swt': 2,
-            'encdate': datetime.datetime(2016, 1, 1, 0, 0, 0, 0, pytz.UTC),
+            'created': datetime.datetime(2016, 1, 1, 0, 0, 0, 0, pytz.UTC),
             'mom_whatsapp': False,
             'mom_pmtct': False,
             'mom_opt_in': False,
@@ -115,7 +114,7 @@ class JembiAppRegistrationSerializerTests(TestCase):
             'clinic_code': '123456',
             'mha': 1,
             'swt': 2,
-            'encdate': '2016-01-01 00:00:00',
+            'created': '2016-01-01 00:00:00',
         }
         serializer = JembiAppRegistrationSerializer(data=data)
         self.assertFalse(serializer.is_valid())
@@ -141,7 +140,7 @@ class JembiAppRegistrationSerializerTests(TestCase):
             'clinic_code': '123456',
             'mha': 1,
             'swt': 2,
-            'encdate': '2016-01-01 00:00:00',
+            'created': '2016-01-01 00:00:00',
         }
         serializer = JembiAppRegistrationSerializer(data=data)
         self.assertFalse(serializer.is_valid())
@@ -168,7 +167,7 @@ class JembiAppRegistrationSerializerTests(TestCase):
             'clinic_code': '123456',
             'mha': 1,
             'swt': 2,
-            'encdate': '2016-01-01 00:00:00',
+            'created': '2016-01-01 00:00:00',
         }
         serializer = JembiAppRegistrationSerializer(data=data)
         self.assertFalse(serializer.is_valid())
