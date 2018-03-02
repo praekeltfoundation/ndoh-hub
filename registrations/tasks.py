@@ -1,9 +1,15 @@
 import json
+import random
+import re
 import uuid
+try:
+    from urlparse import urljoin
+except ImportError:
+    from urllib.parse import urljoin
 from datetime import datetime
 
 import requests
-from requests.exceptions import HTTPError
+from requests.exceptions import HTTPError, ConnectionError
 
 from django.conf import settings
 from celery import chain
@@ -15,6 +21,7 @@ from seed_services_client.service_rating import ServiceRatingApiClient
 from ndoh_hub import utils
 from ndoh_hub.celery import app
 from .models import Registration
+from .serializers import RegistrationSerializer
 
 
 is_client = IdentityStoreApiClient(
@@ -47,6 +54,26 @@ def get_risk_status(reg_type, mom_dob, edd):
 
     # otherwise normal risk
     return "normal"
+
+
+class HTTPRetryMixin(object):
+    """
+    A mixin for exponential delay retries on retriable http errors
+    """
+    max_retries = 1
+    delay_factor = 1
+    jitter_percentage = 0.25
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        delay = (2 ** self.request.retries) * self.delay_factor
+        delay *= 1 + (random.random() * self.jitter_percentage)
+        if (isinstance(exc, HTTPError) and
+                self.request.retries < self.max_retries and
+                500 <= exc.response.status_code < 600):
+            raise self.retry(countdown=delay, exc=exc)
+        if (isinstance(exc, ConnectionError) and
+                self.request.retries < self.max_retries):
+            raise self.retry(countdown=delay, exc=exc)
 
 
 class ValidateSubscribe(Task):
@@ -389,6 +416,10 @@ class ValidateSubscribe(Task):
         from .models import Registration
         registration = Registration.objects.get(id=registration_id)
 
+        if registration.reg_type == 'jembi_momconnect':
+            # We do this validation in it's own task
+            return
+
         reg_validates = self.validate(registration)
         if reg_validates:
             self.create_subscriptionrequests(registration)
@@ -431,7 +462,8 @@ def remove_personally_identifiable_fields(registration_id):
 
     fields = set((
         'id_type', 'mom_dob', 'passport_no', 'passport_origin', 'sa_id_no',
-        'language', 'consent')).intersection(registration.data.keys())
+        'language', 'consent', 'mom_given_name', 'mom_family_name', 'mom_email'
+    )).intersection(registration.data.keys())
     if fields:
         identity = is_client.get_identity(registration.registrant_id)
 
@@ -482,7 +514,8 @@ def add_personally_identifiable_fields(registration):
 
     fields = set((
         'id_type', 'mom_dob', 'passport_no', 'passport_origin', 'sa_id_no',
-        'lang_code', 'consent'))\
+        'lang_code', 'consent', 'mom_given_name', 'mom_family_name',
+        'mom_email'))\
         .intersection(identity['details'].keys())\
         .difference(registration.data.keys())
     for field in fields:
@@ -501,6 +534,253 @@ def add_personally_identifiable_fields(registration):
             registration.data[field] = msisdn
 
     return registration
+
+
+class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
+    """
+    Validates and creates subscriptions for registrations coming from the
+    Jembi application.
+    """
+    def get_or_update_identity_by_address(self, address):
+        """
+        Gets the first identity with the given address, or if no identity
+        exists, creates an identity with the given address
+        """
+        identities = list(is_client.get_identity_by_address(
+            'msisdn', address)['results'])
+        if len(identities) == 0:
+            identity = {
+                'details': {
+                    'default_addr_type': 'msisdn',
+                    'addresses': {
+                        'msisdn': {
+                            address: {'default': True}
+                        }
+                    }
+                }
+            }
+            return is_client.create_identity(identity)
+        return identities[0]
+
+    def is_opted_out(self, identity, address):
+        """
+        Returns whether or not an address on an identity is opted out
+        """
+        addr_details = identity['details']['addresses']['msisdn'][address]
+        return 'optedout' in addr_details and addr_details['optedout'] is True
+
+    def opt_in(self, identity, address, source):
+        """
+        Opts in a previously opted out identity
+        """
+        optin = {
+            'identity': identity['id'],
+            'address_type': "msisdn",
+            'address': address,
+            'request_source': source.name,
+            'requestor_source_id': source.id,
+        }
+        return is_client.create_optin(optin)
+
+    def fail_validation(self, registration, reason):
+        """
+        Validation for the registration has failed
+        """
+        registration.data['invalid_fields'] = reason
+        registration.save()
+        return self.send_webhook(registration, 'validation_failed', reason)
+
+    def fail_error(self, registration, reason):
+        """
+        Uncaught error that caused the registration to fail
+        """
+        return self.send_webhook(registration, 'registration_failed', reason)
+
+    def registration_success(self, registration):
+        """
+        Registration has been successfully processed
+        """
+        return self.send_webhook(
+            registration, 'registration_succeeded',
+            RegistrationSerializer(registration).data
+        )
+
+    def send_webhook(self, registration, event_type, data):
+        """
+        Sends a webhook if one is specified for the given registration
+        """
+        url = registration.data.get('callback_url', None)
+        token = registration.data.get('callback_auth_token', None)
+
+        if url is None:
+            # No webhook if no URL is specified
+            return
+
+        headers = {}
+        if token is not None:
+            headers['Authorization'] = 'Token {}'.format(token)
+
+        payload = {
+            'event_type': event_type,
+            'registration_id': str(registration.pk),
+            'data': data
+        }
+        return http_request_with_retries.delay(
+            method='POST', url=url, headers=headers, payload=payload)
+
+    def is_registered_on_whatsapp(self, address):
+        """
+        Returns whether or not the number is recognised on wassup
+        """
+        r = requests.get(
+            settings.WASSUP_URL,
+            {
+                'number': settings.WASSUP_NUMBER,
+                'address': address,
+                'wait': True,
+            },
+            headers={
+                'Authorization': "Token {}".format(settings.WASSUP_TOKEN),
+
+            },
+        )
+        r.raise_for_status()
+        data = r.json()
+        existing = filter(lambda d: d.get('exists', False), data.values())
+        return any(existing)
+
+    def create_pmtct_registration(self, registration, operator):
+        if 'whatsapp' in registration.reg_type:
+            reg_type = 'whatsapp_pmtct_prebirth'
+        else:
+            reg_type = 'pmtct_prebirth'
+        data = {
+            'language': registration.data['language'],
+            'mom_dob': registration.data['mom_dob'],
+            'edd': registration.data['edd'],
+            'operator_id': operator['id'],
+        }
+        Registration.objects.create(
+            reg_type=reg_type, registrant_id=registration.registrant_id,
+            source=registration.source, created_by=registration.created_by,
+            data=data)
+
+    def is_identity_subscribed(self, identity, regex):
+        """
+        Checks to see if the identity is subscribed to the specified
+        messageset. Check is done on the short name of the messageset matching
+        the given regular expression
+        """
+        active_subs = utils.sbm_client.get_subscriptions({
+            'identity': identity['id'],
+            'active': True
+        })['results']
+        messagesets = utils.sbm_client.get_messagesets()['results']
+        messagesets = {
+            ms['id']: ms['short_name'] for ms in messagesets
+        }
+        for sub in active_subs:
+            short_name = messagesets[sub['messageset']]
+            if re.search(regex, short_name):
+                return True
+        return False
+
+    def is_valid_clinic_code(self, code):
+        """
+        Checks to see if the specified clinic code is recognised or not
+        """
+        r = requests.get(
+            urljoin(settings.JEMBI_BASE_URL, 'facilityCheck'),
+            {
+                'criteria': "code:{}".format(code),
+            },
+            auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+        )
+        r.raise_for_status()
+        return len(r.json().get('rows', [])) != 0
+
+    def run(self, registration_id, **kwargs):
+        registration = Registration.objects.get(id=registration_id)
+        msisdn_registrant = registration.data['msisdn_registrant']
+        registrant = self.get_or_update_identity_by_address(msisdn_registrant)
+        device = self.get_or_update_identity_by_address(
+            registration.data['msisdn_device'])
+        registration.registrant_id = registrant['id']
+
+        # Check for existing subscriptions
+        if self.is_identity_subscribed(registrant, r'prebirth\.hw_full'):
+            self.fail_validation(registration, {
+                'mom_msisdn': "Number is already subscribed to MomConnect "
+                "messaging"
+            })
+            return
+
+        # Check for previously opted out
+        if self.is_opted_out(registrant, msisdn_registrant):
+            if registration.data['mom_opt_in']:
+                self.opt_in(registrant, msisdn_registrant, registration.source)
+            else:
+                self.fail_validation(registration, {
+                    'mom_opt_in': "Mother has previously opted out and has "
+                    "not chosen to opt back in again"
+                })
+                return
+
+        # Determine WhatsApp vs SMS registration
+        registration.data['registered_on_whatsapp'] = (
+            self.is_registered_on_whatsapp(msisdn_registrant))
+        if (registration.data['mom_whatsapp'] and
+                registration.data['registered_on_whatsapp']):
+            registration.reg_type = 'whatsapp_prebirth'
+        else:
+            registration.reg_type = 'momconnect_prebirth'
+
+        # Check clinic code
+        if not self.is_valid_clinic_code(registration.data['faccode']):
+            print 'failed clinic code'
+            self.fail_validation(registration, {
+                'clinic_code': "Not a recognised clinic code"
+            })
+            return
+
+        registration.validated = True
+        registration.save()
+
+        # Create subscriptions
+        self.create_subscriptionrequests(registration)
+        self.create_popi_subscriptionrequest(registration)
+
+        # Push to Jembi and remove personally identifiable information
+        jembi_task = BasePushRegistrationToJembi.\
+            get_jembi_task_for_registration(registration)
+        task = chain(
+            jembi_task.si(str(registration.pk)),
+            remove_personally_identifiable_fields.si(str(registration.pk))
+        )
+        task.delay()
+
+        # Create PMTCT registration if required
+        if registration.data['mom_pmtct']:
+            self.create_pmtct_registration(registration, device)
+
+        # Send success webhook
+        self.registration_success(registration)
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        super(ValidateSubscribeJembiAppRegistration, self).on_failure(
+            exc, task_id, args, kwargs, einfo)
+        # Send failure webhook
+        registration_id = kwargs.get('registration_id', None) or args[0]
+        registration = Registration.objects.get(id=registration_id)
+        self.fail_error(registration, {
+            'type': einfo.type.__name__,
+            'message': str(exc),
+            'traceback': einfo.traceback,
+        })
+
+
+validate_subscribe_jembi_app_registration = (
+    ValidateSubscribeJembiAppRegistration())
 
 
 class BasePushRegistrationToJembi(object):
@@ -824,3 +1104,13 @@ def deliver_hook_wrapper(target, payload, instance, hook):
     kwargs = dict(target=target, payload=payload,
                   instance_id=instance_id, hook_id=hook.id)
     DeliverHook.apply_async(kwargs=kwargs)
+
+
+class HTTPRequestWithRetries(HTTPRetryMixin, Task):
+    def run(self, method, url, headers, payload):
+        r = requests.request(method, url, headers=headers, json=payload)
+        r.raise_for_status()
+        return r.text
+
+
+http_request_with_retries = HTTPRequestWithRetries()
