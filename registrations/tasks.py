@@ -737,7 +737,6 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
 
         # Check clinic code
         if not self.is_valid_clinic_code(registration.data['faccode']):
-            print 'failed clinic code'
             self.fail_validation(registration, {
                 'clinic_code': "Not a recognised clinic code"
             })
