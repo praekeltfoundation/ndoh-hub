@@ -85,7 +85,7 @@ class MSISDNField(serializers.Field):
         try:
             number = phonenumbers.parse(data, self.country)
         except phonenumbers.NumberParseException as e:
-            raise serializers.ValidationError(e.message)
+            raise serializers.ValidationError(str(e))
         if not phonenumbers.is_possible_number(number):
             raise serializers.ValidationError('Not a possible phone number')
         if not phonenumbers.is_valid_number(number):

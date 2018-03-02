@@ -12,7 +12,10 @@ try:
     from urllib.parse import urlparse
 except ImportError:
     from urlparse import urlparse
-import mock
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 from django.contrib.auth.models import User, Group
 from django.core.management import call_command
