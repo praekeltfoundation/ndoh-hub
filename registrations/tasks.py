@@ -60,7 +60,7 @@ class HTTPRetryMixin(object):
     """
     A mixin for exponential delay retries on retriable http errors
     """
-    max_retries = 1
+    max_retries = 10
     delay_factor = 1
     jitter_percentage = 0.25
 
