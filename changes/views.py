@@ -132,7 +132,7 @@ class ReceiveAdminOptout(generics.GenericAPIView):
         changes = []
         for action in actions:
             change = {
-                "registrant_id": identity_id,
+                "registrant_id": str(identity_id),
                 "action": action,
                 "data": {"reason": "other"},
                 "source": source.id,
@@ -166,7 +166,7 @@ class ReceiveAdminChange(generics.CreateAPIView):
         source = get_or_create_source(self.request)
 
         change = {
-            "registrant_id": data['registrant_id'],
+            "registrant_id": str(data['registrant_id']),
             "action": "admin_change_subscription",
             "data": {
                 "subscription": str(data["subscription"])
