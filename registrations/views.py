@@ -13,6 +13,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
+from rest_framework.utils.encoders import JSONEncoder
 
 from seed_services_client.identity_store import IdentityStoreApiClient
 from .models import Source, Registration
@@ -20,7 +21,9 @@ from .serializers import (UserSerializer, GroupSerializer,
                           SourceSerializer, RegistrationSerializer,
                           HookSerializer, CreateUserSerializer,
                           JembiHelpdeskOutgoingSerializer,
-                          ThirdPartyRegistrationSerializer)
+                          ThirdPartyRegistrationSerializer,
+                          JembiAppRegistrationSerializer)
+from .tasks import validate_subscribe_jembi_app_registration
 from ndoh_hub.utils import get_available_metrics
 
 
@@ -432,6 +435,38 @@ class ThirdPartyRegistration(APIView):
                 reg_serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class JembiAppRegistration(APIView):
+    """
+    MomConnect prebirth registrations from the Jembi App
+    """
+    permission_classes = (IsAuthenticated,)
+    serializer_class = JembiAppRegistrationSerializer
+
+    def post(self, request):
+        source = Source.objects.get(user=self.request.user)
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # We encode and decode from JSON to ensure dates are encoded properly
+        created = serializer.validated_data.pop('created')
+        data = json.loads(JSONEncoder().encode(serializer.validated_data))
+
+        registration = Registration.objects.create(
+            reg_type='jembi_momconnect', registrant_id=None,
+            data=data, source=source, created_by=request.user)
+
+        # Overwrite the created_at date with the one provided
+        registration.created_at = created
+        registration.save()
+
+        validate_subscribe_jembi_app_registration.delay(
+            registration_id=str(registration.pk))
+
+        return Response(
+            RegistrationSerializer(registration).data,
+            status=status.HTTP_202_ACCEPTED)
 
 
 class MetricsView(APIView):

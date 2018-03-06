@@ -12,7 +12,10 @@ try:
     from urllib.parse import urlparse
 except ImportError:
     from urlparse import urlparse
-import mock
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 from django.contrib.auth.models import User, Group
 from django.core.management import call_command
@@ -36,7 +39,7 @@ from ndoh_hub import utils, utils_tests
 
 
 def override_get_today():
-    return datetime.datetime.strptime("2016-01-01", "%Y-%m-%d")
+    return datetime.datetime.strptime("2016-01-01", "%Y-%m-%d").date()
 
 
 class RecordingAdapter(TestAdapter):
