@@ -1,4 +1,5 @@
 import django_filters
+import django_filters.rest_framework as filters
 import json
 import requests
 import logging
@@ -7,7 +8,7 @@ from django.conf import settings
 from django.contrib.auth.models import User, Group
 
 from rest_hooks.models import Hook
-from rest_framework import viewsets, mixins, generics, filters, status
+from rest_framework import viewsets, mixins, generics, status
 from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView
@@ -145,9 +146,9 @@ class RegistrationPost(mixins.CreateModelMixin, generics.GenericAPIView):
 class RegistrationFilter(filters.FilterSet):
     """Filter for registrations created, using ISO 8601 formatted dates"""
     created_before = django_filters.IsoDateTimeFilter(name="created_at",
-                                                      lookup_type="lte")
+                                                      lookup_expr="lte")
     created_after = django_filters.IsoDateTimeFilter(name="created_at",
-                                                     lookup_type="gte")
+                                                     lookup_expr="gte")
 
     class Meta:
         model = Registration

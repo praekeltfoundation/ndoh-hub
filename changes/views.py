@@ -1,5 +1,6 @@
 import django_filters
-from rest_framework import viewsets, mixins, generics, filters, status
+import django_filters.rest_framework as filters
+from rest_framework import viewsets, mixins, generics, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import IsAuthenticated
@@ -38,9 +39,9 @@ class ChangePost(mixins.CreateModelMixin, generics.GenericAPIView):
 class ChangeFilter(filters.FilterSet):
     """Filter for changes created, using ISO 8601 formatted dates"""
     created_before = django_filters.IsoDateTimeFilter(name="created_at",
-                                                      lookup_type="lte")
+                                                      lookup_expr="lte")
     created_after = django_filters.IsoDateTimeFilter(name="created_at",
-                                                     lookup_type="gte")
+                                                     lookup_expr="gte")
 
     class Meta:
         model = Change

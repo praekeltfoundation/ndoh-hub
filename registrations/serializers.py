@@ -49,6 +49,7 @@ class HookSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hook
         read_only_fields = ('user',)
+        exclude = ()
 
 
 class ThirdPartyRegistrationSerializer(serializers.Serializer):
