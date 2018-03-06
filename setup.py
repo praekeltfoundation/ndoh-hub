@@ -16,7 +16,7 @@ setup(
         'psycopg2==2.7.1',
         'raven==5.10.0',
         'django-filter==1.0.2',
-        'whitenoise==2.0.6',
+        'whitenoise==3.3.1',
         'celery==3.1.19',
         'django-celery==3.1.17',
         'redis==2.10.5',
