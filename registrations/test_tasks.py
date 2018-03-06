@@ -410,7 +410,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
     @responses.activate
     def test_is_valid_clinic_code_false(self):
         """
-        If there are no results for the clinic code search, then Flase should
+        If there are no results for the clinic code search, then False should
         be returned
         """
         responses.add(
