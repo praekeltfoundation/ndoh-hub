@@ -83,7 +83,6 @@ class JembiAppRegistrationSerializerTests(TestCase):
             'created': '2016-01-01 00:00:00',
         }
         serializer = JembiAppRegistrationSerializer(data=data)
-        serializer.is_valid()
         self.assertTrue(serializer.is_valid())
         self.assertEqual(dict(serializer.validated_data), {
             'msisdn_registrant': '+27820000001',
