@@ -76,6 +76,7 @@ MIDDLEWARE_CLASSES = (
 ROOT_URLCONF = 'ndoh_hub.urls'
 
 WSGI_APPLICATION = 'ndoh_hub.wsgi.application'
+ASGI_APPLICATION = 'ndoh_hub.routing.application'
 
 
 LOGGING = {
