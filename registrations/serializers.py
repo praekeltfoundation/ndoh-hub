@@ -2,6 +2,7 @@ from django.contrib.auth.models import User, Group
 from .models import Source, Registration
 import phonenumbers
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 from rest_hooks.models import Hook
 
 from ndoh_hub import utils
@@ -96,6 +97,11 @@ class MSISDNField(serializers.Field):
 
 
 class JembiAppRegistrationSerializer(serializers.Serializer):
+    external_id = serializers.CharField(
+        required=False, default=None, allow_null=True, allow_blank=True,
+        max_length=100, help_text="The ID of the registration in the external "
+        "application that created this registration",
+        validators=[UniqueValidator(queryset=Registration.objects.all())])
     mom_given_name = serializers.CharField(
         required=False, allow_null=True, allow_blank=True,
         help_text="The given name of the mother", label="Mother Given Name")

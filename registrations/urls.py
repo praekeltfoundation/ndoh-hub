@@ -14,7 +14,9 @@ router.register(r'registrations', views.RegistrationGetViewSet)
 urlpatterns = [
     url(r'^api/v1/registration/', views.RegistrationPost.as_view()),
     url(r'^api/v1/extregistration/', views.ThirdPartyRegistration.as_view()),
-    url(r'^api/v1/jembiregistration/', views.JembiAppRegistration.as_view()),
+    url(r'^api/v1/jembiregistration/$', views.JembiAppRegistration.as_view()),
+    url(r'^api/v1/jembiregistration/(?P<registration_id>[^/]+)/$',
+        views.JembiAppRegistrationStatus.as_view()),
     url(r'^api/v1/jembi/helpdesk/outgoing/$',
         views.JembiHelpdeskOutgoingView.as_view(),
         name='jembi-helpdesk-outgoing'),

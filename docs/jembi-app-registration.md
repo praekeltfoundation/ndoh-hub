@@ -3,11 +3,16 @@
 This endpoint is designed for new registrations created in Jembi's app to be
 sent to us.
 
-The endpoint is available over HTTP at /api/v1/jembiregistration/.
+The endpoint is available as an HTTP POST to /api/v1/jembiregistration/.
 
 It receives a JSON data in the body of the request which contains the data of
 the registration. This data is described in the [registration
 fields](#registration-fields) section.
+
+Status updates can be received by specifying a callback URL, or by making a GET
+request to /api/v1/jembiregistration/{registration-id}/ . The format of this
+status response can be found in the [registration status
+fields](#registration-status-fields) section.
 
 
 ## Authorization
@@ -17,6 +22,10 @@ eg. `Authorization: Token 4e4448a20bab4f89b9d1dee9641a5d91`
 
 
 ## Registration fields
+`external_id` - The ID of the registration in the external service that is
+creating it. Optional, defaults to None. If supplied, will be used as the ID in
+all status updates. Maximum length of 100 characters allowed. Must be unique.
+
 `mom_given_name` - The given name of the mother. Optional.
 
 `mom_family_name` - The family name of the mother. Optional.
@@ -88,7 +97,9 @@ Required.
 Required.
 
 `callback_url` - The URL to call back with the results of the registration.
-Optional.
+Optional. See (registration status fields)[#registration-status-fields] for
+more information on the format of the status that will be sent back to this
+URL.
 
 `callback_auth_token` - The authorization token to use when calling back with
 the results of the registration. Optional.
@@ -139,3 +150,20 @@ the date part, and some fields require both date and time.
 Date example: `2018-03-07`
 
 Date + time example: `2018-03-07T13:13:20+00:00`
+
+
+## Registration status fields
+`registration_id` - If supplied, the external ID, otherwise the internal ID of
+the registration
+
+`registration_data` - The data stored for this registration
+
+`status` - The current status of this registration. Either "succeeded",
+"validation_failed", "failed", or "processing"
+
+`error` - Only present when the status is "validation_failed" or "failed". In
+the case of "validation_failed", this will be an object where the keys are the
+fields that failed validation, and the values are the description of the error
+on that field. In the case of "failed", there will be a "type", which is the
+type of failure, "message", which will be the failure message, and "traceback",
+which will be the traceback info of the error.

@@ -21,7 +21,6 @@ from seed_services_client.service_rating import ServiceRatingApiClient
 from ndoh_hub import utils
 from ndoh_hub.celery import app
 from .models import Registration
-from .serializers import RegistrationSerializer
 
 
 is_client = IdentityStoreApiClient(
@@ -588,24 +587,23 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         """
         registration.data['invalid_fields'] = reason
         registration.save()
-        return self.send_webhook(registration, 'validation_failed', reason)
+        return self.send_webhook(registration)
 
     def fail_error(self, registration, reason):
         """
         Uncaught error that caused the registration to fail
         """
-        return self.send_webhook(registration, 'registration_failed', reason)
+        registration.data['error_data'] = reason
+        registration.save()
+        return self.send_webhook(registration)
 
     def registration_success(self, registration):
         """
         Registration has been successfully processed
         """
-        return self.send_webhook(
-            registration, 'registration_succeeded',
-            RegistrationSerializer(registration).data
-        )
+        return self.send_webhook(registration)
 
-    def send_webhook(self, registration, event_type, data):
+    def send_webhook(self, registration):
         """
         Sends a webhook if one is specified for the given registration
         """
@@ -620,13 +618,9 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         if token is not None:
             headers['Authorization'] = 'Token {}'.format(token)
 
-        payload = {
-            'event_type': event_type,
-            'registration_id': str(registration.pk),
-            'data': data
-        }
         return http_request_with_retries.delay(
-            method='POST', url=url, headers=headers, payload=payload)
+            method='POST', url=url, headers=headers,
+            payload=registration.status)
 
     def is_registered_on_whatsapp(self, address):
         """

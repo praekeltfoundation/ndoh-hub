@@ -6,6 +6,9 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth.models import User, Group
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.http import Http404
+from django.shortcuts import get_object_or_404
 
 from rest_hooks.models import Hook
 from rest_framework import viewsets, mixins, generics, status
@@ -446,17 +449,21 @@ class JembiAppRegistration(APIView):
     serializer_class = JembiAppRegistrationSerializer
 
     def post(self, request):
-        source = Source.objects.get(user=self.request.user)
+        source = Source.objects.get(user=request.user)
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # We encode and decode from JSON to ensure dates are encoded properly
         created = serializer.validated_data.pop('created')
+        external_id = (
+            serializer.validated_data.pop('external_id', None) or None)
+
+        # We encode and decode from JSON to ensure dates are encoded properly
         data = json.loads(JSONEncoder().encode(serializer.validated_data))
 
         registration = Registration.objects.create(
-            reg_type='jembi_momconnect', registrant_id=None,
-            data=data, source=source, created_by=request.user)
+            external_id=external_id, reg_type='jembi_momconnect',
+            registrant_id=None, data=data, source=source,
+            created_by=request.user)
 
         # Overwrite the created_at date with the one provided
         registration.created_at = created
@@ -468,6 +475,27 @@ class JembiAppRegistration(APIView):
         return Response(
             RegistrationSerializer(registration).data,
             status=status.HTTP_202_ACCEPTED)
+
+
+class JembiAppRegistrationStatus(APIView):
+    """
+    Status of registrations
+    """
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, registration_id):
+        try:
+            reg = Registration.objects.get(external_id=registration_id)
+        except Registration.DoesNotExist:
+            try:
+                reg = get_object_or_404(Registration, id=registration_id)
+            except ValidationError:
+                raise Http404()
+
+        if reg.created_by_id != request.user.id:
+            raise PermissionDenied()
+
+        return Response(reg.status, status=status.HTTP_200_OK)
 
 
 class MetricsView(APIView):

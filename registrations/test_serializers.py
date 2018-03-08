@@ -1,4 +1,5 @@
 import datetime
+from django.contrib.auth.models import User
 from django.test import TestCase
 try:
     from unittest import mock
@@ -7,6 +8,7 @@ except ImportError:
 import pytz
 from rest_framework.serializers import ValidationError
 
+from registrations.models import Registration, Source
 from registrations.serializers import (
     MSISDNField, JembiAppRegistrationSerializer)
 
@@ -85,6 +87,7 @@ class JembiAppRegistrationSerializerTests(TestCase):
         serializer = JembiAppRegistrationSerializer(data=data)
         self.assertTrue(serializer.is_valid())
         self.assertEqual(dict(serializer.validated_data), {
+            'external_id': None,
             'msisdn_registrant': '+27820000001',
             'msisdn_device': '+27820000002',
             'id_type': 'none',
@@ -177,4 +180,33 @@ class JembiAppRegistrationSerializerTests(TestCase):
             'non_field_errors': [
                 'mom_passport_origin field must be supplied if mom_id_type is '
                 'passport'],
+        })
+
+    @mock.patch('ndoh_hub.utils.get_today', override_get_today)
+    def test_duplicate_external_id(self):
+        """
+        If a registration with the given external_id already exists, then it
+        should be considered duplicate, and not allowed to be created
+        """
+        user = User.objects.create_user('test')
+        source = Source.objects.create(user=user)
+        Registration.objects.create(
+            source=source, external_id='test-external-id')
+        data = {
+            'external_id': 'test-external-id',
+            'mom_edd': '2016-06-06',
+            'mom_msisdn': '+27820000000',
+            'mom_consent': True,
+            'created': '2016-01-01 00:00:00',
+            'hcw_msisdn': '+27821111111',
+            'clinic_code': '123456',
+            'mom_lang': 'eng_ZA',
+            'mha': 1,
+            'mom_dob': '1988-01-01',
+            'mom_id_type': 'none',
+        }
+        serializer = JembiAppRegistrationSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertEqual(serializer.errors, {
+            'external_id': ['This field must be unique.']
         })

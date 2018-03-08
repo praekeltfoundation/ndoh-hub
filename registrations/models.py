@@ -62,6 +62,10 @@ class Registration(models.Model):
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    external_id = models.CharField(
+        unique=True, blank=True, null=True, db_index=True, default=None,
+        max_length=100, help_text="The ID of the registration in the external "
+        "service that created the registration")
     reg_type = models.CharField(max_length=30, null=False, blank=False,
                                 choices=REG_TYPE_CHOICES)
     registrant_id = models.CharField(max_length=36, null=True, blank=False)
@@ -88,6 +92,29 @@ class Registration(models.Model):
         """
         return SubscriptionRequest.objects.filter(
             identity=self.registrant_id)
+
+    @property
+    def status(self):
+        """
+        Returns the processing status information for the registration
+        """
+        from registrations.serializers import RegistrationSerializer
+        data = {
+            'registration_id': str(self.external_id or self.id),
+            'registration_data': RegistrationSerializer(instance=self).data,
+        }
+
+        if self.validated is True:
+            data['status'] = 'succeeded'
+        elif 'invalid_fields' in self.data:
+            data['status'] = 'validation_failed'
+            data['error'] = self.data['invalid_fields']
+        elif 'error_data' in self.data:
+            data['status'] = 'failed'
+            data['error'] = self.data['error_data']
+        else:
+            data['status'] = 'processing'
+        return data
 
 
 @python_2_unicode_compatible

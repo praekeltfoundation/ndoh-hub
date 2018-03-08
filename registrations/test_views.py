@@ -42,6 +42,7 @@ class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
         today.return_value = datetime.datetime(2016, 1, 1).date()
         source = self.make_source_normaluser()
         response = self.normalclient.post('/api/v1/jembiregistration/', {
+            'external_id': 'test-external-id',
             'mom_edd': '2016-06-06',
             'mom_msisdn': '+27820000000',
             'mom_consent': True,
@@ -60,7 +61,56 @@ class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
         self.assertEqual(
             reg.created_at,
             datetime.datetime(2016, 1, 1, 0, 0, 0, tzinfo=pytz.UTC))
+        self.assertEqual(reg.external_id, 'test-external-id')
         self.assertEqual(reg.created_by, self.normaluser)
         self.assertEqual(
             json.loads(response.content), RegistrationSerializer(reg).data)
         task.assert_called_once_with(registration_id=str(reg.pk))
+
+
+class JembiAppRegistrationStatusViewTests(AuthenticatedAPITestCase):
+    def test_authentication_required(self):
+        """
+        Authentication must be provided in order to access the endpoint
+        """
+        response = self.client.get('/api/v1/jembiregistration/test-id/')
+        self.assertEqual(response.status_code, 401)
+
+    def test_invalid_id(self):
+        """
+        If a registration with a matching ID cannot be found, then a 404 should
+        be returned
+        """
+        response = self.normalclient.get('/api/v1/jembiregistration/test-id/')
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_registration_by_interal_external_id(self):
+        """
+        The status of the registration should be able to be fetched by both
+        the internal and external ID
+        """
+        reg = Registration.objects.create(
+            external_id='test-external', source=self.make_source_normaluser(),
+            created_by=self.normaluser, data={})
+
+        response = self.normalclient.get(
+            '/api/v1/jembiregistration/{}/'.format(reg.external_id))
+        self.assertEqual(response.status_code, 200)
+
+        response = self.normalclient.get(
+            '/api/v1/jembiregistration/{}/'.format(reg.id))
+        self.assertEqual(response.status_code, 200)
+
+    def test_get_registration_only_by_user(self):
+        """
+        If the user who is fetching the registration is not the user that
+        created the registration, then they should be denied permission to
+        view that registration's status
+        """
+        reg = Registration.objects.create(
+            source=self.make_source_normaluser(),
+            created_by=self.adminuser)
+
+        response = self.normalclient.get(
+            '/api/v1/jembiregistration/{}/'.format(reg.id))
+        self.assertEqual(response.status_code, 403)
