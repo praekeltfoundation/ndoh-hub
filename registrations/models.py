@@ -62,6 +62,10 @@ class Registration(models.Model):
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    external_id = models.CharField(
+        unique=True, null=True, db_index=True, default=None, max_length=100,
+        help_text="The ID of the registration in the external service that "
+        "created the registration")
     reg_type = models.CharField(max_length=30, null=False, blank=False,
                                 choices=REG_TYPE_CHOICES)
     registrant_id = models.CharField(max_length=36, null=True, blank=False)
