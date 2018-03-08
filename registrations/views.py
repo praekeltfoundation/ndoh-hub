@@ -6,6 +6,9 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth.models import User, Group
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.http import Http404
+from django.shortcuts import get_object_or_404
 
 from rest_hooks.models import Hook
 from rest_framework import viewsets, mixins, generics, status
@@ -472,6 +475,27 @@ class JembiAppRegistration(APIView):
         return Response(
             RegistrationSerializer(registration).data,
             status=status.HTTP_202_ACCEPTED)
+
+
+class JembiAppRegistrationStatus(APIView):
+    """
+    Status of registrations
+    """
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, registration_id):
+        try:
+            reg = Registration.objects.get(external_id=registration_id)
+        except Registration.DoesNotExist:
+            try:
+                reg = get_object_or_404(Registration, id=registration_id)
+            except ValidationError:
+                raise Http404()
+
+        if reg.created_by_id != request.user.id:
+            raise PermissionDenied()
+
+        return Response(reg.status, status=status.HTTP_200_OK)
 
 
 class MetricsView(APIView):

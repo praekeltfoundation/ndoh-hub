@@ -3,11 +3,16 @@
 This endpoint is designed for new registrations created in Jembi's app to be
 sent to us.
 
-The endpoint is available over HTTP at /api/v1/jembiregistration/.
+The endpoint is available as an HTTP POST to /api/v1/jembiregistration/.
 
 It receives a JSON data in the body of the request which contains the data of
 the registration. This data is described in the [registration
 fields](#registration-fields) section.
+
+Status updates can be received by specifying a callback URL, or by making a GET
+request to /api/v1/jembiregistration/{registration-id}/ . The format of this
+status response can be found in the [registration status
+fields](#registration-status-fields) section.
 
 
 ## Authorization
