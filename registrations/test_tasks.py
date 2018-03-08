@@ -124,7 +124,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
     @responses.activate
     def test_send_webhook(self):
         """
-        Sends a webhook to the specified URL with the specified data
+        Sends a webhook to the specified URL with the registration status
         """
         responses.add(responses.POST, 'http://test/callback')
 
@@ -138,15 +138,10 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
             }
         )
 
-        task.send_webhook(reg, 'test_type', {'test': 'data'})
+        task.send_webhook(reg)
 
-        self.assertEqual(json.loads(responses.calls[-1].request.body), {
-            'event_type': 'test_type',
-            'registration_id': str(reg.pk),
-            'data': {
-                'test': 'data',
-            },
-        })
+        self.assertEqual(
+            json.loads(responses.calls[-1].request.body), reg.status)
         self.assertEqual(
             responses.calls[-1].request.headers['Authorization'],
             'Token test-token')
@@ -162,7 +157,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         reg = Registration.objects.create(
             reg_type='jembi_momconnect', source=source, data={})
 
-        task.send_webhook(reg, 'test_type', {'test': 'data'})
+        task.send_webhook(reg)
         self.assertEqual(len(responses.calls), 0)
 
     @mock.patch(
@@ -181,8 +176,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
 
         task.fail_validation(reg, {'test_field': "Test reason"})
 
-        send_webhook.assert_called_once_with(reg, 'validation_failed', {
-            'test_field': "Test reason"})
+        send_webhook.assert_called_once_with(reg)
         reg.refresh_from_db()
         self.assertEqual(reg.data['invalid_fields'], {
             'test_field': "Test reason"})
@@ -202,7 +196,8 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
 
         task.fail_error(reg, {'test_field': "Test reason"})
 
-        send_webhook.assert_called_once_with(reg, 'registration_failed', {
+        send_webhook.assert_called_once_with(reg)
+        self.assertEqual(reg.data['error_data'], {
             'test_field': "Test reason"})
 
     @mock.patch(
@@ -220,8 +215,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
 
         task.registration_success(reg)
 
-        send_webhook.assert_called_once_with(
-            reg, 'registration_succeeded', RegistrationSerializer(reg).data)
+        send_webhook.assert_called_once_with(reg)
 
     @responses.activate
     def test_is_registered_on_whatsapp_true(self):
@@ -451,11 +445,8 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         self.assertEqual(
             request.headers['Authorization'], 'Token test-auth-token')
         callback = json.loads(request.body)
-        self.assertEqual(callback['event_type'], 'registration_failed')
-        self.assertEqual(callback['registration_id'], str(reg.pk))
-        self.assertTrue('traceback' in callback['data'])
-        self.assertEqual(callback['data']['type'], 'KeyError')
-        self.assertEqual(callback['data']['message'], "'msisdn_registrant'")
+        reg.refresh_from_db()
+        self.assertEqual(callback, reg.status)
 
     @mock.patch(
         'registrations.tasks.validate_subscribe_jembi_app_registration.'
@@ -489,10 +480,12 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         is_subscribed.return_value = True
         task(str(reg.pk))
 
+        reg.refresh_from_db()
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
             'registration_id': str(reg.pk),
-            'event_type': 'validation_failed',
-            'data': {
+            'registration_data': RegistrationSerializer(reg).data,
+            'status': 'validation_failed',
+            'error': {
                 'mom_msisdn':
                     'Number is already subscribed to MomConnect messaging',
             },
@@ -533,10 +526,12 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
 
         task(str(reg.pk))
 
+        reg.refresh_from_db()
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
             'registration_id': str(reg.pk),
-            'event_type': 'validation_failed',
-            'data': {
+            'registration_data': RegistrationSerializer(reg).data,
+            'status': 'validation_failed',
+            'error': {
                 'mom_opt_in':
                     'Mother has previously opted out and has not chosen to '
                     'opt back in again',
@@ -732,10 +727,12 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
 
         task(str(reg.pk))
 
+        reg.refresh_from_db()
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
             'registration_id': str(reg.pk),
-            'event_type': 'validation_failed',
-            'data': {
+            'registration_data': RegistrationSerializer(reg).data,
+            'status': 'validation_failed',
+            'error': {
                 'clinic_code': 'Not a recognised clinic code',
             },
         })
@@ -795,8 +792,8 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         reg.refresh_from_db()
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
             'registration_id': str(reg.pk),
-            'event_type': 'registration_succeeded',
-            'data': RegistrationSerializer(reg).data,
+            'registration_data': RegistrationSerializer(reg).data,
+            'status': 'succeeded',
         })
         self.assertEqual(Registration.objects.count(), 1)
 
@@ -858,7 +855,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         reg.refresh_from_db()
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
             'registration_id': str(reg.pk),
-            'event_type': 'registration_succeeded',
-            'data': RegistrationSerializer(reg).data,
+            'registration_data': RegistrationSerializer(reg).data,
+            'status': 'succeeded',
         })
         pmtct.assert_called_with(reg, {'id': "mother-id"})

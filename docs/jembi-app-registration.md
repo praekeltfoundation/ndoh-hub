@@ -88,7 +88,9 @@ Required.
 Required.
 
 `callback_url` - The URL to call back with the results of the registration.
-Optional.
+Optional. See (registration status fields)[#registration-status-fields] for
+more information on the format of the status that will be sent back to this
+URL.
 
 `callback_auth_token` - The authorization token to use when calling back with
 the results of the registration. Optional.
@@ -139,3 +141,20 @@ the date part, and some fields require both date and time.
 Date example: `2018-03-07`
 
 Date + time example: `2018-03-07T13:13:20+00:00`
+
+
+## Registration status fields
+`registration_id` - If supplied, the external ID, otherwise the internal ID of
+the registration
+
+`registration_data` - The data stored for this registration
+
+`status` - The current status of this registration. Either "succeeded",
+"validation_failed", "failed", or "processing"
+
+`error` - Only present when the status is "validation_failed" or "failed". In
+the case of "validation_failed", this will be an object where the keys are the
+fields that failed validation, and the values are the description of the error
+on that field. In the case of "failed", there will be a "type", which is the
+type of failure, "message", which will be the failure message, and "traceback",
+which will be the traceback info of the error.
