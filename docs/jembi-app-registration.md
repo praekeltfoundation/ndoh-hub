@@ -17,6 +17,10 @@ eg. `Authorization: Token 4e4448a20bab4f89b9d1dee9641a5d91`
 
 
 ## Registration fields
+`external_id` - The ID of the registration in the external service that is
+creating it. Optional, defaults to None. If supplied, will be used as the ID in
+all status updates. Maximum length of 100 characters allowed.
+
 `mom_given_name` - The given name of the mother. Optional.
 
 `mom_family_name` - The family name of the mother. Optional.

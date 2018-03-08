@@ -85,6 +85,7 @@ class JembiAppRegistrationSerializerTests(TestCase):
         serializer = JembiAppRegistrationSerializer(data=data)
         self.assertTrue(serializer.is_valid())
         self.assertEqual(dict(serializer.validated_data), {
+            'external_id': None,
             'msisdn_registrant': '+27820000001',
             'msisdn_device': '+27820000002',
             'id_type': 'none',

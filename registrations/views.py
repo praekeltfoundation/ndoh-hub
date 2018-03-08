@@ -446,17 +446,21 @@ class JembiAppRegistration(APIView):
     serializer_class = JembiAppRegistrationSerializer
 
     def post(self, request):
-        source = Source.objects.get(user=self.request.user)
+        source = Source.objects.get(user=request.user)
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # We encode and decode from JSON to ensure dates are encoded properly
         created = serializer.validated_data.pop('created')
+        external_id = (
+            serializer.validated_data.pop('external_id', None) or None)
+
+        # We encode and decode from JSON to ensure dates are encoded properly
         data = json.loads(JSONEncoder().encode(serializer.validated_data))
 
         registration = Registration.objects.create(
-            reg_type='jembi_momconnect', registrant_id=None,
-            data=data, source=source, created_by=request.user)
+            external_id=external_id, reg_type='jembi_momconnect',
+            registrant_id=None, data=data, source=source,
+            created_by=request.user)
 
         # Overwrite the created_at date with the one provided
         registration.created_at = created

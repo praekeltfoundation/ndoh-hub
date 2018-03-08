@@ -96,6 +96,10 @@ class MSISDNField(serializers.Field):
 
 
 class JembiAppRegistrationSerializer(serializers.Serializer):
+    external_id = serializers.CharField(
+        required=False, default=None, allow_null=True, allow_blank=True,
+        max_length=100, help_text="The ID of the registration in the external "
+        "application that created this registration")
     mom_given_name = serializers.CharField(
         required=False, allow_null=True, allow_blank=True,
         help_text="The given name of the mother", label="Mother Given Name")

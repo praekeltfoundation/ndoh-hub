@@ -42,6 +42,7 @@ class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
         today.return_value = datetime.datetime(2016, 1, 1).date()
         source = self.make_source_normaluser()
         response = self.normalclient.post('/api/v1/jembiregistration/', {
+            'external_id': 'test-external-id',
             'mom_edd': '2016-06-06',
             'mom_msisdn': '+27820000000',
             'mom_consent': True,
@@ -60,6 +61,7 @@ class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
         self.assertEqual(
             reg.created_at,
             datetime.datetime(2016, 1, 1, 0, 0, 0, tzinfo=pytz.UTC))
+        self.assertEqual(reg.external_id, 'test-external-id')
         self.assertEqual(reg.created_by, self.normaluser)
         self.assertEqual(
             json.loads(response.content), RegistrationSerializer(reg).data)
