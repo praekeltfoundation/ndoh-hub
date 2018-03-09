@@ -15,10 +15,40 @@ status response can be found in the [registration status
 fields](#registration-status-fields) section.
 
 
+## Websocket
+
+The websocket can be found at the same /api/v1/jembiregistration/ endpoint.
+
+Frames are sent using JSON, in the following format:
+```json
+{
+    "action": "...",
+    "data": {
+        "...": "..."
+    }
+}
+```
+
+`action` can be either `registration` or `status`.
+
+For `registration`, `data` should be the same data sent in [registration
+fields](#registration-fields).
+
+For `status`, `data` should have one key, `id`, whose value is the ID (either
+external or internal) of the registration that you want to query the status of.
+
+Response frames are sent in JSON, in the same format detailed in [registration
+status fields](#registration-status-fields). Status results of registrations
+made through the HTTP endpoint are also sent over the websocket.
+
+
 ## Authorization
 
 Authorization is done through tokens, in the authorization header,
 eg. `Authorization: Token 4e4448a20bab4f89b9d1dee9641a5d91`
+
+For the websocket, authorization is done through the query parameters, by
+passing a token, eg. `?token=4e4448a20bab4f89b9d1dee9641a5d91`
 
 
 ## Registration fields
