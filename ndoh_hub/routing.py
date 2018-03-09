@@ -31,6 +31,7 @@ class TokenAuthMiddleware(object):
 
 application = ProtocolTypeRouter({
     'websocket': TokenAuthMiddleware(URLRouter([
-        url(r'^echo/$', registrations.EchoConsumer),
+        url(r'^api/v1/jembiregistration/$',
+            registrations.JembiAppRegistrationConsumer),
     ])),
 })
