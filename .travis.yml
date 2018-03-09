@@ -10,6 +10,7 @@ install:
   - "pip install -r requirements-dev.txt --use-wheel"
 script:
   - flake8
+  - mypy registrations changes ndoh_hub
   - py.test
   - python manage.py makemigrations registrations changes --dry-run | grep 'No changes detected' || (echo 'There are changes which require migrations.' && exit 1)
 

@@ -5,3 +5,4 @@ pytest-asyncio==0.8.0
 flake8==3.5.0
 responses==0.5.1
 requests_testadapter==0.3.0
+mypy==0.570
