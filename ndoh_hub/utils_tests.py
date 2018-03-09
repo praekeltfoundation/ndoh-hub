@@ -1,9 +1,6 @@
 import responses
 import json
-try:
-    from urllib import urlencode
-except ImportError:
-    from urllib.parse import urlencode
+from urllib.parse import urlencode
 
 
 # Mocks used in testing

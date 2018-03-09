@@ -1,9 +1,6 @@
 import datetime
 from django.test import TestCase
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 from rest_framework.validators import ValidationError
 
 from registrations import validators

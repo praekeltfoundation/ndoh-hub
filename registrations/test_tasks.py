@@ -2,10 +2,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.test import TestCase
 import json
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 import responses
 
 from registrations.models import Registration, Source

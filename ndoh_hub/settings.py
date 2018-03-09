@@ -257,9 +257,9 @@ djcelery.setup_loader()
 METRICS_REALTIME = [
     'registrations.created.sum',
 ]
-METRICS_SCHEDULED = [
+METRICS_SCHEDULED = [  # type: ignore
 ]
-METRICS_SCHEDULED_TASKS = [
+METRICS_SCHEDULED_TASKS = [  # type: ignore
 ]
 
 METRICS_URL = os.environ.get('METRICS_URL', 'http://metrics/api/v1')
