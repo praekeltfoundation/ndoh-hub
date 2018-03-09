@@ -17,6 +17,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
+from rest_framework.request import Request
 from rest_framework.utils.encoders import JSONEncoder
 
 from seed_services_client.identity_store import IdentityStoreApiClient
@@ -448,9 +449,10 @@ class JembiAppRegistration(APIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = JembiAppRegistrationSerializer
 
-    def post(self, request):
-        source = Source.objects.get(user=request.user)
-        serializer = self.serializer_class(data=request.data)
+    @classmethod
+    def create_registration(cls, user: User, data: dict) -> Registration:
+        source = Source.objects.get(user=user)
+        serializer = cls.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
 
         created = serializer.validated_data.pop('created')
@@ -463,7 +465,7 @@ class JembiAppRegistration(APIView):
         registration = Registration.objects.create(
             external_id=external_id, reg_type='jembi_momconnect',
             registrant_id=None, data=data, source=source,
-            created_by=request.user)
+            created_by=user)
 
         # Overwrite the created_at date with the one provided
         registration.created_at = created
@@ -472,6 +474,11 @@ class JembiAppRegistration(APIView):
         validate_subscribe_jembi_app_registration.delay(
             registration_id=str(registration.pk))
 
+        return registration
+
+    def post(self, request: Request) -> Response:
+        registration = self.create_registration(
+            request.user, request.data)
         return Response(
             RegistrationSerializer(registration).data,
             status=status.HTTP_202_ACCEPTED)
@@ -483,19 +490,24 @@ class JembiAppRegistrationStatus(APIView):
     """
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request, registration_id):
+    @classmethod
+    def get_registration(cls, user: User, reg_id: str) -> Registration:
         try:
-            reg = Registration.objects.get(external_id=registration_id)
+            reg = Registration.objects.get(external_id=reg_id)
         except Registration.DoesNotExist:
             try:
-                reg = get_object_or_404(Registration, id=registration_id)
+                reg = get_object_or_404(Registration, id=reg_id)
             except ValidationError:
                 raise Http404()
 
-        if reg.created_by_id != request.user.id:
+        if reg.created_by_id != user.id:
             raise PermissionDenied()
+        return reg
 
-        return Response(reg.status, status=status.HTTP_200_OK)
+    def get(self, request: Request, registration_id: str) -> Response:
+        registration = self.get_registration(
+            request.user, registration_id)
+        return Response(registration.status, status=status.HTTP_200_OK)
 
 
 class MetricsView(APIView):
