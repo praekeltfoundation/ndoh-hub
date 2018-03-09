@@ -7,13 +7,13 @@ from unittest import mock
 
 from registrations import views
 from registrations.consumers import JembiAppRegistrationConsumer
-from registrations.models import Source
+from registrations.models import Registration, Source
 from ndoh_hub import utils
 
 
 @database_sync_to_async
-def create_user() -> User:
-    user = User.objects.create_user('test')
+def create_user(username: str='test') -> User:
+    user = User.objects.create_user(username)
     Source.objects.create(user=user)
     return user
 
@@ -22,6 +22,18 @@ def create_user() -> User:
 def cleanup_user(user: User) -> None:
     user.sources.all().delete()
     user.delete()
+
+
+@database_sync_to_async
+def create_registration(user: User, external_id: str=None) -> Registration:
+    source = Source.objects.get(user=user)
+    return Registration.objects.create(
+        created_by=user, source=source, external_id=external_id, data={})
+
+
+@database_sync_to_async
+def cleanup_registration(registration: Registration) -> None:
+    registration.delete()
 
 
 async def create_communicator(user: User) -> WebsocketCommunicator:
@@ -155,3 +167,127 @@ async def test_registration_valid() -> None:
     await cleanup_user(user)
     utils.get_today = old_today
     views.validate_subscribe_jembi_app_registration = old_task
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db
+async def test_status_no_id() -> None:
+    """
+    If the ID wasn't specified, a validation error should be returned
+    """
+    user = await create_user()
+    communicator = await create_communicator(user)
+
+    await communicator.send_json_to({
+        'action': 'status',
+        'data': {},
+    })
+
+    res = await communicator.receive_json_from()
+    assert res == {
+        'registration_id': None,
+        'registration_data': {},
+        'status': 'validation_failed',
+        'error': {
+            'id': 'id must be supplied for status query',
+        },
+    }
+
+    await communicator.disconnect()
+    await cleanup_user(user)
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db
+async def test_status_no_registration() -> None:
+    """
+    If a registration with that ID cannot be found, a validation error should
+    be returned
+    """
+    user = await create_user()
+    communicator = await create_communicator(user)
+
+    await communicator.send_json_to({
+        'action': 'status',
+        'data': {
+            'id': 'bad-id',
+        },
+    })
+
+    res = await communicator.receive_json_from()
+    assert res == {
+        'registration_id': 'bad-id',
+        'registration_data': {
+            'id': 'bad-id',
+        },
+        'status': 'validation_failed',
+        'error': {
+            'id': 'Cannot find registration with ID bad-id',
+        },
+    }
+
+    await communicator.disconnect()
+    await cleanup_user(user)
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db
+async def test_status_no_permission() -> None:
+    """
+    If the user that created the registration is not the user that is
+    requesting the status, then a permission denied error should be returned
+    """
+    user1 = await create_user('test1')
+    user2 = await create_user('test2')
+    communicator = await create_communicator(user1)
+    reg = await create_registration(user2)
+
+    await communicator.send_json_to({
+        'action': 'status',
+        'data': {
+            'id': str(reg.id),
+        },
+    })
+
+    res = await communicator.receive_json_from()
+    assert res == {
+        'registration_id': str(reg.id),
+        'registration_data': {
+            'id': str(reg.id),
+        },
+        'status': 'validation_failed',
+        'error': {
+            'id': 'You do not have permission to view this registration',
+        },
+    }
+
+    await communicator.disconnect()
+    await cleanup_user(user1)
+    await cleanup_user(user2)
+    await cleanup_registration(reg)
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db
+async def test_status_valid() -> None:
+    """
+    If the registration exists, and the user has permission, the status should
+    be returned
+    """
+    user = await create_user()
+    communicator = await create_communicator(user)
+    reg = await create_registration(user, 'test-external')
+
+    await communicator.send_json_to({
+        'action': 'status',
+        'data': {
+            'id': str(reg.id),
+        },
+    })
+
+    res = await communicator.receive_json_from()
+    assert res == reg.status
+
+    await communicator.disconnect()
+    await cleanup_user(user)
+    await cleanup_registration(reg)
