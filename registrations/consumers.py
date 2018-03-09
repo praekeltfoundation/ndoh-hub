@@ -1,3 +1,4 @@
+from asgiref.sync import async_to_sync
 from channels.generic.websocket import JsonWebsocketConsumer
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
@@ -10,10 +11,24 @@ from registrations.views import (
 class JembiAppRegistrationConsumer(JsonWebsocketConsumer):
     def connect(self) -> None:
         self.user = self.scope['user']
-        if self.user and self.user.is_authenticated:
-            self.accept()
-        else:
+
+        if not self.user or not self.user.is_authenticated:
             self.close()
+            return
+
+        self.accept()
+        async_to_sync(self.channel_layer.group_add)(
+            "user.{}".format(self.user.id), self.channel_name)
+
+    def disconnect(self, close_code):
+        async_to_sync(self.channel_layer.group_discard)(
+            "user.{}".format(self.user.id), self.channel_name)
+
+    def registration_event(self, event: dict) -> None:
+        """
+        Sends the registration event over the websocket
+        """
+        self.send_json(event['data'])
 
     def action_registration(self, data: dict) -> None:
         """

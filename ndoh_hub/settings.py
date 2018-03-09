@@ -254,6 +254,16 @@ CELERY_ACCEPT_CONTENT = ['json']
 
 djcelery.setup_loader()
 
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_URL],
+        },
+    },
+}
+
 METRICS_REALTIME = [
     'registrations.created.sum',
 ]

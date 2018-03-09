@@ -30,6 +30,7 @@ setup(
         'structlog==16.1.0',
         'phonenumberslite==8.9.0',
         'channels==2.0.2',
+        'channels_redis==2.1.0',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

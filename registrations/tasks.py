@@ -11,10 +11,12 @@ from datetime import datetime
 import requests
 from requests.exceptions import HTTPError, ConnectionError
 
+from asgiref.sync import async_to_sync
 from django.conf import settings
 from celery import chain
 from celery.task import Task
 from celery.utils.log import get_task_logger
+from channels.layers import get_channel_layer
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.service_rating import ServiceRatingApiClient
 
@@ -32,6 +34,8 @@ sr_client = ServiceRatingApiClient(
     api_url=settings.SERVICE_RATING_URL,
     auth_token=settings.SERVICE_RATING_TOKEN
 )
+
+group_send = async_to_sync(get_channel_layer().group_send)
 
 
 def get_risk_status(reg_type, mom_dob, edd):
@@ -606,6 +610,7 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
     def send_webhook(self, registration):
         """
         Sends a webhook if one is specified for the given registration
+        Also sends the status over websocket
         """
         url = registration.data.get('callback_url', None)
         token = registration.data.get('callback_auth_token', None)
@@ -618,6 +623,10 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         if token is not None:
             headers['Authorization'] = 'Token {}'.format(token)
 
+        group_send('user.{}'.format(registration.created_by_id), {
+            'type': 'registration.event',
+            'data': registration.status,
+        })
         return http_request_with_retries.delay(
             method='POST', url=url, headers=headers,
             payload=registration.status)
