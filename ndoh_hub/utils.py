@@ -71,7 +71,7 @@ def is_valid_date(date):
     try:
         datetime.datetime.strptime(date, "%Y-%m-%d")
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -303,6 +303,7 @@ class FireMetric(Task):
         metric_client.fire_metrics(**metric)
         return "Fired metric <%s> with value <%s>" % (
             metric_name, metric_value)
+
 
 fire_metric = FireMetric()
 

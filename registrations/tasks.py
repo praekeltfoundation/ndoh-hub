@@ -80,7 +80,7 @@ class ValidateSubscribe(Task):
     data.
     """
     name = "ndoh_hub.registrations.tasks.validate_subscribe"
-    l = get_task_logger(__name__)
+    log = get_task_logger(__name__)
 
     # Validation checks
     def check_lang(self, data_fields, registration):
@@ -206,7 +206,7 @@ class ValidateSubscribe(Task):
         """ Validates that all the required info is provided for a
         registration.
         """
-        self.l.info("Starting registration validation")
+        self.log.info("Starting registration validation")
 
         validation_errors = []
 
@@ -277,18 +277,18 @@ class ValidateSubscribe(Task):
 
         # Evaluate if there were any problems, save and return
         if len(validation_errors) == 0:
-            self.l.info("Registration validated successfully - updating "
-                        "registration object")
+            self.log.info("Registration validated successfully - updating "
+                          "registration object")
             registration.validated = True
             registration.save()
-            self.l.info("Registration object updated.")
+            self.log.info("Registration object updated.")
             return True
         else:
-            self.l.info("Registration validation failed - updating "
-                        "registration object")
+            self.log.info("Registration validation failed - updating "
+                          "registration object")
             registration.data["invalid_fields"] = validation_errors
             registration.save()
-            self.l.info("Registration object updated.")
+            self.log.info("Registration object updated.")
             return False
 
     def create_popi_subscriptionrequest(self, registration):
@@ -301,13 +301,13 @@ class ValidateSubscribe(Task):
            registration.source.authority not in ['hw_partial', 'hw_full']):
             return "POPI Subscription request not created"
 
-        self.l.info("Fetching messageset")
+        self.log.info("Fetching messageset")
         msgset_short_name = utils.get_messageset_short_name(
             'popi', registration.source.authority, None)
         msgset_id, msgset_schedule, next_sequence_number =\
             utils.get_messageset_schedule_sequence(msgset_short_name, None)
 
-        self.l.info("Creating subscription request")
+        self.log.info("Creating subscription request")
         from .models import SubscriptionRequest
         SubscriptionRequest.objects.create(
             identity=registration.registrant_id,
@@ -316,7 +316,7 @@ class ValidateSubscribe(Task):
             lang=registration.data['language'],
             schedule=msgset_schedule,
         )
-        self.l.info("POPI Subscription request created")
+        self.log.info("POPI Subscription request created")
         return "POPI Subscription Request created"
 
     # Create SubscriptionRequest
@@ -324,9 +324,9 @@ class ValidateSubscribe(Task):
         """ Create SubscriptionRequest(s) based on the
         validated registration.
         """
-        self.l.info("Starting subscriptionrequest creation")
+        self.log.info("Starting subscriptionrequest creation")
 
-        self.l.info("Calculating weeks")
+        self.log.info("Calculating weeks")
         weeks = 1  # default week number
 
         # . calculate weeks along
@@ -344,12 +344,12 @@ class ValidateSubscribe(Task):
                                        registration.data["baby_dob"])
 
         # . determine messageset shortname
-        self.l.info("Determining messageset shortname")
+        self.log.info("Determining messageset shortname")
         short_name = utils.get_messageset_short_name(
             registration.reg_type, registration.source.authority, weeks)
 
         # . determine sbm details
-        self.l.info("Determining SBM details")
+        self.log.info("Determining SBM details")
         msgset_id, msgset_schedule, next_sequence_number =\
             utils.get_messageset_schedule_sequence(
                 short_name, weeks)
@@ -361,10 +361,10 @@ class ValidateSubscribe(Task):
             "lang": registration.data["language"],
             "schedule": msgset_schedule
         }
-        self.l.info("Creating SubscriptionRequest object")
+        self.log.info("Creating SubscriptionRequest object")
         from .models import SubscriptionRequest
         SubscriptionRequest.objects.create(**subscription)
-        self.l.info("SubscriptionRequest created")
+        self.log.info("SubscriptionRequest created")
 
         return "SubscriptionRequest created"
 
@@ -376,20 +376,20 @@ class ValidateSubscribe(Task):
             "identity": registration.registrant_id
             # could provide "invite" to override servicerating defaults
         }
-        self.l.info("Creating ServiceRating invite")
+        self.log.info("Creating ServiceRating invite")
         response = sr_client.create_invite(invite_data)
-        self.l.info("Created ServiceRating invite")
+        self.log.info("Created ServiceRating invite")
         return response
 
     # Set risk status
     def set_risk_status(self, registration):
         """ Determine the risk status of the mother and save it to her identity
         """
-        self.l.info("Calculating risk level")
+        self.log.info("Calculating risk level")
         risk = get_risk_status(registration.reg_type,
                                registration.data["mom_dob"],
                                registration.data["edd"])
-        self.l.info("Reading the identity")
+        self.log.info("Reading the identity")
         identity = is_client.get_identity(registration.registrant_id)
         details = identity["details"]
 
@@ -398,11 +398,11 @@ class ValidateSubscribe(Task):
         else:
             details["pmtct"] = {"risk_status": risk}
 
-        self.l.info("Saving risk level to the identity")
+        self.log.info("Saving risk level to the identity")
         is_client.update_identity(
             registration.registrant_id, {"details": details})
 
-        self.l.info("Identity updated with risk level")
+        self.log.info("Identity updated with risk level")
         return risk
 
     # Run
@@ -410,8 +410,8 @@ class ValidateSubscribe(Task):
         """ Sets the registration's validated field to True if
         validation is successful.
         """
-        self.l = self.get_logger(**kwargs)
-        self.l.info("Looking up the registration")
+        self.log = self.get_logger(**kwargs)
+        self.log.info("Looking up the registration")
         from .models import Registration
         registration = Registration.objects.get(id=registration_id)
 
@@ -432,7 +432,7 @@ class ValidateSubscribe(Task):
             if "pmtct" in registration.reg_type:
                 self.set_risk_status(registration)
 
-            self.l.info("Scheduling registration push to Jembi")
+            self.log.info("Scheduling registration push to Jembi")
             jembi_task = BasePushRegistrationToJembi.\
                 get_jembi_task_for_registration(registration)
             task = chain(
@@ -441,10 +441,10 @@ class ValidateSubscribe(Task):
             )
             task.delay()
 
-            self.l.info("Task executed successfully")
+            self.log.info("Task executed successfully")
             return True
         else:
-            self.l.info("Task terminated due to validation issues")
+            self.log.info("Task terminated due to validation issues")
             return False
 
 
@@ -782,7 +782,7 @@ class BasePushRegistrationToJembi(object):
     to Jembi.
     """
     name = "ndoh_hub.registrations.tasks.base_push_registration_to_jembi"
-    l = get_task_logger(__name__)
+    log = get_task_logger(__name__)
 
     def get_patient_id(self, id_type, id_no=None, passport_origin=None,
                        mom_msisdn=None):
@@ -846,7 +846,7 @@ class BasePushRegistrationToJembi(object):
         registration = Registration.objects.get(pk=registration_id)
         authority = self.get_authority_from_source(registration.source)
         if authority is None:
-            self.l.error(
+            self.log.error(
                 'Unable to establish authority for source %s. Skipping.' % (
                     registration.source))
             return
@@ -867,11 +867,11 @@ class BasePushRegistrationToJembi(object):
             if 500 < e.response.status_code < 599:
                 raise self.retry(exc=e)
             else:
-                self.l.error('Error when posting to Jembi. Payload: %r' % (
+                self.log.error('Error when posting to Jembi. Payload: %r' % (
                     json_doc))
                 raise e
         except (Exception,) as e:
-            self.l.error(
+            self.log.error(
                 'Problem posting Registration %s JSON to Jembi' % (
                     registration_id), exc_info=True)
 
@@ -880,7 +880,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
     """ Task to push registration data to Jembi
     """
     name = "ndoh_hub.registrations.tasks.push_registration_to_jembi"
-    l = get_task_logger(__name__)
+    log = get_task_logger(__name__)
     URL = "%s/subscription" % settings.JEMBI_BASE_URL
 
     def get_subscription_type(self, authority):
@@ -925,7 +925,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
 
     def build_jembi_json(self, registration):
         """ Compile json to be sent to Jembi. """
-        self.l.info("Compiling Jembi Json data for PushRegistrationToJembi")
+        self.log.info("Compiling Jembi Json data for PushRegistrationToJembi")
         authority = self.get_authority_from_source(registration.source)
 
         id_msisdn = None
@@ -1002,12 +1002,13 @@ class PushPmtctRegistrationToJembi(PushRegistrationToJembi, Task):
 
         return json_template
 
+
 push_pmtct_registration_to_jembi = PushPmtctRegistrationToJembi()
 
 
 class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
     name = "ndoh_hub.registrations.tasks.push_nurse_registration_to_jembi"
-    l = get_task_logger(__name__)
+    log = get_task_logger(__name__)
     URL = "%s/nc/subscription" % settings.JEMBI_BASE_URL
 
     def get_persal(self, identity):
@@ -1033,7 +1034,7 @@ class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
         Compiles and returns a dictionary representing the JSON that should
         be sent to Jembi for the given registration.
         """
-        self.l.info(
+        self.log.info(
             "Compiling Jembi Json data for PushNurseRegistrationToJembi")
         identity = is_client.get_identity(registration.registrant_id)
         json_template = {
@@ -1064,6 +1065,7 @@ class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
         }
 
         return json_template
+
 
 push_nurse_registration_to_jembi = PushNurseRegistrationToJembi()
 

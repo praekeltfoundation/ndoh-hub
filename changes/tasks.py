@@ -35,57 +35,57 @@ class ValidateImplement(Task):
     """ Task to apply a Change action.
     """
     name = "ndoh_hub.changes.tasks.validate_implement"
-    l = get_task_logger(__name__)
+    log = get_task_logger(__name__)
 
     # Helpers
     def deactivate_all(self, change):
         """ Deactivates all subscriptions for an identity
         """
-        self.l.info("Retrieving active subscriptions")
+        self.log.info("Retrieving active subscriptions")
         active_subs = sbm_client.get_subscriptions(
             {'identity': change.registrant_id, 'active': True}
         )["results"]
 
-        self.l.info("Deactivating all active subscriptions")
+        self.log.info("Deactivating all active subscriptions")
         for active_sub in active_subs:
             sbm_client.update_subscription(
                 active_sub["id"], {"active": False})
 
-        self.l.info("All subscriptions deactivated")
+        self.log.info("All subscriptions deactivated")
         return True
 
     def deactivate_all_except_nurseconnect(self, change):
         """ Deactivates all subscriptions for an identity that are not to
         nurseconnect
         """
-        self.l.info("Retrieving active subscriptions")
+        self.log.info("Retrieving active subscriptions")
         active_subs = sbm_client.get_subscriptions(
             {'identity': change.registrant_id, 'active': True}
         )["results"]
 
-        self.l.info("Retrieving nurseconnect messagesets")
+        self.log.info("Retrieving nurseconnect messagesets")
         messagesets = sbm_client.get_messagesets()["results"]
         nc_messageset_ids = [ms['id'] for ms in messagesets
                              if 'nurseconnect' in ms['short_name']]
 
-        self.l.info("Deactivating active non-nurseconnect subscriptions")
+        self.log.info("Deactivating active non-nurseconnect subscriptions")
         for active_sub in active_subs:
             if active_sub["messageset"] not in nc_messageset_ids:
                 sbm_client.update_subscription(
                     active_sub["id"], {"active": False})
 
-        self.l.info("Non-nurseconnect subscriptions deactivated")
+        self.log.info("Non-nurseconnect subscriptions deactivated")
         return True
 
     def deactivate_nurseconnect(self, change):
         """ Deactivates nurseconnect subscriptions only
         """
-        self.l.info("Retrieving messagesets")
+        self.log.info("Retrieving messagesets")
         messagesets = sbm_client.get_messagesets()["results"]
         nc_messagesets = [ms for ms in messagesets
                           if 'nurseconnect' in ms['short_name']]
 
-        self.l.info("Retrieving active nurseconnect subscriptions")
+        self.log.info("Retrieving active nurseconnect subscriptions")
         active_subs = []
         for messageset in nc_messagesets:
             active_subs.extend(sbm_client.get_subscriptions(
@@ -93,34 +93,34 @@ class ValidateImplement(Task):
                  'messageset': messageset["id"]}
             )["results"])
 
-        self.l.info("Deactivating active nurseconnect subscriptions")
+        self.log.info("Deactivating active nurseconnect subscriptions")
         for active_sub in active_subs:
             sbm_client.update_subscription(active_sub["id"], {"active": False})
 
     def deactivate_pmtct(self, change):
         """ Deactivates any pmtct subscriptions
         """
-        self.l.info("Retrieving active subscriptions")
+        self.log.info("Retrieving active subscriptions")
         active_subs = sbm_client.get_subscriptions(
             {'identity': change.registrant_id, 'active': True}
         )["results"]
 
-        self.l.info("Deactivating active pmtct subscriptions")
+        self.log.info("Deactivating active pmtct subscriptions")
         for active_sub in active_subs:
             messageset = sbm_client.get_messageset(active_sub["messageset"])
             if "pmtct" in messageset["short_name"]:
-                self.l.info("Deactivating messageset %s" % messageset["id"])
+                self.log.info("Deactivating messageset %s" % messageset["id"])
                 sbm_client.update_subscription(
                     active_sub["id"], {"active": False})
 
     def loss_switch(self, change):
-        self.l.info("Retrieving active subscriptions")
+        self.log.info("Retrieving active subscriptions")
         active_subs = list(sbm_client.get_subscriptions(
             {'identity': change.registrant_id, 'active': True}
         )["results"])
 
         if (len(active_subs) == 0):
-            self.l.info("No active subscriptions - aborting")
+            self.log.info("No active subscriptions - aborting")
             return False
 
         whatsapp = False
@@ -143,19 +143,19 @@ class ValidateImplement(Task):
         else:
             self.deactivate_all_except_nurseconnect(change)
 
-            self.l.info("Determining messageset shortname")
+            self.log.info("Determining messageset shortname")
             set_name = 'loss_{}'.format(change.data['reason'])
             if whatsapp:
                 set_name = 'whatsapp_{}'.format(set_name)
             short_name = utils.get_messageset_short_name(
                 set_name, "patient", 0)
 
-            self.l.info("Determining SBM details")
+            self.log.info("Determining SBM details")
             msgset_id, msgset_schedule, next_sequence_number =\
                 utils.get_messageset_schedule_sequence(
                     short_name, 0)
 
-            self.l.info("Determining language")
+            self.log.info("Determining language")
             identity = is_client.get_identity(change.registrant_id)
 
             subscription = {
@@ -166,9 +166,9 @@ class ValidateImplement(Task):
                 "schedule": msgset_schedule
             }
 
-            self.l.info("Creating Loss SubscriptionRequest")
+            self.log.info("Creating Loss SubscriptionRequest")
             SubscriptionRequest.objects.create(**subscription)
-            self.l.info("Created Loss SubscriptionRequest")
+            self.log.info("Created Loss SubscriptionRequest")
             return True
 
     # Action implementation
@@ -177,22 +177,22 @@ class ValidateImplement(Task):
         only changes the pmtct subscription, but in the future it will also
         change her momconnect subscription.
         """
-        self.l.info("Starting switch to baby")
+        self.log.info("Starting switch to baby")
 
-        self.l.info("Retrieving active subscriptions")
+        self.log.info("Retrieving active subscriptions")
         active_subs = sbm_client.get_subscriptions(
             {'identity': change.registrant_id, 'active': True}
         )["results"]
 
         # Determine if the mother has an active pmtct subscription and
         # deactivate active subscriptions
-        self.l.info("Evaluating active subscriptions")
+        self.log.info("Evaluating active subscriptions")
         has_active_pmtct_prebirth_sub = False
         has_active_whatsapp_pmtct_prebirth_sub = False
         has_active_momconnect_prebirth_sub = False
 
         for active_sub in active_subs:
-            self.l.info("Retrieving messageset")
+            self.log.info("Retrieving messageset")
             messageset = sbm_client.get_messageset(active_sub["messageset"])
             if "pmtct_prebirth" in messageset["short_name"]:
                 if "whatsapp" in messageset["short_name"]:
@@ -203,20 +203,20 @@ class ValidateImplement(Task):
                 has_active_momconnect_prebirth_sub = True
                 lang = active_sub["lang"]
             if "prebirth" in messageset["short_name"]:
-                self.l.info("Deactivating subscription")
+                self.log.info("Deactivating subscription")
                 sbm_client.update_subscription(
                     active_sub["id"], {"active": False})
 
         if has_active_momconnect_prebirth_sub:
-            self.l.info("Starting postbirth momconnect subscriptionrequest")
+            self.log.info("Starting postbirth momconnect subscriptionrequest")
 
-            self.l.info("Determining messageset shortname")
+            self.log.info("Determining messageset shortname")
             # . determine messageset shortname
             short_name = utils.get_messageset_short_name(
                 "momconnect_postbirth", "hw_full", 0)
 
             # . determine sbm details
-            self.l.info("Determining SBM details")
+            self.log.info("Determining SBM details")
             msgset_id, msgset_schedule, next_sequence_number =\
                 utils.get_messageset_schedule_sequence(short_name, 0)
 
@@ -227,14 +227,14 @@ class ValidateImplement(Task):
                 "lang": lang,
                 "schedule": msgset_schedule
             }
-            self.l.info("Creating MomConnect postbirth SubscriptionRequest")
+            self.log.info("Creating MomConnect postbirth SubscriptionRequest")
             SubscriptionRequest.objects.create(**subscription)
-            self.l.info("Created MomConnect postbirth SubscriptionRequest")
+            self.log.info("Created MomConnect postbirth SubscriptionRequest")
 
         if has_active_pmtct_prebirth_sub:
-            self.l.info("Starting postbirth pmtct subscriptionrequest")
+            self.log.info("Starting postbirth pmtct subscriptionrequest")
 
-            self.l.info("Determining messageset shortname")
+            self.log.info("Determining messageset shortname")
             # . determine messageset shortname
             set_name = 'pmtct_postbirth'
             if has_active_whatsapp_pmtct_prebirth_sub:
@@ -243,7 +243,7 @@ class ValidateImplement(Task):
                 set_name, "patient", 0)
 
             # . determine sbm details
-            self.l.info("Determining SBM details")
+            self.log.info("Determining SBM details")
             msgset_id, msgset_schedule, next_sequence_number =\
                 utils.get_messageset_schedule_sequence(short_name, 0)
 
@@ -254,17 +254,17 @@ class ValidateImplement(Task):
                 "lang": lang,
                 "schedule": msgset_schedule
             }
-            self.l.info("Creating PMTCT postbirth SubscriptionRequest")
+            self.log.info("Creating PMTCT postbirth SubscriptionRequest")
             SubscriptionRequest.objects.create(**subscription)
-            self.l.info("Created PMTCT postbirth SubscriptionRequest")
+            self.log.info("Created PMTCT postbirth SubscriptionRequest")
 
-        self.l.info("Saving the date of birth to the identity")
+        self.log.info("Saving the date of birth to the identity")
         identity = is_client.get_identity(change.registrant_id)
         details = identity["details"]
         details["last_baby_dob"] = utils.get_today().strftime("%Y-%m-%d")
         is_client.update_identity(
             change.registrant_id, {"details": details})
-        self.l.info("Saved the date of birth to the identity")
+        self.log.info("Saved the date of birth to the identity")
 
         return push_momconnect_babyswitch_to_jembi.si(str(change.pk))
 
@@ -272,22 +272,22 @@ class ValidateImplement(Task):
         """ Deactivate any active momconnect & pmtct subscriptions, then
         subscribe them to loss messages.
         """
-        self.l.info("Starting PMTCT switch to loss")
+        self.log.info("Starting PMTCT switch to loss")
         switched = self.loss_switch(change)
 
         if switched is True:
-            self.l.info("Completed PMTCT switch to loss")
+            self.log.info("Completed PMTCT switch to loss")
             return push_momconnect_babyloss_to_jembi.si(str(change.pk))
         else:
-            self.l.info("Aborted PMTCT switch to loss")
+            self.log.info("Aborted PMTCT switch to loss")
 
     def pmtct_loss_optout(self, change):
         """ This only deactivates non-nurseconnect subscriptions
         """
-        self.l.info("Starting PMTCT loss optout")
+        self.log.info("Starting PMTCT loss optout")
         self.deactivate_all_except_nurseconnect(change)
-        self.l.info("Completed PMTCT loss optout")
-        self.l.info("Sending optout to Jembi")
+        self.log.info("Completed PMTCT loss optout")
+        self.log.info("Sending optout to Jembi")
         return push_pmtct_optout_to_jembi.si(str(change.pk))
 
     def pmtct_nonloss_optout(self, change):
@@ -295,61 +295,61 @@ class ValidateImplement(Task):
         in the JS app. SMS optout deactivates all subscriptions,
         whereas USSD optout deactivates only pmtct subscriptions
         """
-        self.l.info("Starting PMTCT non-loss optout")
+        self.log.info("Starting PMTCT non-loss optout")
 
         if change.data["reason"] == 'unknown':  # SMS optout
             self.deactivate_all(change)
         else:
             self.deactivate_pmtct(change)
 
-        self.l.info("Completed PMTCT non-loss optout")
-        self.l.info("Sending optout to Jembi")
+        self.log.info("Completed PMTCT non-loss optout")
+        self.log.info("Sending optout to Jembi")
         return push_pmtct_optout_to_jembi.si(str(change.pk))
 
     def nurse_update_detail(self, change):
         """ This currently does nothing, but in a seperate issue this will
         handle sending the information update to Jembi
         """
-        self.l.info("Starting nurseconnect detail update")
-        self.l.info("Completed nurseconnect detail update")
+        self.log.info("Starting nurseconnect detail update")
+        self.log.info("Completed nurseconnect detail update")
 
     def nurse_change_msisdn(self, change):
         """ This currently does nothing, but in a seperate issue this will
         handle sending the information update to Jembi
         """
-        self.l.info("Starting nurseconnect msisdn change")
-        self.l.info("Completed nurseconnect msisdn change")
+        self.log.info("Starting nurseconnect msisdn change")
+        self.log.info("Completed nurseconnect msisdn change")
 
     def nurse_optout(self, change):
         """ The rest of the action required (opting out the identity on the
         identity store) is currently done via the ndoh-jsbox ussd_nurse
         app, we're only deactivating any NurseConnect subscriptions here.
         """
-        self.l.info("Starting NurseConnect optout")
+        self.log.info("Starting NurseConnect optout")
         self.deactivate_nurseconnect(change)
-        self.l.info("Pushing optout to Jembi")
+        self.log.info("Pushing optout to Jembi")
         return push_nurseconnect_optout_to_jembi.si(str(change.pk))
 
     def momconnect_loss_switch(self, change):
         """ Deactivate any active momconnect & pmtct subscriptions, then
         subscribe them to loss messages.
         """
-        self.l.info("Starting MomConnect switch to loss")
+        self.log.info("Starting MomConnect switch to loss")
         switched = self.loss_switch(change)
 
         if switched is True:
-            self.l.info("Completed MomConnect switch to loss")
+            self.log.info("Completed MomConnect switch to loss")
             return push_momconnect_babyloss_to_jembi.si(str(change.pk))
         else:
-            self.l.info("Aborted MomConnect switch to loss")
+            self.log.info("Aborted MomConnect switch to loss")
 
     def momconnect_loss_optout(self, change):
         """ This only deactivates non-nurseconnect subscriptions
         """
-        self.l.info("Starting MomConnect loss optout")
+        self.log.info("Starting MomConnect loss optout")
         self.deactivate_all_except_nurseconnect(change)
-        self.l.info("Completed MomConnect loss optout")
-        self.l.info("Sending optout to Jembi")
+        self.log.info("Completed MomConnect loss optout")
+        self.log.info("Sending optout to Jembi")
         return push_momconnect_optout_to_jembi.si(str(change.pk))
 
     def momconnect_nonloss_optout(self, change):
@@ -357,7 +357,7 @@ class ValidateImplement(Task):
         in the JS app. SMS optout deactivates all subscriptions,
         whereas USSD optout deactivates all except nurseconnect
         """
-        self.l.info("Starting MomConnect non-loss optout")
+        self.log.info("Starting MomConnect non-loss optout")
 
         if (change.data["reason"] == 'unknown' or
                 change.data["reason"] == 'sms_failure'):  # SMS optout
@@ -365,8 +365,8 @@ class ValidateImplement(Task):
         else:
             self.deactivate_all_except_nurseconnect(change)
 
-        self.l.info("Completed MomConnect non-loss optout")
-        self.l.info("Sending optout to Jembi")
+        self.log.info("Completed MomConnect non-loss optout")
+        self.log.info("Sending optout to Jembi")
         return push_momconnect_optout_to_jembi.si(str(change.pk))
 
     def momconnect_change_language(self, change):
@@ -374,32 +374,32 @@ class ValidateImplement(Task):
         Language change should change the language of the identity, as well
         as the language of that identity's subscriptions.
         """
-        self.l.info("Starting MomConnect language change")
+        self.log.info("Starting MomConnect language change")
 
         language = change.data['language']
 
         active_subs = sbm_client.get_subscriptions(
             {'identity': change.registrant_id, 'active': True})
         for sub in active_subs['results']:
-            self.l.info(
+            self.log.info(
                 "Getting messageset for subscription {}".format(sub['id']))
             messageset = sbm_client.get_messageset(sub['messageset'])
             if 'momconnect' not in messageset['short_name']:
                 continue
-            self.l.info(
+            self.log.info(
                 "Changing language for subscription {}".format(sub['id']))
             sbm_client.update_subscription(sub['id'], {
                 'lang': language,
                 })
 
-        self.l.info("Fetching identity {}".format(change.registrant_id))
+        self.log.info("Fetching identity {}".format(change.registrant_id))
         identity = is_client.get_identity(change.registrant_id)
 
-        self.l.info("Updating Change object")
+        self.log.info("Updating Change object")
         change.data['old_language'] = identity['details'].get('lang_code')
         change.save()
 
-        self.l.info(
+        self.log.info(
             "Changing language for identity {}".format(change.registrant_id))
         identity['details']['lang_code'] = language
         is_client.update_identity(identity['id'], {
@@ -412,14 +412,14 @@ class ValidateImplement(Task):
         storing information on the identity to allow us to see the history
         of the change.
         """
-        self.l.info("Starting MomConnect MSISDN change")
+        self.log.info("Starting MomConnect MSISDN change")
 
         new_msisdn = change.data.pop('msisdn')
 
-        self.l.info("Fetching identity")
+        self.log.info("Fetching identity")
         identity = is_client.get_identity(change.registrant_id)
 
-        self.l.info("Updating identity msisdn")
+        self.log.info("Updating identity msisdn")
         details = identity['details']
         if 'addresses' not in details:
             details['addresses'] = {}
@@ -449,7 +449,7 @@ class ValidateImplement(Task):
             'details': details,
             })
 
-        self.l.info("Updating Change object")
+        self.log.info("Updating Change object")
         change.save()
 
     def momconnect_change_identification(self, change):
@@ -457,9 +457,9 @@ class ValidateImplement(Task):
         Identification change should change the identification information on
         the identity, while storing the historical information on the identity.
         """
-        self.l.info("Starting MomConnect Identification change")
+        self.log.info("Starting MomConnect Identification change")
 
-        self.l.info("Fetching Identity")
+        self.log.info("Fetching Identity")
         identity = is_client.get_identity(change.registrant_id)
         details = identity['details']
         old_identification = {'change': change.id}
@@ -476,10 +476,10 @@ class ValidateImplement(Task):
             details['passport_no'] = change.data.pop('passport_no')
             details['passport_origin'] = change.data.pop('passport_origin')
 
-        self.l.info("Updating Identity")
+        self.log.info("Updating Identity")
         is_client.update_identity(identity['id'], {'details': details})
 
-        self.l.info("Updating Change")
+        self.log.info("Updating Change")
         change.save()
 
     def admin_change_subscription(self, change):
@@ -758,7 +758,7 @@ class ValidateImplement(Task):
         """ Validates that all the required info is provided for a
         change.
         """
-        self.l.info("Starting change validation")
+        self.log.info("Starting change validation")
 
         validation_errors = []
 
@@ -819,13 +819,13 @@ class ValidateImplement(Task):
 
         # Evaluate if there were any problems, save and return
         if len(validation_errors) == 0:
-            self.l.info("Change validated successfully - updating change "
-                        "object")
+            self.log.info("Change validated successfully - updating change "
+                          "object")
             change.validated = True
             change.save()
             return True
         else:
-            self.l.info("Change validation failed - updating change object")
+            self.log.info("Change validation failed - updating change object")
             change.data["invalid_fields"] = validation_errors
             change.save()
             return False
@@ -834,8 +834,8 @@ class ValidateImplement(Task):
     def run(self, change_id, **kwargs):
         """ Implements the appropriate action
         """
-        self.l = self.get_logger(**kwargs)
-        self.l.info("Looking up the change")
+        self.log = self.get_logger(**kwargs)
+        self.log.info("Looking up the change")
         change = Change.objects.get(id=change_id)
         change_validates = self.validate(change)
 
@@ -864,11 +864,12 @@ class ValidateImplement(Task):
                     submit_task,
                     remove_personally_identifiable_fields.si(str(change.pk)))
                 task.delay()
-            self.l.info("Task executed successfully")
+            self.log.info("Task executed successfully")
             return True
         else:
-            self.l.info("Task terminated due to validation issues")
+            self.log.info("Task terminated due to validation issues")
             return False
+
 
 validate_implement = ValidateImplement()
 
@@ -990,11 +991,11 @@ class BasePushOptoutToJembi(object):
             if 500 < e.response.status_code < 599:
                 raise self.retry(exc=e)
             else:
-                self.l.error('Error when posting to Jembi. Payload: %r' % (
+                self.log.error('Error when posting to Jembi. Payload: %r' % (
                     json_doc))
                 raise e
         except (Exception,) as e:
-            self.l.error(
+            self.log.error(
                 'Problem posting Optout %s JSON to Jembi' % (
                     change_id), exc_info=True)
 
@@ -1004,7 +1005,7 @@ class PushMomconnectOptoutToJembi(BasePushOptoutToJembi, Task):
     Sends a momconnect optout change to Jembi.
     """
     name = "ndoh_hub.changes.tasks.push_momconnect_optout_to_jembi"
-    l = get_task_logger(__name__)
+    log = get_task_logger(__name__)
     URL = "%s/optout" % settings.JEMBI_BASE_URL
 
     def get_identity_address(self, identity, address_type='msisdn'):
@@ -1033,6 +1034,7 @@ class PushMomconnectOptoutToJembi(BasePushOptoutToJembi, Task):
             'optoutreason': self.get_optout_reason(change.data['reason']),
         }
 
+
 push_momconnect_optout_to_jembi = PushMomconnectOptoutToJembi()
 
 
@@ -1056,6 +1058,7 @@ class PushPMTCTOptoutToJembi(PushMomconnectOptoutToJembi, Task):
             'optoutreason': self.get_optout_reason(change.data['reason']),
         }
 
+
 push_pmtct_optout_to_jembi = PushPMTCTOptoutToJembi()
 
 
@@ -1064,7 +1067,7 @@ class PushMomconnectBabyLossToJembi(BasePushOptoutToJembi, Task):
     Sends a momconnect baby loss change to Jembi.
     """
     name = "ndoh_hub.changes.tasks.push_momconnect_babyloss_to_jembi"
-    l = get_task_logger(__name__)
+    log = get_task_logger(__name__)
     URL = "%s/subscription" % settings.JEMBI_BASE_URL
 
     def get_identity_address(self, identity, address_type='msisdn'):
@@ -1092,6 +1095,7 @@ class PushMomconnectBabyLossToJembi(BasePushOptoutToJembi, Task):
             'type': 5,
         }
 
+
 push_momconnect_babyloss_to_jembi = PushMomconnectBabyLossToJembi()
 
 
@@ -1100,7 +1104,7 @@ class PushMomconnectBabySwitchToJembi(BasePushOptoutToJembi, Task):
     Sends a momconnect baby switch change to Jembi.
     """
     name = "ndoh_hub.changes.tasks.push_momconnect_babyswitch_to_jembi"
-    l = get_task_logger(__name__)
+    log = get_task_logger(__name__)
     URL = "%s/subscription" % settings.JEMBI_BASE_URL
 
     def get_identity_address(self, identity, address_type='msisdn'):
@@ -1128,6 +1132,7 @@ class PushMomconnectBabySwitchToJembi(BasePushOptoutToJembi, Task):
             'type': 11,
         }
 
+
 push_momconnect_babyswitch_to_jembi = PushMomconnectBabySwitchToJembi()
 
 
@@ -1136,7 +1141,7 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
     Sends a nurseconnect optout change to Jembi.
     """
     name = "ndoh_hub.changes.tasks.push_nurseconnect_optout_to_jembi"
-    l = get_task_logger(__name__)
+    log = get_task_logger(__name__)
     URL = "%s/nc/optout" % settings.JEMBI_BASE_URL
 
     def get_nurse_id(
@@ -1167,7 +1172,7 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
     def build_jembi_json(self, change):
         registration = self.get_nurse_registration(change)
         if registration is None:
-            self.l.error(
+            self.log.error(
                 'Cannot find registration for change {}'.format(change.pk))
             return
         return {
@@ -1193,5 +1198,6 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
                     else None),
             'optoutreason': self.get_optout_reason(change.data['reason']),
         }
+
 
 push_nurseconnect_optout_to_jembi = PushNurseconnectOptoutToJembi()
