@@ -1,10 +1,7 @@
 import datetime
 from django.contrib.auth.models import User
 from django.test import TestCase
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 import pytz
 from rest_framework.serializers import ValidationError
 

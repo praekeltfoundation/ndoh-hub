@@ -2,10 +2,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.test import TestCase
 import json
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 import responses
 
 from registrations.models import Registration, Source
@@ -122,9 +119,11 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         })
 
     @responses.activate
-    def test_send_webhook(self):
+    @mock.patch('registrations.tasks.group_send')
+    def test_send_webhook(self, websocket):
         """
         Sends a webhook to the specified URL with the registration status
+        Also send the status over websocket
         """
         responses.add(responses.POST, 'http://test/callback')
 
@@ -135,7 +134,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
             reg_type='jembi_momconnect', source=source, data={
                 'callback_url': 'http://test/callback',
                 'callback_auth_token': 'test-token',
-            }
+            }, created_by=user
         )
 
         task.send_webhook(reg)
@@ -145,6 +144,11 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         self.assertEqual(
             responses.calls[-1].request.headers['Authorization'],
             'Token test-token')
+
+        websocket.assert_called_once_with('user.{}'.format(user.id), {
+            'type': 'registration.event',
+            'data': reg.status,
+        })
 
     @responses.activate
     def test_send_webhook_no_url(self):

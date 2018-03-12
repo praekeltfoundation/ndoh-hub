@@ -8,14 +8,8 @@ try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from urllib.parse import urlparse
+from unittest import mock
 
 from django.contrib.auth.models import User, Group
 from django.core.management import call_command

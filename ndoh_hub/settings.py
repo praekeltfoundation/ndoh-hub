@@ -254,12 +254,22 @@ CELERY_ACCEPT_CONTENT = ['json']
 
 djcelery.setup_loader()
 
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_URL],
+        },
+    },
+}
+
 METRICS_REALTIME = [
     'registrations.created.sum',
 ]
-METRICS_SCHEDULED = [
+METRICS_SCHEDULED = [  # type: ignore
 ]
-METRICS_SCHEDULED_TASKS = [
+METRICS_SCHEDULED_TASKS = [  # type: ignore
 ]
 
 METRICS_URL = os.environ.get('METRICS_URL', 'http://metrics/api/v1')
