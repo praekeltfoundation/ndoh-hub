@@ -151,18 +151,26 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         })
 
     @responses.activate
-    def test_send_webhook_no_url(self):
+    @mock.patch('registrations.tasks.group_send')
+    def test_send_webhook_no_url(self, websocket):
         """
-        If no URL is specified, then the webhook should not be sent
+        If no URL is specified, then the webhook should not be sent, but the
+        websocket message should still be sent.
         """
         user = User.objects.create_user('test', 'test@example.org', 'test')
         source = Source.objects.create(
             name='testsource', user=user, authority='hw_full')
         reg = Registration.objects.create(
-            reg_type='jembi_momconnect', source=source, data={})
+            reg_type='jembi_momconnect', source=source, data={},
+            created_by=user)
 
         task.send_webhook(reg)
         self.assertEqual(len(responses.calls), 0)
+
+        websocket.assert_called_once_with('user.{}'.format(user.id), {
+            'type': 'registration.event',
+            'data': reg.status,
+        })
 
     @mock.patch(
         'registrations.tasks.validate_subscribe_jembi_app_registration.'

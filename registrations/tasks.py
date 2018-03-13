@@ -615,10 +615,6 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         url = registration.data.get('callback_url', None)
         token = registration.data.get('callback_auth_token', None)
 
-        if url is None:
-            # No webhook if no URL is specified
-            return
-
         headers = {}
         if token is not None:
             headers['Authorization'] = 'Token {}'.format(token)
@@ -627,9 +623,11 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
             'type': 'registration.event',
             'data': registration.status,
         })
-        return http_request_with_retries.delay(
-            method='POST', url=url, headers=headers,
-            payload=registration.status)
+
+        if url is not None:
+            http_request_with_retries.delay(
+                method='POST', url=url, headers=headers,
+                payload=registration.status)
 
     def is_registered_on_whatsapp(self, address):
         """
