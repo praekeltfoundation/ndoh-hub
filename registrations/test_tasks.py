@@ -143,7 +143,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
             json.loads(responses.calls[-1].request.body), reg.status)
         self.assertEqual(
             responses.calls[-1].request.headers['Authorization'],
-            'Token test-token')
+            'Bearer test-token')
 
         websocket.assert_called_once_with('user.{}'.format(user.id), {
             'type': 'registration.event',
@@ -455,7 +455,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
 
         request = responses.calls[-1].request
         self.assertEqual(
-            request.headers['Authorization'], 'Token test-auth-token')
+            request.headers['Authorization'], 'Bearer test-auth-token')
         callback = json.loads(request.body)
         reg.refresh_from_db()
         self.assertEqual(callback, reg.status)
