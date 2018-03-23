@@ -617,7 +617,7 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
 
         headers = {}
         if token is not None:
-            headers['Authorization'] = 'Token {}'.format(token)
+            headers['Authorization'] = 'Bearer {}'.format(token)
 
         group_send('user.{}'.format(registration.created_by_id), {
             'type': 'registration.event',
