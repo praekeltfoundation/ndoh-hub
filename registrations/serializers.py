@@ -199,7 +199,7 @@ class JembiAppRegistrationSerializer(serializers.Serializer):
 
     def validate(self, data):
         if data['id_type'] == 'sa_id':
-            if not data.get('sa_id_no'):
+            if not data.get('mom_sa_id_no'):
                 raise serializers.ValidationError(
                     "mom_sa_id_no field must be supplied if mom_id_type is "
                     "sa_id")
