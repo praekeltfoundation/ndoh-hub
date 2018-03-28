@@ -557,6 +557,14 @@ class ValidateImplement(Task):
                     schedule=sub['schedule'],
                 )
 
+        change.data['old_channel'] = 'sms'
+        if change.data['channel'] == 'sms':
+            change.data['old_channel'] = 'whatsapp'
+
+        change.save()
+
+        return push_channel_switch_to_jembi.si(str(change.pk))
+
     # Validation checks
     def check_pmtct_loss_optout_reason(self, data_fields, change):
         loss_reasons = ["miscarriage", "stillbirth", "babyloss"]
@@ -972,6 +980,19 @@ class BasePushOptoutToJembi(object):
             'sms_failure': 10,
         }.get(reason)
 
+    def get_identity_address(self, identity, address_type='msisdn'):
+        """
+        Returns a single address for the identity for the given address
+        type.
+        """
+        addresses = identity.get(
+            'details', {}).get('addresses', {}).get(address_type, {})
+        address = None
+        for address, details in iteritems(addresses):
+            if details.get('default'):
+                return address
+        return address
+
     def run(self, change_id, **kwargs):
         from .models import Change
         change = Change.objects.get(pk=change_id)
@@ -1007,19 +1028,6 @@ class PushMomconnectOptoutToJembi(BasePushOptoutToJembi, Task):
     name = "ndoh_hub.changes.tasks.push_momconnect_optout_to_jembi"
     log = get_task_logger(__name__)
     URL = "%s/optout" % settings.JEMBI_BASE_URL
-
-    def get_identity_address(self, identity, address_type='msisdn'):
-        """
-        Returns a single address for the identity for the given address
-        type.
-        """
-        addresses = identity.get(
-            'details', {}).get('addresses', {}).get(address_type, {})
-        address = None
-        for address, details in iteritems(addresses):
-            if details.get('default'):
-                return address
-        return address
 
     def build_jembi_json(self, change):
         identity = is_client.get_identity(change.registrant_id) or {}
@@ -1070,19 +1078,6 @@ class PushMomconnectBabyLossToJembi(BasePushOptoutToJembi, Task):
     log = get_task_logger(__name__)
     URL = "%s/subscription" % settings.JEMBI_BASE_URL
 
-    def get_identity_address(self, identity, address_type='msisdn'):
-        """
-        Returns a single address for the identity for the given address
-        type.
-        """
-        addresses = identity.get(
-            'details', {}).get('addresses', {}).get(address_type, {})
-        address = None
-        for address, details in iteritems(addresses):
-            if details.get('default'):
-                return address
-        return address
-
     def build_jembi_json(self, change):
         identity = is_client.get_identity(change.registrant_id) or {}
         address = self.get_identity_address(identity)
@@ -1106,19 +1101,6 @@ class PushMomconnectBabySwitchToJembi(BasePushOptoutToJembi, Task):
     name = "ndoh_hub.changes.tasks.push_momconnect_babyswitch_to_jembi"
     log = get_task_logger(__name__)
     URL = "%s/subscription" % settings.JEMBI_BASE_URL
-
-    def get_identity_address(self, identity, address_type='msisdn'):
-        """
-        Returns a single address for the identity for the given address
-        type.
-        """
-        addresses = identity.get(
-            'details', {}).get('addresses', {}).get(address_type, {})
-        address = None
-        for address, details in iteritems(addresses):
-            if details.get('default'):
-                return address
-        return address
 
     def build_jembi_json(self, change):
         identity = is_client.get_identity(change.registrant_id) or {}
@@ -1201,3 +1183,29 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
 
 
 push_nurseconnect_optout_to_jembi = PushNurseconnectOptoutToJembi()
+
+
+class PushChannelSwitchToJembi(BasePushOptoutToJembi, Task):
+    """
+    Sends a channel switch to Jembi.
+    """
+    name = "ndoh_hub.changes.tasks.push_channel_switch_to_jembi"
+    log = get_task_logger(__name__)
+    URL = "%s/messageChange" % settings.JEMBI_BASE_URL
+
+    def build_jembi_json(self, change):
+        identity = is_client.get_identity(change.registrant_id) or {}
+        address = self.get_identity_address(identity)
+        return {
+            'encdate': self.get_timestamp(change),
+            'mha': 1,
+            'swt': 1,
+            'cmsisdn': address,
+            'dmsisdn': address,
+            'type': 12,
+            'channel_current': change.data['old_channel'],
+            'channel_new': change.data['channel'],
+        }
+
+
+push_channel_switch_to_jembi = PushChannelSwitchToJembi()
