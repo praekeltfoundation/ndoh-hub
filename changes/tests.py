@@ -3563,6 +3563,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(sub_req.schedule, 2)
 
         # Check Jembi POST
+        self.assertEqual(responses.calls[-1].request.url,
+                         'http://jembi/ws/rest/v1/messageChange')
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
             'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
             'mha': 1,
@@ -3627,6 +3629,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(sub_req.schedule, 2)
 
         # Check Jembi POST
+        self.assertEqual(responses.calls[-1].request.url,
+                         'http://jembi/ws/rest/v1/messageChange')
         self.assertEqual(json.loads(responses.calls[-1].request.body), {
             'encdate': change.created_at.strftime("%Y%m%d%H%M%S"),
             'mha': 1,

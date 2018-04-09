@@ -1195,7 +1195,7 @@ class PushChannelSwitchToJembi(BasePushOptoutToJembi, Task):
     """
     name = "ndoh_hub.changes.tasks.push_channel_switch_to_jembi"
     log = get_task_logger(__name__)
-    URL = "%s/messageChange" % settings.JEMBI_BASE_URL
+    URL = urljoin(settings.JEMBI_BASE_URL, 'messageChange')
 
     def build_jembi_json(self, change):
         identity = is_client.get_identity(change.registrant_id) or {}
