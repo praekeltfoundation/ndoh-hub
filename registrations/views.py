@@ -3,6 +3,10 @@ import django_filters.rest_framework as filters
 import json
 import requests
 import logging
+try:
+    from urlparse import urljoin
+except ImportError:
+    from urllib.parse import urljoin
 
 from django.conf import settings
 from django.contrib.auth.models import User, Group
@@ -250,7 +254,7 @@ class JembiHelpdeskOutgoingView(APIView):
                 post_data['type'] = 12  # NC Helpdesk
 
             result = requests.post(
-                '%s/%s' % (settings.JEMBI_BASE_URL, endpoint),
+                urljoin(settings.JEMBI_BASE_URL, endpoint),
                 headers={'Content-Type': 'application/json'},
                 data=json.dumps(post_data),
                 auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),

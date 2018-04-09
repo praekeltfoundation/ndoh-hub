@@ -2,6 +2,10 @@ import datetime
 import json
 import re
 import requests
+try:
+    from urlparse import urljoin
+except ImportError:
+    from urllib.parse import urljoin
 
 from celery import chain
 from celery.task import Task
@@ -1027,7 +1031,7 @@ class PushMomconnectOptoutToJembi(BasePushOptoutToJembi, Task):
     """
     name = "ndoh_hub.changes.tasks.push_momconnect_optout_to_jembi"
     log = get_task_logger(__name__)
-    URL = "%s/optout" % settings.JEMBI_BASE_URL
+    URL = urljoin(settings.JEMBI_BASE_URL, 'optout')
 
     def build_jembi_json(self, change):
         identity = is_client.get_identity(change.registrant_id) or {}
@@ -1051,7 +1055,7 @@ class PushPMTCTOptoutToJembi(PushMomconnectOptoutToJembi, Task):
     Sends a PMTCT optout change to Jembi.
     """
     name = "ndoh_hub.changes.tasks.push_pmtct_optout_to_jembi"
-    URL = "%s/pmtctOptout" % settings.JEMBI_BASE_URL
+    URL = urljoin(settings.JEMBI_BASE_URL, 'pmtctOptout')
 
     def build_jembi_json(self, change):
         identity = is_client.get_identity(change.registrant_id) or {}
@@ -1076,7 +1080,7 @@ class PushMomconnectBabyLossToJembi(BasePushOptoutToJembi, Task):
     """
     name = "ndoh_hub.changes.tasks.push_momconnect_babyloss_to_jembi"
     log = get_task_logger(__name__)
-    URL = "%s/subscription" % settings.JEMBI_BASE_URL
+    URL = urljoin(settings.JEMBI_BASE_URL, 'subscription')
 
     def build_jembi_json(self, change):
         identity = is_client.get_identity(change.registrant_id) or {}
@@ -1100,7 +1104,7 @@ class PushMomconnectBabySwitchToJembi(BasePushOptoutToJembi, Task):
     """
     name = "ndoh_hub.changes.tasks.push_momconnect_babyswitch_to_jembi"
     log = get_task_logger(__name__)
-    URL = "%s/subscription" % settings.JEMBI_BASE_URL
+    URL = urljoin(settings.JEMBI_BASE_URL, 'subscription')
 
     def build_jembi_json(self, change):
         identity = is_client.get_identity(change.registrant_id) or {}
@@ -1124,7 +1128,7 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
     """
     name = "ndoh_hub.changes.tasks.push_nurseconnect_optout_to_jembi"
     log = get_task_logger(__name__)
-    URL = "%s/nc/optout" % settings.JEMBI_BASE_URL
+    URL = urljoin(settings.JEMBI_BASE_URL, 'nc/optout')
 
     def get_nurse_id(
             self, id_type, id_no=None, passport_origin=None, mom_msisdn=None):

@@ -365,7 +365,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         """
         responses.add(
             responses.GET,
-            'http://jembi/ws/rest/facilityCheck?criteria=code%3A123456',
+            'http://jembi/ws/rest/v1/facilityCheck?criteria=code%3A123456',
             json={
                 "title": "FacilityCheck",
                 "headers": [
@@ -421,7 +421,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         """
         responses.add(
             responses.GET,
-            'http://jembi/ws/rest/facilityCheck?criteria=code%3A123456',
+            'http://jembi/ws/rest/v1/facilityCheck?criteria=code%3A123456',
             json={
                 "title": "FacilityCheck",
                 "headers": [],

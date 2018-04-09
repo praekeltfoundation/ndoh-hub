@@ -888,7 +888,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
     """
     name = "ndoh_hub.registrations.tasks.push_registration_to_jembi"
     log = get_task_logger(__name__)
-    URL = "%s/subscription" % settings.JEMBI_BASE_URL
+    URL = urljoin(settings.JEMBI_BASE_URL, 'subscription')
 
     def get_subscription_type(self, authority):
         authority_map = {
@@ -983,7 +983,7 @@ class PushPmtctRegistrationToJembi(PushRegistrationToJembi, Task):
     """ Task to push PMTCT registration data to Jembi
     """
     name = "ndoh_hub.registrations.tasks.push_pmtct_registration_to_jembi"
-    URL = "%s/pmtctSubscription" % settings.JEMBI_BASE_URL
+    URL = urljoin(settings.JEMBI_BASE_URL, 'pmtctSubscription')
 
     def build_jembi_json(self, registration):
         json_template = super(PushPmtctRegistrationToJembi, self).\
@@ -1016,7 +1016,7 @@ push_pmtct_registration_to_jembi = PushPmtctRegistrationToJembi()
 class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
     name = "ndoh_hub.registrations.tasks.push_nurse_registration_to_jembi"
     log = get_task_logger(__name__)
-    URL = "%s/nc/subscription" % settings.JEMBI_BASE_URL
+    URL = urljoin(settings.JEMBI_BASE_URL, 'nc/subscription')
 
     def get_persal(self, identity):
         details = identity['details']
