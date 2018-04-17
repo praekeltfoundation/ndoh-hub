@@ -194,6 +194,7 @@ class ValidateImplement(Task):
         has_active_pmtct_prebirth_sub = False
         has_active_whatsapp_pmtct_prebirth_sub = False
         has_active_momconnect_prebirth_sub = False
+        has_active_whatsapp_momconnect_prebirth_sub = False
 
         for active_sub in active_subs:
             self.log.info("Retrieving messageset")
@@ -205,6 +206,8 @@ class ValidateImplement(Task):
                 lang = active_sub["lang"]
             if "momconnect_prebirth" in messageset["short_name"]:
                 has_active_momconnect_prebirth_sub = True
+                if "whatsapp" in messageset["short_name"]:
+                    has_active_whatsapp_momconnect_prebirth_sub = True
                 lang = active_sub["lang"]
             if "prebirth" in messageset["short_name"]:
                 self.log.info("Deactivating subscription")
@@ -218,6 +221,8 @@ class ValidateImplement(Task):
             # . determine messageset shortname
             short_name = utils.get_messageset_short_name(
                 "momconnect_postbirth", "hw_full", 0)
+            if has_active_whatsapp_momconnect_prebirth_sub:
+                short_name = 'whatsapp_{}'.format(short_name)
 
             # . determine sbm details
             self.log.info("Determining SBM details")

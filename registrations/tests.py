@@ -2310,6 +2310,50 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
         self.assertEqual(sr.schedule, 122)
 
     @responses.activate
+    def test_src_whastapp_momconnect_prebirth_clinic_2(self):
+        """ Test a whatsapp clinic prebirth registration after 30 weeks """
+        # Setup
+        # . setup momconnect_prebirth other registration, set validated to true
+        registration_data = {
+            "reg_type": "whatsapp_prebirth",
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "source": self.make_source_adminuser(),
+            "data": {
+                "operator_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
+                "msisdn_registrant": "+27821113333",
+                "msisdn_device": "+27821114444",
+                "id_type": "passport",
+                "passport_no": "ZA1234",
+                "passport_origin": "bw",
+                "language": "eng_ZA",
+                "edd": "2016-03-01",  # in week 32 of pregnancy
+                "faccode": "123456",
+                "consent": True
+            },
+        }
+        registration = Registration.objects.create(**registration_data)
+        registration.validated = True
+        registration.save()
+
+        # . setup fixture responses
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "whatsapp_momconnect_prebirth.hw_full.2")
+        utils_tests.mock_get_schedule(schedule_id)
+
+        # Execute
+        cs = validate_subscribe.create_subscriptionrequests(registration)
+
+        # Check
+        self.assertEqual(cs, "SubscriptionRequest created")
+
+        sr = SubscriptionRequest.objects.last()
+        self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
+        self.assertEqual(sr.messageset, 94)
+        self.assertEqual(sr.next_sequence_number, 4)  # ((32 - 30) * 3) - 2
+        self.assertEqual(sr.lang, "eng_ZA")
+        self.assertEqual(sr.schedule, 122)
+
+    @responses.activate
     def test_src_momconnect_prebirth_public(self):
         """ Test a public prebirth registration """
         # Setup
