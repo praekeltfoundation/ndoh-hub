@@ -176,6 +176,9 @@ def get_baby_age(today, baby_dob):
 def get_messageset_short_name(reg_type, authority, weeks):
     batch_number = 1  # default batch_number
 
+    if reg_type == 'whatsapp_prebirth':
+        reg_type = 'whatsapp_momconnect_prebirth'
+
     if "pmtct_prebirth" in reg_type:
         if 30 <= weeks <= 34:
             batch_number = 2
@@ -186,7 +189,7 @@ def get_messageset_short_name(reg_type, authority, weeks):
         if weeks > 1:
             batch_number = 2
 
-    elif reg_type == "momconnect_prebirth" and authority == "hw_full":
+    elif "momconnect_prebirth" in reg_type and authority == "hw_full":
         if weeks <= 30:
             batch_number = 1
         elif weeks <= 35:
@@ -247,11 +250,11 @@ def get_messageset_schedule_sequence(short_name, weeks):
 
     # nurseconnect always starts at 1
 
-    elif short_name == 'momconnect_prebirth.hw_full.1':
+    elif 'momconnect_prebirth.hw_full.1' in short_name:
         if weeks >= 5:
             next_sequence_number = ((weeks - 4) * msgs_per_week) - 1
 
-    elif short_name == 'momconnect_prebirth.hw_full.2':
+    elif 'momconnect_prebirth.hw_full.2' in short_name:
         if weeks >= 32:
             next_sequence_number = ((weeks - 30) * msgs_per_week) - 2
 
