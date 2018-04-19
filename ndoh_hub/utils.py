@@ -11,6 +11,7 @@ from seed_services_client.metrics import MetricsApiClient
 from seed_services_client.stage_based_messaging import (
     StageBasedMessagingApiClient)
 from seed_services_client.identity_store import IdentityStoreApiClient
+from seed_services_client.message_sender import MessageSenderApiClient
 
 
 ID_TYPES = ["sa_id", "passport", "none"]
@@ -38,6 +39,11 @@ sbm_client = StageBasedMessagingApiClient(
 is_client = IdentityStoreApiClient(
     api_url=settings.IDENTITY_STORE_URL,
     auth_token=settings.IDENTITY_STORE_TOKEN
+)
+
+ms_client = MessageSenderApiClient(
+    api_url=settings.MESSAGE_SENDER_URL,
+    auth_token=settings.MESSAGE_SENDER_TOKEN,
 )
 
 

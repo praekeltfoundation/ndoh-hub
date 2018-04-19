@@ -20,7 +20,7 @@ from ndoh_hub import utils
 from ndoh_hub.celery import app
 from registrations.models import Registration
 from .models import Change
-from registrations.models import SubscriptionRequest
+from registrations.models import SubscriptionRequest, Source
 from registrations.tasks import add_personally_identifiable_fields
 
 
@@ -1218,3 +1218,31 @@ class PushChannelSwitchToJembi(BasePushOptoutToJembi, Task):
 
 
 push_channel_switch_to_jembi = PushChannelSwitchToJembi()
+
+
+class ProcessWhatsAppUnsentEvent(Task):
+    """
+    Switches a user to SMS messaging if we couldn't successfully send them a
+    message on WhatsApp
+    """
+    name = "ndoh_hub.changes.tasks.process_whatsapp_unsent_event"
+
+    def run(self, vumi_message_id: str, user_id: str, **kwargs) -> None:
+        source_id: int = Source.objects.values('pk').get(user=user_id)['pk']
+        identity_uuid: str = next(utils.ms_client.get_outbounds({
+            'vumi_message_id': vumi_message_id,
+        })['results'])['to_identity']
+
+        Change.objects.create(
+            registrant_id=identity_uuid,
+            action='switch_channel',
+            data={
+                'channel': "sms",
+                'reason': "whatsapp_unsent_event",
+            },
+            source_id=source_id,
+            created_by_id=user_id,
+        )
+
+
+process_whatsapp_unsent_event = ProcessWhatsAppUnsentEvent()
