@@ -43,3 +43,18 @@ class AdminChangeSerializer(serializers.Serializer):
     language = serializers.CharField(required=False)
 
     validators = [OneFieldRequiredValidator(['messageset', 'language'])]
+
+
+class ReceiveWhatsAppEventSerializer(serializers.Serializer):
+
+    class HookSerializer(serializers.Serializer):
+        event = serializers.ChoiceField(['message.direct_outbound.status'])
+    hook = HookSerializer()
+
+    class EventSerializer(serializers.Serializer):
+        status = serializers.ChoiceField(['unsent'])
+
+        class MessageMetadata(serializers.Serializer):
+            junebug_message_id = serializers.UUIDField()
+        message_metadata = MessageMetadata()
+    data = EventSerializer()

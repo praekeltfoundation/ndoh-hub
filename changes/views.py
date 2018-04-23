@@ -3,14 +3,21 @@ import django_filters.rest_framework as filters
 from rest_framework import viewsets, mixins, generics, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import CursorPagination
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
 from rest_framework.response import Response
+from rest_framework.request import Request
+from rest_framework.serializers import Serializer
 from rest_framework.views import APIView
+from uuid import UUID
 from .models import Source, Change
-from .serializers import (ChangeSerializer, AdminOptoutSerializer,
-                          AdminChangeSerializer)
+from .serializers import (
+    ChangeSerializer, AdminOptoutSerializer, AdminChangeSerializer,
+    ReceiveWhatsAppEventSerializer,
+)
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
 from django.conf import settings
+
+from changes import tasks
 
 
 class CreatedAtCursorPagination(CursorPagination):
@@ -191,3 +198,25 @@ class ReceiveAdminChange(generics.CreateAPIView):
         else:
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
+
+
+class ReceiveWhatsAppEvent(generics.GenericAPIView):
+    permission_classes = (IsAuthenticated, DjangoModelPermissions)
+    queryset = Change.objects.none()
+    serializer_class = ReceiveWhatsAppEventSerializer
+
+    def post(self, request: Request, *args, **kwargs) -> Response:
+        serializer: Serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            # If this isn't an event that we care about
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        message_uuid: UUID = serializer.validated_data[
+            'data']['message_metadata']['junebug_message_id']
+
+        tasks.process_whatsapp_unsent_event.delay(
+            message_uuid.hex,
+            request.user.pk,
+        )
+
+        return Response(status=status.HTTP_202_ACCEPTED)

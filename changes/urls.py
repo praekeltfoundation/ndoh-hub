@@ -18,5 +18,7 @@ urlpatterns = [
         name="optout_admin"),
     url(r'^api/v1/change_admin/',
         views.ReceiveAdminChange.as_view(),
-        name="change_admin")
+        name="change_admin"),
+    url(r'^api/v1/whatsapp/event/', views.ReceiveWhatsAppEvent.as_view(),
+        name='whatsapp_event'),
 ]
