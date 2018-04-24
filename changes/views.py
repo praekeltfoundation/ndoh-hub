@@ -1,6 +1,7 @@
 import django_filters
 import django_filters.rest_framework as filters
 from rest_framework import viewsets, mixins, generics, status
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
@@ -18,6 +19,7 @@ from seed_services_client.stage_based_messaging import StageBasedMessagingApiCli
 from django.conf import settings
 
 from changes import tasks
+from ndoh_hub.utils import TokenAuthQueryString
 
 
 class CreatedAtCursorPagination(CursorPagination):
@@ -204,6 +206,7 @@ class ReceiveWhatsAppEvent(generics.GenericAPIView):
     permission_classes = (IsAuthenticated, DjangoModelPermissions)
     queryset = Change.objects.none()
     serializer_class = ReceiveWhatsAppEventSerializer
+    authentication_classes = (TokenAuthQueryString, TokenAuthentication)
 
     def post(self, request: Request, *args, **kwargs) -> Response:
         serializer: Serializer = self.get_serializer(data=request.data)

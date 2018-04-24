@@ -7,6 +7,7 @@ import six
 
 from celery.task import Task
 from django.conf import settings
+from rest_framework.authentication import TokenAuthentication
 from seed_services_client.metrics import MetricsApiClient
 from seed_services_client.stage_based_messaging import (
     StageBasedMessagingApiClient)
@@ -325,3 +326,14 @@ def json_decode(data):
         data = data.decode('utf-8')
 
     return json.loads(data)
+
+
+class TokenAuthQueryString(TokenAuthentication):
+    """
+    Look for the token in the querystring parameter "token"
+    """
+    def authenticate(self, request):
+        token = request.query_params.get('token', None)
+        if token is not None:
+            return self.authenticate_credentials(token)
+        return False
