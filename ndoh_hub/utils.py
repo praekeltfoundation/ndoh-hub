@@ -336,4 +336,4 @@ class TokenAuthQueryString(TokenAuthentication):
         token = request.query_params.get('token', None)
         if token is not None:
             return self.authenticate_credentials(token)
-        return False
+        return None

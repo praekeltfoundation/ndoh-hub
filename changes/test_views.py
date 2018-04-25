@@ -9,6 +9,18 @@ from rest_framework.test import APITestCase
 
 @mock.patch('changes.views.tasks.process_whatsapp_unsent_event')
 class ReceiveWhatsAppEventViewTests(APITestCase):
+    def test_no_auth(self, task):
+        """
+        If there is no or invalid auth supplied, a 401 error should be returned
+        """
+        url = reverse('whatsapp_event')
+
+        response = self.client.post(url, {})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        url = '{}?token=badtoken'.format(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
     def test_querystring_auth_token(self, task):
         """
         The token should be able to be specified in the query string
