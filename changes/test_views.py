@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User, Permission
 from django.urls import reverse
 from rest_framework import status
+from rest_framework.authtoken.models import Token
 from unittest import mock
 
 from rest_framework.test import APITestCase
@@ -8,6 +9,20 @@ from rest_framework.test import APITestCase
 
 @mock.patch('changes.views.tasks.process_whatsapp_unsent_event')
 class ReceiveWhatsAppEventViewTests(APITestCase):
+    def test_querystring_auth_token(self, task):
+        """
+        The token should be able to be specified in the query string
+        """
+        user = User.objects.create_user('test')
+        user.user_permissions.add(
+            Permission.objects.get(codename='add_change'))
+        token = Token.objects.create(user=user)
+        url = '{}?token={}'.format(
+            reverse('whatsapp_event'), str(token.key))
+
+        response = self.client.post(url, {})
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
     def test_permission_required(self, task):
         """
         The authenticated user must have permission to create a Change
