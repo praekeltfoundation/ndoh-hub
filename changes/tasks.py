@@ -1229,9 +1229,15 @@ class ProcessWhatsAppUnsentEvent(Task):
 
     def run(self, vumi_message_id: str, user_id: str, **kwargs) -> None:
         source_id: int = Source.objects.values('pk').get(user=user_id)['pk']
-        identity_uuid: str = next(utils.ms_client.get_outbounds({
-            'vumi_message_id': vumi_message_id,
-        })['results'])['to_identity']
+        try:
+            identity_uuid: str = next(utils.ms_client.get_outbounds({
+                'vumi_message_id': vumi_message_id,
+            })['results'])['to_identity']
+        except StopIteration:
+            """
+            Outbound with message id doesn't exist, so don't create a change
+            """
+            return
 
         Change.objects.create(
             registrant_id=identity_uuid,

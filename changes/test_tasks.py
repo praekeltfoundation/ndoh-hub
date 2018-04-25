@@ -50,3 +50,25 @@ class ProcessWhatsAppUnsentEventTaskTests(TestCase):
             'reason': 'whatsapp_unsent_event',
         })
         self.assertEqual(change.created_by, user)
+
+    @responses.activate
+    def test_no_outbound_message(self):
+        """
+        If no outbound message can be found, then the change shouldn't be
+        created
+        """
+        user = User.objects.create_user('test')
+        source = Source.objects.create(user=user)
+
+        responses.add(
+            responses.GET,
+            'http://ms/api/v1/outbound/?vumi_message_id=messageid',
+            json={
+                'results': []
+            }, status=200, match_querystring=True)
+
+        self.assertEqual(Change.objects.count(), 0)
+
+        process_whatsapp_unsent_event('messageid', source.pk)
+
+        self.assertEqual(Change.objects.count(), 0)
