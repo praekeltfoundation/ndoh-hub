@@ -175,7 +175,16 @@ class PositionTracker(models.Model):
     history = HistoricalRecords()
 
     class Meta:
-        permissions = (('increment_position', 'Can increment the position'),)
+        permissions = ((
+            'increment_position_positiontracker', 'Can increment the position'
+        ),)
+
+    @property
+    def modified_at(self):
+        """
+        Returns the datetime when the position was last modified
+        """
+        return self.history.first().history_date
 
     def __str__(self):
         return '{}: {}'.format(self.label, self.position)
