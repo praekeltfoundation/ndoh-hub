@@ -23,7 +23,7 @@ from rest_framework.authtoken.models import Token
 from rest_hooks.models import model_saved
 from requests_testadapter import TestAdapter, TestSession
 
-from .models import Source, Registration, SubscriptionRequest
+from .models import PositionTracker, Source, Registration, SubscriptionRequest
 from .signals import psh_validate_subscribe, psh_fire_created_metric
 from .tasks import (
     validate_subscribe, get_risk_status, remove_personally_identifiable_fields,
@@ -239,6 +239,48 @@ class TestUtils(TestCase):
         self.assertEqual(utils.get_messageset_short_name(
             "momconnect_prebirth", "authority", 1000),
             "momconnect_prebirth.authority.1")
+
+    def test_get_messageset_short_name_nurseconnect(self):
+        """
+        Should return the normal nurseconnect messageset by default, but should
+        return the RTHB messageset if the flag is set
+        """
+        self.assertEqual(utils.get_messageset_short_name(
+            "nurseconnect", "hw_full", None),
+            "nurseconnect.hw_full.1")
+
+        with self.settings(NURSECONNECT_RTHB=True):
+            self.assertEqual(utils.get_messageset_short_name(
+                "nurseconnect", "hw_full", None),
+                "nurseconnect_rthb.hw_full.1")
+
+    @responses.activate
+    def test_get_messageset_schedule_sequence_nurseconnect_rthb(self):
+        """
+        If the messageset short_name is for nurseconnect RTHB, then the
+        sequence number should be taken from the position tracker
+        """
+        # Normal nurseconnect subscription should always start at 1
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "nurseconnect.hw_full.1")
+        utils_tests.mock_get_schedule(schedule_id)
+
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "nurseconnect.hw_full.1", None), (61, 161, 1))
+
+        # RTHB nurseconnect should start according to the position tracker
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "nurseconnect_rthb.hw_full.1")
+        utils_tests.mock_get_schedule(schedule_id)
+
+        pt = PositionTracker.objects.create(
+            label='nurseconnect_rthb', position=7)
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "nurseconnect_rthb.hw_full.1", None), (63, 163, 7))
+        pt.position = 10
+        pt.save()
+        self.assertEqual(utils.get_messageset_schedule_sequence(
+            "nurseconnect_rthb.hw_full.1", None), (63, 163, 10))
 
     @responses.activate
     def test_get_messageset_schedule_sequence(self):
