@@ -7,6 +7,7 @@ from rest_hooks.models import Hook
 
 from ndoh_hub import utils
 from registrations import validators
+from registrations.models import PositionTracker
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -226,3 +227,9 @@ class JembiHelpdeskOutgoingSerializer(serializers.Serializer):
     outbound_created_on = serializers.DateTimeField()
     inbound_channel_id = serializers.CharField(required=False,
                                                allow_blank=True)
+
+
+class PositionTrackerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PositionTracker
+        fields = ('url', 'label', 'position')

@@ -3,8 +3,8 @@ import uuid
 from django.contrib.postgres.fields import JSONField
 from django.contrib.auth.models import User
 from django.db import models
-
 from django.utils.encoding import python_2_unicode_compatible
+from simple_history.models import HistoricalRecords
 
 
 @python_2_unicode_compatible
@@ -156,3 +156,35 @@ class SubscriptionRequest(models.Model):
 
     def __str__(self):
         return str(self.id)
+
+
+class PositionTracker(models.Model):
+    """
+    Tracks the position that we want a certain message set to be on. This is a
+    bit of a hack for messagesets where we want everyone to be in the same
+    position in the message set.
+
+    This gets incremented when the send happens, and all new registrations
+    look here to see where in the message set to place the new subscriptions.
+    """
+    label = models.CharField(
+        max_length=100, null=False, blank=False, primary_key=True,
+        help_text="The unique label to identify the tracker")
+    position = models.IntegerField(
+        default=1, help_text="The current position of the tracker")
+    history = HistoricalRecords()
+
+    class Meta:
+        permissions = ((
+            'increment_position_positiontracker', 'Can increment the position'
+        ),)
+
+    @property
+    def modified_at(self):
+        """
+        Returns the datetime when the position was last modified
+        """
+        return self.history.first().history_date
+
+    def __str__(self):
+        return '{}: {}'.format(self.label, self.position)

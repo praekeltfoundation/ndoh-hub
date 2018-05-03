@@ -1,4 +1,4 @@
-FROM praekeltfoundation/django-bootstrap:py3
+FROM praekeltfoundation/django-bootstrap:py3.6
 
 COPY . /app
 COPY entrypoint.sh /scripts/django-entrypoint.sh

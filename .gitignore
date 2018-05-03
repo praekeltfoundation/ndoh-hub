@@ -43,6 +43,7 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *,cover
+.mypy_cache/
 
 # Translations
 *.mo
@@ -50,6 +51,7 @@ coverage.xml
 
 # Django stuff:
 *.log
+staticfiles/
 
 # Sphinx documentation
 docs/_build/
