@@ -162,9 +162,10 @@ class PositionTracker(models.Model):
     """
     Tracks the position that we want a certain message set to be on. This is a
     bit of a hack for messagesets where we want everyone to be in the same
-    position in the message set. This gets incremented at the same times when
-    the send happens, and all new registrations look here to see where in the
-    message set to place the new subscription.
+    position in the message set.
+
+    This gets incremented when the send happens, and all new registrations
+    look here to see where in the message set to place the new subscriptions.
     """
     label = models.CharField(
         max_length=100, null=False, blank=False, primary_key=True,
@@ -172,6 +173,9 @@ class PositionTracker(models.Model):
     position = models.IntegerField(
         default=1, help_text="The current position of the tracker")
     history = HistoricalRecords()
+
+    class Meta:
+        permissions = (('increment_position', 'Can increment the position'),)
 
     def __str__(self):
         return '{}: {}'.format(self.label, self.position)
