@@ -1,9 +1,11 @@
 import datetime
+from django.contrib.auth.models import Permission
+from django.urls import reverse
 import json
 from unittest import mock
 import pytz
 
-from registrations.models import Registration
+from registrations.models import Registration, PositionTracker
 from registrations.serializers import RegistrationSerializer
 from registrations.tests import AuthenticatedAPITestCase
 
@@ -111,3 +113,82 @@ class JembiAppRegistrationStatusViewTests(AuthenticatedAPITestCase):
         response = self.normalclient.get(
             '/api/v1/jembiregistration/{}/'.format(reg.id))
         self.assertEqual(response.status_code, 403)
+
+
+class PositionTrackerViewsetTests(AuthenticatedAPITestCase):
+    def test_authentication_required(self):
+        """
+        Authentication must be provided in order to access the endpoint
+        """
+        url = reverse('positiontracker-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 401)
+
+        response = self.normalclient.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_permission_required(self):
+        """
+        The user must have the required permission to be able to perform the
+        requested action
+        """
+        url = reverse('positiontracker-list')
+        response = self.normalclient.post(url, data={'label': 'test'})
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(PositionTracker.objects.count(), 0)
+
+        self.normaluser.user_permissions.add(
+            Permission.objects.get(name='Can add position tracker'))
+
+        response = self.normalclient.post(url, data={'label': 'test'})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(PositionTracker.objects.count(), 1)
+
+    def test_increment_position_permission_required(self):
+        """
+        In order to increment the position on a position tracker, the user
+        needs to have the increment position permission
+        """
+        pt = PositionTracker.objects.create(label='test', position=1)
+        # Ensure that it's older than 12 hours
+        [h] = pt.history.all()
+        h.history_date -= datetime.timedelta(hours=13)
+        h.save()
+
+        url = reverse('positiontracker-increment-position', args=[str(pt.pk)])
+        response = self.normalclient.post(url)
+        self.assertEqual(response.status_code, 403)
+        pt.refresh_from_db()
+        self.assertEqual(pt.position, 1)
+
+        self.normaluser.user_permissions.add(
+            Permission.objects.get(name='Can increment the position'))
+
+        response = self.normalclient.post(url)
+        self.assertEqual(response.status_code, 200)
+        pt.refresh_from_db()
+        self.assertEqual(pt.position, 2)
+
+    def test_can_only_increment_once_every_12_hours(self):
+        """
+        In order to avoid retries HTTP requests incrementing the position more
+        than once, and increment may only be allowed once every 12 hours
+        """
+        pt = PositionTracker.objects.create(label='test', position=1)
+        # Ensure that it's older than 12 hours
+        [h] = pt.history.all()
+        h.history_date -= datetime.timedelta(hours=13)
+        h.save()
+        self.normaluser.user_permissions.add(
+            Permission.objects.get(name='Can increment the position'))
+
+        url = reverse('positiontracker-increment-position', args=[str(pt.pk)])
+        response = self.normalclient.post(url)
+        self.assertEqual(response.status_code, 200)
+        pt.refresh_from_db()
+        self.assertEqual(pt.position, 2)
+
+        response = self.normalclient.post(url)
+        self.assertEqual(response.status_code, 400)
+        pt.refresh_from_db()
+        self.assertEqual(pt.position, 2)

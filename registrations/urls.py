@@ -8,6 +8,7 @@ router.register(r'group', views.GroupViewSet)
 router.register(r'source', views.SourceViewSet)
 router.register(r'webhook', views.HookViewSet)
 router.register(r'registrations', views.RegistrationGetViewSet)
+router.register(r'position_tracker', views.PositionTrackerViewset)
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browseable API.

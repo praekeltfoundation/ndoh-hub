@@ -1,3 +1,4 @@
+import datetime
 import django_filters
 import django_filters.rest_framework as filters
 import json
@@ -13,11 +14,14 @@ from django.contrib.auth.models import User, Group
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 from rest_hooks.models import Hook
 from rest_framework import viewsets, mixins, generics, status
+from rest_framework.decorators import detail_route
 from rest_framework.pagination import CursorPagination
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import (
+    IsAuthenticated, IsAdminUser, DjangoModelPermissions)
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
@@ -25,13 +29,14 @@ from rest_framework.request import Request
 from rest_framework.utils.encoders import JSONEncoder
 
 from seed_services_client.identity_store import IdentityStoreApiClient
-from .models import Source, Registration
+from .models import Source, Registration, PositionTracker
 from .serializers import (UserSerializer, GroupSerializer,
                           SourceSerializer, RegistrationSerializer,
                           HookSerializer, CreateUserSerializer,
                           JembiHelpdeskOutgoingSerializer,
                           ThirdPartyRegistrationSerializer,
-                          JembiAppRegistrationSerializer)
+                          JembiAppRegistrationSerializer,
+                          PositionTrackerSerializer)
 from .tasks import validate_subscribe_jembi_app_registration
 from ndoh_hub.utils import get_available_metrics
 
@@ -53,6 +58,20 @@ def transform_language_code(lang):
         've': 'ven_ZA',
         'nr': 'nbl_ZA'
     }[lang]
+
+
+def CursorPaginationFactory(field):
+    """
+    Returns a CursorPagination class with the field specified by field
+    """
+    class CustomCursorPagination(CursorPagination):
+        ordering = field
+
+    name = '{}CursorPagination'.format(field.capitalize())
+    CustomCursorPagination.__name__ = name
+    CustomCursorPagination.__qualname__ = name
+
+    return CustomCursorPagination
 
 
 class IdCursorPagination(CursorPagination):
@@ -535,3 +554,46 @@ class MetricsView(APIView):
         # scheduled_metrics.apply_async()
         resp = {"scheduled_metrics_initiated": True}
         return Response(resp, status=status)
+
+
+class IncrementPositionPermission(DjangoModelPermissions):
+    """
+    Allows POST requests if the user has the increment_position permission
+    """
+    perms_map = {
+        'POST': ['%(app_label)s.increment_position_%(model_name)s'],
+    }
+
+
+class PositionTrackerViewset(
+        mixins.CreateModelMixin, mixins.RetrieveModelMixin,
+        mixins.ListModelMixin, viewsets.GenericViewSet):
+
+    permission_classes = (DjangoModelPermissions,)
+    queryset = PositionTracker.objects.all()
+    serializer_class = PositionTrackerSerializer
+    pagination_class = CursorPaginationFactory('label')
+
+    @detail_route(
+            methods=['post'],
+            permission_classes=[IncrementPositionPermission])
+    def increment_position(self, request, pk=None):
+        """
+        Increments the position on the specified position tracker. Only allows
+        an update once every 12 hours to avoid retried HTTP requests
+        incrementing the position more than once
+        """
+        position_tracker = self.get_object()
+
+        time_difference = timezone.now() - position_tracker.modified_at
+        if time_difference < datetime.timedelta(hours=12):
+            return Response({
+                "error": "The position may only be incremented once every 12 "
+                         "hours",
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        position_tracker.position += 1
+        position_tracker.save(update_fields=('position',))
+
+        serializer = self.get_serializer(instance=position_tracker)
+        return Response(serializer.data, status=status.HTTP_200_OK)
