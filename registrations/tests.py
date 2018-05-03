@@ -273,8 +273,9 @@ class TestUtils(TestCase):
             "nurseconnect_rthb.hw_full.1")
         utils_tests.mock_get_schedule(schedule_id)
 
-        pt = PositionTracker.objects.create(
-            label='nurseconnect_rthb', position=7)
+        pt = PositionTracker.objects.get(label='nurseconnect_rthb')
+        pt.position = 7
+        pt.save()
         self.assertEqual(utils.get_messageset_schedule_sequence(
             "nurseconnect_rthb.hw_full.1", None), (63, 163, 7))
         pt.position = 10
