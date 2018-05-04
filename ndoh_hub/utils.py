@@ -14,6 +14,8 @@ from seed_services_client.stage_based_messaging import (
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.message_sender import MessageSenderApiClient
 
+from registrations.models import PositionTracker
+
 
 ID_TYPES = ["sa_id", "passport", "none"]
 PASSPORT_ORIGINS = [
@@ -210,6 +212,11 @@ def get_messageset_short_name(reg_type, authority, weeks):
         else:
             batch_number = 6
 
+    # If the RTHB messaging is enabled, all nurseconnect subscriptions should
+    # start on the RTHB messageset
+    elif settings.NURSECONNECT_RTHB and "nurseconnect" in reg_type:
+        reg_type += '_rthb'
+
     short_name = "%s.%s.%s" % (reg_type, authority, batch_number)
 
     return short_name
@@ -268,6 +275,11 @@ def get_messageset_schedule_sequence(short_name, weeks):
     # other momconnect_prebirth sets start at 1
 
     # loss subscriptions always start at 1
+
+    # RTHB NurseConnect subscriptions are tracked by the position tracker
+    if 'nurseconnect_rthb' in short_name:
+        next_sequence_number = PositionTracker.objects.get(
+            label='nurseconnect_rthb').position
 
     return (messageset["id"], messageset["default_schedule"],
             next_sequence_number)

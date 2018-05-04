@@ -309,3 +309,6 @@ WHATSAPP_CHANNEL_TYPE = os.environ.get('WHATSAPP_CHANNEL_TYPE', 'wassup')
 WASSUP_URL = os.environ.get('WASSUP_URL', 'http://wassup')
 WASSUP_TOKEN = os.environ.get('WASSUP_TOKEN', 'wassup-token')
 WASSUP_NUMBER = os.environ.get('WASSUP_NUMBER', '+27820000000')
+
+NURSECONNECT_RTHB = os.environ.get(
+    'NURSECONNECT_RTHB', 'false').lower() == 'true'

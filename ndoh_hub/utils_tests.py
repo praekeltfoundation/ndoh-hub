@@ -128,6 +128,8 @@ def mock_get_messageset_by_shortname(short_name):
         "loss_babyloss.patient.1": 53,
         "nurseconnect.hw_full.1": 61,
         "whatsapp_nurseconnect.hw_full.1": 62,
+        "nurseconnect_rthb.hw_full.1": 63,
+        "whatsapp_nurseconnect_rthb.hw_full.1": 64,
         "popi.hw_full.1": 71,
         "popi.hw_partial.1": 71,
         "whatsapp_loss_miscarriage.patient.1": 81,
@@ -159,6 +161,8 @@ def mock_get_messageset_by_shortname(short_name):
         "loss_babyloss.patient.1": 153,
         "nurseconnect.hw_full.1": 161,
         "whatsapp_nurseconnect.hw_full.1": 162,
+        "nurseconnect_rthb.hw_full.1": 163,
+        "whatsapp_nurseconnect_rthb.hw_full.1": 164,
         "popi.hw_full.1": 171,
         "popi.hw_partial.1": 171,
         "whatsapp_loss_miscarriage.patient.1": 181,
@@ -237,6 +241,8 @@ def mock_get_messageset(messageset_id):
         "loss_babyloss.patient.1": 153,
         "nurseconnect.hw_full.1": 161,
         "whatsapp_nurseconnect.hw_full.1": 162,
+        "nurseconnect_rthb.hw_full.1": 163,
+        "whatsapp_nurseconnect_rthb.hw_full.1": 164,
         "popi.hw_full.1": 171,
         "popi.hw_partial.1": 171,
         "whatsapp_pmtct_prebirth.patient.1": 181,
@@ -282,6 +288,8 @@ def mock_get_schedule(schedule_id):
         153: "1,4",
         161: "1,3,5",
         162: "1,3,5",
+        163: "1,3,5",
+        164: "1,3,5",
         181: "1,4",
         191: "1,4",
         192: "1",
@@ -366,4 +374,21 @@ def mock_get_active_subscriptions(identity, count=0):
         identity,
         json={"results": subscriptions}, match_querystring=True,
         status=200, content_type='application/json',
+    )
+
+
+def mock_get_subscriptions(querystring, results):
+    responses.add(
+        responses.GET,
+        'http://sbm/api/v1/subscriptions/{}'.format(querystring),
+        json={"results": results}, match_querystring=True,
+        status=200, content_type='application/json',
+    )
+
+
+def mock_update_subscription(uuid):
+    responses.add(
+        responses.PATCH,
+        'http://sbm/api/v1/subscriptions/{}/'.format(uuid),
+        status=204, content_type='application/json',
     )

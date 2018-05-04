@@ -135,14 +135,14 @@ class PositionTrackerViewsetTests(AuthenticatedAPITestCase):
         url = reverse('positiontracker-list')
         response = self.normalclient.post(url, data={'label': 'test'})
         self.assertEqual(response.status_code, 403)
-        self.assertEqual(PositionTracker.objects.count(), 0)
+        self.assertEqual(PositionTracker.objects.count(), 1)
 
         self.normaluser.user_permissions.add(
             Permission.objects.get(name='Can add position tracker'))
 
         response = self.normalclient.post(url, data={'label': 'test'})
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(PositionTracker.objects.count(), 1)
+        self.assertEqual(PositionTracker.objects.count(), 2)
 
     def test_increment_position_permission_required(self):
         """
