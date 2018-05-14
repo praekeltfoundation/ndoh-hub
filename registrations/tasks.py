@@ -634,7 +634,6 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         """
         Returns whether or not the number is recognised on wassup
         """
-        print('posting to ', settings.WASSUP_URL)
         r = requests.post(
             settings.WASSUP_URL,
             json={
