@@ -634,11 +634,11 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         """
         Returns whether or not the number is recognised on wassup
         """
-        r = requests.get(
+        r = requests.post(
             settings.WASSUP_URL,
-            {
+            json={
                 'number': settings.WASSUP_NUMBER,
-                'address': address,
+                'msisdns': [address],
                 'wait': True,
             },
             headers={
@@ -648,7 +648,7 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         )
         r.raise_for_status()
         data = r.json()
-        existing = filter(lambda d: d.get('exists', False), data.values())
+        existing = filter(lambda d: d.get('status', False) == 'valid', data)
         return any(existing)
 
     def create_pmtct_registration(self, registration, operator):

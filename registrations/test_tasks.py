@@ -235,16 +235,21 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         If the wassup API returns that the number is registered, should return
         True
         """
-        responses.add(
-            responses.GET,
-            'http://wassup?number=%2B27820000000&address=%2B27821111111'
-            '&wait=True', match_querystring=True, json={
-                '+27820000000': {
-                    'exists': True,
-                    'username': '27821111111',
-                },
-            }
-        )
+        def cb(request):
+            data = json.loads(request.body)
+            self.assertEqual(data, {
+                "number": "+27820000000",
+                "msisdns": ["+27821111111"],
+                "wait": True,
+            })
+            return (200, {}, json.dumps([{
+                "status": "valid",
+                "wa_id": "27821111111"
+            }]))
+
+        responses.add_callback(
+            responses.POST, 'http://wassup/',
+            callback=cb, content_type='application/json')
 
         self.assertTrue(task.is_registered_on_whatsapp('+27821111111'))
         self.assertEqual(
@@ -257,17 +262,21 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         If the wassup API returns that the number is registered, should return
         False
         """
-        responses.add(
-            responses.GET,
-            'http://wassup?number=%2B27820000000&address=%2B27821111111'
-            '&wait=True', match_querystring=True, json={
-                '+27820000000': {
-                    'exists': False,
-                    'username': '27821111111',
-                },
-            }
-        )
+        def cb(request):
+            data = json.loads(request.body)
+            self.assertEqual(data, {
+                "number": "+27820000000",
+                "msisdns": ["+27821111111"],
+                "wait": True,
+            })
+            return (200, {}, json.dumps([{
+                "status": "invalid",
+                "wa_id": "27821111111"
+            }]))
 
+        responses.add_callback(
+            responses.POST, 'http://wassup/',
+            callback=cb, content_type='application/json')
         self.assertFalse(task.is_registered_on_whatsapp('+27821111111'))
         self.assertEqual(
             responses.calls[-1].request.headers['Authorization'],
