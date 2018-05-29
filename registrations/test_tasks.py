@@ -77,6 +77,39 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
             },
         })
 
+    @responses.activate
+    def test_get_or_update_identity_by_address_not_primary(self):
+        """
+        If the identity returned by the identity store does not have the
+        address we're looking for as the primary address, then it should not
+        be returned.
+        """
+        responses.add(
+            responses.GET,
+            'http://is/api/v1/identities/search/'
+            '?details__addresses__msisdn=%2B27820000000',
+            json={
+                'results': [
+                    {
+                        'details': {
+                            'addresses': {
+                                'msisdn': {
+                                    '+27820000000': {},
+                                    '+27820000001': {'default': True},
+                                }
+                            }
+                        }
+                    }
+                ]
+            }, status=200, match_querystring=True)
+
+        responses.add(
+            responses.POST, 'http://is/api/v1/identities/',
+            json={'identity': 'result'})
+
+        r = task.get_or_update_identity_by_address('+27820000000')
+        self.assertEqual(r, {'identity': 'result'})
+
     def test_is_opted_out(self):
         """
         Return True if the address on the identity is opted out, and
