@@ -1,3 +1,4 @@
+from functools import partial
 import json
 import random
 import re
@@ -545,14 +546,46 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
     Validates and creates subscriptions for registrations coming from the
     Jembi application.
     """
+    def is_primary_address(self, addr_type, address, identity):
+        """
+        Returns whether `address` is the primary address for `identity`
+
+        Arguments:
+            addr_type {string} -- The type of address to check for
+            address {string} -- The address to check for
+            identity {dict} -- The identity that has addresses to check
+
+        Returns:
+            A bool which is `True` when the address is the identity's primary
+            address.
+        """
+        return all(map(
+            lambda addr: address == addr[0] or not addr[1].get('default'),
+            identity\
+                .get('details', {})\
+                .get('addresses', {})\
+                .get(addr_type, {})\
+                .items()
+        ))
+
     def get_or_update_identity_by_address(self, address):
         """
-        Gets the first identity with the given address, or if no identity
-        exists, creates an identity with the given address
+        Gets the first identity with the given primary address, or if no
+        identity exists, creates an identity with the given address
+
+        Arguments:
+            address {string} -- The MSISDN to search for
+
+        Returns:
+            A dict representing the identity for `address`
         """
-        identities = list(is_client.get_identity_by_address(
-            'msisdn', address)['results'])
-        if len(identities) == 0:
+        identities = filter(
+            partial(self.is_primary_address, 'msisdn', address),
+            is_client.get_identity_by_address('msisdn', address)['results']
+        )
+        try:
+            return next(identities)
+        except StopIteration:
             identity = {
                 'details': {
                     'default_addr_type': 'msisdn',
@@ -564,7 +597,6 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
                 }
             }
             return is_client.create_identity(identity)
-        return identities[0]
 
     def is_opted_out(self, identity, address):
         """
