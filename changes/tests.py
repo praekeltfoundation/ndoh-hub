@@ -3005,6 +3005,95 @@ class TestChangeActions(AuthenticatedAPITestCase):
         })
 
     @responses.activate
+    def test_momconnect_nonloss_optout_with_identity_optout(self):
+        """
+        If there is a identity optout in the change payload it should be sent
+        to the identity store.
+        """
+        # Setup
+        # make registration
+        self.make_registration_momconnect_prebirth()
+        self.make_registration_pmtct_prebirth()
+        self.assertEqual(Registration.objects.all().count(), 2)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        # make change object
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "momconnect_nonloss_optout",
+            "data": {
+                "reason": "other",
+                "identity_store_optout": {
+                    "optout_type": "forget",
+                    "identity": "mother01-63e2-4acc-9b94-26663b9bc267",
+                    "reason": "unknown",
+                    "address_type": "msisdn",
+                    "address": "",
+                    "request_source": "ussd_popi_user_data"
+                }
+            },
+            "source": self.make_source_normaluser()
+        }
+        change = Change.objects.create(**change_data)
+
+        # . mock get subscription request
+        mock_get_active_subs_mcpre_mcpost_pmtct_nc(
+            change_data["registrant_id"])
+
+        # . mock get messagesets
+        mock_get_all_messagesets()
+
+        # . mock deactivate active subscriptions
+        mock_deactivate_subscriptions([
+            "subscriptionid-momconnect-prebirth-0",
+            "subscriptionid-momconnect-postbirth-",
+            "subscriptionid-pmtct-prebirth-000000"
+        ])
+
+        # mock identity lookup
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267", {
+                'addresses': {
+                    'msisdn': {'+27111111111': {}},
+                },
+            })
+
+        # mock post to jembi
+        responses.add(
+            responses.POST,
+            'http://jembi/ws/rest/v1/optout',
+            json={"foo": "bar"},
+            status=200, content_type='application/json',
+        )
+
+        # mock identity store post
+        responses.add(
+            responses.POST,
+            'http://is/api/v1/optout/',
+            json={"foo": "bar"},
+            status=200, content_type='application/json',
+        )
+
+        # Execute
+        result = validate_implement.apply_async(args=[change.id])
+
+        # Check
+        change.refresh_from_db()
+        self.assertEqual(result.get(), True)
+        self.assertEqual(change.validated, True)
+        self.assertEqual(Registration.objects.all().count(), 2)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+        self.assertEqual(len(responses.calls), 8)
+
+        # Check Identity Store optout POST
+        self.assertEqual(json.loads(responses.calls[-1].request.body), {
+            "address": "",
+            "address_type": "msisdn",
+            "identity": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "optout_type": "forget",
+            "reason": "unknown",
+            "request_source": "ussd_popi_user_data"})
+
+    @responses.activate
     def test_momconnect_change_language_identity(self):
         """
         The language change should change the language on the lang_code field
