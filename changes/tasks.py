@@ -1015,6 +1015,9 @@ class BasePushOptoutToJembi(object):
                 verify=False
             )
             result.raise_for_status()
+
+            push_optout_to_identity_store(str(change_id))
+
             return result.text
         except (HTTPError,) as e:
             # retry message sending if in 500 range (3 default retries)
@@ -1192,6 +1195,40 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
 
 
 push_nurseconnect_optout_to_jembi = PushNurseconnectOptoutToJembi()
+
+
+class PushOptoutToIdentityStore(Task):
+    """
+    Sends optout to the Identity store. This is used when it's a forget type
+    optout but we want to send it to jembi before we remove the data from the
+    identity.
+    """
+    name = "ndoh_hub.changes.tasks.push_optout_to_identity_store"
+    log = get_task_logger(__name__)
+
+    def run(self, change_id, **kwargs):
+
+        change = Change.objects.get(id=change_id)
+        payload = change.data.get("identity_store_optout")
+
+        if payload:
+            try:
+                is_client.create_optout(payload)
+            except (HTTPError,) as e:
+                # retry sending if in 500 range
+                if 500 < e.response.status_code < 599:
+                    raise self.retry(exc=e)
+                else:
+                    self.log.error(
+                        'Error when posting to IdentityStore. Payload: %r' % (
+                            payload))
+                    raise e
+            except (Exception,) as e:
+                self.log.error(
+                    'Problem posting Optout %s JSON to IdentityStore' % (
+                        change_id), exc_info=True)
+
+push_optout_to_identity_store = PushOptoutToIdentityStore()
 
 
 class PushChannelSwitchToJembi(BasePushOptoutToJembi, Task):
