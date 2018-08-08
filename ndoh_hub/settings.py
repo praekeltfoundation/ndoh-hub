@@ -51,12 +51,12 @@ INSTALLED_APPS = (
     'rest_framework_docs',
     # 3rd party
     'djcelery',
+    'channels',
     'raven.contrib.django.raven_compat',
     'rest_framework',
     'rest_framework.authtoken',
     'django_filters',
     'rest_hooks',
-    'channels',
     'simple_history',
     # us
     'registrations',
