@@ -15,6 +15,7 @@ matrix:
         - flake8
         - mypy registrations changes ndoh_hub
         - py.test
+        - createdb ndoh_hub
         - python manage.py makemigrations registrations changes --dry-run | grep 'No changes detected' || (echo 'There are changes which require migrations.' && exit 1)
 
     # Create docker image on merge to develop
