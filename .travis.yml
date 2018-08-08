@@ -1,21 +1,23 @@
 language: python
-python:
-  - "3.6"
-addons:
-  postgresql: "9.4"
-services:
-  - postgresql
-install:
-  - "pip install -r requirements.txt --use-wheel"
-  - "pip install -r requirements-dev.txt --use-wheel"
-script:
-  - flake8
-  - mypy registrations changes ndoh_hub
-  - py.test
-  - python manage.py makemigrations registrations changes --dry-run | grep 'No changes detected' || (echo 'There are changes which require migrations.' && exit 1)
 
 matrix:
   include:
+    # Run tests
+    - python:
+        - "3.6"
+      addons:
+        postgresql: "9.4"
+      services:
+        - postgresql
+      install:
+        - "pip install -r requirements.txt --use-wheel"
+        - "pip install -r requirements-dev.txt --use-wheel"
+      script:
+        - flake8
+        - mypy registrations changes ndoh_hub
+        - py.test
+        - python manage.py makemigrations registrations changes --dry-run | grep 'No changes detected' || (echo 'There are changes which require migrations.' && exit 1)
+
     # Create docker image on merge to develop
     - python: "2.7"
       sudo: required
@@ -40,10 +42,6 @@ matrix:
         on:
           branch: develop
 
-        # Inherited build steps that we don't want
-      install: []
-      addons: {}
-
     - python: "2.7"
       sudo: required
       dist: trusty
@@ -66,7 +64,3 @@ matrix:
         script: dcd --version "$(git tag -l --points-at HEAD)" --version-semver --version-latest "$IMAGE_NAME"
         on:
           tags: true
-
-        # Inherited build steps that we don't want
-      install: []
-      addons: {}
