@@ -1,11 +1,12 @@
 language: python
 python: "3.6"
+cache: pip
 
 matrix:
   include:
     # Run tests
     - addons:
-        postgresql: "9.4"
+        postgresql: "10.4"
       services:
         - postgresql
       install:
