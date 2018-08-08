@@ -9,6 +9,7 @@ matrix:
         postgresql: "10.4"
       services:
         - postgresql
+        - redis-server
       install:
         - "pip install -r requirements.txt --use-wheel"
         - "pip install -r requirements-dev.txt --use-wheel"
