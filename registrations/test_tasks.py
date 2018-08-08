@@ -476,6 +476,45 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         self.assertFalse(task.is_valid_clinic_code('123456'))
 
     @responses.activate
+    def test_send_welcome_message_whatsapp(self):
+        """
+        Should escape formatting for the USSD codes, and send using the correct
+        channel
+        """
+        responses.add(responses.POST, 'http://ms/api/v1/outbound/')
+        task.send_welcome_message(
+            "eng_ZA", "WHATSAPP", "+27820001000", "identity-uuid")
+        request = responses.calls[-1].request
+        self.assertEqual(json.loads(request.body), {
+            "to_addr": "+27820001000",
+            "to_identity": "identity-uuid",
+            "channel": "WHATSAPP",
+            "content":
+                "Welcome to MomConnect! For more services dial "
+                "```*134*550*7#```, to stop dial ```*134*550*1#``` (Free). To "
+                "move to WhatsApp, reply “WA”. Std SMS rates apply.",
+        })
+
+    @responses.activate
+    def test_send_welcome_message_sms(self):
+        """
+        Should send the SMS text using the correct channel and language
+        """
+        responses.add(responses.POST, 'http://ms/api/v1/outbound/')
+        task.send_welcome_message(
+            "nso_ZA", "JUNE_TEXT", "+27820001000", "identity-uuid")
+        request = responses.calls[-1].request
+        self.assertEqual(json.loads(request.body), {
+            "to_addr": "+27820001000",
+            "to_identity": "identity-uuid",
+            "channel": "JUNE_TEXT",
+            "content":
+                "O amogetšwe go MomConnect! Go hwetša ditirelo "
+                "leletša*134*550*7#, go emiša letša*134*550*1# (Mahala)."
+                "Go iša go WhatsApp, fetola WA. Go šoma ditefelo tša Std SMS."
+        })
+
+    @responses.activate
     def test_on_failure(self):
         """
         If there is a failure in processing the registration, then a webhook
@@ -793,6 +832,9 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
 
     @mock.patch(
         'registrations.tasks.validate_subscribe_jembi_app_registration.'
+        'send_welcome_message')
+    @mock.patch(
+        'registrations.tasks.validate_subscribe_jembi_app_registration.'
         'create_subscriptionrequests')
     @mock.patch(
         'registrations.tasks.validate_subscribe_jembi_app_registration.'
@@ -815,7 +857,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
     @responses.activate
     def test_registration_complete_no_pmtct(
             self, get_identity, is_subscribed, opted_out, whatsapp, clinic,
-            subreq, popi_subreq):
+            subreq, popi_subreq, welcome_msg):
         """
         Valid parameters should result in a successful registration and a
         success webhook being sent
@@ -832,6 +874,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
                 'callback_auth_token': 'test-auth-token',
                 'faccode': '123456',
                 'mom_pmtct': False,
+                'language': "eng_ZA",
             })
 
         responses.add(responses.POST, 'http://testcallback/')
@@ -851,6 +894,9 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         })
         self.assertEqual(Registration.objects.count(), 1)
 
+    @mock.patch(
+        'registrations.tasks.validate_subscribe_jembi_app_registration.'
+        'send_welcome_message')
     @mock.patch(
         'registrations.tasks.validate_subscribe_jembi_app_registration.'
         'create_pmtct_registration')
@@ -878,7 +924,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
     @responses.activate
     def test_registration_complete_with_pmtct(
             self, get_identity, is_subscribed, opted_out, whatsapp, clinic,
-            subreq, popi_subreq, pmtct):
+            subreq, popi_subreq, pmtct, welcome_msg):
         """
         Valid parameters should result in a successful registration and a
         success webhook being sent.
@@ -895,6 +941,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
                 'callback_auth_token': 'test-auth-token',
                 'faccode': '123456',
                 'mom_pmtct': True,
+                'language': "eng_ZA",
             })
 
         responses.add(responses.POST, 'http://testcallback/')

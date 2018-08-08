@@ -1,24 +1,28 @@
 language: python
-python:
-  - "3.6"
-addons:
-  postgresql: "9.4"
-services:
-  - postgresql
-install:
-  - "pip install -r requirements.txt --use-wheel"
-  - "pip install -r requirements-dev.txt --use-wheel"
-script:
-  - flake8
-  - mypy registrations changes ndoh_hub
-  - py.test
-  - python manage.py makemigrations registrations changes --dry-run | grep 'No changes detected' || (echo 'There are changes which require migrations.' && exit 1)
+python: "3.6"
+cache: pip
 
 matrix:
   include:
+    # Run tests
+    - addons:
+        postgresql: "9.4"
+      services:
+        - postgresql
+        - redis-server
+      install:
+        - "pip install -r requirements.txt --use-wheel"
+        - "pip install -r requirements-dev.txt --use-wheel"
+        - django-admin compilemessages
+      script:
+        - flake8
+        - mypy registrations changes ndoh_hub
+        - py.test
+        - createdb ndoh_hub
+        - python manage.py makemigrations registrations changes --dry-run | grep 'No changes detected' || (echo 'There are changes which require migrations.' && exit 1)
+
     # Create docker image on merge to develop
-    - python: "2.7"
-      sudo: required
+    - sudo: required
       dist: trusty
       services: [docker]
       env:
@@ -28,8 +32,10 @@ matrix:
         - secure: "HdNKmMAw+2K6APKFp/Cy5SVxFDDDtx83UeIA5h9mBF4wrjRQcNLwZCbDGQTKmeZ/HZZLqxj3H8k034Y1vw6iQRGvv2X5Jazanh6ett4zH6QNd8Tnk4CqsZZ7MIG71ZFaSbdotpq2KgWP//Sz2BlnzXugr2CWbydTDOGE3dyRwwphs8DXgUu2gOeSFVolf3H0zYbnWPkDyb4EB/lOsTETEXRN1F3jgwY58RQU6LAV/k/FAr4WDWE+qX8f9Kr13UhMJYKS8mouJsSU1Q2Uq/hMXz/2QZ1h8vdv/lV9l3JRcK7JOEwXRGyFNYVFpBMSzUQpb6OwcaLgiBQ25y4HLtrViiVGg1abGrWqXH2Uiv1gnkKsJ37VIXtR7gso7n48j7lNBUHdJUE6JdiktOlmt1KvLjGzdWyukmMpRB2Ci2KQkPbAqF7pxgC7Tq0x/XT+2M85g/xv+U9uP+SBPA5V1ZPaHntHgWKjjlU224tfXB/PhVRe3wSx2kHKQEHzbxGCB0i5bLkcVhMUxpuod6H6cYt5RqI3JQMWcQMup7suUyQKn8iu8oLeVAZIeJAEZRSLSUvFpvAvEmrNyflUtOLJ3eCCXaAgThej5ZNaH9np1yVMa8CVt3ccudA2l8M00oC2qu1qkgbY2SPePBkfo9htoUWJ7cQF0oGrim/TA4TBM6BQwOk="
       before_script:
         - docker pull "$IMAGE_NAME" || true
+        - pip install -r seaworthy/requirements.txt
       script:
         - docker build --tag "$IMAGE_NAME" --cache-from "$IMAGE_NAME" .
+        - (cd seaworthy; py.test -v --hub-image "$IMAGE_NAME" test.py)
 
       before_deploy:
         - pip install docker-ci-deploy==0.3.0
@@ -40,12 +46,8 @@ matrix:
         on:
           branch: develop
 
-        # Inherited build steps that we don't want
-      install: []
-      addons: {}
-
-    - python: "2.7"
-      sudo: required
+    # Create docker images for tagged releases
+    - sudo: required
       dist: trusty
       services: [docker]
       env:
@@ -55,8 +57,10 @@ matrix:
         - secure: "HdNKmMAw+2K6APKFp/Cy5SVxFDDDtx83UeIA5h9mBF4wrjRQcNLwZCbDGQTKmeZ/HZZLqxj3H8k034Y1vw6iQRGvv2X5Jazanh6ett4zH6QNd8Tnk4CqsZZ7MIG71ZFaSbdotpq2KgWP//Sz2BlnzXugr2CWbydTDOGE3dyRwwphs8DXgUu2gOeSFVolf3H0zYbnWPkDyb4EB/lOsTETEXRN1F3jgwY58RQU6LAV/k/FAr4WDWE+qX8f9Kr13UhMJYKS8mouJsSU1Q2Uq/hMXz/2QZ1h8vdv/lV9l3JRcK7JOEwXRGyFNYVFpBMSzUQpb6OwcaLgiBQ25y4HLtrViiVGg1abGrWqXH2Uiv1gnkKsJ37VIXtR7gso7n48j7lNBUHdJUE6JdiktOlmt1KvLjGzdWyukmMpRB2Ci2KQkPbAqF7pxgC7Tq0x/XT+2M85g/xv+U9uP+SBPA5V1ZPaHntHgWKjjlU224tfXB/PhVRe3wSx2kHKQEHzbxGCB0i5bLkcVhMUxpuod6H6cYt5RqI3JQMWcQMup7suUyQKn8iu8oLeVAZIeJAEZRSLSUvFpvAvEmrNyflUtOLJ3eCCXaAgThej5ZNaH9np1yVMa8CVt3ccudA2l8M00oC2qu1qkgbY2SPePBkfo9htoUWJ7cQF0oGrim/TA4TBM6BQwOk="
       before_script:
         - docker pull "$IMAGE_NAME" || true
+        - pip install -r seaworthy/requirements.txt
       script:
         - docker build --tag "$IMAGE_NAME" --cache-from "$IMAGE_NAME" .
+        - (cd seaworthy; py.test -v --hub-image "$IMAGE_NAME" test.py)
 
       before_deploy:
         - pip install docker-ci-deploy==0.3.0
@@ -66,7 +70,3 @@ matrix:
         script: dcd --version "$(git tag -l --points-at HEAD)" --version-semver --version-latest "$IMAGE_NAME"
         on:
           tags: true
-
-        # Inherited build steps that we don't want
-      install: []
-      addons: {}
