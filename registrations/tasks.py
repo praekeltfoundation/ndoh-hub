@@ -14,6 +14,7 @@ from requests.exceptions import HTTPError, ConnectionError
 
 from asgiref.sync import async_to_sync
 from django.conf import settings
+from django.utils import translation
 from celery import chain
 from celery.task import Task
 from celery.utils.log import get_task_logger
@@ -561,11 +562,11 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         """
         return all(map(
             lambda addr: address == addr[0] or not addr[1].get('default'),
-            identity\
-                .get('details', {})\
-                .get('addresses', {})\
-                .get(addr_type, {})\
-                .items()
+            identity
+            .get('details', {})
+            .get('addresses', {})
+            .get(addr_type, {})
+            .items()
         ))
 
     def get_or_update_identity_by_address(self, address):
@@ -733,6 +734,43 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         r.raise_for_status()
         return len(r.json().get('rows', [])) != 0
 
+    def send_welcome_message(
+            self, language: str, channel: str, msisdn: str,
+            identity_id: str) -> None:
+        """
+        Sends the welcome message to the user in the user's language using the
+        message sender
+        """
+
+        def format_ussd_code(reg_type: str, ussd_code: str) -> str:
+            """
+            Prevent *'s in the USSD code being interpreted as markup
+            """
+            if channel == "WHATSAPP":
+                return "```{}```".format(ussd_code)
+            return ussd_code
+
+        # Transform to django language code
+        language = language.lower().replace('_', '-')
+        with translation.override(language):
+            text = translation.ugettext(
+                "Welcome to MomConnect! For more services dial %(popi_ussd)s, "
+                "to stop dial %(optout_ussd)s (Free). To move to WhatsApp, "
+                "reply “WA”. Std SMS rates apply."
+            ) % {
+                'popi_ussd': format_ussd_code(
+                    channel, settings.POPI_USSD_CODE),
+                'optout_ussd': format_ussd_code(
+                    channel, settings.OPTOUT_USSD_CODE),
+            }
+
+        utils.ms_client.create_outbound({
+            'to_addr': msisdn,
+            'to_identity': identity_id,
+            'content': text,
+            'channel': channel,
+        })
+
     def run(self, registration_id, **kwargs):
         registration = Registration.objects.get(id=registration_id)
         msisdn_registrant = registration.data['msisdn_registrant']
@@ -782,6 +820,15 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         # Create subscriptions
         self.create_subscriptionrequests(registration)
         self.create_popi_subscriptionrequest(registration)
+
+        # Send welcome message
+        self.send_welcome_message(
+            language=registration.data['language'],
+            channel="WHATSAPP" if 'whatsapp' in registration.reg_type
+                    else "JUNE_TEXT",
+            msisdn=msisdn_registrant,
+            identity_id=registration.registrant_id,
+        )
 
         # Push to Jembi and remove personally identifiable information
         jembi_task = BasePushRegistrationToJembi.\

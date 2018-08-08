@@ -15,6 +15,7 @@ import djcelery
 import dj_database_url
 import mimetypes
 
+import django.conf.locale
 
 # Support SVG on admin
 mimetypes.add_type("image/svg+xml", ".svg", True)
@@ -148,6 +149,35 @@ USE_L10N = True
 
 USE_TZ = True
 
+LANGUAGES = [
+    ('afr-za', "Afrikaans"),
+    ('eng-za', "English"),
+    ('nbl-za', "isiNdebele"),
+    ('nso-za', "Sepedi"),
+    ('sot-za', "Sesotho"),
+    ('ssw-za', "Siswati"),
+    ('tsn-za', "Setswana"),
+    ('tso-za', "Xitsonga"),
+    ('ven-za', "Tshivenda"),
+    ('xho-za', "isiXhosa"),
+    ('zul-za', "isiZulu"),
+]
+
+LANG_INFO = {
+    lang[0]: {
+        'bidi': False,
+        'code': lang[0],
+        'name': lang[1],
+        'name_local': lang[1],
+    } for lang in LANGUAGES
+}
+
+LOCALE_PATHS = [
+    os.path.join(BASE_DIR, 'locale'),
+]
+
+# Add custom languages not provided by Django
+django.conf.locale.LANG_INFO = LANG_INFO
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
@@ -312,3 +342,6 @@ WASSUP_NUMBER = os.environ.get('WASSUP_NUMBER', '+27820000000')
 
 NURSECONNECT_RTHB = os.environ.get(
     'NURSECONNECT_RTHB', 'false').lower() == 'true'
+
+POPI_USSD_CODE = os.environ.get('POPI_USSD_CODE', '*134*550*7#')
+OPTOUT_USSD_CODE = os.environ.get('OPTOUT_USSD_CODE', '*134*550*1#')
