@@ -1228,6 +1228,7 @@ class PushOptoutToIdentityStore(Task):
                     'Problem posting Optout %s JSON to IdentityStore' % (
                         change_id), exc_info=True)
 
+
 push_optout_to_identity_store = PushOptoutToIdentityStore()
 
 
