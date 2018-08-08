@@ -6,7 +6,7 @@ matrix:
   include:
     # Run tests
     - addons:
-        postgresql: "10.4"
+        postgresql: "9.4"
       services:
         - postgresql
         - redis-server
