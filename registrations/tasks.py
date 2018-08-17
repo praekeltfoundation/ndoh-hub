@@ -325,6 +325,34 @@ class ValidateSubscribe(Task):
         self.log.info("POPI Subscription request created")
         return "POPI Subscription Request created"
 
+    def create_service_info_subscriptionrequest(self, registration):
+        """
+        Creates a new subscription request for the service info message set.
+        This should only be created for momconnect whatsapp registrations.
+        """
+        if registration.reg_type != 'whatsapp_prebirth':
+            return
+
+        self.log.info("Fetching messageset")
+
+        weeks = utils.get_pregnancy_week(
+            utils.get_today(), registration.data["edd"])
+        msgset_short_name = utils.get_messageset_short_name(
+            'whatsapp_service_info', registration.source.authority, weeks)
+        msgset_id, msgset_schedule, next_sequence_number =\
+            utils.get_messageset_schedule_sequence(msgset_short_name, weeks)
+
+        self.log.info("Creating subscription request")
+        from .models import SubscriptionRequest
+        SubscriptionRequest.objects.create(
+            identity=registration.registrant_id,
+            messageset=msgset_id,
+            next_sequence_number=next_sequence_number,
+            lang=registration.data['language'],
+            schedule=msgset_schedule,
+        )
+        self.log.info("Service Info Subscription request created")
+
     # Create SubscriptionRequest
     def create_subscriptionrequests(self, registration):
         """ Create SubscriptionRequest(s) based on the

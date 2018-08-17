@@ -3,14 +3,17 @@ from django.db.models.signals import post_save
 from django.test import TestCase
 import json
 from unittest import mock
+from uuid import uuid4
 import responses
 
-from registrations.models import Registration, Source
+from registrations.models import Registration, Source, SubscriptionRequest
 from registrations.serializers import RegistrationSerializer
 from registrations.signals import (
     psh_fire_created_metric, psh_validate_subscribe)
 from registrations.tasks import (
-    validate_subscribe_jembi_app_registration as task)
+    validate_subscribe_jembi_app_registration as task, validate_subscribe)
+from ndoh_hub import utils_tests
+from .tests import AuthenticatedAPITestCase
 
 
 class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
@@ -960,3 +963,46 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
             'status': 'succeeded',
         })
         pmtct.assert_called_with(reg, {'id': "mother-id"})
+
+
+class ServiceInfoSubscriptionRequestTestCase(AuthenticatedAPITestCase):
+    def test_skips_other_registration_types(self):
+        """
+        Should skip creating subscription requests if not a whatsapp
+        registration
+        """
+        registration = Registration(
+            reg_type='momconnect_prebirth'
+        )
+        validate_subscribe.create_service_info_subscriptionrequest(
+            registration)
+        self.assertEqual(SubscriptionRequest.objects.count(), 0)
+
+    @responses.activate
+    def test_creates_subscriptionrequest(self):
+        """
+        Should create a subscription request at the correct place in the
+        service info messages
+        """
+        registration = Registration(
+            source=self.make_source_adminuser(),
+            reg_type='whatsapp_prebirth',
+            registrant_id=str(uuid4()),
+            data={
+                "edd": "2016-05-01",  # in week 23 of pregnancy
+                "language": "zul_ZA",
+            },
+        )
+        schedule_id = utils_tests.mock_get_messageset_by_shortname(
+            "whatsapp_service_info.hw_full.1")
+        utils_tests.mock_get_schedule(schedule_id)
+
+        validate_subscribe.create_service_info_subscriptionrequest(
+            registration)
+
+        [subreq] = SubscriptionRequest.objects.all()
+        self.assertEqual(subreq.identity, registration.registrant_id)
+        self.assertEqual(subreq.messageset, 95)
+        self.assertEqual(subreq.next_sequence_number, 5)
+        self.assertEqual(subreq.lang, 'zul_ZA')
+        self.assertEqual(subreq.schedule, schedule_id)
