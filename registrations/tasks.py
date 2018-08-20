@@ -458,6 +458,7 @@ class ValidateSubscribe(Task):
         if reg_validates:
             self.create_subscriptionrequests(registration)
             self.create_popi_subscriptionrequest(registration)
+            self.create_service_info_subscriptionrequest(registration)
 
             # NOTE: disable service rating for now
             # if registration.reg_type == "momconnect_prebirth" and\
@@ -848,6 +849,7 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         # Create subscriptions
         self.create_subscriptionrequests(registration)
         self.create_popi_subscriptionrequest(registration)
+        self.create_service_info_subscriptionrequest(registration)
 
         # Send welcome message
         self.send_welcome_message(
