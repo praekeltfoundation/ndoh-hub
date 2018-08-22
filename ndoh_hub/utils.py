@@ -272,6 +272,11 @@ def get_messageset_schedule_sequence(short_name, weeks):
         if weeks >= 32:
             next_sequence_number = ((weeks - 30) * msgs_per_week) - 2
 
+    # WhatsApp service info messages depend on months pregnant
+    elif 'whatsapp_service_info.hw_full.1' in short_name:
+        if weeks >= 5:
+            next_sequence_number = ((weeks - 4) // 4) + 1
+
     # other momconnect_prebirth sets start at 1
 
     # loss subscriptions always start at 1

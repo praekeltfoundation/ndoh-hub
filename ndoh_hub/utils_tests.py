@@ -138,6 +138,7 @@ def mock_get_messageset_by_shortname(short_name):
         "whatsapp_momconnect_prebirth.hw_full.1": 93,
         "whatsapp_momconnect_postbirth.hw_full.1": 93,
         "whatsapp_momconnect_prebirth.hw_full.2": 94,
+        "whatsapp_service_info.hw_full.1": 95,
     }[short_name]
 
     default_schedule = {
@@ -171,6 +172,7 @@ def mock_get_messageset_by_shortname(short_name):
         "whatsapp_momconnect_prebirth.hw_full.1": 192,
         "whatsapp_momconnect_postbirth.hw_full.1": 192,
         "whatsapp_momconnect_prebirth.hw_full.2": 122,
+        "whatsapp_service_info.hw_full.1": 123,
     }[short_name]
 
     responses.add(
