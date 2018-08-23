@@ -45,7 +45,6 @@ class Command(BaseCommand):
 
         service_info_messageset = next(sbm_client.get_messagesets(
             {"short_name": "whatsapp_service_info.hw_full.1"})["results"])
-        print(service_info_messageset)
 
         subscriptions = sbm_client.get_subscriptions({
             "messageset_contains": "whatsapp_momconnect_",
