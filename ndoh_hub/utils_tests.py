@@ -268,6 +268,17 @@ def mock_get_messageset(messageset_id):
     )
 
 
+def mock_get_messagesets(messagesets):
+    responses.add(
+        responses.GET,
+        "http://sbm/api/v1/messageset/",
+        json={
+            "results": messagesets,
+        },
+        match_querystring=True,
+    )
+
+
 def mock_get_schedule(schedule_id):
     day_of_week = {
         111: "1",
