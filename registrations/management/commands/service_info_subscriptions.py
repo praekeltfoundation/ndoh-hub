@@ -52,6 +52,11 @@ class Command(BaseCommand):
         })["results"]
 
         for subscription in subscriptions:
+            messageset = messageset_mapping[subscription["messageset"]]
+            if "hw_full" not in messageset:
+                # We only want to subscribe full clinic subscriptions
+                continue
+
             if self.identity_has_service_info_subscription(
                     messageset_mapping, subscription["identity"]):
                 # They already have an active service info subscription, skip
@@ -61,7 +66,7 @@ class Command(BaseCommand):
                 continue
 
             sequence = self.service_info_sequence(
-                messageset_mapping[subscription["messageset"]],
+                messageset,
                 subscription["next_sequence_number"]
             )
             self.log.debug(

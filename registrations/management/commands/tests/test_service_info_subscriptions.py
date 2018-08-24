@@ -52,12 +52,13 @@ class ServiceInfoSubscriptionsTests(TestCase):
         utils_tests.mock_get_messagesets([
             {"id": 1, "short_name": "whatsapp_momconnect_prebirth.hw_full.1"},
             {"id": 2, "short_name": "whatsapp_service_info.hw_full.1"},
-            {"id": 3, "short_name": "whatsapp_popi.hw_full.1"},
+            {"id": 3, "short_name": "whatsapp_momconnect_prebirth.patient.1"},
         ])
         utils_tests.mock_get_messageset_by_shortname(
             "whatsapp_service_info.hw_full.1")
         utils_tests.mock_get_subscriptions(
             "?active=True&messageset_contains=whatsapp_momconnect_", [
+                # already has service info subscription
                 {
                     "identity": "identity-uuid1",
                     "lang": "zul_ZA",
@@ -65,10 +66,19 @@ class ServiceInfoSubscriptionsTests(TestCase):
                     "sequence_number": 5,
                     "next_sequence_number": 3,
                 },
+                # should get service subscription added
                 {
                     "identity": "identity-uuid2",
                     "lang": "sso_ZA",
                     "messageset": 1,
+                    "sequence_number": 7,
+                    "next_sequence_number": 5,
+                },
+                # subscription is not for full messageset
+                {
+                    "identity": "identity-uuid2",
+                    "lang": "sso_ZA",
+                    "messageset": 3,
                     "sequence_number": 7,
                     "next_sequence_number": 5,
                 },
