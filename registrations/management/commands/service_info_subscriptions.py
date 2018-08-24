@@ -85,18 +85,44 @@ class Command(BaseCommand):
         Calculates the sequence number that the service info messageset should
         be on, given the existing subscription that a user has
         """
-        # TODO: work out the actual logic here
-        # whatsapp_momconnect_prebirth.hw_partial.1
-        # whatsapp_momconnect_postbirth.hw_full.1
-        # whatsapp_momconnect_postbirth.hw_full.2
-        # whatsapp_momconnect_prebirth.hw_full.1
-        # whatsapp_momconnect_prebirth.hw_full.2
-        # whatsapp_momconnect_prebirth.hw_full.3
-        # whatsapp_momconnect_prebirth.hw_full.4
-        # whatsapp_momconnect_prebirth.hw_full.5
-        # whatsapp_momconnect_prebirth.hw_full.6
-        # whatsapp_momconnect_prebirth.patient.1
-        return 1
+        def calculate_position(frequency: int, offset: int) -> int:
+            """
+            Given the weekly frequency, and the weekly offset, calculate the
+            monthly positions
+            """
+            weeks = ((sequence - 1) // frequency) + offset
+            return (weeks // 4) + 1
+
+        # Service info messages are once a month
+        # Weeks described below are weeks of messaging, not weeks of pregnancy
+        if short_name == "whatsapp_momconnect_prebirth.hw_full.1":
+            # Twice a week, starts at week 0, 74 messages
+            return calculate_position(2, 0)
+        if short_name == "whatsapp_momconnect_prebirth.hw_full.2":
+            # Three times a week, starts at week 26, 31 messages
+            return calculate_position(3, 26)
+        if short_name == "whatsapp_momconnect_prebirth.hw_full.3":
+            # Three times a week, starts at week 31, 15 messages
+            return calculate_position(3, 31)
+        if short_name == "whatsapp_momconnect_prebirth.hw_full.4":
+            # Four times a week, starts at week 32, 15 messages
+            return calculate_position(4, 32)
+        if short_name == "whatsapp_momconnect_prebirth.hw_full.5":
+            # Five times a week, starts at week 33, 15 messages
+            return calculate_position(5, 33)
+        if short_name == "whatsapp_momconnect_prebirth.hw_full.6":
+            # Seven times a week, starts at week 34, 15 messages
+            return calculate_position(7, 34)
+        if short_name == "whatsapp_momconnect_postbirth.hw_full.1":
+            # Twice a week, starts at week 37, 30 messages
+            return calculate_position(2, 37)
+        if short_name == "whatsapp_momconnect_postbirth.hw_full.2":
+            # Once a week, starts at week 52, 38 messages
+            return calculate_position(1, 52)
+        if short_name == "whatsapp_momconnect_postbirth.hw_full.3":
+            # Three times a week, starts at week 90, 156 messages
+            return calculate_position(3, 90)
+        raise ValueError("{} is not expected".format(short_name))
 
     def identity_has_service_info_subscription(
             self, messageset_mapping: dict, identity: str) -> bool:
