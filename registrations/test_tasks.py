@@ -496,6 +496,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
                 "Welcome to MomConnect! For more services dial "
                 "```*134*550*7#```, to stop dial ```*134*550*1#``` (Free). To "
                 "move to WhatsApp, reply “WA”. Std SMS rates apply.",
+            "metadata": {},
         })
 
     @responses.activate
@@ -514,7 +515,8 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
             "content":
                 "O amogetšwe go MomConnect! Go hwetša ditirelo "
                 "leletša*134*550*7#, go emiša letša*134*550*1# (Mahala)."
-                "Go iša go WhatsApp, fetola WA. Go šoma ditefelo tša Std SMS."
+                "Go iša go WhatsApp, fetola WA. Go šoma ditefelo tša Std SMS.",
+            "metadata": {},
         })
 
     @responses.activate

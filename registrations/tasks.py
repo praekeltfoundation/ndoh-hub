@@ -798,6 +798,7 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
             'to_identity': identity_id,
             'content': text,
             'channel': channel,
+            'metadata': {},
         })
 
     def run(self, registration_id, **kwargs):
