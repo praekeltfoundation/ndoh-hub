@@ -1,15 +1,17 @@
+import base64
+import hmac
 import django_filters
 import django_filters.rest_framework as filters
+from hashlib import sha256
 from rest_framework import viewsets, mixins, generics, status
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, AuthenticationFailed
 from rest_framework.pagination import CursorPagination
-from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
+from rest_framework.permissions import (
+    IsAuthenticated, AllowAny, DjangoModelPermissions
+)
 from rest_framework.response import Response
-from rest_framework.request import Request
-from rest_framework.serializers import Serializer
 from rest_framework.views import APIView
-from uuid import UUID
 from .models import Source, Change
 from .serializers import (
     ChangeSerializer, AdminOptoutSerializer, AdminChangeSerializer,
@@ -203,23 +205,36 @@ class ReceiveAdminChange(generics.CreateAPIView):
 
 
 class ReceiveWhatsAppEvent(generics.GenericAPIView):
-    permission_classes = (IsAuthenticated, DjangoModelPermissions)
+    permission_classes = (AllowAny, DjangoModelPermissions)
     queryset = Change.objects.none()
     serializer_class = ReceiveWhatsAppEventSerializer
     authentication_classes = (TokenAuthQueryString, TokenAuthentication)
 
-    def post(self, request: Request, *args, **kwargs) -> Response:
-        serializer: Serializer = self.get_serializer(data=request.data)
+    def validate_signature(self, request):
+        secret = settings.ENGAGE_HMAC_SECRET
+        signature = request.META.get(
+            "headers", {}).get("X-Engage-Hook-Signature")
+
+        if not signature:
+            raise AuthenticationFailed(
+                "X-Engage-Hook-Signature header required")
+
+        h = hmac.new(secret.encode(), request.body, sha256)
+
+        if base64.b64encode(h.digest()) != signature.encode():
+            raise AuthenticationFailed("Invalid hook signature")
+
+    def post(self, request, *args, **kwargs):
+        self.validate_signature(request)
+        serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             # If this isn't an event that we care about
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-        message_uuid: UUID = serializer.validated_data[
-            'data']['message_metadata']['junebug_message_id']
-
-        tasks.process_whatsapp_unsent_event.delay(
-            message_uuid.hex,
-            request.user.pk,
-        )
+        for item in serializer.validated_data["statuses"]:
+            tasks.process_whatsapp_unsent_event.delay(
+                item["id"],
+                request.user.pk,
+            )
 
         return Response(status=status.HTTP_202_ACCEPTED)

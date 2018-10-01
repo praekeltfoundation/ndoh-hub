@@ -47,14 +47,14 @@ class AdminChangeSerializer(serializers.Serializer):
 
 class ReceiveWhatsAppEventSerializer(serializers.Serializer):
 
-    class HookSerializer(serializers.Serializer):
-        event = serializers.ChoiceField(['message.direct_outbound.status'])
-    hook = HookSerializer()
+    class StatusSerializer(serializers.Serializer):
 
-    class EventSerializer(serializers.Serializer):
-        status = serializers.ChoiceField(['unsent'])
+        class ErrorSerializer(serializers.Serializer):
+            code = serializers.CharField(required=False)
+            title = serializers.CharField(required=True)
 
-        class MessageMetadata(serializers.Serializer):
-            junebug_message_id = serializers.UUIDField()
-        message_metadata = MessageMetadata()
-    data = EventSerializer()
+        id = serializers.CharField(required=True)
+        status = serializers.ChoiceField(['failed'])
+        errors = serializers.ListField(child=ErrorSerializer(), default=[])
+
+    statuses = serializers.ListField(child=StatusSerializer(), min_length=1)
