@@ -82,12 +82,14 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
         self.client.force_authenticate(user=user)
         url = reverse('whatsapp_event')
 
+        errors = [
+            {"code": 500, "title": "structure unavailable: Client could not display highly structured message"}  # noqa
+        ]
+
         response = self.client.post(url, {
             "statuses": [
                 {
-                    "errors": [
-                        {"code": 500, "title": "structure unavailable: Client could not display highly structured message"}  # noqa
-                    ],
+                    "errors": errors,
                     "id": "41c377a47b064eba9abee5a1ea827b3d",
                     "recipient_id": "27831112222",
                     "status": "failed",
@@ -97,7 +99,7 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         task.delay.assert_called_once_with(
-            '41c377a47b064eba9abee5a1ea827b3d', user.pk)
+            '41c377a47b064eba9abee5a1ea827b3d', user.pk, errors)
 
 
 @mock.patch('changes.views.tasks.process_whatsapp_unsent_event')
@@ -152,12 +154,14 @@ class ValidateSignatureTests(APITestCase):
         header = {'X-Engage-Hook-Signature':
                   'Gu7dfV2kfjbT6PJ/J7N7xi4/d+y91Ys9ISMxQRxhac8='}
 
+        errors = [
+            {"code": 500, "title": "structure unavailable: Client could not display highly structured message"}  # noqa
+        ]
+
         response = self.client.post(url, data={
             "statuses": [
                 {
-                    "errors": [
-                        {"code": 500, "title": "structure unavailable: Client could not display highly structured message"}  # noqa
-                    ],
+                    "errors": errors,
                     "id": "41c377a47b064eba9abee5a1ea827b3d",
                     "recipient_id": "27831112222",
                     "status": "failed",
@@ -168,4 +172,4 @@ class ValidateSignatureTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         task.delay.assert_called_once_with(
-            '41c377a47b064eba9abee5a1ea827b3d', user.pk)
+            '41c377a47b064eba9abee5a1ea827b3d', user.pk, errors)
