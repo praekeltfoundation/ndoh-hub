@@ -11,6 +11,7 @@ from celery import chain
 from celery.task import Task
 from celery.utils.log import get_task_logger
 from django.conf import settings
+from django.utils import translation
 from requests.exceptions import HTTPError
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
@@ -1277,12 +1278,23 @@ class ProcessWhatsAppUnsentEvent(Task):
             created_by_id=user_id,
         )
 
+        identity = is_client.get_identity(identity_uuid)
+
+        # Transform to django language code
+        language = identity["details"]["lang_code"].lower().replace('_', '-')
+        with translation.override(language):
+            text = translation.ugettext(
+                "Sorry, we can't send WhatsApp msgs to this phone. We'll send "
+                "your MomConnect msgs on SMS. To stop dial %(optout_ussd)s, "
+                "for more dial %(popi_ussd)s."
+            ) % {
+                'popi_ussd': settings.POPI_USSD_CODE,
+                'optout_ussd': settings.OPTOUT_USSD_CODE,
+            }
+
         utils.ms_client.create_outbound({
             'to_identity': identity_uuid,
-            'content':
-                "Sorry, we can't send WhatsApp msgs to this phone. We'll send "
-                "your MomConnect msgs on SMS. To stop dial *134*550*1#, for "
-                "more dial *134*550*7#.",
+            'content': text,
             'channel': "JUNE_TEXT",
             'metadata': {},
         })
