@@ -50,7 +50,7 @@ class ReceiveWhatsAppEventSerializer(serializers.Serializer):
     class StatusSerializer(serializers.Serializer):
 
         class ErrorSerializer(serializers.Serializer):
-            code = serializers.CharField(required=False)
+            code = serializers.IntegerField(required=False)
             title = serializers.CharField(required=True)
 
         id = serializers.CharField(required=True)

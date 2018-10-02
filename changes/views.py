@@ -233,6 +233,7 @@ class ReceiveWhatsAppEvent(generics.GenericAPIView):
             tasks.process_whatsapp_unsent_event.delay(
                 item["id"],
                 request.user.pk,
+                item["errors"]
             )
 
         return Response(status=status.HTTP_202_ACCEPTED)

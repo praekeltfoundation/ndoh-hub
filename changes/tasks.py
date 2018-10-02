@@ -1265,7 +1265,31 @@ class ProcessWhatsAppUnsentEvent(Task):
     """
     name = "ndoh_hub.changes.tasks.process_whatsapp_unsent_event"
 
-    def run(self, vumi_message_id: str, user_id: str, **kwargs) -> None:
+    def handle_hsm_error(self, user_id, source_id, identity_uuid):
+        Change.objects.create(
+            registrant_id=identity_uuid,
+            action='switch_channel',
+            data={
+                'channel': "sms",
+                'reason': "whatsapp_unsent_event",
+            },
+            source_id=source_id,
+            created_by_id=user_id,
+        )
+
+        utils.ms_client.create_outbound({
+            'to_identity': identity_uuid,
+            'content':
+                "Sorry, we can't send WhatsApp msgs to this phone. We'll send "
+                "your MomConnect msgs on SMS. To stop dial *134*550*1#, for "
+                "more dial *134*550*7#.",
+            'channel': "JUNE_TEXT",
+            'metadata': {},
+        })
+
+    def run(
+            self, vumi_message_id: str, user_id: str, errors: list,
+            **kwargs) -> None:
         source_id: int = Source.objects.values('pk').get(user=user_id)['pk']
         try:
             identity_uuid: str = next(utils.ms_client.get_outbounds({
@@ -1277,16 +1301,15 @@ class ProcessWhatsAppUnsentEvent(Task):
             """
             return
 
-        Change.objects.create(
-            registrant_id=identity_uuid,
-            action='switch_channel',
-            data={
-                'channel': "sms",
-                'reason': "whatsapp_unsent_event",
-            },
-            source_id=source_id,
-            created_by_id=user_id,
-        )
+        hsm_error = False
+        for error in errors:
+            if "structure unavailable" in error["title"]:
+                hsm_error = True
+            if "envelope mismatch" in error["title"]:
+                hsm_error = True
+
+        if hsm_error:
+            self.handle_hsm_error(user_id, source_id, identity_uuid)
 
 
 process_whatsapp_unsent_event = ProcessWhatsAppUnsentEvent()
