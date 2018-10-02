@@ -345,3 +345,5 @@ NURSECONNECT_RTHB = os.environ.get(
 
 POPI_USSD_CODE = os.environ.get('POPI_USSD_CODE', '*134*550*7#')
 OPTOUT_USSD_CODE = os.environ.get('OPTOUT_USSD_CODE', '*134*550*1#')
+
+ENGAGE_HMAC_SECRET = os.environ.get('ENGAGE_HMAC_SECRET', 'REPLACEME')
