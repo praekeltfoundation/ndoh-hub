@@ -205,7 +205,7 @@ class ReceiveAdminChange(generics.CreateAPIView):
 
 
 class ReceiveWhatsAppEvent(generics.GenericAPIView):
-    permission_classes = (AllowAny, DjangoModelPermissions)
+    permission_classes = (IsAuthenticated, DjangoModelPermissions)
     queryset = Change.objects.none()
     serializer_class = ReceiveWhatsAppEventSerializer
     authentication_classes = (TokenAuthQueryString, TokenAuthentication)
