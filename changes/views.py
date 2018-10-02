@@ -7,9 +7,7 @@ from rest_framework import viewsets, mixins, generics, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.exceptions import ValidationError, AuthenticationFailed
 from rest_framework.pagination import CursorPagination
-from rest_framework.permissions import (
-    IsAuthenticated, AllowAny, DjangoModelPermissions
-)
+from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Source, Change
