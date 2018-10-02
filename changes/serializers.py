@@ -54,7 +54,20 @@ class ReceiveWhatsAppEventSerializer(serializers.Serializer):
             title = serializers.CharField(required=True)
 
         id = serializers.CharField(required=True)
-        status = serializers.ChoiceField(['failed'])
+        status = serializers.ChoiceField(
+            ["failed", "sent", "delivered", "read"])
         errors = serializers.ListField(child=ErrorSerializer(), default=[])
 
     statuses = serializers.ListField(child=StatusSerializer(), min_length=1)
+
+    def to_internal_value(self, data):
+        if "statuses" in data:
+            statuses = []
+            for status in data["statuses"]:
+                if(status["status"] == "failed"):
+                    statuses.append(status)
+
+            data["statuses"] = statuses
+
+        return super(ReceiveWhatsAppEventSerializer, self).to_internal_value(
+            data)
