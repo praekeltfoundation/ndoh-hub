@@ -20,16 +20,7 @@ class ProcessWhatsAppUnsentEventTaskTests(TestCase):
         post_save.connect(
             receiver=psh_validate_implement, sender=Change)
 
-    @mock.patch('changes.tasks.utils.ms_client.create_outbound')
-    @responses.activate
-    def test_change_created(self, mock_create_outbound):
-        """
-        The task should create a Change according to the details received from
-        the message sender
-        """
-        user = User.objects.create_user('test')
-        source = Source.objects.create(user=user)
-
+    def create_outbound_lookup(self):
         responses.add(
             responses.GET,
             'http://ms/api/v1/outbound/?vumi_message_id=messageid',
@@ -40,6 +31,31 @@ class ProcessWhatsAppUnsentEventTaskTests(TestCase):
                     },
                 ]
             }, status=200, match_querystring=True)
+
+    def create_identity_lookup(self, lang="eng_ZA"):
+        responses.add(
+            responses.GET,
+            'http://is/api/v1/identities/test-identity-uuid/',
+            json={
+                'identity': 'result',
+                'details': {
+                    'lang_code': lang
+                }
+            },
+            status=200, match_querystring=True)
+
+    @mock.patch('changes.tasks.utils.ms_client.create_outbound')
+    @responses.activate
+    def test_change_created(self, mock_create_outbound):
+        """
+        The task should create a Change according to the details received from
+        the message sender
+        """
+        user = User.objects.create_user('test')
+        source = Source.objects.create(user=user)
+
+        self.create_outbound_lookup()
+        self.create_identity_lookup()
 
         self.assertEqual(Change.objects.count(), 0)
 
@@ -64,6 +80,37 @@ class ProcessWhatsAppUnsentEventTaskTests(TestCase):
                 "Sorry, we can't send WhatsApp msgs to this phone. We'll send "
                 "your MomConnect msgs on SMS. To stop dial *134*550*1#, for "
                 "more dial *134*550*7#.",
+            'channel': "JUNE_TEXT",
+            'metadata': {},
+        })
+
+    @mock.patch('changes.tasks.utils.ms_client.create_outbound')
+    @responses.activate
+    def test_change_created_diff_language(self, mock_create_outbound):
+        """
+        The task should create a Change according to the details received from
+        the message sender
+        """
+        user = User.objects.create_user('test')
+        source = Source.objects.create(user=user)
+
+        self.create_outbound_lookup()
+        self.create_identity_lookup('zul_ZA')
+
+        self.assertEqual(Change.objects.count(), 0)
+
+        process_whatsapp_unsent_event('messageid', source.pk, [{
+            'code': 500,
+            "title": "structure unavailable: Client could not display highly "
+                     "structured message"}
+        ])
+
+        mock_create_outbound.assert_called_once_with({
+            'to_identity': 'test-identity-uuid',
+            'content':
+                "Siyaxolisa asikwazi ukusenda uWhatsApp kule foni. "
+                "Sizokusendela imiyalezo yeMomConnect ngeSMS. Ukuphuma dayela "
+                "*134*550*1# Ukuthola okunye dayela *134*550*7#.",
             'channel': "JUNE_TEXT",
             'metadata': {},
         })
