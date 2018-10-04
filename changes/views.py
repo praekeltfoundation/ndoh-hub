@@ -249,8 +249,7 @@ class ReceiveWhatsAppSystemEvent(ReceiveWhatsAppBase):
         self.validate_signature(request)
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
-            # If this isn't an event that we care about
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
         for item in serializer.validated_data["events"]:
             tasks.process_whatsapp_system_event.delay(item["message_id"],

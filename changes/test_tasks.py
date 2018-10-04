@@ -205,6 +205,9 @@ class ProcessWhatsAppSystemEventTaskTests(WhatsAppBaseTestCase):
         """
         self.create_outbound_lookup(0)
 
-        process_whatsapp_system_event('messageid', "something_else")
+        process_whatsapp_system_event('messageid', "undelivered")
 
+        self.assertEqual(
+            responses.calls[0].request.url,
+            "http://ms/api/v1/outbound/?vumi_message_id=messageid")
         self.assertFalse(mock_create_outbound.called)

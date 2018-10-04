@@ -130,7 +130,7 @@ class ReceiveWhatsAppSystemEventViewTests(APITestCase):
 
     def test_serializer_failed(self, task, mock_validate_signature):
         """
-        If the serializer doesn't pass, then a 204 should be returned, and the
+        If the serializer doesn't pass, then a 400 should be returned, and the
         task shouldn't be called
         """
         user = User.objects.create_user('test')
@@ -146,7 +146,7 @@ class ReceiveWhatsAppSystemEventViewTests(APITestCase):
                 "type": "undelivered"
             }]
         })
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(task.called)
 
 
