@@ -71,3 +71,13 @@ class ReceiveWhatsAppEventSerializer(serializers.Serializer):
 
         return super(ReceiveWhatsAppEventSerializer, self).to_internal_value(
             data)
+
+
+class ReceiveWhatsAppSystemEventSerializer(serializers.Serializer):
+
+    class EventSerializer(serializers.Serializer):
+        type = serializers.CharField(required=True)
+        message_id = serializers.CharField(required=True)
+        recipient_id = serializers.CharField(required=True)
+
+    events = serializers.ListField(child=EventSerializer(), min_length=1)

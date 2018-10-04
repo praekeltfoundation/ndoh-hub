@@ -1,6 +1,7 @@
 from django.test import TestCase
 
-from changes.serializers import ReceiveWhatsAppEventSerializer
+from changes.serializers import (
+    ReceiveWhatsAppEventSerializer, ReceiveWhatsAppSystemEventSerializer)
 
 
 class ReceiveWhatsAppEventSerializerTests(TestCase):
@@ -98,5 +99,50 @@ class ReceiveWhatsAppEventSerializerTests(TestCase):
         self.assertEqual(serializer.errors, {
             'statuses': {
                 'id': ['This field is required.']
+            }
+        })
+
+
+class ReceiveWhatsAppSystemEventSerializerTests(TestCase):
+
+    def test_valid(self):
+        serializer = ReceiveWhatsAppSystemEventSerializer(data={
+            "events": [
+                {
+                    "recipient_id": "27831112222",
+                    "timestamp": "1538388353",
+                    "message_id": "gBGGJ4NjeFMfAgl58_8Il_tnCNI",
+                    "type": "undelivered"
+                }, {
+                    "recipient_id": "27831113333",
+                    "timestamp": "1538388354",
+                    "message_id": "gBGGJ4NjeFMfAgl58_8Il_WWWWW",
+                    "type": "something_else"
+                }
+            ]
+        })
+
+        self.assertTrue(serializer.is_valid())
+
+    def test_missing_message_id(self):
+        serializer = ReceiveWhatsAppSystemEventSerializer(data={
+            "events": [
+                {
+                    "recipient_id": "27831112222",
+                    "timestamp": "1538388353",
+                    "type": "undelivered"
+                }, {
+                    "recipient_id": "27831113333",
+                    "timestamp": "1538388354",
+                    "message_id": "gBGGJ4NjeFMfAgl58_8Il_WWWWW",
+                    "type": "undelivered"
+                }
+            ]
+        })
+
+        self.assertFalse(serializer.is_valid())
+        self.assertEqual(serializer.errors, {
+            'events': {
+                'message_id': ['This field is required.']
             }
         })
