@@ -21,4 +21,7 @@ urlpatterns = [
         name="change_admin"),
     url(r'^api/v1/whatsapp/event/', views.ReceiveWhatsAppEvent.as_view(),
         name='whatsapp_event'),
+    url(r'^api/v1/whatsapp/system_event/',
+        views.ReceiveWhatsAppSystemEvent.as_view(),
+        name='whatsapp_system_event'),
 ]

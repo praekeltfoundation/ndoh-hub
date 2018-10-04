@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 from .models import Source, Change
 from .serializers import (
     ChangeSerializer, AdminOptoutSerializer, AdminChangeSerializer,
-    ReceiveWhatsAppEventSerializer,
+    ReceiveWhatsAppEventSerializer, ReceiveWhatsAppSystemEventSerializer
 )
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
 from django.conf import settings
@@ -202,10 +202,9 @@ class ReceiveAdminChange(generics.CreateAPIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
 
-class ReceiveWhatsAppEvent(generics.GenericAPIView):
+class ReceiveWhatsAppBase(generics.GenericAPIView):
     permission_classes = (IsAuthenticated, DjangoModelPermissions)
     queryset = Change.objects.none()
-    serializer_class = ReceiveWhatsAppEventSerializer
     authentication_classes = (TokenAuthQueryString, TokenAuthentication)
 
     def validate_signature(self, request):
@@ -222,6 +221,10 @@ class ReceiveWhatsAppEvent(generics.GenericAPIView):
         if base64.b64encode(h.digest()) != signature.encode():
             raise AuthenticationFailed("Invalid hook signature")
 
+
+class ReceiveWhatsAppEvent(ReceiveWhatsAppBase):
+    serializer_class = ReceiveWhatsAppEventSerializer
+
     def post(self, request, *args, **kwargs):
         self.validate_signature(request)
         serializer = self.get_serializer(data=request.data)
@@ -235,5 +238,21 @@ class ReceiveWhatsAppEvent(generics.GenericAPIView):
                 request.user.pk,
                 item["errors"]
             )
+
+        return Response(status=status.HTTP_202_ACCEPTED)
+
+
+class ReceiveWhatsAppSystemEvent(ReceiveWhatsAppBase):
+    serializer_class = ReceiveWhatsAppSystemEventSerializer
+
+    def post(self, request, *args, **kwargs):
+        self.validate_signature(request)
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        for item in serializer.validated_data["events"]:
+            tasks.process_whatsapp_system_event.delay(item["message_id"],
+                                                      item["type"])
 
         return Response(status=status.HTTP_202_ACCEPTED)

@@ -1325,3 +1325,46 @@ class ProcessWhatsAppUnsentEvent(Task):
 
 
 process_whatsapp_unsent_event = ProcessWhatsAppUnsentEvent()
+
+
+class ProcessWhatsAppSystemEvent(Task):
+    """
+    Notifies a user that a message we send them on Whatsapp was not
+    successfully delivered.
+    """
+    name = "ndoh_hub.changes.tasks.process_whatsapp_system_event"
+
+    def handle_undelivered(self, identity_uuid):
+        identity = is_client.get_identity(identity_uuid)
+        # Transform to django language code
+        language = identity["details"]["lang_code"].lower().replace('_', '-')
+        with translation.override(language):
+            text = translation.ugettext(
+                "We see that your MomConnect WhatsApp messages are not being "
+                "delivered. If you would like to receive your messages over "
+                "SMS, reply ‘SMS’."
+            )
+
+        utils.ms_client.create_outbound({
+            'to_identity': identity_uuid,
+            'content': text,
+            'channel': "JUNE_TEXT",
+            'metadata': {},
+        })
+
+    def run(self, vumi_message_id: str, event_type: str, **kwargs) -> None:
+        try:
+            identity_uuid: str = next(utils.ms_client.get_outbounds({
+                'vumi_message_id': vumi_message_id,
+            })['results'])['to_identity']
+        except StopIteration:
+            """
+            Outbound with message id doesn't exist, so don't continue
+            """
+            return
+
+        if (event_type == "undelivered"):
+            self.handle_undelivered(identity_uuid)
+
+
+process_whatsapp_system_event = ProcessWhatsAppSystemEvent()

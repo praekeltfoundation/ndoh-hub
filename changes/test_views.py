@@ -8,7 +8,7 @@ from unittest import mock
 from rest_framework.test import APITestCase
 
 
-@mock.patch('changes.views.ReceiveWhatsAppEvent.validate_signature')
+@mock.patch('changes.views.ReceiveWhatsAppBase.validate_signature')
 @mock.patch('changes.views.tasks.process_whatsapp_unsent_event')
 class ReceiveWhatsAppEventViewTests(APITestCase):
     def test_no_auth(self, task, mock_validate_signature):
@@ -100,6 +100,54 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         task.delay.assert_called_once_with(
             '41c377a47b064eba9abee5a1ea827b3d', user.pk, errors)
+
+
+@mock.patch('changes.views.ReceiveWhatsAppBase.validate_signature')
+@mock.patch('changes.views.tasks.process_whatsapp_system_event')
+class ReceiveWhatsAppSystemEventViewTests(APITestCase):
+    def test_serializer_succeeded(self, task, mock_validate_signature):
+        """
+        If the serializer passes, then the task should be called with the
+        correct parameters
+        """
+        user = User.objects.create_user('test')
+        user.user_permissions.add(
+            Permission.objects.get(codename='add_change'))
+        self.client.force_authenticate(user=user)
+        url = reverse('whatsapp_system_event')
+
+        response = self.client.post(url, {
+            "events": [{
+                "recipient_id": "278311155555",
+                "timestamp": "1538388353",
+                "message_id": "gBGGJ4NjeFMfAgl58_8Il_tnCNI",
+                "type": "undelivered"
+            }]
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        task.delay.assert_called_once_with('gBGGJ4NjeFMfAgl58_8Il_tnCNI',
+                                           "undelivered")
+
+    def test_serializer_failed(self, task, mock_validate_signature):
+        """
+        If the serializer doesn't pass, then a 400 should be returned, and the
+        task shouldn't be called
+        """
+        user = User.objects.create_user('test')
+        user.user_permissions.add(
+            Permission.objects.get(codename='add_change'))
+        self.client.force_authenticate(user=user)
+        url = reverse('whatsapp_system_event')
+
+        response = self.client.post(url, {
+            "events": [{
+                "recipient_id": "278311155555",
+                "timestamp": "1538388353",
+                "type": "undelivered"
+            }]
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(task.called)
 
 
 @mock.patch('changes.views.tasks.process_whatsapp_unsent_event')
