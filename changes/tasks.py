@@ -1284,9 +1284,9 @@ class ProcessWhatsAppUnsentEvent(Task):
         language = identity["details"]["lang_code"].lower().replace('_', '-')
         with translation.override(language):
             text = translation.ugettext(
-                "Sorry, we can't send WhatsApp msgs to this phone. We'll send "
-                "your MomConnect msgs on SMS. To stop dial %(optout_ussd)s, "
-                "for more dial %(popi_ussd)s."
+                "Sorry but we can't send WhatsApp msgs to this phone. We'll "
+                "send your MomConnect msgs on SMS. To stop dial "
+                "%(optout_ussd)s, for more dial %(popi_ussd)s (Free)."
             ) % {
                 'popi_ussd': settings.POPI_USSD_CODE,
                 'optout_ussd': settings.OPTOUT_USSD_CODE,
@@ -1368,3 +1368,52 @@ class ProcessWhatsAppSystemEvent(Task):
 
 
 process_whatsapp_system_event = ProcessWhatsAppSystemEvent()
+
+
+class ProcessWhatsAppContactCheckFail(Task):
+    """
+    Switches the user back to SMS if they don't exist on the WhatsApp network
+    """
+    name = "ndoh_hub.changes.tasks.process_whatsapp_contact_check_fail"
+
+    def run(self, user_id: int, address: str, **kwargs) -> None:
+        results = list(
+            utils.is_client.get_identity_by_address("msisdn", address)["results"])
+        if len(results) == 0:
+            # We don't have any identities with this address
+            return
+        identity = results[0]
+        identity_uuid = identity["id"]
+
+        source_id: int = Source.objects.values('pk').get(user=user_id)['pk']
+        Change.objects.create(
+            registrant_id=identity_uuid,
+            action='switch_channel',
+            data={
+                'channel': "sms",
+                'reason': "whatsapp_contact_check_fail",
+            },
+            source_id=source_id,
+            created_by_id=user_id,
+        )
+
+        language = identity["details"]\
+            .get("lang_code", "eng_ZA")\
+            .lower()\
+            .replace('_', '-')
+        with translation.override(language):
+            text = translation.ugettext(
+                "Oh no! You can't get MomConnect messages on WhatsApp. We'll "
+                "keep sending your MomConnect messages on SMS."
+            )
+
+        print(text)
+        utils.ms_client.create_outbound({
+            'to_identity': identity_uuid,
+            'content': text,
+            'channel': "JUNE_TEXT",
+            'metadata': {},
+        })
+
+
+process_whatsapp_contact_check_fail = ProcessWhatsAppContactCheckFail()
