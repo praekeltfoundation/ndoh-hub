@@ -238,7 +238,7 @@ class ReceiveSeedMessageSenderHookViewTests(APITestCase):
     def test_whatsapp_contact_check_failure(self, task):
         """
         If the message sender sends us an event for whatsapp contact check fail
-        then we should run the processing task.        
+        then we should run the processing task.
         """
         user = User.objects.create_user("test")
         token = Token.objects.create(user=user).key
