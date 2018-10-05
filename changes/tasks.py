@@ -1378,7 +1378,8 @@ class ProcessWhatsAppContactCheckFail(Task):
 
     def run(self, user_id: int, address: str, **kwargs) -> None:
         results = list(
-            utils.is_client.get_identity_by_address("msisdn", address)["results"])
+            utils.is_client.get_identity_by_address("msisdn", address)[
+                "results"])
         if len(results) == 0:
             # We don't have any identities with this address
             return
@@ -1407,7 +1408,6 @@ class ProcessWhatsAppContactCheckFail(Task):
                 "keep sending your MomConnect messages on SMS."
             )
 
-        print(text)
         utils.ms_client.create_outbound({
             'to_identity': identity_uuid,
             'content': text,
