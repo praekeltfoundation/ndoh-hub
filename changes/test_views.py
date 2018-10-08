@@ -4,6 +4,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from unittest import mock
+from urllib.parse import urlencode
 
 from rest_framework.test import APITestCase
 
@@ -221,3 +222,40 @@ class ValidateSignatureTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         task.delay.assert_called_once_with(
             '41c377a47b064eba9abee5a1ea827b3d', user.pk, errors)
+
+
+class ReceiveSeedMessageSenderHookViewTests(APITestCase):
+    def test_token_querystring_auth(self):
+        """
+        The token should be required in the querystring for requests to be
+        processed.
+        """
+        url = reverse('message_sender_webhook')
+        response = self.client.post(url, data={}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    @mock.patch('changes.views.tasks.process_whatsapp_contact_check_fail')
+    def test_whatsapp_contact_check_failure(self, task):
+        """
+        If the message sender sends us an event for whatsapp contact check fail
+        then we should run the processing task.
+        """
+        user = User.objects.create_user("test")
+        token = Token.objects.create(user=user).key
+        url = "{}?{}".format(reverse('message_sender_webhook'), urlencode({
+            "token": token
+        }))
+
+        response = self.client.post(url, data={
+            "hook": {
+                "id": 1,
+                "event": "whatsapp.failed_contact_check",
+                "target": "http://example.org",
+            },
+            "data": {
+                "address": "+27820001001",
+            },
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        task.delay.assert_called_once_with(str(user.pk), "+27820001001")

@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-08-08 12:35+0200\n"
-"PO-Revision-Date: 2018-10-02 15:52+0200\n"
+"POT-Creation-Date: 2018-10-05 15:50+0200\n"
+"PO-Revision-Date: 2018-10-05 15:29+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: nbl_ZA\n"
@@ -17,7 +17,32 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.1.1\n"
 
-#: registrations/tasks.py:757
+#: changes/tasks.py:1287
+#, python-format
+msgid ""
+"Sorry but we can't send WhatsApp msgs to this phone. We'll send your "
+"MomConnect msgs on SMS. To stop dial %(optout_ussd)s, for more dial "
+"%(popi_ussd)s (Free)."
+msgstr ""
+"Siyacolisa, asikghoni ukuthumela imilayezo yeWhatsApp kilefoni.Sizayithumela "
+"ngeSMS. Ukulisa dayela %(optout_ussd)s, ukufumana kunengi dayela"
+"%(popi_ussd)s."
+
+#: changes/tasks.py:1343
+msgid ""
+"We see that your MomConnect WhatsApp messages are not being delivered. If "
+"you would like to receive your messages over SMS, reply ‘SMS’."
+msgstr ""
+
+#: changes/tasks.py:1404
+msgid ""
+"Oh no! You can't get MomConnect messages on WhatsApp. We'll keep sending "
+"your MomConnect messages on SMS."
+msgstr ""
+"Awa! Angeze wathola imilayezwakho yeMomConnect kuWhatsApp. Sizakuhlala "
+"siyithumela ngeSMS."
+
+#: registrations/tasks.py:786
 #, python-format
 msgid ""
 "Welcome to MomConnect! For more services dial %(popi_ussd)s, to stop dial "
@@ -26,11 +51,3 @@ msgstr ""
 "Wamukelwa kuMomConnect!Nawufuna kunengi dayela %(popi_ussd)s, ukulisa dayela "
 "%(optout_ussd)s (Mahala).Tjhinga kuWhatsApp, ngo“WA”.Kubiza imali "
 "ejayelekileko yeSMS."
-
-msgid ""
-"Sorry, we can't send WhatsApp msgs to this phone. We'll send your MomConnect "
-"msgs on SMS. To stop dial %(optout_ussd)s, for more dial %(popi_ussd)s."
-msgstr ""
-"Siyacolisa, asikghoni ukuthumela imilayezo yeWhatsApp kilefoni.Sizayithumela "
-"ngeSMS. Ukulisa dayela %(optout_ussd)s, ukufumana kunengi dayela"
-"%(popi_ussd)s."

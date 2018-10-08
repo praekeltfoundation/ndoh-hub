@@ -1,25 +1,29 @@
 import base64
 import hmac
+from hashlib import sha256
+
 import django_filters
 import django_filters.rest_framework as filters
-from hashlib import sha256
-from rest_framework import viewsets, mixins, generics, status
+import phonenumbers
+from django.conf import settings
+from rest_framework import generics, mixins, status, viewsets
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.exceptions import ValidationError, AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework.pagination import CursorPagination
-from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
+from rest_framework.permissions import DjangoModelPermissions, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Source, Change
-from .serializers import (
-    ChangeSerializer, AdminOptoutSerializer, AdminChangeSerializer,
-    ReceiveWhatsAppEventSerializer, ReceiveWhatsAppSystemEventSerializer
-)
-from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient  # noqa
-from django.conf import settings
+from seed_services_client.stage_based_messaging import \
+    StageBasedMessagingApiClient  # noqa
 
 from changes import tasks
 from ndoh_hub.utils import TokenAuthQueryString
+
+from .models import Change, Source
+from .serializers import (AdminChangeSerializer, AdminOptoutSerializer,
+                          ChangeSerializer, ReceiveWhatsAppEventSerializer,
+                          ReceiveWhatsAppSystemEventSerializer,
+                          SeedMessageSenderHookSerializer)
 
 
 class CreatedAtCursorPagination(CursorPagination):
@@ -255,4 +259,26 @@ class ReceiveWhatsAppSystemEvent(ReceiveWhatsAppBase):
             tasks.process_whatsapp_system_event.delay(item["message_id"],
                                                       item["type"])
 
+        return Response(status=status.HTTP_202_ACCEPTED)
+
+
+class SeedMessageSenderHook(generics.GenericAPIView):
+    """
+    Receives events from the Seed Message Sender. Supports:
+    * whatsapp.failed_contact_check
+
+    Requires token auth in the querystring "token" field.
+    """
+    serializer_class = SeedMessageSenderHookSerializer
+    authentication_classes = (TokenAuthQueryString,)
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        msisdn = serializer.validated_data["data"]["address"]
+        msisdn = phonenumbers.format_number(
+            msisdn, phonenumbers.PhoneNumberFormat.E164)
+        tasks.process_whatsapp_contact_check_fail.delay(
+            str(request.user.pk), msisdn
+        )
         return Response(status=status.HTTP_202_ACCEPTED)

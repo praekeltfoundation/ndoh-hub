@@ -1,5 +1,7 @@
-from .models import Change
 from rest_framework import serializers
+
+from .fields import PhoneNumberField
+from .models import Change
 
 
 class OneFieldRequiredValidator:
@@ -81,3 +83,18 @@ class ReceiveWhatsAppSystemEventSerializer(serializers.Serializer):
         recipient_id = serializers.CharField(required=True)
 
     events = serializers.ListField(child=EventSerializer(), min_length=1)
+
+
+class SeedMessageSenderHookSerializer(serializers.Serializer):
+    class Hook(serializers.Serializer):
+        id = serializers.IntegerField()
+        event = serializers.ChoiceField(
+            choices=["whatsapp.failed_contact_check"])
+        target = serializers.CharField()
+
+    hook = Hook()
+
+    class Data(serializers.Serializer):
+        address = PhoneNumberField(country_code="ZA")
+
+    data = Data()

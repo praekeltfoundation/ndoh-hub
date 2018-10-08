@@ -3,13 +3,15 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.test import TestCase
 from unittest import mock
+from urllib.parse import urlencode
 
 
 from registrations.models import Source
 from changes.models import Change
 from changes.signals import psh_validate_implement
 from changes.tasks import (
-    process_whatsapp_unsent_event, process_whatsapp_system_event)
+    process_whatsapp_unsent_event, process_whatsapp_system_event,
+    process_whatsapp_contact_check_fail)
 
 
 class WhatsAppBaseTestCase(TestCase):
@@ -36,6 +38,23 @@ class WhatsAppBaseTestCase(TestCase):
                 'details': {
                     'lang_code': lang
                 }
+            },
+            status=200, match_querystring=True)
+
+    def create_identity_lookup_by_msisdn(
+            self, address="+27820001001", lang="eng_ZA", num_results=1):
+        responses.add(
+            responses.GET,
+            'http://is/api/v1/identities/search/?{}'.format(urlencode({
+                "details__addresses__msisdn": address,
+            })),
+            json={
+                'results': [{
+                    'id': 'test-identity-uuid',
+                    'details': {
+                        'lang_code': lang
+                    },
+                }] * num_results
             },
             status=200, match_querystring=True)
 
@@ -211,3 +230,83 @@ class ProcessWhatsAppSystemEventTaskTests(WhatsAppBaseTestCase):
             responses.calls[0].request.url,
             "http://ms/api/v1/outbound/?vumi_message_id=messageid")
         self.assertFalse(mock_create_outbound.called)
+
+
+class ProcessWhatsAppContactLookupFailTaskTests(WhatsAppBaseTestCase):
+    def setUp(self):
+        post_save.disconnect(
+            receiver=psh_validate_implement, sender=Change)
+
+    def tearDown(self):
+        post_save.connect(
+            receiver=psh_validate_implement, sender=Change)
+
+    @mock.patch('changes.tasks.utils.ms_client.create_outbound')
+    @responses.activate
+    def test_successful_processing(self, mock_create_outbound):
+        """
+        The task should send the correct outbound based on the contact lookup
+        failure hook.
+        """
+        user = User.objects.create_user('test')
+        source = Source.objects.create(user=user)
+        self.create_identity_lookup_by_msisdn(address="+27820001001")
+
+        self.assertEqual(Change.objects.count(), 0)
+
+        process_whatsapp_contact_check_fail(user.pk, "+27820001001")
+
+        [change] = Change.objects.all()
+        self.assertEqual(change.registrant_id, 'test-identity-uuid')
+        self.assertEqual(change.action, 'switch_channel')
+        self.assertEqual(change.data, {
+            'channel': 'sms',
+            'reason': 'whatsapp_contact_check_fail',
+        })
+        self.assertEqual(change.created_by, user)
+        self.assertEqual(change.source, source)
+
+        mock_create_outbound.assert_called_once_with({
+            'to_identity': 'test-identity-uuid',
+            'content':
+                "Oh no! You can't get MomConnect messages on WhatsApp. We'll "
+                "keep sending your MomConnect messages on SMS.",
+            'channel': "JUNE_TEXT",
+            'metadata': {},
+        })
+
+    @mock.patch('changes.tasks.utils.ms_client.create_outbound')
+    @responses.activate
+    def test_sms_language(self, mock_create_outbound):
+        """
+        The outbound SMS should be translated into the user's language
+        """
+        user = User.objects.create_user('test')
+        Source.objects.create(user=user)
+        self.create_identity_lookup_by_msisdn(
+            address="+27820001001", lang="xho_ZA")
+
+        process_whatsapp_contact_check_fail(user.pk, "+27820001001")
+
+        mock_create_outbound.assert_called_once_with({
+            'to_identity': 'test-identity-uuid',
+            'content':
+                "Owu yhini! Awukwazi kufumana imiyalezo ka-MomConnect "
+                "ku-WhatsApp. Siya kuthumelela rhoqo imiyalezo ka-MomConnect "
+                "nge-SMS.",
+            'channel': 'JUNE_TEXT',
+            'metadata': {},
+        })
+
+    @responses.activate
+    def test_no_identity_found(self):
+        """
+        If there's no identity for the given msisdn, the task should exit
+        without taking any actions
+        """
+        user = User.objects.create_user('test')
+        self.create_identity_lookup_by_msisdn(num_results=0)
+
+        process_whatsapp_contact_check_fail(user.pk, "+27820001001")
+
+        self.assertEqual(Change.objects.count(), 0)

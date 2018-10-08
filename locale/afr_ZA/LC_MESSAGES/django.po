@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-08-08 12:35+0200\n"
-"PO-Revision-Date: 2018-10-02 15:45+0200\n"
+"POT-Creation-Date: 2018-10-05 15:50+0200\n"
+"PO-Revision-Date: 2018-10-05 15:27+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: afr_ZA\n"
@@ -18,7 +18,32 @@ msgstr ""
 "X-Generator: Poedit 2.1.1\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: registrations/tasks.py:757
+#: changes/tasks.py:1287
+#, python-format
+msgid ""
+"Sorry but we can't send WhatsApp msgs to this phone. We'll send your "
+"MomConnect msgs on SMS. To stop dial %(optout_ussd)s, for more dial "
+"%(popi_ussd)s (Free)."
+msgstr ""
+"Jammer ons kan nie WhatsApp boodskappe na hd foon stuur nie. MomConnect sal "
+"boodskappe via SMS stuur. Om te stop skakel %(optout_ussd)s vir meer skakel "
+"%(popi_ussd)s."
+
+#: changes/tasks.py:1343
+msgid ""
+"We see that your MomConnect WhatsApp messages are not being delivered. If "
+"you would like to receive your messages over SMS, reply ‘SMS’."
+msgstr ""
+
+#: changes/tasks.py:1404
+msgid ""
+"Oh no! You can't get MomConnect messages on WhatsApp. We'll keep sending "
+"your MomConnect messages on SMS."
+msgstr ""
+"Ag nee! Jy kan nie MomConnect boodskappe via WhatsApp kry nie. Ons sal "
+"aanhou om dit via SMS te stuur."
+
+#: registrations/tasks.py:786
 #, python-format
 msgid ""
 "Welcome to MomConnect! For more services dial %(popi_ussd)s, to stop dial "
@@ -27,11 +52,3 @@ msgstr ""
 "Welkom by MomConnect! Vir meer dienste bel %(popi_ussd)s, om te stop bel "
 "%(optout_ussd)s (gratis). Om na WhatsApp oor te skakel stuur “WA”. Standaard "
 "SMS fooie geld."
-
-msgid ""
-"Sorry, we can't send WhatsApp msgs to this phone. We'll send your MomConnect "
-"msgs on SMS. To stop dial %(optout_ussd)s, for more dial %(popi_ussd)s."
-msgstr ""
-"Jammer ons kan nie WhatsApp boodskappe na hd foon stuur nie. MomConnect sal "
-"boodskappe via SMS stuur. Om te stop skakel %(optout_ussd)s vir meer skakel "
-"%(popi_ussd)s."

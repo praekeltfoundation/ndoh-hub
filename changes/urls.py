@@ -24,4 +24,7 @@ urlpatterns = [
     url(r'^api/v1/whatsapp/system_event/',
         views.ReceiveWhatsAppSystemEvent.as_view(),
         name='whatsapp_system_event'),
+    url(r'^api/v1/message_sender/webhook/',
+        views.SeedMessageSenderHook.as_view(),
+        name='message_sender_webhook'),
 ]

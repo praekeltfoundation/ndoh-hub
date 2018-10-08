@@ -269,3 +269,11 @@ To release a version for production purposes, update the version in setup.py,
 and tag the commit that updates the version to the version that it updates to,
 and then push that tag. A new docker image and tag will be created according to
 the version specified in the git tag.
+
+## Translations
+To update the translation files from the source, run:
+
+    django-admin makemessages -a
+
+You can then use a tool like POEdit to update the PO files with the relevant
+translations
