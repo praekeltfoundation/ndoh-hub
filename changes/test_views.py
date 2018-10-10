@@ -180,9 +180,8 @@ class ValidateSignatureTests(APITestCase):
         self.client.force_authenticate(user=user)
         url = reverse('whatsapp_event')
 
-        header = {'X-Engage-Hook-Signature': 'SECRET'}
-
-        response = self.client.post(url, data={}, headers=header)
+        response = self.client.post(
+            url, data={}, HTTP_X_ENGAGE_HOOK_SIGNATURE="SECRET")
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(
@@ -200,8 +199,7 @@ class ValidateSignatureTests(APITestCase):
         self.client.force_authenticate(user=user)
         url = reverse('whatsapp_event')
 
-        header = {'X-Engage-Hook-Signature':
-                  'Gu7dfV2kfjbT6PJ/J7N7xi4/d+y91Ys9ISMxQRxhac8='}
+        signature = 'Gu7dfV2kfjbT6PJ/J7N7xi4/d+y91Ys9ISMxQRxhac8='
 
         errors = [
             {"code": 500, "title": "structure unavailable: Client could not display highly structured message"}  # noqa
@@ -217,7 +215,7 @@ class ValidateSignatureTests(APITestCase):
                     "timestamp": "1538388353"
                 }
             ]
-        }, format="json", headers=header)
+        }, format="json", HTTP_X_ENGAGE_HOOK_SIGNATURE=signature)
 
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         task.delay.assert_called_once_with(

@@ -213,8 +213,7 @@ class ReceiveWhatsAppBase(generics.GenericAPIView):
 
     def validate_signature(self, request):
         secret = settings.ENGAGE_HMAC_SECRET
-        signature = request.META.get(
-            "headers", {}).get("X-Engage-Hook-Signature")
+        signature = request.META.get("HTTP_X_ENGAGE_HOOK_SIGNATURE")
 
         if not signature:
             raise AuthenticationFailed(
