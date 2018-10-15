@@ -2,6 +2,7 @@ from celery import chain
 from uuid import UUID
 from django.core.management import BaseCommand, CommandError
 from django.utils.dateparse import parse_datetime
+from django.utils import timezone
 
 from changes.tasks import (
     restore_personally_identifiable_fields,
@@ -45,6 +46,8 @@ class Command(BaseCommand):
         changes = Change.objects.filter(validated=True)
 
         if since and until:
+            since = timezone.make_aware(since)
+            until = timezone.make_aware(until)
             changes = changes.filter(
                 created_at__gte=since,
                 created_at__lte=until)

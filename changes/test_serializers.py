@@ -98,7 +98,9 @@ class ReceiveWhatsAppEventSerializerTests(TestCase):
         self.assertFalse(serializer.is_valid())
         self.assertEqual(serializer.errors, {
             'statuses': {
-                'id': ['This field is required.']
+                0: {
+                    'id': ['This field is required.']
+                }
             }
         })
 
@@ -143,6 +145,8 @@ class ReceiveWhatsAppSystemEventSerializerTests(TestCase):
         self.assertFalse(serializer.is_valid())
         self.assertEqual(serializer.errors, {
             'events': {
-                'message_id': ['This field is required.']
+                0: {
+                    'message_id': ['This field is required.']
+                }
             }
         })

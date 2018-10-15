@@ -51,10 +51,10 @@ class ChangePost(mixins.CreateModelMixin, generics.GenericAPIView):
 
 class ChangeFilter(filters.FilterSet):
     """Filter for changes created, using ISO 8601 formatted dates"""
-    created_before = django_filters.IsoDateTimeFilter(name="created_at",
-                                                      lookup_expr="lte")
-    created_after = django_filters.IsoDateTimeFilter(name="created_at",
-                                                     lookup_expr="gte")
+    created_before = django_filters.IsoDateTimeFilter(
+        field_name="created_at", lookup_expr="lte")
+    created_after = django_filters.IsoDateTimeFilter(
+        field_name="created_at", lookup_expr="gte")
 
     class Meta:
         model = Change
@@ -70,7 +70,7 @@ class ChangeGetViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticated,)
     queryset = Change.objects.all()
     serializer_class = ChangeSerializer
-    filter_class = ChangeFilter
+    filterset_class = ChangeFilter
     pagination_class = CreatedAtCursorPagination
 
 
@@ -110,6 +110,7 @@ def get_or_create_source(request):
 
 class ReceiveAdminOptout(generics.GenericAPIView):
     permission_classes = (IsAuthenticated,)
+    serializer_class = AdminOptoutSerializer
 
     def post(self, request, *args, **kwargs):
 
@@ -167,6 +168,7 @@ class ReceiveAdminOptout(generics.GenericAPIView):
 
 class ReceiveAdminChange(generics.CreateAPIView):
     permission_classes = (IsAuthenticated,)
+    serializer_class = AdminChangeSerializer
 
     def post(self, request, *args, **kwargs):
 

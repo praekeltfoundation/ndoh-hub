@@ -4612,7 +4612,6 @@ class TestRevalidateRegistrationsCommand(AuthenticatedAPITestCase):
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "momconnect_prebirth.patient.1")
         utils_tests.mock_get_schedule(schedule_id)
-        utils_tests.mock_get_identity_by_id(registrant_uuid)
         utils_tests.mock_patch_identity(registrant_uuid)
         utils_tests.mock_get_active_subscriptions(registrant_uuid, count=0)
 
@@ -4668,7 +4667,6 @@ class TestRevalidateRegistrationsCommand(AuthenticatedAPITestCase):
         schedule_id = utils_tests.mock_get_messageset_by_shortname(
             "momconnect_prebirth.patient.1")
         utils_tests.mock_get_schedule(schedule_id)
-        utils_tests.mock_get_identity_by_id(registrant_uuid)
         utils_tests.mock_patch_identity(registrant_uuid)
         utils_tests.mock_get_active_subscriptions(registrant_uuid, count=0)
 

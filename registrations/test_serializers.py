@@ -1,8 +1,8 @@
 import datetime
 from django.contrib.auth.models import User
 from django.test import TestCase
+from django.utils import timezone
 from unittest import mock
-import pytz
 from rest_framework.serializers import ValidationError
 
 from registrations.models import Registration, Source
@@ -96,7 +96,7 @@ class JembiAppRegistrationSerializerTests(TestCase):
             'consent': True,
             'faccode': '123456',
             'mha': 1,
-            'created': datetime.datetime(2016, 1, 1, 0, 0, 0, 0, pytz.UTC),
+            'created': datetime.datetime(2016, 1, 1, 0, 0, 0, 0, timezone.utc),
             'mom_whatsapp': False,
             'mom_pmtct': False,
             'mom_opt_in': False,
