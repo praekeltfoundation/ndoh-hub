@@ -1,31 +1,31 @@
-from functools import partial
 import json
 import random
 import re
 import uuid
-
-try:
-    from urlparse import urljoin
-except ImportError:
-    from urllib.parse import urljoin
 from datetime import datetime
+from functools import partial
 
 import requests
-from requests.exceptions import HTTPError, ConnectionError
-
 from asgiref.sync import async_to_sync
-from django.conf import settings
-from django.utils import translation
 from celery import chain
 from celery.task import Task
 from celery.utils.log import get_task_logger
 from channels.layers import get_channel_layer
+from django.conf import settings
+from django.utils import translation
+from requests.exceptions import ConnectionError, HTTPError
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.service_rating import ServiceRatingApiClient
 
 from ndoh_hub import utils
 from ndoh_hub.celery import app
+
 from .models import Registration
+
+try:
+    from urlparse import urljoin
+except ImportError:
+    from urllib.parse import urljoin
 
 
 is_client = IdentityStoreApiClient(

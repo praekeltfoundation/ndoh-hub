@@ -1,11 +1,12 @@
 import datetime
-from django.contrib.auth.models import Permission
-from django.urls import reverse
-from django.utils import timezone
 import json
 from unittest import mock
 
-from registrations.models import Registration, PositionTracker
+from django.contrib.auth.models import Permission
+from django.urls import reverse
+from django.utils import timezone
+
+from registrations.models import PositionTracker, Registration
 from registrations.serializers import RegistrationSerializer
 from registrations.tests import AuthenticatedAPITestCase
 

@@ -1,10 +1,9 @@
 from os import environ
 
 from django.core.management.base import BaseCommand, CommandError
+from seed_services_client import StageBasedMessagingApiClient
 
 from registrations.models import SubscriptionRequest
-
-from seed_services_client import StageBasedMessagingApiClient
 
 from ._utils import validate_and_return_url
 

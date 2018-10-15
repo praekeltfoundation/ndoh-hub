@@ -1,19 +1,19 @@
-from django.contrib.auth.models import User
-from django.db.models.signals import post_save
-from django.test import TestCase
 import json
 from unittest import mock
 from uuid import uuid4
-import responses
 
+import responses
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.test import TestCase
+
+from ndoh_hub import utils_tests
 from registrations.models import Registration, Source, SubscriptionRequest
 from registrations.serializers import RegistrationSerializer
 from registrations.signals import psh_fire_created_metric, psh_validate_subscribe
-from registrations.tasks import (
-    validate_subscribe_jembi_app_registration as task,
-    validate_subscribe,
-)
-from ndoh_hub import utils_tests
+from registrations.tasks import validate_subscribe
+from registrations.tasks import validate_subscribe_jembi_app_registration as task
+
 from .tests import AuthenticatedAPITestCase
 
 

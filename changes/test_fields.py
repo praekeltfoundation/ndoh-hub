@@ -1,9 +1,9 @@
 from unittest import TestCase
 
+import phonenumbers
 from rest_framework.serializers import ValidationError
 
 from changes.fields import PhoneNumberField
-import phonenumbers
 
 
 class PhoneNumberFieldTests(TestCase):

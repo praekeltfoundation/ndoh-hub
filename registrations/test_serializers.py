@@ -1,12 +1,13 @@
 import datetime
+from unittest import mock
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import timezone
-from unittest import mock
 from rest_framework.serializers import ValidationError
 
 from registrations.models import Registration, Source
-from registrations.serializers import MSISDNField, JembiAppRegistrationSerializer
+from registrations.serializers import JembiAppRegistrationSerializer, MSISDNField
 
 
 def override_get_today():

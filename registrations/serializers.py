@@ -1,6 +1,5 @@
-from django.contrib.auth.models import User, Group
-from .models import Source, Registration
 import phonenumbers
+from django.contrib.auth.models import Group, User
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from rest_hooks.models import Hook
@@ -8,6 +7,8 @@ from rest_hooks.models import Hook
 from ndoh_hub import utils
 from registrations import validators
 from registrations.models import PositionTracker
+
+from .models import Registration, Source
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):

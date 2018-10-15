@@ -1,8 +1,9 @@
 from uuid import UUID
+
 from celery import chain
 from django.core.management import BaseCommand, CommandError
-from django.utils.dateparse import parse_datetime
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 
 from registrations.tasks import (
     add_personally_identifiable_fields,

@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 
 from registrations.models import Registration
-from registrations.tasks import validate_subscribe, add_personally_identifiable_fields
+from registrations.tasks import add_personally_identifiable_fields, validate_subscribe
 
 
 class Command(BaseCommand):

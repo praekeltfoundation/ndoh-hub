@@ -1,10 +1,10 @@
-from os import environ
 import logging
+from os import environ
 
 from django.core.management.base import BaseCommand, CommandError
-from registrations.models import SubscriptionRequest
 
 from ndoh_hub.utils import sbm_client
+from registrations.models import SubscriptionRequest
 
 
 class Command(BaseCommand):

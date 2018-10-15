@@ -13,9 +13,9 @@ from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import DjangoModelPermissions, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from seed_services_client.stage_based_messaging import (
+from seed_services_client.stage_based_messaging import (  # noqa
     StageBasedMessagingApiClient,
-)  # noqa
+)
 
 from changes import tasks
 from ndoh_hub.utils import TokenAuthQueryString

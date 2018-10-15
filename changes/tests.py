@@ -1,32 +1,32 @@
 import datetime
 import json
+
 import responses
+from django.contrib.auth.models import User
+from django.core.management import call_command
+from django.db.models.signals import post_save
+from django.test import TestCase
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+from rest_framework.test import APIClient
+from rest_hooks.models import model_saved
+
+from ndoh_hub import utils, utils_tests
+from registrations.models import Registration, Source, SubscriptionRequest
+from registrations.signals import psh_fire_created_metric, psh_validate_subscribe
+
+from .models import Change
+from .signals import psh_validate_implement
+from .tasks import (
+    remove_personally_identifiable_fields,
+    restore_personally_identifiable_fields,
+    validate_implement,
+)
 
 try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
-
-from django.test import TestCase
-from django.contrib.auth.models import User
-from django.core.management import call_command
-from django.db.models.signals import post_save
-
-from rest_framework import status
-from rest_framework.test import APIClient
-from rest_framework.authtoken.models import Token
-from rest_hooks.models import model_saved
-
-from ndoh_hub import utils, utils_tests
-from .models import Change
-from .signals import psh_validate_implement
-from .tasks import (
-    validate_implement,
-    remove_personally_identifiable_fields,
-    restore_personally_identifiable_fields,
-)
-from registrations.models import Source, Registration, SubscriptionRequest
-from registrations.signals import psh_validate_subscribe, psh_fire_created_metric
 
 
 def override_get_today():

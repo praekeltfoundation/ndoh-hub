@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 
-from registrations.models import SubscriptionRequest
 from ndoh_hub import utils
+from registrations.models import SubscriptionRequest
 
 
 class Command(BaseCommand):

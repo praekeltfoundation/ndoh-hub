@@ -1,6 +1,7 @@
 import pytest
-from seaworthy.definitions import ContainerDefinition
+
 from seaworthy.containers.postgresql import PostgreSQLContainer
+from seaworthy.definitions import ContainerDefinition
 
 HUB_IMAGE = pytest.config.getoption("--hub-image")
 

@@ -1,11 +1,11 @@
 import json
-from django.contrib.auth.models import User, Permission
-from django.urls import reverse
-from rest_framework import status
-from rest_framework.authtoken.models import Token
 from unittest import mock
 from urllib.parse import urlencode
 
+from django.contrib.auth.models import Permission, User
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
 

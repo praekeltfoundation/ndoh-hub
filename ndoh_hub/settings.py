@@ -8,13 +8,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.9/ref/settings/
 """
 
-from kombu import Exchange, Queue
-
-import os
-import dj_database_url
 import mimetypes
+import os
 
+import dj_database_url
 import django.conf.locale
+from kombu import Exchange, Queue
 
 # Support SVG on admin
 mimetypes.add_type("image/svg+xml", ".svg", True)

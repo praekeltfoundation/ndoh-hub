@@ -1,7 +1,7 @@
 from django.contrib import admin
 
-from .tasks import remove_personally_identifiable_fields
 from .models import Change
+from .tasks import remove_personally_identifiable_fields
 
 
 class ChangeAdmin(admin.ModelAdmin):

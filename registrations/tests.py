@@ -1,40 +1,41 @@
 ﻿import json
-import uuid
 import datetime
+import uuid
 from datetime import timedelta
-import responses
+from unittest import mock
+from urllib.parse import urlparse
+
 import requests
+import responses
+from django.contrib.auth.models import Group, User
+from django.core import management
+from django.core.management import call_command
+from django.db.models.signals import post_save
+from django.test import TestCase, override_settings
+from django.utils import timezone
+from requests_testadapter import TestAdapter, TestSession
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+from rest_framework.test import APIClient
+from rest_hooks.models import model_saved
+
+from ndoh_hub import utils, utils_tests
+
+from .models import PositionTracker, Registration, Source, SubscriptionRequest
+from .signals import psh_fire_created_metric, psh_validate_subscribe
+from .tasks import (
+    PushRegistrationToJembi,
+    add_personally_identifiable_fields,
+    get_risk_status,
+    push_nurse_registration_to_jembi,
+    remove_personally_identifiable_fields,
+    validate_subscribe,
+)
 
 try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
-from urllib.parse import urlparse
-from unittest import mock
-
-from django.contrib.auth.models import User, Group
-from django.core.management import call_command
-from django.core import management
-from django.test import TestCase, override_settings
-from django.db.models.signals import post_save
-from django.utils import timezone
-from rest_framework import status
-from rest_framework.test import APIClient
-from rest_framework.authtoken.models import Token
-from rest_hooks.models import model_saved
-from requests_testadapter import TestAdapter, TestSession
-
-from .models import PositionTracker, Source, Registration, SubscriptionRequest
-from .signals import psh_validate_subscribe, psh_fire_created_metric
-from .tasks import (
-    validate_subscribe,
-    get_risk_status,
-    remove_personally_identifiable_fields,
-    add_personally_identifiable_fields,
-    push_nurse_registration_to_jembi,
-)
-from .tasks import PushRegistrationToJembi
-from ndoh_hub import utils, utils_tests
 
 
 def override_get_today():

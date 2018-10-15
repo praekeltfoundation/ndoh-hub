@@ -1,20 +1,18 @@
-from __future__ import division
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 import datetime
 import json
-import six
 
+import six
 from celery.task import Task
 from django.conf import settings
 from rest_framework.authentication import TokenAuthentication
-from seed_services_client.metrics import MetricsApiClient
-from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.message_sender import MessageSenderApiClient
+from seed_services_client.metrics import MetricsApiClient
+from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
 
 from registrations.models import PositionTracker
-
 
 ID_TYPES = ["sa_id", "passport", "none"]
 PASSPORT_ORIGINS = [

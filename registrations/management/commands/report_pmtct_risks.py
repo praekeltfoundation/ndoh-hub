@@ -1,20 +1,19 @@
 import csv
 from collections import defaultdict
 
+from django.core.management.base import BaseCommand, CommandError
+from django.core.validators import URLValidator
+from django.db.models import Q
+from seed_services_client import HubApiClient, IdentityStoreApiClient
+
+from registrations.models import Registration
+from registrations.tasks import add_personally_identifiable_fields, get_risk_status
+
 # NOTE: Python 3 compatibility
 try:
     from urlparse import urlparse, parse_qs
 except ImportError:
     from urllib.parse import urlparse, parse_qs
-
-from django.core.management.base import BaseCommand, CommandError
-from django.core.validators import URLValidator
-from django.db.models import Q
-
-from registrations.models import Registration
-from registrations.tasks import add_personally_identifiable_fields, get_risk_status
-
-from seed_services_client import HubApiClient, IdentityStoreApiClient
 
 
 def mk_validator(django_validator):

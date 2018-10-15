@@ -1,8 +1,9 @@
-from io import StringIO
 import json
+from io import StringIO
+
+import responses
 from django.core.management import call_command
 from django.test import TestCase
-import responses
 
 from ndoh_hub import utils_tests
 from registrations.models import SubscriptionRequest

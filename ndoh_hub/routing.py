@@ -1,8 +1,9 @@
+from urllib.parse import parse_qs
+
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.conf.urls import url
 from django.utils.functional import SimpleLazyObject
 from rest_framework.authtoken.models import Token
-from urllib.parse import parse_qs
 
 import registrations.consumers as registrations
 

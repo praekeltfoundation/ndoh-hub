@@ -1,7 +1,7 @@
+import responses
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
-import responses
 
 from ndoh_hub import utils_tests
 from registrations.management.commands.service_info_subscriptions import Command

@@ -1,14 +1,15 @@
 import datetime
+from unittest import mock
+
 import pytest
 from channels.db import database_sync_to_async
 from channels.testing import WebsocketCommunicator
 from django.contrib.auth.models import User
-from unittest import mock
 
+from ndoh_hub import utils
 from registrations import views
 from registrations.consumers import JembiAppRegistrationConsumer
 from registrations.models import Registration, Source
-from ndoh_hub import utils
 
 
 @database_sync_to_async

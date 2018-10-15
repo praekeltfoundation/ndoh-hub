@@ -1,8 +1,7 @@
 import csv
 
-from sqlalchemy import create_engine, MetaData
+from sqlalchemy import MetaData, create_engine
 from sqlalchemy.sql import select
-
 
 # This is an example script and should not be used directly.
 

@@ -1,7 +1,8 @@
+from urllib.parse import urlencode
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 from rest_framework.authtoken.models import Token
-from urllib.parse import urlencode
 
 from ndoh_hub.routing import TokenAuthMiddleware
 

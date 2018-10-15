@@ -1,19 +1,19 @@
+from unittest import mock
+from urllib.parse import urlencode
+
 import responses
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.test import TestCase
-from unittest import mock
-from urllib.parse import urlencode
 
-
-from registrations.models import Source
 from changes.models import Change
 from changes.signals import psh_validate_implement
 from changes.tasks import (
-    process_whatsapp_unsent_event,
-    process_whatsapp_system_event,
     process_whatsapp_contact_check_fail,
+    process_whatsapp_system_event,
+    process_whatsapp_unsent_event,
 )
+from registrations.models import Source
 
 
 class WhatsAppBaseTestCase(TestCase):

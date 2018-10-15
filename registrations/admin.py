@@ -1,5 +1,6 @@
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
+
 from .models import PositionTracker, Registration, Source, SubscriptionRequest
 from .tasks import remove_personally_identifiable_fields
 
