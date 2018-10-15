@@ -13,17 +13,22 @@ from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import DjangoModelPermissions, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from seed_services_client.stage_based_messaging import \
-    StageBasedMessagingApiClient  # noqa
+from seed_services_client.stage_based_messaging import (
+    StageBasedMessagingApiClient,
+)  # noqa
 
 from changes import tasks
 from ndoh_hub.utils import TokenAuthQueryString
 
 from .models import Change, Source
-from .serializers import (AdminChangeSerializer, AdminOptoutSerializer,
-                          ChangeSerializer, ReceiveWhatsAppEventSerializer,
-                          ReceiveWhatsAppSystemEventSerializer,
-                          SeedMessageSenderHookSerializer)
+from .serializers import (
+    AdminChangeSerializer,
+    AdminOptoutSerializer,
+    ChangeSerializer,
+    ReceiveWhatsAppEventSerializer,
+    ReceiveWhatsAppSystemEventSerializer,
+    SeedMessageSenderHookSerializer,
+)
 
 
 class CreatedAtCursorPagination(CursorPagination):
@@ -42,8 +47,7 @@ class ChangePost(mixins.CreateModelMixin, generics.GenericAPIView):
         return self.create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user,
-                        updated_by=self.request.user)
+        serializer.save(created_by=self.request.user, updated_by=self.request.user)
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
@@ -51,22 +55,32 @@ class ChangePost(mixins.CreateModelMixin, generics.GenericAPIView):
 
 class ChangeFilter(filters.FilterSet):
     """Filter for changes created, using ISO 8601 formatted dates"""
+
     created_before = django_filters.IsoDateTimeFilter(
-        field_name="created_at", lookup_expr="lte")
+        field_name="created_at", lookup_expr="lte"
+    )
     created_after = django_filters.IsoDateTimeFilter(
-        field_name="created_at", lookup_expr="gte")
+        field_name="created_at", lookup_expr="gte"
+    )
 
     class Meta:
         model = Change
-        ('action', 'registrant_id', 'validated', 'source', 'created_at')
-        fields = ['action', 'registrant_id', 'validated', 'source',
-                  'created_before', 'created_after']
+        ("action", "registrant_id", "validated", "source", "created_at")
+        fields = [
+            "action",
+            "registrant_id",
+            "validated",
+            "source",
+            "created_before",
+            "created_after",
+        ]
 
 
 class ChangeGetViewSet(viewsets.ReadOnlyModelViewSet):
     """
     API endpoint that allows Changes to be viewed.
     """
+
     permission_classes = (IsAuthenticated,)
     queryset = Change.objects.all()
     serializer_class = ChangeSerializer
@@ -78,22 +92,25 @@ class OptOutInactiveIdentity(APIView):
     """
     Creates an Opt-out Change for an identity we can't send messages to
     """
+
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
         try:
             # The hooks send the request data as {"hook":{}, "data":{}}
-            data = request.data['data']
+            data = request.data["data"]
         except KeyError:
             raise ValidationError('"data" must be supplied')
-        identity_id = data.get('identity_id', None)
+        identity_id = data.get("identity_id", None)
         if identity_id is None or identity_id == "":
-            raise ValidationError(
-                '"identity_id" must be supplied')
+            raise ValidationError('"identity_id" must be supplied')
         source = Source.objects.get(user=request.user)
-        Change.objects.create(source=source, registrant_id=identity_id,
-                              action='momconnect_nonloss_optout',
-                              data={'reason': 'sms_failure'})
+        Change.objects.create(
+            source=source,
+            registrant_id=identity_id,
+            action="momconnect_nonloss_optout",
+            data={"reason": "sms_failure"},
+        )
         return Response(status=status.HTTP_201_CREATED)
 
 
@@ -102,9 +119,9 @@ def get_or_create_source(request):
         user=request.user,
         defaults={
             "authority": "advisor",
-            "name": (request.user.get_full_name() or
-                     request.user.username)
-            })
+            "name": (request.user.get_full_name() or request.user.username),
+        },
+    )
     return source
 
 
@@ -118,16 +135,15 @@ class ReceiveAdminOptout(generics.GenericAPIView):
         if admin_serializer.is_valid():
             identity_id = admin_serializer.validated_data["registrant_id"]
         else:
-            return Response(admin_serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(admin_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         sbm_client = StageBasedMessagingApiClient(
             api_url=settings.STAGE_BASED_MESSAGING_URL,
-            auth_token=settings.STAGE_BASED_MESSAGING_TOKEN
+            auth_token=settings.STAGE_BASED_MESSAGING_TOKEN,
         )
 
         active_subs = sbm_client.get_subscriptions(
-            {'identity': identity_id, 'active': True}
+            {"identity": identity_id, "active": True}
         )["results"]
 
         actions = set()
@@ -159,11 +175,9 @@ class ReceiveAdminOptout(generics.GenericAPIView):
         if serializer.is_valid():
             serializer.save()
 
-            return Response(data=serializer.data,
-                            status=status.HTTP_201_CREATED)
+            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
         else:
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ReceiveAdminChange(generics.CreateAPIView):
@@ -176,36 +190,31 @@ class ReceiveAdminChange(generics.CreateAPIView):
         if admin_serializer.is_valid():
             data = admin_serializer.validated_data
         else:
-            return Response(admin_serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(admin_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         source = get_or_create_source(self.request)
 
         change = {
-            "registrant_id": str(data['registrant_id']),
+            "registrant_id": str(data["registrant_id"]),
             "action": "admin_change_subscription",
-            "data": {
-                "subscription": str(data["subscription"])
-            },
+            "data": {"subscription": str(data["subscription"])},
             "source": source.id,
         }
 
-        if data.get('messageset'):
-            change['data']['messageset'] = data['messageset']
+        if data.get("messageset"):
+            change["data"]["messageset"] = data["messageset"]
 
-        if data.get('language'):
-            change['data']['language'] = data['language']
+        if data.get("language"):
+            change["data"]["language"] = data["language"]
 
         serializer = ChangeSerializer(data=change)
 
         if serializer.is_valid():
             serializer.save()
 
-            return Response(data=serializer.data,
-                            status=status.HTTP_201_CREATED)
+            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
         else:
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ReceiveWhatsAppBase(generics.GenericAPIView):
@@ -218,8 +227,7 @@ class ReceiveWhatsAppBase(generics.GenericAPIView):
         signature = request.META.get("HTTP_X_ENGAGE_HOOK_SIGNATURE")
 
         if not signature:
-            raise AuthenticationFailed(
-                "X-Engage-Hook-Signature header required")
+            raise AuthenticationFailed("X-Engage-Hook-Signature header required")
 
         h = hmac.new(secret.encode(), request.body, sha256)
 
@@ -239,9 +247,7 @@ class ReceiveWhatsAppEvent(ReceiveWhatsAppBase):
 
         for item in serializer.validated_data["statuses"]:
             tasks.process_whatsapp_unsent_event.delay(
-                item["id"],
-                request.user.pk,
-                item["errors"]
+                item["id"], request.user.pk, item["errors"]
             )
 
         return Response(status=status.HTTP_202_ACCEPTED)
@@ -257,8 +263,7 @@ class ReceiveWhatsAppSystemEvent(ReceiveWhatsAppBase):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         for item in serializer.validated_data["events"]:
-            tasks.process_whatsapp_system_event.delay(item["message_id"],
-                                                      item["type"])
+            tasks.process_whatsapp_system_event.delay(item["message_id"], item["type"])
 
         return Response(status=status.HTTP_202_ACCEPTED)
 
@@ -270,6 +275,7 @@ class SeedMessageSenderHook(generics.GenericAPIView):
 
     Requires token auth in the querystring "token" field.
     """
+
     serializer_class = SeedMessageSenderHookSerializer
     authentication_classes = (TokenAuthQueryString,)
 
@@ -277,9 +283,6 @@ class SeedMessageSenderHook(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         msisdn = serializer.validated_data["data"]["address"]
-        msisdn = phonenumbers.format_number(
-            msisdn, phonenumbers.PhoneNumberFormat.E164)
-        tasks.process_whatsapp_contact_check_fail.delay(
-            str(request.user.pk), msisdn
-        )
+        msisdn = phonenumbers.format_number(msisdn, phonenumbers.PhoneNumberFormat.E164)
+        tasks.process_whatsapp_contact_check_fail.delay(str(request.user.pk), msisdn)
         return Response(status=status.HTTP_202_ACCEPTED)

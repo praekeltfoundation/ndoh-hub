@@ -20,6 +20,7 @@ matrix:
         - py.test
         - createdb ndoh_hub
         - python manage.py makemigrations registrations changes --dry-run | grep 'No changes detected' || (echo 'There are changes which require migrations.' && exit 1)
+        - black --check ndoh_hub changes registrations seaworthy tools setup.py
 
     # Create docker image on merge to develop
     - sudo: required

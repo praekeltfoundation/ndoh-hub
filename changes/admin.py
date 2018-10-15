@@ -5,11 +5,10 @@ from .models import Change
 
 
 class ChangeAdmin(admin.ModelAdmin):
-    list_display = [
-        "id", "registrant_id", "action", "validated"]
+    list_display = ["id", "registrant_id", "action", "validated"]
     list_filter = ["action", "validated"]
     search_fields = ["registrant_id"]
-    actions = ['remove_personal_information']
+    actions = ["remove_personal_information"]
 
     def remove_personal_information(modeladmin, request, queryset):
         for q in queryset.iterator():

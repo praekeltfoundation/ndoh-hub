@@ -7,19 +7,27 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('registrations', '0014_auto_20180503_1418'),
-    ]
+    dependencies = [("registrations", "0014_auto_20180503_1418")]
 
     operations = [
         migrations.AlterField(
-            model_name='registration',
-            name='created_by',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='registrations_created', to=settings.AUTH_USER_MODEL),
+            model_name="registration",
+            name="created_by",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="registrations_created",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
-            model_name='registration',
-            name='updated_by',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='registrations_updated', to=settings.AUTH_USER_MODEL),
+            model_name="registration",
+            name="updated_by",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="registrations_updated",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

@@ -15,23 +15,75 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('registrations', '0004_auto_20160722_1019'),
+        ("registrations", "0004_auto_20160722_1019"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Change',
+            name="Change",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('registrant_id', models.CharField(max_length=36)),
-                ('action', models.CharField(choices=[('pmtct_loss_switch', 'Change to loss messaging via pmtct app'), ('pmtct_loss_optout', 'Optout due to loss via pmtct app'), ('pmtct_nonloss_optout', 'Optout not due to loss via pmtct app')], max_length=255)),
-                ('data', django.contrib.postgres.fields.jsonb.JSONField(blank=True, null=True)),
-                ('validated', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('created_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='changes_created', to=settings.AUTH_USER_MODEL)),
-                ('source', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='changes', to='registrations.Source')),
-                ('updated_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='changes_updated', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("registrant_id", models.CharField(max_length=36)),
+                (
+                    "action",
+                    models.CharField(
+                        choices=[
+                            (
+                                "pmtct_loss_switch",
+                                "Change to loss messaging via pmtct app",
+                            ),
+                            ("pmtct_loss_optout", "Optout due to loss via pmtct app"),
+                            (
+                                "pmtct_nonloss_optout",
+                                "Optout not due to loss via pmtct app",
+                            ),
+                        ],
+                        max_length=255,
+                    ),
+                ),
+                (
+                    "data",
+                    django.contrib.postgres.fields.jsonb.JSONField(
+                        blank=True, null=True
+                    ),
+                ),
+                ("validated", models.BooleanField(default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="changes_created",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "source",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="changes",
+                        to="registrations.Source",
+                    ),
+                ),
+                (
+                    "updated_by",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="changes_updated",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
-        ),
+        )
     ]

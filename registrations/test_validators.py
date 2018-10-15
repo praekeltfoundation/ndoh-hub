@@ -11,7 +11,7 @@ def override_get_today():
 
 
 class ValidatorsTests(TestCase):
-    @mock.patch('ndoh_hub.utils.get_today', override_get_today)
+    @mock.patch("ndoh_hub.utils.get_today", override_get_today)
     def test_invalid_edd(self):
         """
         If the EDD is greater than 43 weeks from todays date, a validation
@@ -19,8 +19,9 @@ class ValidatorsTests(TestCase):
         """
         self.assertRaisesMessage(
             ValidationError,
-            'Must be in the future, but less than 43 weeks away',
-            validators.edd, datetime.date(2016, 12, 1)
+            "Must be in the future, but less than 43 weeks away",
+            validators.edd,
+            datetime.date(2016, 12, 1),
         )
 
     def test_invalid_consent(self):
@@ -29,8 +30,9 @@ class ValidatorsTests(TestCase):
         """
         self.assertRaisesMessage(
             ValidationError,
-            'Mother must consent for registration',
-            validators.consent, False
+            "Mother must consent for registration",
+            validators.consent,
+            False,
         )
 
     def test_invalid_sa_id_no(self):
@@ -38,9 +40,7 @@ class ValidatorsTests(TestCase):
         If the SA ID number isn't valid, it should raise a validation error
         """
         self.assertRaisesMessage(
-            ValidationError,
-            'Invalid SA ID number',
-            validators.sa_id_no, '123'
+            ValidationError, "Invalid SA ID number", validators.sa_id_no, "123"
         )
 
     def test_invalid_passport_no(self):
@@ -48,7 +48,5 @@ class ValidatorsTests(TestCase):
         If the passport number is invalid, it should raise a validation error
         """
         self.assertRaisesMessage(
-            ValidationError,
-            'Invalid passport number',
-            validators.passport_no, ''
+            ValidationError, "Invalid passport number", validators.passport_no, ""
         )

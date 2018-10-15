@@ -6,10 +6,7 @@ from urllib.parse import urlencode
 # Mocks used in testing
 def mock_get_identity_by_id(identity_id, details={}):
 
-    default_details = {
-        "foo": "bar",
-        "lang_code": "afr_ZA"
-    }
+    default_details = {"foo": "bar", "lang_code": "afr_ZA"}
     default_details.update(details)
 
     identity = {
@@ -21,74 +18,82 @@ def mock_get_identity_by_id(identity_id, details={}):
         "created_at": "2016-03-31T09:28:29.506591Z",
         "created_by": None,
         "updated_at": "2016-08-17T09:44:31.812532Z",
-        "updated_by": 1
+        "updated_by": 1,
     }
 
     responses.add(
         responses.GET,
-        'http://is/api/v1/identities/%s/' % identity_id,
+        "http://is/api/v1/identities/%s/" % identity_id,
         json=identity,
-        status=200, content_type='application/json'
+        status=200,
+        content_type="application/json",
     )
 
 
 def mock_get_nonexistant_identity_by_id(identity_id):
     responses.add(
         responses.GET,
-        'http://is/api/v1/identities/%s/' % identity_id,
-        json={'detail': 'Not found.'},
-        status=404, content_type='application/json'
+        "http://is/api/v1/identities/%s/" % identity_id,
+        json={"detail": "Not found."},
+        status=404,
+        content_type="application/json",
     )
 
 
-def mock_get_identity_by_msisdn(msisdn, identity_id='identity-uuid', num=1):
+def mock_get_identity_by_msisdn(msisdn, identity_id="identity-uuid", num=1):
     """
     Mocks the request to the identity store to get identities by msisdn.
     """
-    response = {'results': [{
-        "id": identity_id,
-        "version": 1,
-        "details": {'addresses': {'msisdn': {msisdn: {}}}},
-        "communicate_through": None,
-        "operator": None,
-        "created_at": "2016-03-31T09:28:29.506591Z",
-        "created_by": None,
-        "updated_at": "2016-08-17T09:44:31.812532Z",
-    }] * num}
+    response = {
+        "results": [
+            {
+                "id": identity_id,
+                "version": 1,
+                "details": {"addresses": {"msisdn": {msisdn: {}}}},
+                "communicate_through": None,
+                "operator": None,
+                "created_at": "2016-03-31T09:28:29.506591Z",
+                "created_by": None,
+                "updated_at": "2016-08-17T09:44:31.812532Z",
+            }
+        ]
+        * num
+    }
 
     responses.add(
         responses.GET,
-        'http://is/api/v1/identities/search/?%s' % urlencode({
-            'details__addresses__msisdn': msisdn}),
-        json=response, status=200, content_type='application/json',
-        match_querystring=True)
+        "http://is/api/v1/identities/search/?%s"
+        % urlencode({"details__addresses__msisdn": msisdn}),
+        json=response,
+        status=200,
+        content_type="application/json",
+        match_querystring=True,
+    )
 
 
 def mock_patch_identity(identity_id):
     patched_identity = {
         "id": identity_id,
         "version": 1,
-        "details": {
-            "foo": "bar",
-            "risk": "high"
-        },
+        "details": {"foo": "bar", "risk": "high"},
         "communicate_through": None,
         "operator": None,
         "created_at": "2016-03-31T09:28:29.506591Z",
         "created_by": None,
         "updated_at": "2016-08-17T09:44:31.812532Z",
-        "updated_by": 1
+        "updated_by": 1,
     }
 
     responses.add(
         responses.PATCH,
-        'http://is/api/v1/identities/%s/' % identity_id,
+        "http://is/api/v1/identities/%s/" % identity_id,
         json=patched_identity,
-        status=200, content_type='application/json'
+        status=200,
+        content_type="application/json",
     )
 
 
-def mock_create_identity(identity_id='identity-uuid', details={}):
+def mock_create_identity(identity_id="identity-uuid", details={}):
     identity = {
         "id": identity_id,
         "version": 1,
@@ -98,12 +103,15 @@ def mock_create_identity(identity_id='identity-uuid', details={}):
         "created_at": "2016-03-31T09:28:29.506591Z",
         "created_by": None,
         "updated_at": "2016-08-17T09:44:31.812532Z",
-        "updated_by": 1
+        "updated_by": 1,
     }
     responses.add(
         responses.POST,
-        'http://is/api/v1/identities/', json=identity, status=200,
-        content_type='application_json')
+        "http://is/api/v1/identities/",
+        json=identity,
+        status=200,
+        content_type="application_json",
+    )
 
 
 def mock_get_messageset_by_shortname(short_name):
@@ -177,18 +185,21 @@ def mock_get_messageset_by_shortname(short_name):
 
     responses.add(
         responses.GET,
-        'http://sbm/api/v1/messageset/?short_name=%s' % short_name,
+        "http://sbm/api/v1/messageset/?short_name=%s" % short_name,
         json={
             "next": None,
             "previous": None,
-            "results": [{
-                "id": messageset_id,
-                "short_name": short_name,
-                "default_schedule": default_schedule
-            }]
+            "results": [
+                {
+                    "id": messageset_id,
+                    "short_name": short_name,
+                    "default_schedule": default_schedule,
+                }
+            ],
         },
-        status=200, content_type='application/json',
-        match_querystring=True
+        status=200,
+        content_type="application/json",
+        match_querystring=True,
     )
     return default_schedule
 
@@ -254,17 +265,17 @@ def mock_get_messageset(messageset_id):
 
     responses.add(
         responses.GET,
-        'http://sbm/api/v1/messageset/%s/' % messageset_id,
+        "http://sbm/api/v1/messageset/%s/" % messageset_id,
         json={
-            'id': messageset_id,
-            'short_name': short_name,
-            'notes': None,
-            'next_set': 10,
-            'default_schedule': default_schedule,
-            'content_type': 'text',
-            'created_at': "2016-06-22T06:13:29.693272Z",
-            'updated_at': "2016-06-22T06:13:29.693272Z"
-        }
+            "id": messageset_id,
+            "short_name": short_name,
+            "notes": None,
+            "next_set": 10,
+            "default_schedule": default_schedule,
+            "content_type": "text",
+            "created_at": "2016-06-22T06:13:29.693272Z",
+            "updated_at": "2016-06-22T06:13:29.693272Z",
+        },
     )
 
 
@@ -272,9 +283,7 @@ def mock_get_messagesets(messagesets):
     responses.add(
         responses.GET,
         "http://sbm/api/v1/messageset/",
-        json={
-            "results": messagesets,
-        },
+        json={"results": messagesets},
         match_querystring=True,
     )
 
@@ -310,40 +319,41 @@ def mock_get_schedule(schedule_id):
 
     responses.add(
         responses.GET,
-        'http://sbm/api/v1/schedule/%s/' % schedule_id,
+        "http://sbm/api/v1/schedule/%s/" % schedule_id,
         json={"id": schedule_id, "day_of_week": day_of_week},
-        status=200, content_type='application/json',
+        status=200,
+        content_type="application/json",
     )
 
 
 def mock_create_servicerating_invite(identity_id):
     responses.add(
         responses.POST,
-        'http://sr/api/v1/invite/',
+        "http://sr/api/v1/invite/",
         json={"identity": identity_id},
-        status=201, content_type='application/json'
+        status=201,
+        content_type="application/json",
     )
 
 
-def mock_push_registration_to_jembi(ok_response="ok", err_response="err",
-                                    fields={}):
+def mock_push_registration_to_jembi(ok_response="ok", err_response="err", fields={}):
     return mock_jembi_json_api_call(
-        'http://jembi/ws/rest/v1/subscription',
-        ok_response=ok_response, err_response=err_response,
-        fields=fields)
+        "http://jembi/ws/rest/v1/subscription",
+        ok_response=ok_response,
+        err_response=err_response,
+        fields=fields,
+    )
 
 
-def mock_jembi_json_api_call(url, ok_response="ok", err_response="err",
-                             fields={}):
+def mock_jembi_json_api_call(url, ok_response="ok", err_response="err", fields={}):
     def request_callback(request):
         errors = []
         payload = json.loads(request.body)
         for key, value in fields.items():
             if payload[key] != value:
-                errors.append('%s != %s for %s' % (payload[key], value, key))
+                errors.append("%s != %s for %s" % (payload[key], value, key))
         if errors:
-            return (400, {}, json.dumps({"result": err_response,
-                                         "errors": errors}))
+            return (400, {}, json.dumps({"result": err_response, "errors": errors}))
         return (201, {}, json.dumps({"result": ok_response}))
 
     responses.add_callback(responses.POST, url, callback=request_callback)
@@ -359,49 +369,55 @@ def mock_junebug_channel_call(url, channel_type):
             "mo_url": "http://www.example.com/first_channel/mo",
             "label": "My First Channel",
             "type": channel_type,
-            "config": {"twisted_endpoint": "tcp:9001"}
-        }
+            "config": {"twisted_endpoint": "tcp:9001"},
+        },
     }
 
     responses.add(
-        responses.GET, url, json=data, status=200,
-        content_type='application/json',
+        responses.GET, url, json=data, status=200, content_type="application/json"
     )
 
 
 def mock_get_active_subscriptions(identity, count=0):
     subscriptions = []
     for i in range(count):
-        subscriptions.insert(i, {
+        subscriptions.insert(
+            i,
+            {
                 "id": "sub-3401-63e2-4acc-9b94-26663b9bc267",
                 "identity": identity,
                 "messageset": 1,
                 "next_sequence_number": 1,
                 "lang": "eng_ZA",
-                "active": True
-        })
+                "active": True,
+            },
+        )
 
     responses.add(
         responses.GET,
-        'http://sbm.org/api/v1/subscriptions/?active=True&identity=%s' %
-        identity,
-        json={"results": subscriptions}, match_querystring=True,
-        status=200, content_type='application/json',
+        "http://sbm.org/api/v1/subscriptions/?active=True&identity=%s" % identity,
+        json={"results": subscriptions},
+        match_querystring=True,
+        status=200,
+        content_type="application/json",
     )
 
 
 def mock_get_subscriptions(querystring, results):
     responses.add(
         responses.GET,
-        'http://sbm/api/v1/subscriptions/{}'.format(querystring),
-        json={"results": results}, match_querystring=True,
-        status=200, content_type='application/json',
+        "http://sbm/api/v1/subscriptions/{}".format(querystring),
+        json={"results": results},
+        match_querystring=True,
+        status=200,
+        content_type="application/json",
     )
 
 
 def mock_update_subscription(uuid):
     responses.add(
         responses.PATCH,
-        'http://sbm/api/v1/subscriptions/{}/'.format(uuid),
-        status=204, content_type='application/json',
+        "http://sbm/api/v1/subscriptions/{}/".format(uuid),
+        status=204,
+        content_type="application/json",
     )

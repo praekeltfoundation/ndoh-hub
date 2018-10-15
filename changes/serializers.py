@@ -9,7 +9,7 @@ class OneFieldRequiredValidator:
         self.fields = fields
 
     def set_context(self, serializer):
-        self.is_create = getattr(serializer, 'instance', None) is None
+        self.is_create = getattr(serializer, "instance", None) is None
 
     def __call__(self, data):
         if self.is_create:
@@ -19,19 +19,32 @@ class OneFieldRequiredValidator:
                     return
 
             raise serializers.ValidationError(
-                "One of these fields must be populated: %s" %
-                (', '.join(self.fields)))
+                "One of these fields must be populated: %s" % (", ".join(self.fields))
+            )
 
 
 class ChangeSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Change
-        read_only_fields = ('validated', 'created_by', 'updated_by',
-                            'created_at', 'updated_at')
-        fields = ('id', 'action', 'registrant_id', 'data', 'validated',
-                  'source', 'created_at', 'updated_at', 'created_by',
-                  'updated_by')
+        read_only_fields = (
+            "validated",
+            "created_by",
+            "updated_by",
+            "created_at",
+            "updated_at",
+        )
+        fields = (
+            "id",
+            "action",
+            "registrant_id",
+            "data",
+            "validated",
+            "source",
+            "created_at",
+            "updated_at",
+            "created_by",
+            "updated_by",
+        )
 
 
 class AdminOptoutSerializer(serializers.Serializer):
@@ -44,20 +57,17 @@ class AdminChangeSerializer(serializers.Serializer):
     messageset = serializers.CharField(required=False)
     language = serializers.CharField(required=False)
 
-    validators = [OneFieldRequiredValidator(['messageset', 'language'])]
+    validators = [OneFieldRequiredValidator(["messageset", "language"])]
 
 
 class ReceiveWhatsAppEventSerializer(serializers.Serializer):
-
     class StatusSerializer(serializers.Serializer):
-
         class ErrorSerializer(serializers.Serializer):
             code = serializers.IntegerField(required=False)
             title = serializers.CharField(required=True)
 
         id = serializers.CharField(required=True)
-        status = serializers.ChoiceField(
-            ["failed", "sent", "delivered", "read"])
+        status = serializers.ChoiceField(["failed", "sent", "delivered", "read"])
         errors = serializers.ListField(child=ErrorSerializer(), default=[])
 
     statuses = serializers.ListField(child=StatusSerializer(), min_length=1)
@@ -66,17 +76,15 @@ class ReceiveWhatsAppEventSerializer(serializers.Serializer):
         if "statuses" in data:
             statuses = []
             for status in data["statuses"]:
-                if(status["status"] == "failed"):
+                if status["status"] == "failed":
                     statuses.append(status)
 
             data["statuses"] = statuses
 
-        return super(ReceiveWhatsAppEventSerializer, self).to_internal_value(
-            data)
+        return super(ReceiveWhatsAppEventSerializer, self).to_internal_value(data)
 
 
 class ReceiveWhatsAppSystemEventSerializer(serializers.Serializer):
-
     class EventSerializer(serializers.Serializer):
         type = serializers.CharField(required=True)
         message_id = serializers.CharField(required=True)
@@ -88,8 +96,7 @@ class ReceiveWhatsAppSystemEventSerializer(serializers.Serializer):
 class SeedMessageSenderHookSerializer(serializers.Serializer):
     class Hook(serializers.Serializer):
         id = serializers.IntegerField()
-        event = serializers.ChoiceField(
-            choices=["whatsapp.failed_contact_check"])
+        event = serializers.ChoiceField(choices=["whatsapp.failed_contact_check"])
         target = serializers.CharField()
 
     hook = Hook()

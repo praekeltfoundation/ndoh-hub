@@ -6,23 +6,19 @@ from django.db import migrations
 
 
 def move_limited_to_partial(apps, schema_editor):
-    Source = apps.get_model('registrations', 'Source')
-    Source.objects.filter(authority='hw_limited')\
-        .update(authority='hw_partial')
+    Source = apps.get_model("registrations", "Source")
+    Source.objects.filter(authority="hw_limited").update(authority="hw_partial")
 
 
 def move_partial_to_limited(apps, schema_editor):
-    Source = apps.get_model('registrations', 'Source')
-    Source.objects.filter(authority='hw_partial')\
-        .update(authority='hw_limited')
+    Source = apps.get_model("registrations", "Source")
+    Source.objects.filter(authority="hw_partial").update(authority="hw_limited")
 
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('registrations', '0005_rename_limited_authority_to_partial'),
-    ]
+    dependencies = [("registrations", "0005_rename_limited_authority_to_partial")]
 
     operations = [
-        migrations.RunPython(move_limited_to_partial, move_partial_to_limited),
+        migrations.RunPython(move_limited_to_partial, move_partial_to_limited)
     ]

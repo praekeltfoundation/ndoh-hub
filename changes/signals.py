@@ -3,5 +3,5 @@ def psh_validate_implement(sender, instance, created, **kwargs):
     """
     if created:
         from .tasks import validate_implement
-        validate_implement.apply_async(
-            kwargs={"change_id": str(instance.id)})
+
+        validate_implement.apply_async(kwargs={"change_id": str(instance.id)})

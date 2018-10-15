@@ -5,11 +5,9 @@ from django.db.models.signals import post_save
 
 class ChangesAppConfig(AppConfig):
 
-    name = 'changes'
+    name = "changes"
 
     def ready(self):
         from .signals import psh_validate_implement
 
-        post_save.connect(
-            psh_validate_implement,
-            sender='changes.Change')
+        post_save.connect(psh_validate_implement, sender="changes.Change")

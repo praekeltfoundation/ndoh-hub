@@ -7,24 +7,37 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('changes', '0007_auto_20180212_0759'),
-    ]
+    dependencies = [("changes", "0007_auto_20180212_0759")]
 
     operations = [
         migrations.AlterField(
-            model_name='change',
-            name='created_by',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='changes_created', to=settings.AUTH_USER_MODEL),
+            model_name="change",
+            name="created_by",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="changes_created",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
-            model_name='change',
-            name='source',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='changes', to='registrations.Source'),
+            model_name="change",
+            name="source",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="changes",
+                to="registrations.Source",
+            ),
         ),
         migrations.AlterField(
-            model_name='change',
-            name='updated_by',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='changes_updated', to=settings.AUTH_USER_MODEL),
+            model_name="change",
+            name="updated_by",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="changes_updated",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

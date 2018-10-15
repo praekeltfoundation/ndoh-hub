@@ -3,9 +3,10 @@ import os
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--hub-image", action="store", default=os.environ.get(
-            "HUB_IMAGE", "praekeltfoundation/ndoh-hub:develop"),
-        help="NDOH Hub image to test"
+        "--hub-image",
+        action="store",
+        default=os.environ.get("HUB_IMAGE", "praekeltfoundation/ndoh-hub:develop"),
+        help="NDOH Hub image to test",
     )
 
 

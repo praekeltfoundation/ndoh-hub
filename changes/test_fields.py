@@ -21,8 +21,7 @@ class PhoneNumberFieldTests(TestCase):
         If a country code is supplied, it should be used when interpreting the
         number.
         """
-        number = PhoneNumberField(country_code="ZA").to_internal_value(
-            "0820001001")
+        number = PhoneNumberField(country_code="ZA").to_internal_value("0820001001")
         self.assertEqual(number.country_code, 27)
 
     def test_cannot_parse(self):
@@ -57,5 +56,4 @@ class PhoneNumberFieldTests(TestCase):
         The phone number should be in E164 format for representation
         """
         number = phonenumbers.parse("0820001001", "ZA")
-        self.assertEqual(
-            PhoneNumberField().to_representation(number), "+27820001001")
+        self.assertEqual(PhoneNumberField().to_representation(number), "+27820001001")

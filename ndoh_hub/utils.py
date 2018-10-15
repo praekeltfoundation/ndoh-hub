@@ -9,8 +9,7 @@ from celery.task import Task
 from django.conf import settings
 from rest_framework.authentication import TokenAuthentication
 from seed_services_client.metrics import MetricsApiClient
-from seed_services_client.stage_based_messaging import (
-    StageBasedMessagingApiClient)
+from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.message_sender import MessageSenderApiClient
 
@@ -19,34 +18,44 @@ from registrations.models import PositionTracker
 
 ID_TYPES = ["sa_id", "passport", "none"]
 PASSPORT_ORIGINS = [
-    "na", "bw", "mz", "sz", "ls", "cu", "zw", "mw", "ng", "cd", "so", "other"]
+    "na",
+    "bw",
+    "mz",
+    "sz",
+    "ls",
+    "cu",
+    "zw",
+    "mw",
+    "ng",
+    "cd",
+    "so",
+    "other",
+]
 LANGUAGES = [
-        "zul_ZA",  # isiZulu
-        "xho_ZA",  # isiXhosa
-        "afr_ZA",  # Afrikaans
-        "eng_ZA",  # English
-        "nso_ZA",  # Sesotho sa Leboa / Pedi
-        "tsn_ZA",  # Setswana
-        "sot_ZA",  # Sesotho
-        "tso_ZA",  # Xitsonga
-        "ssw_ZA",  # siSwati
-        "ven_ZA",  # Tshivenda
-        "nbl_ZA",  # isiNdebele
+    "zul_ZA",  # isiZulu
+    "xho_ZA",  # isiXhosa
+    "afr_ZA",  # Afrikaans
+    "eng_ZA",  # English
+    "nso_ZA",  # Sesotho sa Leboa / Pedi
+    "tsn_ZA",  # Setswana
+    "sot_ZA",  # Sesotho
+    "tso_ZA",  # Xitsonga
+    "ssw_ZA",  # siSwati
+    "ven_ZA",  # Tshivenda
+    "nbl_ZA",  # isiNdebele
 ]
 
 sbm_client = StageBasedMessagingApiClient(
     api_url=settings.STAGE_BASED_MESSAGING_URL,
-    auth_token=settings.STAGE_BASED_MESSAGING_TOKEN
+    auth_token=settings.STAGE_BASED_MESSAGING_TOKEN,
 )
 
 is_client = IdentityStoreApiClient(
-    api_url=settings.IDENTITY_STORE_URL,
-    auth_token=settings.IDENTITY_STORE_TOKEN
+    api_url=settings.IDENTITY_STORE_URL, auth_token=settings.IDENTITY_STORE_TOKEN
 )
 
 ms_client = MessageSenderApiClient(
-    api_url=settings.MESSAGE_SENDER_URL,
-    auth_token=settings.MESSAGE_SENDER_TOKEN,
+    api_url=settings.MESSAGE_SENDER_URL, auth_token=settings.MESSAGE_SENDER_TOKEN
 )
 
 
@@ -60,20 +69,19 @@ def get_identity_msisdn(registrant_id):
     if not identity:
         return
 
-    msisdns = \
-        identity['details'].get('addresses', {}).get('msisdn', {})
+    msisdns = identity["details"].get("addresses", {}).get("msisdn", {})
 
     identity_msisdn = None
     for msisdn, details in msisdns.items():
-        if 'default' in details and details['default']:
+        if "default" in details and details["default"]:
             return msisdn
-        if not ('optedout' in details and details['optedout']):
+        if not ("optedout" in details and details["optedout"]):
             identity_msisdn = msisdn
     return identity_msisdn
 
 
 def is_valid_uuid(id):
-    return len(id) == 36 and id[14] == '4' and id[19] in ['a', 'b', '8', '9']
+    return len(id) == 36 and id[14] == "4" and id[19] in ["a", "b", "8", "9"]
 
 
 def is_valid_date(date):
@@ -89,10 +97,7 @@ def is_valid_edd_date(edd):
     Checks given Estimated Due Date is in the future but not more than
     9 months away
     """
-    return (
-        edd > get_today() and
-        edd < get_today() + datetime.timedelta(weeks=43)
-    )
+    return edd > get_today() and edd < get_today() + datetime.timedelta(weeks=43)
 
 
 def is_valid_edd(date):
@@ -113,7 +118,7 @@ def is_valid_lang(lang):
 # TODO 15: Improve validation functions
 def is_valid_msisdn(msisdn):
     """ A very basic msisdn validation check """
-    return msisdn[0] == '+' and len(msisdn) == 12
+    return msisdn[0] == "+" and len(msisdn) == 12
 
 
 def is_valid_faccode(faccode):
@@ -158,8 +163,7 @@ def get_today():
 def get_mom_age(today, mom_dob):
     """ Calculate the mother's age in years """
     born = datetime.datetime.strptime(mom_dob, "%Y-%m-%d")
-    return today.year - born.year - (
-        (today.month, today.day) < (born.month, born.day))
+    return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
 
 
 def get_pregnancy_week(today, edd):
@@ -185,8 +189,8 @@ def get_baby_age(today, baby_dob):
 def get_messageset_short_name(reg_type, authority, weeks):
     batch_number = 1  # default batch_number
 
-    if reg_type == 'whatsapp_prebirth':
-        reg_type = 'whatsapp_momconnect_prebirth'
+    if reg_type == "whatsapp_prebirth":
+        reg_type = "whatsapp_momconnect_prebirth"
 
     if "pmtct_prebirth" in reg_type:
         if 30 <= weeks <= 34:
@@ -215,7 +219,7 @@ def get_messageset_short_name(reg_type, authority, weeks):
     # If the RTHB messaging is enabled, all nurseconnect subscriptions should
     # start on the RTHB messageset
     elif settings.NURSECONNECT_RTHB and "nurseconnect" in reg_type:
-        reg_type += '_rthb'
+        reg_type += "_rthb"
 
     short_name = "%s.%s.%s" % (reg_type, authority, batch_number)
 
@@ -224,8 +228,7 @@ def get_messageset_short_name(reg_type, authority, weeks):
 
 def get_messageset_schedule_sequence(short_name, weeks):
     # get messageset
-    messageset = next(sbm_client.get_messagesets(
-        {"short_name": short_name})["results"])
+    messageset = next(sbm_client.get_messagesets({"short_name": short_name})["results"])
 
     if "prebirth" in short_name:
         # get schedule
@@ -233,30 +236,30 @@ def get_messageset_schedule_sequence(short_name, weeks):
         # get schedule days of week: comma-seperated str e.g. '1,3' for Mon&Wed
         days_of_week = schedule["day_of_week"]
         # determine how many times a week messages are sent e.g. 2 for '1,3'
-        msgs_per_week = len(days_of_week.split(','))
+        msgs_per_week = len(days_of_week.split(","))
 
     next_sequence_number = 1  # default to 1
 
     # calculate next_sequence_number
-    if 'pmtct_prebirth.patient.1' in short_name:
+    if "pmtct_prebirth.patient.1" in short_name:
         if weeks >= 7:
             next_sequence_number = (weeks - 6) * msgs_per_week
 
-    elif 'pmtct_prebirth.patient.2' in short_name:
+    elif "pmtct_prebirth.patient.2" in short_name:
         if weeks >= 31:
             next_sequence_number = (weeks - 30) * msgs_per_week
 
-    elif 'pmtct_prebirth.patient.3' in short_name:
+    elif "pmtct_prebirth.patient.3" in short_name:
         if 36 <= weeks <= 41:
             next_sequence_number = (weeks - 35) * msgs_per_week
         if weeks >= 42:
             next_sequence_number = 20  # last message in set
 
-    elif 'pmtct_postbirth.patient.1' in short_name:
+    elif "pmtct_postbirth.patient.1" in short_name:
         if weeks == 1:
             next_sequence_number = 3
 
-    elif 'pmtct_postbirth.patient.2' in short_name:
+    elif "pmtct_postbirth.patient.2" in short_name:
         if weeks <= 50:
             next_sequence_number = weeks - 1
         else:
@@ -264,16 +267,16 @@ def get_messageset_schedule_sequence(short_name, weeks):
 
     # nurseconnect always starts at 1
 
-    elif 'momconnect_prebirth.hw_full.1' in short_name:
+    elif "momconnect_prebirth.hw_full.1" in short_name:
         if weeks >= 5:
             next_sequence_number = ((weeks - 4) * msgs_per_week) - 1
 
-    elif 'momconnect_prebirth.hw_full.2' in short_name:
+    elif "momconnect_prebirth.hw_full.2" in short_name:
         if weeks >= 32:
             next_sequence_number = ((weeks - 30) * msgs_per_week) - 2
 
     # WhatsApp service info messages depend on months pregnant
-    elif 'whatsapp_service_info.hw_full.1' in short_name:
+    elif "whatsapp_service_info.hw_full.1" in short_name:
         if weeks >= 5:
             next_sequence_number = ((weeks - 4) // 4) + 1
 
@@ -282,12 +285,12 @@ def get_messageset_schedule_sequence(short_name, weeks):
     # loss subscriptions always start at 1
 
     # RTHB NurseConnect subscriptions are tracked by the position tracker
-    if 'nurseconnect_rthb' in short_name:
+    if "nurseconnect_rthb" in short_name:
         next_sequence_number = PositionTracker.objects.get(
-            label='nurseconnect_rthb').position
+            label="nurseconnect_rthb"
+        ).position
 
-    return (messageset["id"], messageset["default_schedule"],
-            next_sequence_number)
+    return (messageset["id"], messageset["default_schedule"], next_sequence_number)
 
 
 def append_or_create(dictionary, field, value):
@@ -310,26 +313,23 @@ def get_available_metrics():
 
 def get_metric_client(session=None):
     return MetricsApiClient(
-        url=settings.METRICS_URL,
-        auth=settings.METRICS_AUTH,
-        session=session)
+        url=settings.METRICS_URL, auth=settings.METRICS_AUTH, session=session
+    )
 
 
 class FireMetric(Task):
 
     """ Fires a metric using the MetricsApiClient
     """
+
     name = "ndoh_hub.tasks.fire_metric"
 
     def run(self, metric_name, metric_value, session=None, **kwargs):
         metric_value = float(metric_value)
-        metric = {
-            metric_name: metric_value
-        }
+        metric = {metric_name: metric_value}
         metric_client = get_metric_client(session=session)
         metric_client.fire_metrics(**metric)
-        return "Fired metric <%s> with value <%s>" % (
-            metric_name, metric_value)
+        return "Fired metric <%s> with value <%s>" % (metric_name, metric_value)
 
 
 fire_metric = FireMetric()
@@ -340,7 +340,7 @@ def json_decode(data):
     Decodes the given JSON as primitives
     """
     if isinstance(data, six.binary_type):
-        data = data.decode('utf-8')
+        data = data.decode("utf-8")
 
     return json.loads(data)
 
@@ -349,8 +349,9 @@ class TokenAuthQueryString(TokenAuthentication):
     """
     Look for the token in the querystring parameter "token"
     """
+
     def authenticate(self, request):
-        token = request.query_params.get('token', None)
+        token = request.query_params.get("token", None)
         if token is not None:
             return self.authenticate_credentials(token)
         return None

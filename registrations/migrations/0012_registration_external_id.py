@@ -7,14 +7,20 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('registrations', '0011_auto_20180227_1517'),
-    ]
+    dependencies = [("registrations", "0011_auto_20180227_1517")]
 
     operations = [
         migrations.AddField(
-            model_name='registration',
-            name='external_id',
-            field=models.CharField(blank=True, db_index=True, default=None, help_text='The ID of the registration in the external service that created the registration', max_length=100, null=True, unique=True),
-        ),
+            model_name="registration",
+            name="external_id",
+            field=models.CharField(
+                blank=True,
+                db_index=True,
+                default=None,
+                help_text="The ID of the registration in the external service that created the registration",
+                max_length=100,
+                null=True,
+                unique=True,
+            ),
+        )
     ]
