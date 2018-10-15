@@ -51,14 +51,16 @@ class Change(models.Model):
                               choices=ACTION_CHOICES)
     data = JSONField(null=True, blank=True)
     validated = models.BooleanField(default=False)
-    source = models.ForeignKey(Source, related_name='changes',
-                               null=False)
+    source = models.ForeignKey(
+        Source, related_name='changes', null=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(User, related_name='changes_created',
-                                   null=True)
-    updated_by = models.ForeignKey(User, related_name='changes_updated',
-                                   null=True)
+    created_by = models.ForeignKey(
+        User, related_name='changes_created', null=True,
+        on_delete=models.SET_NULL)
+    updated_by = models.ForeignKey(
+        User, related_name='changes_updated', null=True,
+        on_delete=models.SET_NULL)
     user = property(lambda self: self.created_by)
 
     def __str__(self):

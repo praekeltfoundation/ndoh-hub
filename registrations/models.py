@@ -20,7 +20,8 @@ class Source(models.Model):
         ('hw_full', "Health Worker Full")
     )
     name = models.CharField(max_length=100, null=False, blank=False)
-    user = models.ForeignKey(User, related_name='sources', null=False)
+    user = models.ForeignKey(
+        User, related_name='sources', null=False, on_delete=models.CASCADE)
     authority = models.CharField(max_length=30, null=False, blank=False,
                                  choices=AUTHORITY_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -71,14 +72,17 @@ class Registration(models.Model):
     registrant_id = models.CharField(max_length=36, null=True, blank=False)
     data = JSONField(null=True, blank=True)
     validated = models.BooleanField(default=False)
-    source = models.ForeignKey(Source, related_name='registrations',
-                               null=False)
+    source = models.ForeignKey(
+        Source, related_name='registrations', null=False,
+        on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(User, related_name='registrations_created',
-                                   null=True)
-    updated_by = models.ForeignKey(User, related_name='registrations_updated',
-                                   null=True)
+    created_by = models.ForeignKey(
+        User, related_name='registrations_created', null=True,
+        on_delete=models.SET_NULL)
+    updated_by = models.ForeignKey(
+        User, related_name='registrations_updated', null=True,
+        on_delete=models.SET_NULL)
     user = property(lambda self: self.created_by)
 
     def __str__(self):

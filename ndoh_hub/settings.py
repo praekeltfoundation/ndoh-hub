@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 from kombu import Exchange, Queue
 
 import os
-import djcelery
 import dj_database_url
 import mimetypes
 
@@ -50,7 +49,6 @@ INSTALLED_APPS = (
     # documentation
     'rest_framework_docs',
     # 3rd party
-    'djcelery',
     'channels',
     'raven.contrib.django.raven_compat',
     'rest_framework',
@@ -70,7 +68,6 @@ MIDDLEWARE = (
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'simple_history.middleware.HistoryRequestMiddleware',
@@ -241,19 +238,16 @@ HOOK_DELIVERER = 'registrations.tasks.deliver_hook_wrapper'
 HOOK_AUTH_TOKEN = os.environ.get('HOOK_AUTH_TOKEN', 'REPLACEME')
 
 # Celery configuration options
-CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
-CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
+CELERY_BROKER_URL = os.environ.get('BROKER_URL', 'redis://localhost:6379/0')
 
-BROKER_URL = os.environ.get('BROKER_URL', 'redis://localhost:6379/0')
-
-CELERY_DEFAULT_QUEUE = 'ndoh_hub'
-CELERY_QUEUES = (
+CELERY_TASK_DEFAULT_QUEUE = 'ndoh_hub'
+CELERY_TASK_QUEUES = (
     Queue('ndoh_hub',
           Exchange('ndoh_hub'),
           routing_key='ndoh_hub'),
 )
 
-CELERY_ALWAYS_EAGER = False
+CELERY_TASK_ALWAYS_EAGER = False
 
 # Tell Celery where to find the tasks
 CELERY_IMPORTS = (
@@ -261,8 +255,8 @@ CELERY_IMPORTS = (
     'changes.tasks',
 )
 
-CELERY_CREATE_MISSING_QUEUES = True
-CELERY_ROUTES = {
+CELERY_TASK_CREATE_MISSING_QUEUES = True
+CELERY_TASK_ROUTES = {
     'celery.backend_cleanup': {
         'queue': 'mediumpriority',
     },
@@ -283,8 +277,6 @@ CELERY_ROUTES = {
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json']
-
-djcelery.setup_loader()
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
 CHANNEL_LAYERS = {

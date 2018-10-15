@@ -172,10 +172,10 @@ class RegistrationPost(mixins.CreateModelMixin, generics.GenericAPIView):
 
 class RegistrationFilter(filters.FilterSet):
     """Filter for registrations created, using ISO 8601 formatted dates"""
-    created_before = django_filters.IsoDateTimeFilter(name="created_at",
-                                                      lookup_expr="lte")
-    created_after = django_filters.IsoDateTimeFilter(name="created_at",
-                                                     lookup_expr="gte")
+    created_before = django_filters.IsoDateTimeFilter(
+        field_name="created_at", lookup_expr="lte")
+    created_after = django_filters.IsoDateTimeFilter(
+        field_name="created_at", lookup_expr="gte")
 
     class Meta:
         model = Registration
@@ -465,7 +465,7 @@ class ThirdPartyRegistration(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class JembiAppRegistration(APIView):
+class JembiAppRegistration(generics.CreateAPIView):
     """
     MomConnect prebirth registrations from the Jembi App
     """
