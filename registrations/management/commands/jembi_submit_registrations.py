@@ -2,6 +2,7 @@ from uuid import UUID
 from celery import chain
 from django.core.management import BaseCommand, CommandError
 from django.utils.dateparse import parse_datetime
+from django.utils import timezone
 
 from registrations.tasks import (
     add_personally_identifiable_fields, remove_personally_identifiable_fields)
@@ -44,6 +45,8 @@ class Command(BaseCommand):
         registrations = Registration.objects.all()
 
         if since and until:
+            since = timezone.make_aware(since)
+            until = timezone.make_aware(until)
             registrations = registrations.filter(
                 created_at__gte=since,
                 created_at__lte=until,

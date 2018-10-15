@@ -70,7 +70,7 @@ class ChangeGetViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticated,)
     queryset = Change.objects.all()
     serializer_class = ChangeSerializer
-    filter_class = ChangeFilter
+    filterset_class = ChangeFilter
     pagination_class = CreatedAtCursorPagination
 
 
