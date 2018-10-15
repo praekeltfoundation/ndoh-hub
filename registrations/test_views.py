@@ -1,9 +1,9 @@
 import datetime
 from django.contrib.auth.models import Permission
 from django.urls import reverse
+from django.utils import timezone
 import json
 from unittest import mock
-import pytz
 
 from registrations.models import Registration, PositionTracker
 from registrations.serializers import RegistrationSerializer
@@ -59,7 +59,7 @@ class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
         self.assertEqual(reg.source, source)
         self.assertEqual(
             reg.created_at,
-            datetime.datetime(2016, 1, 1, 0, 0, 0, tzinfo=pytz.UTC))
+            datetime.datetime(2016, 1, 1, 0, 0, 0, tzinfo=timezone.utc))
         self.assertEqual(reg.external_id, 'test-external-id')
         self.assertEqual(reg.created_by, self.normaluser)
         self.assertEqual(
