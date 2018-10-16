@@ -1,4 +1,5 @@
 from django.conf.urls import include, url
+from django.urls import path
 from rest_framework import routers
 
 from . import views
@@ -27,5 +28,10 @@ urlpatterns = [
         name="jembi-helpdesk-outgoing",
     ),
     url(r"^api/v1/user/token/$", views.UserView.as_view(), name="create-user-token"),
+    path(
+        "api/v1/engage/context",
+        views.EngageContextView.as_view(),
+        name="engage-context",
+    ),
     url(r"^api/v1/", include(router.urls)),
 ]

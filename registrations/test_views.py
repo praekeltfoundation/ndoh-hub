@@ -2,9 +2,12 @@ import datetime
 import json
 from unittest import mock
 
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Permission, User
 from django.urls import reverse
 from django.utils import timezone
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+from rest_framework.test import APITestCase
 
 from registrations.models import PositionTracker, Registration
 from registrations.serializers import RegistrationSerializer
@@ -199,3 +202,31 @@ class PositionTrackerViewsetTests(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, 400)
         pt.refresh_from_db()
         self.assertEqual(pt.position, 2)
+
+
+class EngageContextViewTests(APITestCase):
+    def add_authorization_token(self):
+        """
+        Adds credentials to the current client
+        """
+        user = User.objects.create_user("test")
+        token = Token.objects.create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION="Token {}".format(token.key))
+
+    def test_authentication_required(self):
+        """
+        A valid token is required to access the API
+        """
+        url = reverse("engage-context")
+        response = self.client.post(url, {}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_returns_information(self):
+        """
+        Returns the information related to the phone number in the request
+        """
+        self.add_authorization_token()
+        url = reverse("engage-context")
+        response = self.client.post(url, {}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json(), {"version": "1.0.0-alpha", "context": []})

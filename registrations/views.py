@@ -32,6 +32,7 @@ from ndoh_hub.utils import get_available_metrics
 from .models import PositionTracker, Registration, Source
 from .serializers import (
     CreateUserSerializer,
+    EngageContextSerializer,
     GroupSerializer,
     HookSerializer,
     JembiAppRegistrationSerializer,
@@ -625,3 +626,13 @@ class PositionTrackerViewset(
 
         serializer = self.get_serializer(instance=position_tracker)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class EngageContextView(generics.CreateAPIView):
+    serializer_class = EngageContextSerializer
+
+    def post(self, request):
+        serializer = self.get_serializer_class()(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        context = []
+        return Response({"version": "1.0.0-alpha", "context": context})
