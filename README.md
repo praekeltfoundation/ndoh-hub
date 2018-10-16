@@ -277,3 +277,22 @@ To update the translation files from the source, run:
 
 You can then use a tool like POEdit to update the PO files with the relevant
 translations
+
+## Development
+This project uses isort for the formatting of imports, to format run:
+
+    isort -rc .
+
+It also uses black for consistent code formatting, to format run:
+
+    black .
+
+To run the unit tests:
+
+    py.test
+
+And for static typing analysis:
+
+    mypy .
+
+All of these must pass before the CI checks pass and the PR will be considered.

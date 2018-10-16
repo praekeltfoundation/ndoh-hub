@@ -16,8 +16,10 @@ class TestHubContainer:
         assert "Running migrations" in django_logs
 
         psql_output = postgresql_container.exec_psql(
-            ("SELECT COUNT(*) FROM information_schema.tables WHERE "
-             "table_schema='public';")
+            (
+                "SELECT COUNT(*) FROM information_schema.tables WHERE "
+                "table_schema='public';"
+            )
         )
         count = int(psql_output.output.strip())
         assert count > 0

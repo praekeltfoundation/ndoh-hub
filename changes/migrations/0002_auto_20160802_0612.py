@@ -7,14 +7,20 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('changes', '0001_initial'),
-    ]
+    dependencies = [("changes", "0001_initial")]
 
     operations = [
         migrations.AlterField(
-            model_name='change',
-            name='action',
-            field=models.CharField(choices=[('baby_switch', 'Change from pregnancy to baby messaging'), ('pmtct_loss_switch', 'Change to loss messaging via pmtct app'), ('pmtct_loss_optout', 'Optout due to loss via pmtct app'), ('pmtct_nonloss_optout', 'Optout not due to loss via pmtct app')], max_length=255),
-        ),
+            model_name="change",
+            name="action",
+            field=models.CharField(
+                choices=[
+                    ("baby_switch", "Change from pregnancy to baby messaging"),
+                    ("pmtct_loss_switch", "Change to loss messaging via pmtct app"),
+                    ("pmtct_loss_optout", "Optout due to loss via pmtct app"),
+                    ("pmtct_nonloss_optout", "Optout not due to loss via pmtct app"),
+                ],
+                max_length=255,
+            ),
+        )
     ]

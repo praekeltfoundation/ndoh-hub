@@ -4,13 +4,12 @@ from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from rest_framework.exceptions import ValidationError
 
-from registrations.views import (
-    JembiAppRegistration, JembiAppRegistrationStatus)
+from registrations.views import JembiAppRegistration, JembiAppRegistrationStatus
 
 
 class JembiAppRegistrationConsumer(JsonWebsocketConsumer):
     def connect(self) -> None:
-        self.user = self.scope['user']
+        self.user = self.scope["user"]
 
         if not self.user or not self.user.is_authenticated:
             self.close()
@@ -18,17 +17,19 @@ class JembiAppRegistrationConsumer(JsonWebsocketConsumer):
 
         self.accept()
         async_to_sync(self.channel_layer.group_add)(
-            "user.{}".format(self.user.id), self.channel_name)
+            "user.{}".format(self.user.id), self.channel_name
+        )
 
     def disconnect(self, close_code):
         async_to_sync(self.channel_layer.group_discard)(
-            "user.{}".format(self.user.id), self.channel_name)
+            "user.{}".format(self.user.id), self.channel_name
+        )
 
     def registration_event(self, event: dict) -> None:
         """
         Sends the registration event over the websocket
         """
-        self.send_json(event['data'])
+        self.send_json(event["data"])
 
     def action_registration(self, data: dict) -> None:
         """
@@ -36,72 +37,75 @@ class JembiAppRegistrationConsumer(JsonWebsocketConsumer):
         new registration
         """
         try:
-            JembiAppRegistration.create_registration(
-                self.user, data)
+            JembiAppRegistration.create_registration(self.user, data)
         except ValidationError as e:
-            self.send_json({
-                'registration_id': data.get('external_id'),
-                'registration_data': data,
-                'status': 'validation_failed',
-                'error': e.detail,
-            })
+            self.send_json(
+                {
+                    "registration_id": data.get("external_id"),
+                    "registration_data": data,
+                    "status": "validation_failed",
+                    "error": e.detail,
+                }
+            )
 
     def action_status(self, data: dict) -> None:
         """
         If allowed, and if it exists, attempts to get the status of a
         registration
         """
-        reg_id = data.get('id', None)
+        reg_id = data.get("id", None)
         if reg_id is None:
-            self.send_json({
-                'registration_id': None,
-                'registration_data': data,
-                'status': 'validation_failed',
-                'error': {
-                    'id': "id must be supplied for status query",
-                },
-            })
+            self.send_json(
+                {
+                    "registration_id": None,
+                    "registration_data": data,
+                    "status": "validation_failed",
+                    "error": {"id": "id must be supplied for status query"},
+                }
+            )
             return
 
         try:
-            reg = JembiAppRegistrationStatus.get_registration(
-                self.user, reg_id)
+            reg = JembiAppRegistrationStatus.get_registration(self.user, reg_id)
             self.send_json(reg.status)
         except Http404:
-            self.send_json({
-                'registration_id': reg_id,
-                'registration_data': data,
-                'status': 'validation_failed',
-                'error': {
-                    'id': "Cannot find registration with ID {}".format(reg_id),
-                },
-            })
+            self.send_json(
+                {
+                    "registration_id": reg_id,
+                    "registration_data": data,
+                    "status": "validation_failed",
+                    "error": {
+                        "id": "Cannot find registration with ID {}".format(reg_id)
+                    },
+                }
+            )
             return
         except PermissionDenied:
-            self.send_json({
-                'registration_id': reg_id,
-                'registration_data': data,
-                'status': 'validation_failed',
-                'error': {
-                    'id': "You do not have permission to view this "
-                    "registration",
-                },
-            })
+            self.send_json(
+                {
+                    "registration_id": reg_id,
+                    "registration_data": data,
+                    "status": "validation_failed",
+                    "error": {
+                        "id": "You do not have permission to view this " "registration"
+                    },
+                }
+            )
 
     def receive_json(self, content: dict) -> None:
-        action = content.get('action', None)
-        data = content.get('data', {})
+        action = content.get("action", None)
+        data = content.get("data", {})
 
-        if action == 'registration':
+        if action == "registration":
             self.action_registration(data)
-        elif action == 'status':
+        elif action == "status":
             self.action_status(data)
         else:
-            self.send_json({
-                'registration_id': data.get('external_id'),
-                'registration_data': data,
-                'status': 'validation_failed',
-                'error': {
-                    'action': 'Action {} is not recognised'.format(action),
-                },
-            })
+            self.send_json(
+                {
+                    "registration_id": data.get("external_id"),
+                    "registration_data": data,
+                    "status": "validation_failed",
+                    "error": {"action": "Action {} is not recognised".format(action)},
+                }
+            )

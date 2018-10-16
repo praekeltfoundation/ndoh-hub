@@ -6,7 +6,7 @@ from six.moves import zip
 
 
 class Command(BaseCommand):
-    help = 'Generate reports for PMTCT registrations.'
+    help = "Generate reports for PMTCT registrations."
 
     def query(self, query_string):
         cursor = connection.cursor()
@@ -45,7 +45,4 @@ class Command(BaseCommand):
          reg_type,
          created
         """
-        self.query_to_csv(
-            self.stdout,
-            ['Registration Type', 'created', 'count'],
-            query)
+        self.query_to_csv(self.stdout, ["Registration Type", "created", "count"], query)

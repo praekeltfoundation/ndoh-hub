@@ -1,55 +1,64 @@
-from os import environ
 import logging
+from os import environ
 
 from django.core.management.base import BaseCommand, CommandError
-from registrations.models import SubscriptionRequest
 
 from ndoh_hub.utils import sbm_client
+from registrations.models import SubscriptionRequest
 
 
 class Command(BaseCommand):
     log = logging.getLogger("registrations")
-    help = ('Subscribes all current WhatsApp subscription users to the '
-            'correct place in the service info messageset')
+    help = (
+        "Subscribes all current WhatsApp subscription users to the "
+        "correct place in the service info messageset"
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--sbm-url', dest='sbm_url',
-            default=environ.get('STAGE_BASED_MESSAGING_URL'),
-            help=('The Stage Based Messaging Service for '
-                  'service info subscriptions'))
+            "--sbm-url",
+            dest="sbm_url",
+            default=environ.get("STAGE_BASED_MESSAGING_URL"),
+            help=(
+                "The Stage Based Messaging Service for " "service info subscriptions"
+            ),
+        )
         parser.add_argument(
-            '--sbm-token', dest='sbm_token',
-            default=environ.get('STAGE_BASED_MESSAGING_TOKEN'),
-            help=('The Authorization token for the SBM Service')
+            "--sbm-token",
+            dest="sbm_token",
+            default=environ.get("STAGE_BASED_MESSAGING_TOKEN"),
+            help=("The Authorization token for the SBM Service"),
         )
 
     def handle(self, *args, **kwargs):
-        sbm_url = kwargs['sbm_url']
-        sbm_token = kwargs['sbm_token']
+        sbm_url = kwargs["sbm_url"]
+        sbm_token = kwargs["sbm_token"]
 
         if not sbm_url:
             raise CommandError(
-                'Please make sure either the STAGE_BASED_MESSAGING_URL '
-                'environment variable or --sbm-url is set.')
+                "Please make sure either the STAGE_BASED_MESSAGING_URL "
+                "environment variable or --sbm-url is set."
+            )
 
         if not sbm_token:
             raise CommandError(
-                'Please make sure either the STAGE_BASED_MESSAGING_TOKEN '
-                'environment variable or --sbm-token is set.')
+                "Please make sure either the STAGE_BASED_MESSAGING_TOKEN "
+                "environment variable or --sbm-token is set."
+            )
 
         messageset_mapping = {
-            ms['id']: ms['short_name']
-            for ms in sbm_client.get_messagesets()["results"]
+            ms["id"]: ms["short_name"] for ms in sbm_client.get_messagesets()["results"]
         }
 
-        service_info_messageset = next(sbm_client.get_messagesets(
-            {"short_name": "whatsapp_service_info.hw_full.1"})["results"])
+        service_info_messageset = next(
+            sbm_client.get_messagesets(
+                {"short_name": "whatsapp_service_info.hw_full.1"}
+            )["results"]
+        )
 
-        subscriptions = sbm_client.get_subscriptions({
-            "messageset_contains": "whatsapp_momconnect_",
-            "active": True,
-        })["results"]
+        subscriptions = sbm_client.get_subscriptions(
+            {"messageset_contains": "whatsapp_momconnect_", "active": True}
+        )["results"]
 
         for subscription in subscriptions:
             messageset = messageset_mapping[subscription["messageset"]]
@@ -58,20 +67,22 @@ class Command(BaseCommand):
                 continue
 
             if self.identity_has_service_info_subscription(
-                    messageset_mapping, subscription["identity"]):
+                messageset_mapping, subscription["identity"]
+            ):
                 # They already have an active service info subscription, skip
                 self.log.debug(
                     "%s already has a service info subscription, skipping",
-                    subscription["identity"])
+                    subscription["identity"],
+                )
                 continue
 
             sequence = self.service_info_sequence(
-                messageset,
-                subscription["next_sequence_number"]
+                messageset, subscription["next_sequence_number"]
             )
             self.log.debug(
                 "Creating service info subscription request for %s",
-                subscription["identity"])
+                subscription["identity"],
+            )
             SubscriptionRequest.objects.create(
                 identity=subscription["identity"],
                 messageset=service_info_messageset["id"],
@@ -85,6 +96,7 @@ class Command(BaseCommand):
         Calculates the sequence number that the service info messageset should
         be on, given the existing subscription that a user has
         """
+
         def calculate_position(frequency: int, offset: int) -> int:
             """
             Given the weekly frequency, and the weekly offset, calculate the
@@ -125,7 +137,8 @@ class Command(BaseCommand):
         raise ValueError("{} is not expected".format(short_name))
 
     def identity_has_service_info_subscription(
-            self, messageset_mapping: dict, identity: str) -> bool:
+        self, messageset_mapping: dict, identity: str
+    ) -> bool:
         """
         Whether or not the given identity has an active subscription to the
         service info messageset.
@@ -136,10 +149,9 @@ class Command(BaseCommand):
             identity (str): The UUID of the identity
         """
         subscriptions = [
-            messageset_mapping[sub["messageset"]] for sub in
-            sbm_client.get_subscriptions({
-                "active": True,
-                "identity": identity,
-            })["results"]
+            messageset_mapping[sub["messageset"]]
+            for sub in sbm_client.get_subscriptions(
+                {"active": True, "identity": identity}
+            )["results"]
         ]
         return "whatsapp_service_info.hw_full.1" in subscriptions

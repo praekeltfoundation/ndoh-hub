@@ -1,11 +1,11 @@
 from rest_framework.serializers import ValidationError
+
 from ndoh_hub import utils
 
 
 def edd(value):
     if not utils.is_valid_edd_date(value):
-        raise ValidationError(
-            "Must be in the future, but less than 43 weeks away")
+        raise ValidationError("Must be in the future, but less than 43 weeks away")
 
 
 def consent(value):
@@ -21,4 +21,5 @@ def sa_id_no(value):
 def passport_no(value):
     if not utils.is_valid_passport_no(value):
         raise ValidationError(
-            "Invalid passport number. Must be at least 1 character long")
+            "Invalid passport number. Must be at least 1 character long"
+        )
