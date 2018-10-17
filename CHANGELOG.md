@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1 (2018-10-17)
+### Enhancements
+1. Add endpoint for engage context
+   ([#172](https://github.com/praekeltfoundation/ndoh-hub/pull/171))
+
 ## 0.3.0 (2018-10-16)
 ### Enhancements
 1. Switch to WhatsApp API for failure event types
