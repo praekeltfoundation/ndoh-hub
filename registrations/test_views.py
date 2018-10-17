@@ -250,12 +250,6 @@ class EngageContextViewTests(APITestCase):
         except ValueError:
             self.fail("{} is an invalid date".format(date))
 
-    def assertUUID(self, uuid):
-        try:
-            UUID(uuid)
-        except ValueError:
-            self.fail("{} is an invalid UUID".format(uuid))
-
     def generate_hmac_signature(self, data, key):
         data = JSONRenderer().render(data)
         h = hmac.new(key.encode(), data, sha256)
@@ -353,13 +347,13 @@ class EngageContextViewTests(APITestCase):
         [mother_details] = response.pop("context")
         self.assertEqual(response, {"version": "1.0.0-alpha"})
         self.assertDateTime(mother_details.pop("timestamp"))
-        self.assertUUID(mother_details.pop("uuid"))
         self.assertEqual(
             mother_details,
             {
                 "icon": "info-circle",
                 "title": "Mother's Details",
                 "type": "table",
+                "uuid": "7eb448be-3180-417e-823c-0c6d5da24e00",
                 "payload": {
                     "Facility Code": "123456",
                     "Registration Type": "MomConnect pregnancy registration",
