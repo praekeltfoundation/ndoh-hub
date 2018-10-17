@@ -1,9 +1,13 @@
+import base64
 import datetime
+import hmac
 import json
 import logging
+from hashlib import sha256
 
 import django_filters
 import django_filters.rest_framework as filters
+import phonenumbers
 import requests
 from django.conf import settings
 from django.contrib.auth.models import Group, User
@@ -11,9 +15,11 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from requests.exceptions import RequestException
 from rest_framework import generics, mixins, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import (
     DjangoModelPermissions,
@@ -32,6 +38,7 @@ from ndoh_hub.utils import get_available_metrics
 from .models import PositionTracker, Registration, Source
 from .serializers import (
     CreateUserSerializer,
+    EngageContextSerializer,
     GroupSerializer,
     HookSerializer,
     JembiAppRegistrationSerializer,
@@ -625,3 +632,140 @@ class PositionTrackerViewset(
 
         serializer = self.get_serializer(instance=position_tracker)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class EngageContextView(generics.CreateAPIView):
+    serializer_class = EngageContextSerializer
+
+    # Since these external requests are happening in the request loop, we need to
+    # ensure that they are quick
+    identity_store = IdentityStoreApiClient(
+        api_url=settings.IDENTITY_STORE_URL,
+        auth_token=settings.IDENTITY_STORE_TOKEN,
+        retries=0,
+        timeout=3,
+    )
+
+    LOOKUP_FIELDS = (
+        ("faccode", "Facility Code"),
+        ("edd", "Expected Due Date"),
+        ("mom_dob", "Date of Birth"),
+    )
+
+    def validate_signature(self, request):
+        secret = settings.ENGAGE_CONTEXT_HMAC_SECRET
+        try:
+            signature = request.META["HTTP_X_ENGAGE_HOOK_SIGNATURE"]
+        except KeyError:
+            raise AuthenticationFailed("X-Engage-Hook-Signature header required")
+
+        h = hmac.new(secret.encode(), request.body, sha256)
+
+        if base64.b64encode(h.digest()).decode() != signature:
+            raise AuthenticationFailed("Invalid hook signature")
+
+    def get_msisdn(self, data):
+        """
+        Gets the MSISDN of the user, if present in the request, otherwise returns None
+        """
+        msisdns = list(
+            filter(
+                lambda x: x, (message["from"] for message in data.get("messages", []))
+            )
+        )
+        if msisdns:
+            return phonenumbers.format_number(
+                msisdns[-1], phonenumbers.PhoneNumberFormat.E164
+            )
+
+    def get_identity(self, msisdn):
+        """
+        Gets the identity for the msisdn, if exists, otherwise returns None
+        """
+        if not msisdn:
+            return None
+
+        try:
+            identity = self.identity_store.get_identity_by_address("msisdn", msisdn)
+            return next(identity["results"])
+        # Catch both no results and HTTP errors
+        except (StopIteration, RequestException):
+            return None
+
+    def get_registrations(self, identity):
+        """
+        Gets the list of registrations for the identity, ordered from oldest to newest.
+        If there is no identity, returns empty list
+        """
+        try:
+            identity_id = identity["id"]
+        except (KeyError, TypeError):
+            return []
+
+        return Registration.objects.filter(registrant_id=identity_id).order_by(
+            "created_at"
+        )
+
+    def lookup_field_from_dictionaries(self, field, *dictionaries):
+        """
+        Given a field and one or more dictionaries, returns the first match that it
+        finds, or None if no match is found
+        """
+        for dictionary in dictionaries:
+            if field in dictionary:
+                return dictionary[field]
+
+    def extract_info(self, identity, registrations):
+        """
+        Extracts the info from the identity and registrations to be displayed.
+        Returns a map of labels and values.
+        """
+        result = {}
+
+        registrations_details = []
+        for registration in registrations:
+            result["Registration Type"] = registration.get_reg_type_display()
+            registrations_details.append(registration.data)
+
+        # Reverse registration details so that we get latest information first
+        registrations_details = registrations_details[::-1]
+
+        try:
+            identity_details = identity["details"]
+        except (KeyError, TypeError):
+            identity_details = {}
+
+        for field, label in self.LOOKUP_FIELDS:
+            value = self.lookup_field_from_dictionaries(
+                field, identity_details, *registrations_details
+            )
+            if value:
+                result[label] = value
+
+        return result
+
+    def post(self, request):
+        self.validate_signature(request)
+
+        serializer = self.get_serializer_class()(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        context = []
+
+        msisdn = self.get_msisdn(serializer.validated_data)
+        identity = self.get_identity(msisdn)
+        registrations = self.get_registrations(identity)
+        info = self.extract_info(identity, registrations)
+        if info:
+            context.append(
+                {
+                    "icon": "info-circle",
+                    "title": "Mother's Details",
+                    "type": "table",
+                    "timestamp": timezone.now().isoformat(),
+                    "uuid": "7eb448be-3180-417e-823c-0c6d5da24e00",
+                    "payload": info,
+                }
+            )
+
+        return Response({"version": "1.0.0-alpha", "context": context})

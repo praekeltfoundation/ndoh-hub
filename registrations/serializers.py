@@ -4,6 +4,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from rest_hooks.models import Hook
 
+from changes.fields import PhoneNumberField
 from ndoh_hub import utils
 from registrations import validators
 from registrations.models import PositionTracker
@@ -317,3 +318,17 @@ class PositionTrackerSerializer(serializers.ModelSerializer):
     class Meta:
         model = PositionTracker
         fields = ("url", "label", "position")
+
+
+class EngageContextSerializer(serializers.Serializer):
+    class Message(serializers.Serializer):
+        from_ = PhoneNumberField(country_code="ZA")
+
+        def get_fields(self):
+            # from is a reserved keyword, so we have to do a little dance
+            result = super().get_fields()
+            from_ = result.pop("from_")
+            result["from"] = from_
+            return result
+
+    messages = serializers.ListField(child=Message(), required=False)

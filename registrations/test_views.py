@@ -1,14 +1,25 @@
+import base64
 import datetime
+import hmac
 import json
+from hashlib import sha256
 from unittest import mock
+from urllib.parse import urlencode
 
-from django.contrib.auth.models import Permission
+import responses
+from django.contrib.auth.models import Permission, User
+from django.test.utils import override_settings
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import dateparse, timezone
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+from rest_framework.renderers import JSONRenderer
+from rest_framework.test import APITestCase
 
-from registrations.models import PositionTracker, Registration
+from registrations.models import PositionTracker, Registration, Source
 from registrations.serializers import RegistrationSerializer
 from registrations.tests import AuthenticatedAPITestCase
+from registrations.views import EngageContextView
 
 
 class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
@@ -199,3 +210,163 @@ class PositionTrackerViewsetTests(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, 400)
         pt.refresh_from_db()
         self.assertEqual(pt.position, 2)
+
+
+class EngageContextViewTests(APITestCase):
+    def add_authorization_token(self):
+        """
+        Adds credentials to the current client
+        """
+        user = User.objects.create_user("test")
+        token = Token.objects.create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION="Token {}".format(token.key))
+
+    def add_identity_lookup_by_address_fixture(
+        self, msisdn="+27820001001", identity_uuid=None, details=None
+    ):
+        """
+        Adds the fixtures for the identity lookup. If details aren't specified, then
+        an empty result is returned.
+        """
+        if identity_uuid is None and details is None:
+            results = []
+        else:
+            details["addresses"] = {"msisdn": {msisdn: {"default": True}}}
+            results = [{"id": identity_uuid, "details": details}]
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/search/?{}".format(
+                urlencode({"details__addresses__msisdn": msisdn})
+            ),
+            json={"results": results},
+            status=200,
+        )
+
+    def assertDateTime(self, date):
+        try:
+            result = dateparse.parse_datetime(date)
+            assert result is not None, "{} is an invalid date".format(date)
+        except ValueError:
+            self.fail("{} is an invalid date".format(date))
+
+    def generate_hmac_signature(self, data, key):
+        data = JSONRenderer().render(data)
+        h = hmac.new(key.encode(), data, sha256)
+        return base64.b64encode(h.digest()).decode()
+
+    def test_get_identity_no_msisdn(self):
+        """
+        If no msisdn is presented, then no request for the identity should be made.
+        """
+        self.assertIsNone(EngageContextView().get_identity(None))
+
+    @responses.activate
+    def test_get_identity_no_results(self):
+        """
+        If there are no results for the specifed MSISDN, then None should be returned
+        """
+        self.add_identity_lookup_by_address_fixture(msisdn="+27820001001")
+        self.assertIsNone(EngageContextView().get_identity(msisdn="+27820001001"))
+
+    def get_registrations_no_identity(self):
+        """
+        If there is no identity given, then an empty list should be returned
+        """
+        self.assertEqual(EngageContextView().get_registrations(None), [])
+
+    def test_authentication_required(self):
+        """
+        A valid token is required to access the API
+        """
+        url = reverse("engage-context")
+        response = self.client.post(url, {}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_signature_required(self):
+        """
+        A valid signature is required on the request to access the API
+        """
+        self.add_authorization_token()
+        url = reverse("engage-context")
+        response = self.client.post(url, {}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn(
+            "X-Engage-Hook-Signature header required", response.json()["detail"]
+        )
+
+        response = self.client.post(
+            url, {}, format="json", HTTP_X_ENGAGE_HOOK_SIGNATURE="bad"
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn("Invalid hook signature", response.json()["detail"])
+
+    @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
+    def test_returns_no_information(self):
+        """
+        Returns no information when there are no inbound messages
+        """
+        self.add_authorization_token()
+        url = reverse("engage-context")
+        response = self.client.post(
+            url,
+            {},
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                {}, "hmac-secret"
+            ),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json(), {"version": "1.0.0-alpha", "context": []})
+
+    @responses.activate
+    @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
+    def test_returns_information(self):
+        """
+        If the request has inbound messages, return the information for that user.
+        """
+        self.add_authorization_token()
+        self.add_identity_lookup_by_address_fixture(
+            msisdn="+27820001001",
+            identity_uuid="mother-uuid",
+            details={"mom_dob": "1980-08-08"},
+        )
+        user = User.objects.create_user("test2")
+        source = Source.objects.create(user=user)
+        Registration.objects.create(
+            reg_type="momconnect_prebirth",
+            registrant_id="mother-uuid",
+            data={"faccode": "123456", "edd": "2018-12-15"},
+            source=source,
+        )
+
+        url = reverse("engage-context")
+        data = {"messages": [{"from": "27820001001"}]}
+        response = self.client.post(
+            url,
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = response.json()
+        [mother_details] = response.pop("context")
+        self.assertEqual(response, {"version": "1.0.0-alpha"})
+        self.assertDateTime(mother_details.pop("timestamp"))
+        self.assertEqual(
+            mother_details,
+            {
+                "icon": "info-circle",
+                "title": "Mother's Details",
+                "type": "table",
+                "uuid": "7eb448be-3180-417e-823c-0c6d5da24e00",
+                "payload": {
+                    "Facility Code": "123456",
+                    "Registration Type": "MomConnect pregnancy registration",
+                    "Date of Birth": "1980-08-08",
+                    "Expected Due Date": "2018-12-15",
+                },
+            },
+        )
