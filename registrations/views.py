@@ -3,7 +3,6 @@ import datetime
 import hmac
 import json
 import logging
-import uuid
 from hashlib import sha256
 
 import django_filters

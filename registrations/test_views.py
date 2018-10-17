@@ -5,7 +5,6 @@ import json
 from hashlib import sha256
 from unittest import mock
 from urllib.parse import urlencode
-from uuid import UUID
 
 import responses
 from django.contrib.auth.models import Permission, User
