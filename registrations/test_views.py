@@ -1,17 +1,21 @@
 import datetime
 import json
 from unittest import mock
+from urllib.parse import urlencode
+from uuid import UUID
 
 from django.contrib.auth.models import Permission, User
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import timezone, dateparse
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
+import responses
 
-from registrations.models import PositionTracker, Registration
+from registrations.models import PositionTracker, Registration, Source
 from registrations.serializers import RegistrationSerializer
 from registrations.tests import AuthenticatedAPITestCase
+from registrations.views import EngageContextView
 
 
 class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
@@ -213,6 +217,60 @@ class EngageContextViewTests(APITestCase):
         token = Token.objects.create(user=user)
         self.client.credentials(HTTP_AUTHORIZATION="Token {}".format(token.key))
 
+    def add_identity_lookup_by_address_fixture(
+        self, msisdn="+27820001001", identity_uuid=None, details=None
+    ):
+        """
+        Adds the fixtures for the identity lookup. If details aren't specified, then
+        an empty result is returned.
+        """
+        if identity_uuid is None and details is None:
+            results = []
+        else:
+            details["addresses"] = {"msisdn": {msisdn: {"default": True}}}
+            results = [{"id": identity_uuid, "details": details}]
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/search/?{}".format(
+                urlencode({"details__addresses__msisdn": msisdn})
+            ),
+            json={"results": results},
+            status=200,
+        )
+
+    def assertDateTime(self, date):
+        try:
+            result = dateparse.parse_datetime(date)
+            assert result is not None, "{} is an invalid date".format(date)
+        except ValueError:
+            self.fail("{} is an invalid date".format(date))
+
+    def assertUUID(self, uuid):
+        try:
+            UUID(uuid)
+        except ValueError:
+            self.fail("{} is an invalid UUID".format(uuid))
+
+    def test_get_identity_no_msisdn(self):
+        """
+        If no msisdn is presented, then no request for the identity should be made.
+        """
+        self.assertIsNone(EngageContextView().get_identity(None))
+
+    @responses.activate
+    def test_get_identity_no_results(self):
+        """
+        If there are no results for the specifed MSISDN, then None should be returned
+        """
+        self.add_identity_lookup_by_address_fixture(msisdn="+27820001001")
+        self.assertIsNone(EngageContextView().get_identity(msisdn="+27820001001"))
+
+    def get_registrations_no_identity(self):
+        """
+        If there is no identity given, then an empty list should be returned
+        """
+        self.assertEqual(EngageContextView().get_registrations(None), [])
+
     def test_authentication_required(self):
         """
         A valid token is required to access the API
@@ -221,12 +279,60 @@ class EngageContextViewTests(APITestCase):
         response = self.client.post(url, {}, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_returns_information(self):
+    def test_returns_no_information(self):
         """
-        Returns the information related to the phone number in the request
+        Returns no information when there are no inbound messages
         """
         self.add_authorization_token()
         url = reverse("engage-context")
         response = self.client.post(url, {}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json(), {"version": "1.0.0-alpha", "context": []})
+
+    @responses.activate
+    def test_returns_information(self):
+        """
+        If the request has inbound messages, return the information for that user.
+        """
+        self.add_authorization_token()
+        self.add_identity_lookup_by_address_fixture(
+            msisdn="+27820001001",
+            identity_uuid="mother-uuid",
+            details={"mom_dob": "1980-08-08"},
+        )
+        user = User.objects.create_user("test2")
+        source = Source.objects.create(user=user)
+        Registration.objects.create(
+            reg_type="momconnect_prebirth",
+            registrant_id="mother-uuid",
+            data={"faccode": "123456", "edd": "2018-12-15"},
+            source=source,
+        )
+
+        url = reverse("engage-context")
+        response = self.client.post(
+            url,
+            {"messages": [{"from": "27820001001", "foo": "27820001001"}]},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = response.json()
+        [mother_details] = response.pop("context")
+        self.assertEqual(response, {"version": "1.0.0-alpha"})
+        self.assertDateTime(mother_details.pop("timestamp"))
+        self.assertUUID(mother_details.pop("uuid"))
+        self.assertEqual(
+            mother_details,
+            {
+                "icon": "info-circle",
+                "title": "Mother's Details",
+                "type": "table",
+                "payload": {
+                    "Facility Code": "123456",
+                    "Registration Type": "MomConnect pregnancy registration",
+                    "Date of Birth": "1980-08-08",
+                    "Expected Due Date": "2018-12-15",
+                },
+            },
+        )

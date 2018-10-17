@@ -322,9 +322,13 @@ class PositionTrackerSerializer(serializers.ModelSerializer):
 
 class EngageContextSerializer(serializers.Serializer):
     class Message(serializers.Serializer):
-        def __init__(self, *args, **kwargs):
-            # from is a reserved keyword, so we are setting it here
-            setattr(self, "from", PhoneNumberField(country_code="ZA"))
-            return super().__init__(*args, **kwargs)
+        from_ = PhoneNumberField(country_code="ZA")
+
+        def get_fields(self):
+            # from is a reserved keyword, so we have to do a little dance
+            result = super().get_fields()
+            from_ = result.pop("from_")
+            result["from"] = from_
+            return result
 
     messages = serializers.ListField(child=Message(), required=False)
