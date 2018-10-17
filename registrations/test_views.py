@@ -1,16 +1,21 @@
+import base64
 import datetime
+import hmac
 import json
+from hashlib import sha256
 from unittest import mock
 from urllib.parse import urlencode
 from uuid import UUID
 
+import responses
 from django.contrib.auth.models import Permission, User
+from django.test.utils import override_settings
 from django.urls import reverse
-from django.utils import timezone, dateparse
+from django.utils import dateparse, timezone
 from rest_framework import status
 from rest_framework.authtoken.models import Token
+from rest_framework.renderers import JSONRenderer
 from rest_framework.test import APITestCase
-import responses
 
 from registrations.models import PositionTracker, Registration, Source
 from registrations.serializers import RegistrationSerializer
@@ -251,6 +256,11 @@ class EngageContextViewTests(APITestCase):
         except ValueError:
             self.fail("{} is an invalid UUID".format(uuid))
 
+    def generate_hmac_signature(self, data, key):
+        data = JSONRenderer().render(data)
+        h = hmac.new(key.encode(), data, sha256)
+        return base64.b64encode(h.digest()).decode()
+
     def test_get_identity_no_msisdn(self):
         """
         If no msisdn is presented, then no request for the identity should be made.
@@ -279,17 +289,35 @@ class EngageContextViewTests(APITestCase):
         response = self.client.post(url, {}, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_signature_required(self):
+        """
+        A valid signature is required on the request to access the API
+        """
+        self.add_authorization_token()
+        url = reverse("engage-context")
+        response = self.client.post(url, {}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
     def test_returns_no_information(self):
         """
         Returns no information when there are no inbound messages
         """
         self.add_authorization_token()
         url = reverse("engage-context")
-        response = self.client.post(url, {}, format="json")
+        response = self.client.post(
+            url,
+            {},
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                {}, "hmac-secret"
+            ),
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json(), {"version": "1.0.0-alpha", "context": []})
 
     @responses.activate
+    @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
     def test_returns_information(self):
         """
         If the request has inbound messages, return the information for that user.
@@ -310,10 +338,14 @@ class EngageContextViewTests(APITestCase):
         )
 
         url = reverse("engage-context")
+        data = {"messages": [{"from": "27820001001"}]}
         response = self.client.post(
             url,
-            {"messages": [{"from": "27820001001", "foo": "27820001001"}]},
+            data,
             format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 

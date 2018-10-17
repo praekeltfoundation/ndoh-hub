@@ -1,7 +1,10 @@
+import base64
 import datetime
+import hmac
 import json
 import logging
 import uuid
+from hashlib import sha256
 
 import django_filters
 import django_filters.rest_framework as filters
@@ -13,9 +16,11 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from requests.exceptions import RequestException
 from rest_framework import generics, mixins, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import (
     DjangoModelPermissions,
@@ -28,7 +33,6 @@ from rest_framework.utils.encoders import JSONEncoder
 from rest_framework.views import APIView
 from rest_hooks.models import Hook
 from seed_services_client.identity_store import IdentityStoreApiClient
-from requests.exceptions import RequestException
 
 from ndoh_hub.utils import get_available_metrics
 
@@ -649,6 +653,23 @@ class EngageContextView(generics.CreateAPIView):
         ("mom_dob", "Date of Birth"),
     )
 
+    def validate_signature(self, request):
+        secret = settings.ENGAGE_CONTEXT_HMAC_SECRET
+        try:
+            signature = request.META["HTTP_X_ENGAGE_HOOK_SIGNATURE"]
+        except KeyError:
+            raise AuthenticationFailed("X-Engage-Hook-Signature header required")
+
+        h = hmac.new(secret.encode(), request.body, sha256)
+
+        if base64.b64encode(h.digest()).decode() != signature:
+            raise AuthenticationFailed("Invalid hook signature")
+
+    def generate_hmac_signature(self, data, key):
+        data = json.dumps(data)
+        h = hmac.new(key.encode(), data.encode(), sha256)
+        return base64.b64encode(h.digest()).decode()
+
     def get_msisdn(self, data):
         """
         Gets the MSISDN of the user, if present in the request, otherwise returns None
@@ -730,6 +751,8 @@ class EngageContextView(generics.CreateAPIView):
         return result
 
     def post(self, request):
+        self.validate_signature(request)
+
         serializer = self.get_serializer_class()(data=request.data)
         serializer.is_valid(raise_exception=True)
 
