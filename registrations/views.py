@@ -665,11 +665,6 @@ class EngageContextView(generics.CreateAPIView):
         if base64.b64encode(h.digest()).decode() != signature:
             raise AuthenticationFailed("Invalid hook signature")
 
-    def generate_hmac_signature(self, data, key):
-        data = json.dumps(data)
-        h = hmac.new(key.encode(), data.encode(), sha256)
-        return base64.b64encode(h.digest()).decode()
-
     def get_msisdn(self, data):
         """
         Gets the MSISDN of the user, if present in the request, otherwise returns None

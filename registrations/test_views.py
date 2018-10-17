@@ -291,6 +291,15 @@ class EngageContextViewTests(APITestCase):
         url = reverse("engage-context")
         response = self.client.post(url, {}, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn(
+            "X-Engage-Hook-Signature header required", response.json()["detail"]
+        )
+
+        response = self.client.post(
+            url, {}, format="json", HTTP_X_ENGAGE_HOOK_SIGNATURE="bad"
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn("Invalid hook signature", response.json()["detail"])
 
     @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
     def test_returns_no_information(self):
