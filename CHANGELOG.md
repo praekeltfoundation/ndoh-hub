@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.2 (2018-10-17)
+### Enhancements
+1. Add list of active subscriptions to engage context
+   ([#173](https://github.com/praekeltfoundation/ndoh-hub/pull/173))
+
 ## 0.3.1 (2018-10-17)
 ### Enhancements
 1. Add endpoint for engage context
