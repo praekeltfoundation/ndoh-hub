@@ -242,6 +242,23 @@ class EngageContextViewTests(APITestCase):
             status=200,
         )
 
+    def add_subscription_lookup(self, identity_uuid, subscriptions=None):
+        if subscriptions is None:
+            subscriptions = []
+        else:
+            subscriptions = [
+                {"id": i, "messageset_label": l} for i, l in enumerate(subscriptions)
+            ]
+
+        responses.add(
+            responses.GET,
+            "http://sbm/api/v1/subscriptions/?{}".format(
+                urlencode({"identity": identity_uuid, "active": True})
+            ),
+            json={"results": subscriptions},
+            status=200,
+        )
+
     def assertDateTime(self, date):
         try:
             result = dateparse.parse_datetime(date)
@@ -330,6 +347,10 @@ class EngageContextViewTests(APITestCase):
             identity_uuid="mother-uuid",
             details={"mom_dob": "1980-08-08"},
         )
+        self.add_subscription_lookup(
+            identity_uuid="mother-uuid",
+            subscriptions=["MomConnect Pregnancy WhatsApp", "Service Info WhatsApp"],
+        )
         user = User.objects.create_user("test2")
         source = Source.objects.create(user=user)
         Registration.objects.create(
@@ -352,8 +373,9 @@ class EngageContextViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response = response.json()
-        [mother_details] = response.pop("context")
+        [mother_details, subscriptions] = response.pop("context")
         self.assertEqual(response, {"version": "1.0.0-alpha"})
+
         self.assertDateTime(mother_details.pop("timestamp"))
         self.assertEqual(
             mother_details,
@@ -368,5 +390,17 @@ class EngageContextViewTests(APITestCase):
                     "Date of Birth": "1980-08-08",
                     "Expected Due Date": "2018-12-15",
                 },
+            },
+        )
+
+        self.assertDateTime(subscriptions.pop("timestamp"))
+        self.assertEqual(
+            subscriptions,
+            {
+                "icon": "profile",
+                "title": "Subscriptions",
+                "type": "ordered-list",
+                "uuid": "ff758121-ea24-446d-9d15-709ad92d2056",
+                "payload": ["MomConnect Pregnancy WhatsApp", "Service Info WhatsApp"],
             },
         )

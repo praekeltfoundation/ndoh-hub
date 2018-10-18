@@ -32,6 +32,7 @@ from rest_framework.utils.encoders import JSONEncoder
 from rest_framework.views import APIView
 from rest_hooks.models import Hook
 from seed_services_client.identity_store import IdentityStoreApiClient
+from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
 
 from ndoh_hub.utils import get_available_metrics
 
@@ -643,7 +644,13 @@ class EngageContextView(generics.CreateAPIView):
         api_url=settings.IDENTITY_STORE_URL,
         auth_token=settings.IDENTITY_STORE_TOKEN,
         retries=0,
-        timeout=3,
+        timeout=1,
+    )
+    stage_based_messaging = StageBasedMessagingApiClient(
+        api_url=settings.STAGE_BASED_MESSAGING_URL,
+        auth_token=settings.STAGE_BASED_MESSAGING_TOKEN,
+        retries=0,
+        timeout=1,
     )
 
     LOOKUP_FIELDS = (
@@ -715,7 +722,22 @@ class EngageContextView(generics.CreateAPIView):
             if field in dictionary:
                 return dictionary[field]
 
-    def extract_info(self, identity, registrations):
+    def get_subscriptions(self, identity):
+        """
+        Gets the list of active subscription labels for the given identity. If there
+        is no identity, returns an empty list
+        """
+        try:
+            identity_id = identity["id"]
+        except (KeyError, TypeError):
+            return []
+
+        subscriptions = self.stage_based_messaging.get_subscriptions(
+            {"identity": identity_id, "active": True}
+        )
+        return [sub["messageset_label"] for sub in subscriptions["results"]]
+
+    def extract_registration_info(self, identity, registrations):
         """
         Extracts the info from the identity and registrations to be displayed.
         Returns a map of labels and values.
@@ -755,7 +777,7 @@ class EngageContextView(generics.CreateAPIView):
         msisdn = self.get_msisdn(serializer.validated_data)
         identity = self.get_identity(msisdn)
         registrations = self.get_registrations(identity)
-        info = self.extract_info(identity, registrations)
+        info = self.extract_registration_info(identity, registrations)
         if info:
             context.append(
                 {
@@ -765,6 +787,19 @@ class EngageContextView(generics.CreateAPIView):
                     "timestamp": timezone.now().isoformat(),
                     "uuid": "7eb448be-3180-417e-823c-0c6d5da24e00",
                     "payload": info,
+                }
+            )
+
+        subscriptions = self.get_subscriptions(identity)
+        if subscriptions:
+            context.append(
+                {
+                    "icon": "profile",
+                    "title": "Subscriptions",
+                    "type": "ordered-list",
+                    "timestamp": timezone.now().isoformat(),
+                    "uuid": "ff758121-ea24-446d-9d15-709ad92d2056",
+                    "payload": subscriptions,
                 }
             )
 
