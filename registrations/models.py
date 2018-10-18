@@ -82,7 +82,9 @@ class Registration(models.Model):
     reg_type = models.CharField(
         max_length=30, null=False, blank=False, choices=REG_TYPE_CHOICES
     )
-    registrant_id = models.CharField(max_length=36, null=True, blank=False)
+    registrant_id = models.CharField(
+        max_length=36, null=True, blank=False, db_index=True
+    )
     data = JSONField(null=True, blank=True)
     validated = models.BooleanField(default=False)
     source = models.ForeignKey(
