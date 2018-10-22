@@ -297,21 +297,24 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         def cb(request):
             data = json.loads(request.body)
             self.assertEqual(
-                data,
-                {"number": "+27820000000", "msisdns": ["+27821111111"], "wait": True},
+                data, {"blocking": "wait", "contacts": ["+27821111112"]},
             )
-            return (200, {}, json.dumps([{"status": "valid", "wa_id": "27821111111"}]))
+            return (200, {}, json.dumps([{"contacts": [{"input": "+27821111112",
+                                                        "status": "valid",
+                                                        "wa_id": "27821111112"}]
+                                          }]))
 
         responses.add_callback(
             responses.POST,
-            "http://wassup/",
+            "http://engage/",
             callback=cb,
             content_type="application/json",
         )
 
-        self.assertTrue(task.is_registered_on_whatsapp("+27821111111"))
+        self.assertTrue(task.is_registered_on_whatsapp("+27821111112"))
         self.assertEqual(
-            responses.calls[-1].request.headers["Authorization"], "Token wassup-token"
+            responses.calls[-1].request.headers["Authorization"],
+            "Bearer engage-token"
         )
 
     @responses.activate
@@ -324,24 +327,25 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         def cb(request):
             data = json.loads(request.body)
             self.assertEqual(
-                data,
-                {"number": "+27820000000", "msisdns": ["+27821111111"], "wait": True},
+                data, {"blocking": "wait", "contacts": ["+27821111111"]},
             )
             return (
                 200,
                 {},
-                json.dumps([{"status": "invalid", "wa_id": "27821111111"}]),
+                json.dumps([{"contacts": [{"input": "+27821111111",
+                                           "status": "invalid"}]}])
             )
 
         responses.add_callback(
             responses.POST,
-            "http://wassup/",
+            "http://engage/",
             callback=cb,
             content_type="application/json",
         )
         self.assertFalse(task.is_registered_on_whatsapp("+27821111111"))
         self.assertEqual(
-            responses.calls[-1].request.headers["Authorization"], "Token wassup-token"
+            responses.calls[-1].request.headers["Authorization"],
+            "Bearer engage-token"
         )
 
     def test_create_pmtct_registration_whatsapp(self):
