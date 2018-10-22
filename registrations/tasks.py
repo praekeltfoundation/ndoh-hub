@@ -708,13 +708,14 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         Returns whether or not the number is recognised on wassup
         """
         r = requests.post(
-            settings.WASSUP_URL,
-            json={"number": settings.WASSUP_NUMBER, "msisdns": [address], "wait": True},
-            headers={"Authorization": "Token {}".format(settings.WASSUP_TOKEN)},
+            settings.ENGAGE_URL,
+            json={"blocking": "wait", "contacts": [address]},
+            headers={"Authorization": "Bearer {}".format(settings.ENGAGE_TOKEN)},
         )
         r.raise_for_status()
         data = r.json()
-        existing = filter(lambda d: d.get("status", False) == "valid", data)
+        existing = filter(lambda d: d.get('status', False) == "valid",
+                          data[0]['contacts'])
         return any(existing)
 
     def create_pmtct_registration(self, registration, operator):
