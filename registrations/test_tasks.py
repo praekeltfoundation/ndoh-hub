@@ -299,14 +299,14 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
             self.assertEqual(
                 data, {"blocking": "wait", "contacts": ["+27821111112"]},
             )
-            return (200, {}, json.dumps([{"contacts": [{"input": "+27821111112",
-                                                        "status": "valid",
-                                                        "wa_id": "27821111112"}]
-                                          }]))
+            return (200, {}, json.dumps({"contacts": [{"input": "+27821111112",
+                                                       "status": "valid",
+                                                       "wa_id": "27821111112"}]
+                                         }))
 
         responses.add_callback(
             responses.POST,
-            "http://engage/",
+            "http://engage/v1/contacts",
             callback=cb,
             content_type="application/json",
         )
@@ -332,13 +332,13 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
             return (
                 200,
                 {},
-                json.dumps([{"contacts": [{"input": "+27821111111",
-                                           "status": "invalid"}]}])
+                json.dumps({"contacts": [{"input": "+27821111111",
+                                          "status": "invalid"}]})
             )
 
         responses.add_callback(
             responses.POST,
-            "http://engage/",
+            "http://engage/v1/contacts",
             callback=cb,
             content_type="application/json",
         )
