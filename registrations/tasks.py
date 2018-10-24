@@ -708,7 +708,7 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         Returns whether or not the number is recognised on wassup
         """
         r = requests.post(
-            urljoin(settings.ENGAGE_TOKEN, "http://engage/v1/contacts"),
+            urljoin(settings.ENGAGE_URL, "v1/contacts"),
             json={"blocking": "wait", "contacts": [address]},
             headers={"Authorization": "Bearer {}".format(settings.ENGAGE_TOKEN)},
         )
