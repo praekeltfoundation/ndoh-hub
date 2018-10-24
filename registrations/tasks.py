@@ -710,11 +710,7 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         r = requests.post(
             urljoin(settings.ENGAGE_TOKEN, "http://engage/v1/contacts"),
             json={"blocking": "wait", "contacts": [address]},
-            headers={
-                "Authorization": "Bearer {}".format(
-                    settings.ENGAGE_TOKEN
-                )
-            },
+            headers={"Authorization": "Bearer {}".format(settings.ENGAGE_TOKEN)},
         )
         r.raise_for_status()
         data = r.json()
