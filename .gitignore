@@ -20,6 +20,11 @@ parts/
 sdist/
 var/
 bin/
+.vs/
+.vscode/
+djcelery/
+include/
+pip-selfcheck.json
 *.egg-info/
 *.egg
 .installed.cfg
