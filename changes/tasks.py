@@ -551,9 +551,8 @@ class ValidateImplement(Task):
                 msgset_short_name = utils.get_messageset_short_name(
                     "whatsapp_service_info", reg.source.authority, weeks
                 )
-                msgset_id, msgset_schedule, next_sequence_number = utils.get_messageset_schedule_sequence(
-                    msgset_short_name, weeks
-                )
+                r = utils.get_messageset_schedule_sequence(msgset_short_name, weeks)
+                msgset_id, msgset_schedule, next_sequence_number = r
 
                 SubscriptionRequest.objects.create(
                     identity=reg.registrant_id,
