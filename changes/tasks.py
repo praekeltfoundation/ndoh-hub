@@ -545,15 +545,19 @@ class ValidateImplement(Task):
             elif change.data["channel"] == "sms" and "whatsapp" in short_name:
                 # Change any WhatsApp subscriptions to SMS
                 sbm_client.update_subscription(sub["id"], {"active": False})
-                if "whatsapp_service_info" not in short_name:
-                    messageset = messagesets_rev[re.sub("^whatsapp_", "", short_name)]
-                    SubscriptionRequest.objects.create(
-                        identity=sub["identity"],
-                        messageset=messageset,
-                        next_sequence_number=sub["next_sequence_number"],
-                        lang=sub["lang"],
-                        schedule=sub["schedule"],
-                    )
+
+                # There's no service info for SMS
+                if "service_info" in short_name:
+                    continue
+
+                messageset = messagesets_rev[re.sub("^whatsapp_", "", short_name)]
+                SubscriptionRequest.objects.create(
+                    identity=sub["identity"],
+                    messageset=messageset,
+                    next_sequence_number=sub["next_sequence_number"],
+                    lang=sub["lang"],
+                    schedule=sub["schedule"],
+                )
 
         change.data["old_channel"] = "sms"
         if change.data["channel"] == "sms":
