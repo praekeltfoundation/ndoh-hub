@@ -542,6 +542,11 @@ class ValidateImplement(Task):
                     lang=sub["lang"],
                     schedule=sub["schedule"],
                 )
+
+                # only create service info subscription for momconnect subs
+                if "momconnect" not in short_name:
+                    continue
+
                 reg = (
                     Registration.objects.filter(registrant_id=change.registrant_id)
                     .order_by("-created_at")
