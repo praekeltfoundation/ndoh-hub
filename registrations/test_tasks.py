@@ -1110,6 +1110,17 @@ class ServiceInfoSubscriptionRequestTestCase(AuthenticatedAPITestCase):
         validate_subscribe.create_service_info_subscriptionrequest(registration)
         self.assertEqual(SubscriptionRequest.objects.count(), 0)
 
+    def test_skips_other_authorities(self):
+        """
+        Should skip creating subscription requests if the source authority is
+        partial or public
+        """
+        registration = Registration(
+            source=self.make_source_partialuser(), reg_type="whatsapp_prebirth"
+        )
+        validate_subscribe.create_service_info_subscriptionrequest(registration)
+        self.assertEqual(SubscriptionRequest.objects.count(), 0)
+
     @responses.activate
     def test_creates_subscriptionrequest(self):
         """
