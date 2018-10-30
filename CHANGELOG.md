@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0 (2018-10-30)
+1. Change WhatsApp contact check from Wassup API to Engage API
+   ([#174](https://github.com/praekeltfoundation/ndoh-hub/pull/174))
+
 ## 0.3.2 (2018-10-17)
 ### Enhancements
 1. Add list of active subscriptions to engage context
