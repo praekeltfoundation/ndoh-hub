@@ -30,7 +30,7 @@ except ImportError:
 
 
 def override_get_today():
-    return datetime.datetime.strptime("20150817", "%Y%m%d")
+    return datetime.datetime.strptime("20150817", "%Y%m%d").date()
 
 
 def mock_get_active_subs_mcpre_mcpost_pmtct_nc(registrant_id):
@@ -3809,9 +3809,16 @@ class TestChangeActions(AuthenticatedAPITestCase):
     def test_switch_channel_to_whatsapp(self):
         """
         Switching to WhatsApp should change all other subscriptions to WhatsApp
+        and create a service_info subscription
         """
         registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
-        mock_get_messagesets(["whatsapp_momconnect_prebirth", "momconnect_prebirth"])
+        mock_get_messagesets(
+            [
+                "whatsapp_momconnect_prebirth",
+                "momconnect_prebirth",
+                "whatsapp_service_info",
+            ]
+        )
         mock_get_subscriptions(
             "?identity={}&active=True".format(registrant_id),
             [
@@ -3835,6 +3842,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {"addresses": {"msisdn": {"+27821112222": {}}}},
         )
 
+        self.make_registration_momconnect_prebirth()
+
         change = Change.objects.create(
             registrant_id=registrant_id,
             action="switch_channel",
@@ -3847,12 +3856,18 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertTrue(change.validated)
         self.assertTrue(change.data["old_channel"], "sms")
 
-        [sub_req] = SubscriptionRequest.objects.all()
+        [sub_req, sub_service_info] = SubscriptionRequest.objects.all()
         self.assertEqual(sub_req.identity, registrant_id)
         self.assertEqual(sub_req.messageset, 0)
         self.assertEqual(sub_req.next_sequence_number, 7)
         self.assertEqual(sub_req.lang, "eng")
         self.assertEqual(sub_req.schedule, 2)
+
+        self.assertEqual(sub_service_info.identity, registrant_id)
+        self.assertEqual(sub_service_info.messageset, 0)
+        self.assertEqual(sub_service_info.next_sequence_number, 1)
+        self.assertEqual(sub_service_info.lang, "eng")
+        self.assertEqual(sub_service_info.schedule, 1)
 
         # Check Jembi POST
         self.assertEqual(

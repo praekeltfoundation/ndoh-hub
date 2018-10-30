@@ -542,6 +542,31 @@ class ValidateImplement(Task):
                     lang=sub["lang"],
                     schedule=sub["schedule"],
                 )
+
+                # only create service info subscription for momconnect subs
+                if "momconnect" not in short_name:
+                    continue
+
+                reg = (
+                    Registration.objects.filter(registrant_id=change.registrant_id)
+                    .order_by("-created_at")
+                    .first()
+                )
+                weeks = utils.get_pregnancy_week(utils.get_today(), reg.data["edd"])
+                msgset_short_name = utils.get_messageset_short_name(
+                    "whatsapp_service_info", reg.source.authority, weeks
+                )
+                r = utils.get_messageset_schedule_sequence(msgset_short_name, weeks)
+                msgset_id, msgset_schedule, next_sequence_number = r
+
+                SubscriptionRequest.objects.create(
+                    identity=reg.registrant_id,
+                    messageset=msgset_id,
+                    next_sequence_number=next_sequence_number,
+                    lang=sub["lang"],
+                    schedule=msgset_schedule,
+                )
+
             elif change.data["channel"] == "sms" and "whatsapp" in short_name:
                 # Change any WhatsApp subscriptions to SMS
                 sbm_client.update_subscription(sub["id"], {"active": False})
