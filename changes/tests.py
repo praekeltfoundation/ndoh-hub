@@ -3677,6 +3677,68 @@ class TestChangeActions(AuthenticatedAPITestCase):
         )
 
     @responses.activate
+    def test_switch_channel_to_sms_skips_service_info(self):
+        """
+        Switching the channel to SMS should skip service info subscriptions.
+        """
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        mock_get_messagesets(["whatsapp_service_info.hw_full.1", "momconnect_prebirth"])
+        mock_get_subscriptions(
+            "?identity={}&active=True".format(registrant_id),
+            [
+                {
+                    "id": "sub1",
+                    "messageset": 0,
+                    "identity": registrant_id,
+                    "next_sequence_number": 7,
+                    "lang": "eng",
+                    "schedule": 2,
+                    "active": True,
+                },
+                {"messageset": 1, "active": True},
+            ],
+        )
+        mock_deactivate_subscriptions(["sub1"])
+
+        # . mock get identity by id
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267",
+            {"addresses": {"msisdn": {"+27821112222": {}}}},
+        )
+
+        change = Change.objects.create(
+            registrant_id=registrant_id,
+            action="switch_channel",
+            data={"channel": "sms"},
+            source=self.make_source_normaluser(),
+        )
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertTrue(change.validated)
+        self.assertTrue(change.data["old_channel"], "whatsapp")
+
+        self.assertEqual(SubscriptionRequest.objects.count(), 0)
+
+        # Check Jembi POST
+        self.assertEqual(
+            responses.calls[-1].request.url, "http://jembi/ws/rest/v1/messageChange"
+        )
+        self.assertEqual(
+            json.loads(responses.calls[-1].request.body),
+            {
+                "encdate": change.created_at.strftime("%Y%m%d%H%M%S"),
+                "mha": 1,
+                "swt": 1,
+                "cmsisdn": "+27821112222",
+                "dmsisdn": "+27821112222",
+                "type": 12,
+                "channel_current": "whatsapp",
+                "channel_new": change.data["channel"],
+            },
+        )
+
+    @responses.activate
     def test_switch_channel_to_sms(self):
         """
         Switching to SMS should change all other subscriptions to SMS
