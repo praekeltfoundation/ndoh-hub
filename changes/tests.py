@@ -3926,7 +3926,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {"addresses": {"msisdn": {"+27821112222": {}}}},
         )
 
-        reg = self.make_registration_momconnect_prebirth()
+        self.make_registration_momconnect_prebirth()
 
         change = Change.objects.create(
             registrant_id=registrant_id,
