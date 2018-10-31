@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1 (2018-10-31)
+1. Fix service info subscription request function
+   ([#175](https://github.com/praekeltfoundation/ndoh-hub/pull/175))
+2. Channel switch between WhatsApp and SMS fix for service info subscriptions.
+   ([#176](https://github.com/praekeltfoundation/ndoh-hub/pull/176))
+   ([#177](https://github.com/praekeltfoundation/ndoh-hub/pull/177))
+
 ## 0.4.0 (2018-10-30)
 1. Change WhatsApp contact check from Wassup API to Engage API
    ([#174](https://github.com/praekeltfoundation/ndoh-hub/pull/174))
