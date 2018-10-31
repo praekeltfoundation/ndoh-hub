@@ -552,6 +552,10 @@ class ValidateImplement(Task):
                     .order_by("-created_at")
                     .first()
                 )
+
+                if reg.source.authority in ["hw_partial", "patient"]:
+                    continue
+
                 weeks = utils.get_pregnancy_week(utils.get_today(), reg.data["edd"])
                 msgset_short_name = utils.get_messageset_short_name(
                     "whatsapp_service_info", reg.source.authority, weeks
