@@ -9,6 +9,7 @@ import requests
 import responses
 from django.contrib.auth.models import Group, User
 from django.core import management
+from django.core.cache import cache
 from django.core.management import call_command
 from django.db.models.signals import post_save
 from django.test import TestCase, override_settings
@@ -3708,6 +3709,10 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "2016-01-02", "%Y-%m-%d"
         )
 
+    def tearDown(self):
+        super(TestJembiHelpdeskOutgoing, self).tearDown()
+        cache.clear()
+
     def make_registration_for_jembi_helpdesk(self, source=None):
         registration_data = {
             "reg_type": "momconnect_prebirth",
@@ -4084,6 +4089,60 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(responses.calls), 2)
         request_json = json.loads(responses.calls[1].request.body)
+
+        self.assertEqual(request_json["dmsisdn"], "+27123456789")
+        self.assertEqual(request_json["cmsisdn"], "+27123456789")
+        self.assertEqual(request_json["encdate"], "20160101000000")
+        self.assertEqual(request_json["repdate"], "20160102000000")
+        self.assertEqual(request_json["mha"], 1)
+        self.assertEqual(request_json["swt"], 4)
+        self.assertEqual(request_json["faccode"], "123456")
+        self.assertEqual(
+            request_json["data"],
+            {
+                "question": u"this is a sample user message",
+                "answer": u"this is a sample response",
+            },
+        )
+        self.assertEqual(request_json["class"], "Complaint")
+        self.assertEqual(request_json["type"], 7)
+        self.assertEqual(request_json["op"], "1234")
+
+        cache_key = "SW_TYPE_6a5c691e-140c-48b0-9f39-a53d4951d7fa"
+        self.assertEqual(cache.get(cache_key), 4)
+
+    @responses.activate
+    def test_send_outgoing_message_to_jembi_using_cache_for_sw_type(self):
+        self.make_registration_for_jembi_helpdesk()
+
+        utils_tests.mock_jembi_json_api_call(
+            url="http://jembi/ws/rest/v1/helpdesk",
+            ok_response="jembi-is-ok",
+            err_response="jembi-is-unhappy",
+            fields={},
+        )
+
+        cache_key = "SW_TYPE_6a5c691e-140c-48b0-9f39-a53d4951d7fa"
+        cache.set(cache_key, 4)
+
+        user_request = {
+            "to": "+27123456789",
+            "content": "this is a sample response",
+            "reply_to": "this is a sample user message",
+            "inbound_created_on": self.inbound_created_on_date,
+            "outbound_created_on": self.outbound_created_on_date,
+            "user_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "helpdesk_operator_id": 1234,
+            "label": "Complaint",
+            "inbound_channel_id": "6a5c691e-140c-48b0-9f39-a53d4951d7fa",
+        }
+        # Execute
+        response = self.normalclient.post(
+            "/api/v1/jembi/helpdesk/outgoing/", user_request
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(responses.calls), 1)
+        request_json = json.loads(responses.calls[0].request.body)
 
         self.assertEqual(request_json["dmsisdn"], "+27123456789")
         self.assertEqual(request_json["cmsisdn"], "+27123456789")
