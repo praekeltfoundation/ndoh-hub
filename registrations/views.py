@@ -11,6 +11,7 @@ import phonenumbers
 import requests
 from django.conf import settings
 from django.contrib.auth.models import Group, User
+from django.core.cache import cache
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -242,20 +243,29 @@ class JembiHelpdeskOutgoingView(APIView):
             """
             if channel_id == "":
                 return 2
-            result = requests.get(
-                "%s/jb/channels/%s" % (settings.JUNEBUG_BASE_URL, channel_id),
-                headers={"Content-Type": "application/json"},
-                auth=(settings.JUNEBUG_USERNAME, settings.JUNEBUG_PASSWORD),
-            )
-            result.raise_for_status()
-            channel_config = result.json()
 
-            if (
-                channel_config["result"].get("type", None)
-                == settings.WHATSAPP_CHANNEL_TYPE
-            ):
-                return 4
-            return 2
+            cache_key = "SW_TYPE_{}".format(channel_id)
+            sw_type = cache.get(cache_key, None)
+
+            if not sw_type:
+                result = requests.get(
+                    "%s/jb/channels/%s" % (settings.JUNEBUG_BASE_URL, channel_id),
+                    headers={"Content-Type": "application/json"},
+                    auth=(settings.JUNEBUG_USERNAME, settings.JUNEBUG_PASSWORD),
+                )
+                result.raise_for_status()
+                channel_config = result.json()
+
+                sw_type = 2
+                if (
+                    channel_config["result"].get("type", None)
+                    == settings.WHATSAPP_CHANNEL_TYPE
+                ):
+                    sw_type = 4
+
+                cache.set(cache_key, sw_type)
+
+            return sw_type
 
         registration = (
             Registration.objects.filter(registrant_id=validated_data.get("user_id"))
