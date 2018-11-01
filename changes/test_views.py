@@ -108,6 +108,104 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
             "41c377a47b064eba9abee5a1ea827b3d", user.pk, errors
         )
 
+    @mock.patch("changes.views.tasks.process_engage_helpdesk_outbound")
+    def test_engage_outbound_webhook(self, outbound_task, unsent_task, validate_sig):
+        """
+        If we receive a webhook from engage for an outbound message from a helpdesk
+        operator, we should then submit this to OpenHIM so that it's reported in DHIS2
+        """
+        user = User.objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_change"))
+        self.client.force_authenticate(user=user)
+        url = reverse("whatsapp_event")
+
+        webhook = {
+            "id": "message-id",
+            "to": "27820001001",
+            "type": "text",
+            "text": {"body": "Helpdesk operator to mother"},
+            "timestamp": "1540982581",
+            "_vnd": {"v1": {"direction": "outbound", "in_reply_to": None, "author": 2}},
+        }
+
+        response = self.client.post(
+            url,
+            webhook,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SUBSCRIPTION="engage",
+            HTTP_X_WHATSAPP_ID="message-id",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        outbound_task.delay.assert_called_once_with("27820001001", "message-id")
+
+    def test_invalid_hook_type(self, unsent_task, validate_sig):
+        """
+        If there is an invalid choice for the hook type, a validation error should
+        be raised.
+        """
+        user = User.objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_change"))
+        self.client.force_authenticate(user=user)
+        url = reverse("whatsapp_event")
+
+        response = self.client.post(
+            url, {}, format="json", HTTP_X_ENGAGE_HOOK_SUBSCRIPTION="bad"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Unrecognised hook subscription bad", response.data)
+
+    def test_whatsapp_id_required_for_engage_hook(self, unsent_task, validate_sig):
+        """
+        If there is an invalid choice for the hook type, a validation error should
+        be raised.
+        """
+        user = User.objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_change"))
+        self.client.force_authenticate(user=user)
+        url = reverse("whatsapp_event")
+
+        webhook = {
+            "id": "message-id",
+            "to": "27820001001",
+            "type": "text",
+            "text": {"body": "Helpdesk operator to mother"},
+            "timestamp": "1540982581",
+            "_vnd": {"v1": {"direction": "outbound", "in_reply_to": None, "author": 2}},
+        }
+        response = self.client.post(
+            url, webhook, format="json", HTTP_X_ENGAGE_HOOK_SUBSCRIPTION="engage"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("X-WhatsApp-Id header required", response.data)
+
+    def test_engage_outbound_webhook_ignore(self, unsent_task, validate_sig):
+        """
+        If we receive a webhook from engage for an outbound message and it's not from
+        a helpdesk operator, we should ignore the request.
+        """
+        user = User.objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_change"))
+        self.client.force_authenticate(user=user)
+        url = reverse("whatsapp_event")
+
+        webhook = {
+            "id": "message-id",
+            "to": "27820001001",
+            "type": "text",
+            "text": {"body": "Helpdesk operator to mother"},
+            "timestamp": "1540982581"
+        }
+
+        response = self.client.post(
+            url,
+            webhook,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SUBSCRIPTION="engage",
+            HTTP_X_WHATSAPP_ID="message-id",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
 @mock.patch("changes.views.ReceiveWhatsAppBase.validate_signature")
 @mock.patch("changes.views.tasks.process_whatsapp_system_event")

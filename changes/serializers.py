@@ -84,6 +84,21 @@ class ReceiveWhatsAppEventSerializer(serializers.Serializer):
         return super(ReceiveWhatsAppEventSerializer, self).to_internal_value(data)
 
 
+class ReceiveEngageMessage(serializers.Serializer):
+    to = serializers.CharField(required=True)
+    # We're only interested in text messages
+    type = serializers.ChoiceField(["text"])
+
+    # We're only interested in messages sent from Engage UI
+    class Vnd(serializers.Serializer):
+        class V1(serializers.Serializer):
+            author = serializers.CharField(required=True)
+
+        v1 = V1()
+
+    _vnd = Vnd()
+
+
 class ReceiveWhatsAppSystemEventSerializer(serializers.Serializer):
     class EventSerializer(serializers.Serializer):
         type = serializers.CharField(required=True)

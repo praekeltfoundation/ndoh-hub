@@ -28,6 +28,7 @@ from .serializers import (
     ReceiveWhatsAppEventSerializer,
     ReceiveWhatsAppSystemEventSerializer,
     SeedMessageSenderHookSerializer,
+    ReceiveEngageMessage,
 )
 
 
@@ -240,14 +241,32 @@ class ReceiveWhatsAppEvent(ReceiveWhatsAppBase):
 
     def post(self, request, *args, **kwargs):
         self.validate_signature(request)
-        serializer = self.get_serializer(data=request.data)
+
+        webhook_type = request.META.get("HTTP_X_ENGAGE_HOOK_SUBSCRIPTION", "whatsapp")
+        if webhook_type == "whatsapp":
+            serializer = ReceiveWhatsAppEventSerializer(data=request.data)
+        elif webhook_type == "engage":
+            serializer = ReceiveEngageMessage(data=request.data)
+        else:
+            raise ValidationError(
+                "Unrecognised hook subscription {}".format(webhook_type)
+            )
+
         if not serializer.is_valid():
             # If this isn't an event that we care about
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-        for item in serializer.validated_data["statuses"]:
-            tasks.process_whatsapp_unsent_event.delay(
-                item["id"], request.user.pk, item["errors"]
+        if webhook_type == "whatsapp":
+            for item in serializer.validated_data["statuses"]:
+                tasks.process_whatsapp_unsent_event.delay(
+                    item["id"], request.user.pk, item["errors"]
+                )
+        else:
+            message_id = request.META.get("HTTP_X_WHATSAPP_ID")
+            if not message_id:
+                raise ValidationError("X-WhatsApp-Id header required")
+            tasks.process_engage_helpdesk_outbound.delay(
+                serializer.validated_data["to"], message_id
             )
 
         return Response(status=status.HTTP_202_ACCEPTED)

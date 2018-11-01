@@ -1455,3 +1455,8 @@ class ProcessWhatsAppContactCheckFail(Task):
 
 
 process_whatsapp_contact_check_fail = ProcessWhatsAppContactCheckFail()
+
+
+def process_engage_helpdesk_outbound(wa_contact, message_id):
+    # TODO: Implement
+    pass
