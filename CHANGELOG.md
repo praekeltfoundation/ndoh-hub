@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.2 (2018-11-01)
+1. Fix channel switch between WhatsApp and SMS for public subscriptions.
+   ([#178](https://github.com/praekeltfoundation/ndoh-hub/pull/178))
+
 ## 0.4.1 (2018-10-31)
 1. Fix service info subscription request function
    ([#175](https://github.com/praekeltfoundation/ndoh-hub/pull/175))
