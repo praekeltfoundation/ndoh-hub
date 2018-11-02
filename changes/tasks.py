@@ -577,9 +577,7 @@ class ValidateImplement(Task):
                 if "service_info" in short_name:
                     continue
 
-                messageset = messagesets_rev.get(re.sub("^whatsapp_", "", short_name))
-
-                if not messageset:
+                if short_name == "whatsapp_momconnect_postbirth.hw_full.3":
                     text = (
                         "We notice that you have been receiving MomConnect msgs on "
                         "WhatsApp for children between 1 - 2. Messages for children "
@@ -602,6 +600,7 @@ class ValidateImplement(Task):
 
                 # Change any WhatsApp subscriptions to SMS
                 sbm_client.update_subscription(sub["id"], {"active": False})
+                messageset = messagesets_rev[re.sub("^whatsapp_", "", short_name)]
 
                 SubscriptionRequest.objects.create(
                     identity=sub["identity"],

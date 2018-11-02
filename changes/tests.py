@@ -3816,7 +3816,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         """
         registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
         mock_get_messagesets(
-            ["whatsapp_momconnect_prebirth", "not_momconnect_prebirth"]
+            ["whatsapp_momconnect_postbirth.hw_full.3", "not_momconnect_prebirth"]
         )
         mock_get_subscriptions(
             "?identity={}&active=True".format(registrant_id),
