@@ -42,6 +42,47 @@ class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
             json.loads(response.content)["mom_edd"], ["This field is required."]
         )
 
+    @mock.patch("rest_framework.validators.UniqueValidator.__call__")
+    def test_duplicate_external_id(self, validator):
+        """
+        If the external_id already exists, a 400 response with a appropriate
+        message should be returned. This tests for a race condition where the
+        serializer passes on two or more requests but the second one fails on
+        the db.
+        """
+
+        source = self.make_source_normaluser()
+        Registration.objects.create(
+            external_id="test-external-id",
+            reg_type="jembi_momconnect",
+            registrant_id=None,
+            data={},
+            source=source,
+            created_by=User.objects.get(username="testnormaluser"),
+        )
+
+        response = self.normalclient.post(
+            "/api/v1/jembiregistration/",
+            {
+                "external_id": "test-external-id",
+                "mom_edd": "2016-06-06",
+                "mom_msisdn": "+27820000000",
+                "mom_consent": True,
+                "created": "2016-01-01 00:00:00",
+                "hcw_msisdn": "+27821111111",
+                "clinic_code": "123456",
+                "mom_lang": "eng_ZA",
+                "mha": 1,
+                "mom_dob": "1988-01-01",
+                "mom_id_type": "none",
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            json.loads(response.content)["external_id"], ["This field must be unique."]
+        )
+
     @mock.patch("registrations.tasks.validate_subscribe_jembi_app_registration.delay")
     @mock.patch("ndoh_hub.utils.get_today")
     def test_successful_registration(self, today, task):
