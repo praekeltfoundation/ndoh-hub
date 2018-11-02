@@ -1,3 +1,4 @@
+import json
 from unittest import mock
 from urllib.parse import urlencode
 
@@ -13,6 +14,7 @@ from changes.tasks import (
     process_whatsapp_contact_check_fail,
     process_whatsapp_system_event,
     process_whatsapp_unsent_event,
+    send_helpdesk_response_to_dhis2,
 )
 from registrations.models import Source
 
@@ -452,3 +454,53 @@ class GetEngageInboundAndReplyTests(TestCase):
                 "reply_timestamp": "1540803363",
             },
         )
+
+
+class SendHelpdeskResponseToDHIS2Tests(TestCase):
+    @responses.activate
+    def test_send_helpdesk_response_to_dhis2(self):
+        """
+        Should send the data to OpenHIM in the correct format to be placed in DHIS2
+        """
+
+        def assert_openhim_request(request):
+            payload = json.loads(request.body)
+            self.assertEqual(
+                payload,
+                {
+                    "encdate": "20181029085453",
+                    "repdate": "20181029085603",
+                    "mha": 1,
+                    "swt": 4,
+                    "cmsisdn": "+27820001001",
+                    "dmsisdn": "+27820001001",
+                    "faccode": "",
+                    "data": {
+                        "question": "Mother question",
+                        "answer": "Operator answer",
+                    },
+                    "class": "Unclassified",
+                    "type": 7,
+                    "op": "",
+                },
+            )
+            return (200, {}, json.dumps({}))
+
+        responses.add_callback(
+            responses.POST,
+            "http://jembi/ws/rest/v1/helpdesk",
+            callback=assert_openhim_request,
+            content_type="application/json",
+        )
+
+        send_helpdesk_response_to_dhis2.delay(
+            {
+                "inbound_text": "Mother question",
+                "inbound_timestamp": "1540803293",
+                "inbound_address": "27820001001",
+                "reply_text": "Operator answer",
+                "reply_timestamp": "1540803363",
+            }
+        ).get()
+
+        self.assertEqual(len(responses.calls), 1)

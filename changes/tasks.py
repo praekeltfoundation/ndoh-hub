@@ -3,6 +3,7 @@ import json
 import re
 from itertools import dropwhile, takewhile
 
+import phonenumbers
 import requests
 from celery import chain
 from celery.task import Task
@@ -1542,7 +1543,33 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
 
 @app.task
 def send_helpdesk_response_to_dhis2(context):
-    pass
+    encdate = datetime.datetime.utcfromtimestamp(int(context["inbound_timestamp"]))
+    repdate = datetime.datetime.utcfromtimestamp(int(context["reply_timestamp"]))
+    msisdn = phonenumbers.parse(context["inbound_address"], "ZA")
+    msisdn = phonenumbers.format_number(msisdn, phonenumbers.PhoneNumberFormat.E164)
+
+    result = requests.post(
+        urljoin(settings.JEMBI_BASE_URL, "helpdesk"),
+        auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+        verify=False,
+        json={
+            "encdate": encdate.strftime("%Y%m%d%H%M%S"),
+            "repdate": repdate.strftime("%Y%m%d%H%M%S"),
+            "mha": 1,  # Praekelt
+            "swt": 4,  # WhatsApp
+            "cmsisdn": msisdn,
+            "dmsisdn": msisdn,
+            "faccode": "",
+            "data": {
+                "question": context["inbound_text"],
+                "answer": context["reply_text"],
+            },
+            "class": "Unclassified",
+            "type": 7,  # Helpdesk
+            "op": "",
+        },
+    )
+    result.raise_for_status()
 
 
 process_engage_helpdesk_outbound = (
