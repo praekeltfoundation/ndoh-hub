@@ -1,5 +1,6 @@
 import datetime
 import json
+from unittest import mock
 
 import responses
 from django.contrib.auth.models import User
@@ -3803,6 +3804,71 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 "channel_current": "whatsapp",
                 "channel_new": change.data["channel"],
             },
+        )
+
+    @mock.patch("changes.tasks.utils.ms_client.create_outbound")
+    @responses.activate
+    def test_switch_channel_to_sms_not_available(self, mock_create_outbound):
+        """
+        Switching to SMS where there is no corrosponding WHatsapp set should
+        not change the subscription to sms and should send a notification to
+        the user.
+        """
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        mock_get_messagesets(
+            ["whatsapp_momconnect_postbirth.hw_full.3", "not_momconnect_prebirth"]
+        )
+        mock_get_subscriptions(
+            "?identity={}&active=True".format(registrant_id),
+            [
+                {
+                    "id": "sub1",
+                    "messageset": 0,
+                    "identity": registrant_id,
+                    "next_sequence_number": 7,
+                    "lang": "eng",
+                    "schedule": 2,
+                    "active": True,
+                },
+                {"messageset": 1, "active": True},
+            ],
+        )
+
+        # . mock get identity by id
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267",
+            {"addresses": {"msisdn": {"+27821112222": {}}}},
+        )
+
+        change = Change.objects.create(
+            registrant_id=registrant_id,
+            action="switch_channel",
+            data={"channel": "sms"},
+            source=self.make_source_normaluser(),
+        )
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertTrue(change.validated)
+        self.assertTrue(
+            change.data["error"], "WhatsApp-only messagesets cannot be switched to SMS"
+        )
+
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+
+        mock_create_outbound.assert_called_once_with(
+            {
+                "to_identity": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "content": (
+                    "We notice that you have been receiving MomConnect msgs on "
+                    "WhatsApp for children between 1 - 2. Messages for children "
+                    "between 1 - 2 are only available on WhatsApp - switching to "
+                    "SMS means you will not receive any messages. You can stop "
+                    "your MomConnect messages completely by replying ‘STOP‘"
+                ),
+                "channel": "WHATSAPP",
+                "metadata": {},
+            }
         )
 
     @responses.activate
