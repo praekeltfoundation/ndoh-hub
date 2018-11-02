@@ -3850,7 +3850,9 @@ class TestChangeActions(AuthenticatedAPITestCase):
         validate_implement(change.id)
         change.refresh_from_db()
         self.assertTrue(change.validated)
-        self.assertTrue(change.data["error"], "No whatsapp available")
+        self.assertTrue(
+            change.data["error"], "WhatsApp-only messagesets cannot be switched to SMS"
+        )
 
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
 

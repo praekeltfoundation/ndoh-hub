@@ -594,7 +594,9 @@ class ValidateImplement(Task):
                             "metadata": {},
                         }
                     )
-                    change.data["error"] = "No whatsapp available"
+                    change.data[
+                        "error"
+                    ] = "WhatsApp-only messagesets cannot be switched to SMS"
                     change.save()
                     return
 
