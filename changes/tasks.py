@@ -590,7 +590,7 @@ class ValidateImplement(Task):
                         {
                             "to_identity": change.registrant_id,
                             "content": text,
-                            "channel": "JUNE_TEXT",
+                            "channel": "WHATSAPP",
                             "metadata": {},
                         }
                     )

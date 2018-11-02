@@ -3864,7 +3864,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                     "SMS means you will not receive any messages. You can stop "
                     "your MomConnect messages completely by replying ‘STOP‘"
                 ),
-                "channel": "JUNE_TEXT",
+                "channel": "WHATSAPP",
                 "metadata": {},
             }
         )
