@@ -9,6 +9,7 @@ from django.test import TestCase
 from changes.models import Change
 from changes.signals import psh_validate_implement
 from changes.tasks import (
+    get_engage_inbound_and_reply,
     process_whatsapp_contact_check_fail,
     process_whatsapp_system_event,
     process_whatsapp_unsent_event,
@@ -341,3 +342,113 @@ class ProcessWhatsAppContactLookupFailTaskTests(WhatsAppBaseTestCase):
         process_whatsapp_contact_check_fail(user.pk, "+27820001001")
 
         self.assertEqual(Change.objects.count(), 0)
+
+
+class GetEngageInboundAndReplyTests(TestCase):
+    @responses.activate
+    def test_get_engage_inbound_and_reply(self):
+        responses.add(
+            responses.GET,
+            "http://engage/v1/contacts/27820001001/messages",
+            status=200,
+            json={
+                "messages": [
+                    {
+                        "_vnd": {
+                            "v1": {
+                                "direction": "outbound",
+                                "in_reply_to": "KCGGK3FVGUV_CiD9cD-KZ7S6UsB76FeJP3sc",
+                                "author": 2,
+                            }
+                        },
+                        "from": "27820001002",
+                        "id": "gBGGJ3EVEUV_AgkC5c71UQ9ug08",
+                        "text": {"body": "Response after the one we care about"},
+                        "timestamp": "1540803400",
+                        "type": "text",
+                    },
+                    {
+                        "_vnd": {
+                            "v1": {
+                                "direction": "outbound",
+                                "in_reply_to": "gBGGJ3EVEUV_AgkC5c71UQ9ug08",
+                                "author": 2,
+                            }
+                        },
+                        "from": "27820001002",
+                        "id": "BCGGJ3FVFUV",
+                        "text": {"body": "Operator response"},
+                        "timestamp": "1540803363",
+                        "type": "text",
+                    },
+                    {
+                        "_vnd": {
+                            "v1": {
+                                "direction": "outbound",
+                                "in_reply_to": "ABGGJ3EVEUV_AhC9cG-UA8S5UsB75FeJP1sb",
+                            }
+                        },
+                        "from": "27820001002",
+                        "id": "gBGGJ3EVEUV_AgkC5c71UQ9ug08",
+                        "text": {"body": "Autoresponse - should be ignored"},
+                        "timestamp": "1540803295",
+                        "type": "text",
+                    },
+                    {
+                        "_vnd": {"v1": {"direction": "inbound", "in_reply_to": None}},
+                        "from": "27820001001",
+                        "id": "ABGGJ3EVEUV_AhC9cG-UA8S5UsA75FeJP1sb",
+                        "image": {
+                            "caption": "User question as caption",
+                            "file": "/path/to/media/file",
+                            "id": "1260423b-b39a-4283-ba85-623f81f9408d",
+                            "mime_type": "image/jpeg",
+                            "sha256": "f706688d5fc79cd0640cd39086dd3f3885708b7fe2e64fd",
+                        },
+                        "timestamp": "1540803293",
+                        "type": "image",
+                    },
+                    {
+                        "_vnd": {"v1": {"direction": "inbound", "in_reply_to": None}},
+                        "from": "27820001001",
+                        "id": "ABGGJ3EVEUV_AhALwhRTSopsSmF7IxgeYIBz",
+                        "text": {"body": "User question as text"},
+                        "timestamp": "1540802983",
+                        "type": "text",
+                    },
+                    {
+                        "_vnd": {
+                            "v1": {
+                                "direction": "outbound",
+                                "in_reply_to": "BCGGJ3FVFUV_CiC9cG-KZ7S5UsB73FeJP2sc",
+                                "author": 2,
+                            }
+                        },
+                        "from": "27820001002",
+                        "id": "gBGGJ3EVEUV_AgkC5c71UQ9ug08",
+                        "text": {"body": "Previous operator response, should ignore"},
+                        "timestamp": "1540802812",
+                        "type": "text",
+                    },
+                    {
+                        "_vnd": {"v1": {"direction": "inbound", "in_reply_to": None}},
+                        "from": "27820001001",
+                        "id": "GBFGJ8EVEUV_AhBLwhRTSpprSmF7IxhfYIBy",
+                        "text": {"body": "Previous user question, should be ignored"},
+                        "timestamp": "1540802744",
+                        "type": "text",
+                    },
+                ]
+            },
+        )
+        resp = get_engage_inbound_and_reply.delay("27820001001", "BCGGJ3FVFUV")
+        self.assertEqual(
+            resp.get(),
+            {
+                "inbound_address": "27820001001",
+                "inbound_text": "User question as text | User question as caption",
+                "inbound_timestamp": "1540803293",
+                "reply_text": "Operator response",
+                "reply_timestamp": "1540803363",
+            },
+        )

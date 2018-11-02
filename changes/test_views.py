@@ -194,7 +194,7 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
             "to": "27820001001",
             "type": "text",
             "text": {"body": "Helpdesk operator to mother"},
-            "timestamp": "1540982581"
+            "timestamp": "1540982581",
         }
 
         response = self.client.post(
@@ -206,6 +206,7 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
 
 @mock.patch("changes.views.ReceiveWhatsAppBase.validate_signature")
 @mock.patch("changes.views.tasks.process_whatsapp_system_event")

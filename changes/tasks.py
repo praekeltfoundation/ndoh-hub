@@ -1,6 +1,7 @@
 import datetime
 import json
 import re
+from itertools import dropwhile, takewhile
 
 import requests
 from celery import chain
@@ -8,7 +9,7 @@ from celery.task import Task
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.utils import translation
-from requests.exceptions import HTTPError
+from requests.exceptions import ConnectionError, HTTPError, Timeout
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
 from six import iteritems
@@ -1457,6 +1458,93 @@ class ProcessWhatsAppContactCheckFail(Task):
 process_whatsapp_contact_check_fail = ProcessWhatsAppContactCheckFail()
 
 
-def process_engage_helpdesk_outbound(wa_contact, message_id):
-    # TODO: Implement
+log = get_task_logger(__name__)
+
+
+@app.task(
+    autoretry_for=(HTTPError, ConnectionError, Timeout),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=15,
+    acks_late=True,
+    time_limit=10,
+)
+def get_engage_inbound_and_reply(wa_contact_id, message_id):
+    """
+    Fetches the messages for `wa_contact_id`, and returns details about the outbound
+    specified by `message_id`, as well as details about the possible inbound/s that
+    the outbound is responding to.
+
+    This is a best-guess effort, and isn't guaranteed to be correct.
+
+    Args:
+        wa_contact_id (str): The whatsapp ID for the contact
+        message_id (str): The message ID for the outbound
+
+    Returns:
+        dict:
+            inbound_text: The concatenated text body of the inbound/s
+            inbound_timestamp: The timestamp of the last inbound
+            inbound_address: The contact address of the inbound
+            reply_text: The text of the outbound
+            reply_timestamp: The timestamp of the outbound
+    """
+
+    response = requests.get(
+        urljoin(settings.ENGAGE_URL, "v1/contacts/{}/messages".format(wa_contact_id)),
+        headers={
+            "Authorization": "Bearer {}".format(settings.ENGAGE_TOKEN),
+            "Accept": "application/vnd.v1+json",
+        },
+    )
+    response.raise_for_status()
+    messages = response.json()["messages"]
+
+    # Filter out outbounds that aren't from helpdesk operators
+    messages = filter(
+        lambda m: m["_vnd"]["v1"]["direction"] == "inbound"
+        or m["_vnd"]["v1"].get("author"),
+        messages,
+    )
+    # Sort in timestamp order, descending
+    messages = sorted(messages, key=lambda m: m.get("timestamp"), reverse=True)
+    # Filter out all messages that came after after the one we care about
+    messages = dropwhile(lambda m: m["id"] != message_id, messages)
+
+    reply = next(messages)
+    # Text content is in an object placed at a key with the same name as the type,
+    # eg. {"type": "text", "text": {"body": "Message content"}}
+    reply_text = reply[reply["type"]]
+    # For text messages, message is in "body", for media, it's in "caption"
+    reply_text = reply_text.get("body") or reply_text.get("caption")
+    reply_timestamp = reply["timestamp"]
+
+    # Remove all outbound from beginning now that we have the one we care about
+    messages = dropwhile(lambda m: m["_vnd"]["v1"]["direction"] == "outbound", messages)
+    # Get all the inbounds until the previous outbound, and join into single string
+    inbounds = list(
+        takewhile(lambda m: m["_vnd"]["v1"]["direction"] == "inbound", messages)
+    )
+    inbound_timestamp = inbounds[0]["timestamp"]
+    inbound_address = inbounds[0]["from"]
+    inbound_text = map(lambda m: m[m["type"]], inbounds)
+    inbound_text = map(lambda m: m.get("body") or m.get("caption"), inbound_text)
+    inbound_text = " | ".join(list(inbound_text)[::-1])
+
+    return {
+        "inbound_text": inbound_text or "No Question",
+        "inbound_timestamp": inbound_timestamp,
+        "inbound_address": inbound_address,
+        "reply_text": reply_text or "No Answer",
+        "reply_timestamp": reply_timestamp,
+    }
+
+
+@app.task
+def send_helpdesk_response_to_dhis2(context):
     pass
+
+
+process_engage_helpdesk_outbound = (
+    get_engage_inbound_and_reply.s() | send_helpdesk_response_to_dhis2.s()
+)
