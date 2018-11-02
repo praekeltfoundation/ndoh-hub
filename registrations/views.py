@@ -4,6 +4,7 @@ import hmac
 import json
 import logging
 from hashlib import sha256
+from typing import Tuple
 
 import django_filters
 import django_filters.rest_framework as filters
@@ -513,7 +514,7 @@ class JembiAppRegistration(generics.CreateAPIView):
     serializer_class = JembiAppRegistrationSerializer
 
     @classmethod
-    def create_registration(cls, user: User, data: dict) -> Registration:
+    def create_registration(cls, user: User, data: dict) -> Tuple[int, dict]:
         source = Source.objects.get(user=user)
         serializer = cls.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
