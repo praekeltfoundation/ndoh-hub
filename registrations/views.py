@@ -13,6 +13,7 @@ from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -523,14 +524,20 @@ class JembiAppRegistration(generics.CreateAPIView):
         # We encode and decode from JSON to ensure dates are encoded properly
         data = json.loads(JSONEncoder().encode(serializer.validated_data))
 
-        registration = Registration.objects.create(
-            external_id=external_id,
-            reg_type="jembi_momconnect",
-            registrant_id=None,
-            data=data,
-            source=source,
-            created_by=user,
-        )
+        try:
+            registration = Registration.objects.create(
+                external_id=external_id,
+                reg_type="jembi_momconnect",
+                registrant_id=None,
+                data=data,
+                source=source,
+                created_by=user,
+            )
+        except IntegrityError:
+            return (
+                status.HTTP_400_BAD_REQUEST,
+                {"external_id": ["This field must be unique."]},
+            )
 
         # Overwrite the created_at date with the one provided
         registration.created_at = created
@@ -540,13 +547,11 @@ class JembiAppRegistration(generics.CreateAPIView):
             registration_id=str(registration.pk)
         )
 
-        return registration
+        return status.HTTP_202_ACCEPTED, RegistrationSerializer(registration).data
 
     def post(self, request: Request) -> Response:
-        registration = self.create_registration(request.user, request.data)
-        return Response(
-            RegistrationSerializer(registration).data, status=status.HTTP_202_ACCEPTED
-        )
+        status, response = self.create_registration(request.user, request.data)
+        return Response(response, status=status)
 
 
 class JembiAppRegistrationStatus(APIView):
