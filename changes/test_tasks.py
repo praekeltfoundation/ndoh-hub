@@ -6,17 +6,20 @@ import responses
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.test import TestCase
+from rest_hooks.models import model_saved
 
 from changes.models import Change
 from changes.signals import psh_validate_implement
 from changes.tasks import (
     get_engage_inbound_and_reply,
+    get_identity_from_msisdn,
     process_whatsapp_contact_check_fail,
     process_whatsapp_system_event,
     process_whatsapp_unsent_event,
     send_helpdesk_response_to_dhis2,
 )
-from registrations.models import Source
+from registrations.models import Registration, Source
+from registrations.signals import psh_fire_created_metric, psh_validate_subscribe
 
 
 class WhatsAppBaseTestCase(TestCase):
@@ -452,11 +455,50 @@ class GetEngageInboundAndReplyTests(TestCase):
                 "inbound_timestamp": "1540803293",
                 "reply_text": "Operator response",
                 "reply_timestamp": "1540803363",
+                "reply_operator": 2,
             },
         )
 
 
 class SendHelpdeskResponseToDHIS2Tests(TestCase):
+    def setUp(self):
+        assert post_save.has_listeners(Registration), (
+            "Registration model has no post_save listeners. Make sure"
+            " helpers cleaned up properly in earlier tests."
+        )
+        post_save.disconnect(
+            receiver=psh_validate_subscribe,
+            sender=Registration,
+            dispatch_uid="psh_validate_subscribe",
+        )
+        post_save.disconnect(
+            receiver=psh_fire_created_metric,
+            sender=Registration,
+            dispatch_uid="psh_fire_created_metric",
+        )
+        post_save.disconnect(receiver=model_saved, dispatch_uid="instance-saved-hook")
+        assert not post_save.has_listeners(Registration), (
+            "Registration model still has post_save listeners. Make sure"
+            " helpers cleaned up properly in earlier tests."
+        )
+
+    def tearDown(self):
+        assert not post_save.has_listeners(Registration), (
+            "Registration model still has post_save listeners. Make sure"
+            " helpers removed them properly in earlier tests."
+        )
+        post_save.connect(
+            psh_validate_subscribe,
+            sender=Registration,
+            dispatch_uid="psh_validate_subscribe",
+        )
+        post_save.connect(
+            psh_fire_created_metric,
+            sender=Registration,
+            dispatch_uid="psh_fire_created_metric",
+        )
+        post_save.connect(receiver=model_saved, dispatch_uid="instance-saved-hook")
+
     @responses.activate
     def test_send_helpdesk_response_to_dhis2(self):
         """
@@ -474,14 +516,14 @@ class SendHelpdeskResponseToDHIS2Tests(TestCase):
                     "swt": 4,
                     "cmsisdn": "+27820001001",
                     "dmsisdn": "+27820001001",
-                    "faccode": "",
+                    "faccode": "123456",
                     "data": {
                         "question": "Mother question",
                         "answer": "Operator answer",
                     },
                     "class": "Unclassified",
                     "type": 7,
-                    "op": "",
+                    "op": "2",
                 },
             )
             return (200, {}, json.dumps({}))
@@ -493,6 +535,12 @@ class SendHelpdeskResponseToDHIS2Tests(TestCase):
             content_type="application/json",
         )
 
+        user = User.objects.create_user("test")
+        source = Source.objects.create(user=user)
+        Registration.objects.create(
+            registrant_id="identity-uuid", data={"faccode": "123456"}, source=source
+        )
+
         send_helpdesk_response_to_dhis2.delay(
             {
                 "inbound_text": "Mother question",
@@ -500,7 +548,31 @@ class SendHelpdeskResponseToDHIS2Tests(TestCase):
                 "inbound_address": "27820001001",
                 "reply_text": "Operator answer",
                 "reply_timestamp": "1540803363",
+                "reply_operator": 2,
+                "identity_id": "identity-uuid",
             }
         ).get()
 
         self.assertEqual(len(responses.calls), 1)
+
+
+class GetIdentityFromMsisdnTests(TestCase):
+    @responses.activate
+    def test_get_identity_from_msisdn(self):
+        """
+        Should add the identity to the specified field in the context
+        """
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/search/"
+            "?details__addresses__msisdn=%2B27820001001",
+            json={"results": [{"id": "identity-uuid"}]},
+        )
+
+        context = get_identity_from_msisdn.delay(
+            {"identity_msisdn": "27820001001"}, "identity_msisdn"
+        ).get()
+
+        self.assertEqual(
+            context, {"identity_msisdn": "27820001001", "identity_id": "identity-uuid"}
+        )

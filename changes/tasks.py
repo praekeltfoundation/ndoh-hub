@@ -8,6 +8,7 @@ import requests
 from celery import chain
 from celery.task import Task
 from celery.utils.log import get_task_logger
+from demands import HTTPServiceError
 from django.conf import settings
 from django.utils import translation
 from requests.exceptions import ConnectionError, HTTPError, Timeout
@@ -1519,6 +1520,7 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
     # For text messages, message is in "body", for media, it's in "caption"
     reply_text = reply_text.get("body") or reply_text.get("caption")
     reply_timestamp = reply["timestamp"]
+    reply_operator = reply["_vnd"]["v1"]["author"]
 
     # Remove all outbound from beginning now that we have the one we care about
     messages = dropwhile(lambda m: m["_vnd"]["v1"]["direction"] == "outbound", messages)
@@ -1538,15 +1540,49 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
         "inbound_address": inbound_address,
         "reply_text": reply_text or "No Answer",
         "reply_timestamp": reply_timestamp,
+        "reply_operator": reply_operator,
     }
+
+
+@app.task(
+    autoretry_for=(HTTPError, ConnectionError, Timeout, HTTPServiceError),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=15,
+    acks_late=True,
+    time_limit=10,
+)
+def get_identity_from_msisdn(context, field):
+    """
+    Fetches the identity from the identity store using `field` inside the context and
+    returns its ID in the context
+    
+    Args:
+        context (dict): The context to find the msisdn and add the ID in
+        field (str): The field in the context that contains the MSISDN
+    """
+    msisdn = phonenumbers.parse(context[field], "ZA")
+    msisdn = phonenumbers.format_number(msisdn, phonenumbers.PhoneNumberFormat.E164)
+    identity = next(
+        utils.is_client.get_identity_by_address("msisdn", msisdn)["results"]
+    )
+    context["identity_id"] = identity["id"]
+    return context
 
 
 @app.task
 def send_helpdesk_response_to_dhis2(context):
     encdate = datetime.datetime.utcfromtimestamp(int(context["inbound_timestamp"]))
     repdate = datetime.datetime.utcfromtimestamp(int(context["reply_timestamp"]))
+
     msisdn = phonenumbers.parse(context["inbound_address"], "ZA")
     msisdn = phonenumbers.format_number(msisdn, phonenumbers.PhoneNumberFormat.E164)
+
+    registration = (
+        Registration.objects.filter(registrant_id=context["identity_id"])
+        .order_by("-created_at")
+        .first()
+    )
 
     result = requests.post(
         urljoin(settings.JEMBI_BASE_URL, "helpdesk"),
@@ -1559,19 +1595,21 @@ def send_helpdesk_response_to_dhis2(context):
             "swt": 4,  # WhatsApp
             "cmsisdn": msisdn,
             "dmsisdn": msisdn,
-            "faccode": "",
+            "faccode": registration.data.get("faccode") if registration else None,
             "data": {
                 "question": context["inbound_text"],
                 "answer": context["reply_text"],
             },
             "class": "Unclassified",
             "type": 7,  # Helpdesk
-            "op": "",
+            "op": str(context["reply_operator"]),
         },
     )
     result.raise_for_status()
 
 
 process_engage_helpdesk_outbound = (
-    get_engage_inbound_and_reply.s() | send_helpdesk_response_to_dhis2.s()
+    get_engage_inbound_and_reply.s()
+    | get_identity_from_msisdn.s("inbound_address")
+    | send_helpdesk_response_to_dhis2.s()
 )
