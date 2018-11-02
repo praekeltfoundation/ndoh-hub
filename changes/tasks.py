@@ -1556,7 +1556,7 @@ def get_identity_from_msisdn(context, field):
     """
     Fetches the identity from the identity store using `field` inside the context and
     returns its ID in the context
-    
+
     Args:
         context (dict): The context to find the msisdn and add the ID in
         field (str): The field in the context that contains the MSISDN
