@@ -572,14 +572,37 @@ class ValidateImplement(Task):
                 )
 
             elif change.data["channel"] == "sms" and "whatsapp" in short_name:
-                # Change any WhatsApp subscriptions to SMS
-                sbm_client.update_subscription(sub["id"], {"active": False})
 
                 # There's no service info for SMS
                 if "service_info" in short_name:
                     continue
 
-                messageset = messagesets_rev[re.sub("^whatsapp_", "", short_name)]
+                messageset = messagesets_rev.get(re.sub("^whatsapp_", "", short_name))
+
+                if not messageset:
+                    text = (
+                        "We notice that you have been receiving MomConnect msgs on "
+                        "WhatsApp for children between 1 - 2. Messages for children "
+                        "between 1 - 2 are only available on WhatsApp - switching to "
+                        "SMS means you will not receive any messages. You can stop "
+                        "your MomConnect messages completely by replying ‘STOP‘"
+                    )
+
+                    utils.ms_client.create_outbound(
+                        {
+                            "to_identity": change.registrant_id,
+                            "content": text,
+                            "channel": "JUNE_TEXT",
+                            "metadata": {},
+                        }
+                    )
+                    change.data["error"] = "No whatsapp available"
+                    change.save()
+                    return
+
+                # Change any WhatsApp subscriptions to SMS
+                sbm_client.update_subscription(sub["id"], {"active": False})
+
                 SubscriptionRequest.objects.create(
                     identity=sub["identity"],
                     messageset=messageset,
