@@ -1,7 +1,10 @@
 from collections import namedtuple
 from django.core.management.base import BaseCommand, CommandError
+from iso639 import languages
 from openpyxl import load_workbook
 import phonenumbers
+
+from ndoh_hub.utils import LANGUAGES
 
 
 Contact = namedtuple("Contact", ["msisdn", "language"])
@@ -61,22 +64,32 @@ class Command(BaseCommand):
             )
             return None
 
-    @staticmethod
-    def validate_language(language):
+    def validate_language(self, language):
         """
         Returns the language in the Seed language format if valid, else logs an error
         and returns `None`
         """
+        try:
+            languages.get(part3=language)
+            seed_lang = "{}_ZA".format(language)
+            assert seed_lang in LANGUAGES
+            return seed_lang
+        except (KeyError, AssertionError):
+            self.stdout.write(
+                self.style.NOTICE(
+                    "Invalid language code {}. Skipping...".format(language)
+                )
+            )
+            return None
 
     @staticmethod
     def create_or_update_identity(msisdn, language):
         """
-        Fetches the identity with the given msisdn, or if identity doesn't exist,
-        creates and returns it.
+        Fetches the identity with the given msisdn, ensures that the language code is
+        correct, or if identity doesn't exist, creates and returns it.
         """
 
-    @staticmethod
-    def create_subscription_postbirth(identity):
+    def create_subscription_postbirth(self, identity):
         """
         Creates a subscription to the postbirth messageset for `identity` if the
         identity doesn't have any active subscriptions. Logs an error if the identity
@@ -85,4 +98,14 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         contacts = self.extract_contacts_from_workbook(options["file_path"])
+        contacts = map(
+            lambda c: c._replace(
+                msisdn=self.validate_msisdn(c.msisdn),
+                language=self.validate_language(c.language),
+            ),
+            contacts,
+        )
+        contacts = filter(
+            lambda c: c.msisdn is not None and c.language is not None, contacts
+        )
         print(list(contacts))

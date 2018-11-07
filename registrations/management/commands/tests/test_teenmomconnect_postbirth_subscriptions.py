@@ -153,3 +153,33 @@ class TeenMomConnectPostbirthSubscriptionsCommandTests(TestCase):
         self.assertIn(
             "Invalid phone number +12001230101. Skipping...", command.stdout.getvalue()
         )
+
+    def test_validate_language(self):
+        """
+        If the language code is valid, it should be returned in the Seed language format
+        """
+        command = Command()
+        self.assertEqual(command.validate_language("eng"), "eng_ZA")
+
+    def test_validate_language_invalid(self):
+        """
+        If the language code is invalid, an error should be logged and None returned
+        """
+        command = Command()
+        command.stdout = io.StringIO()
+        self.assertEqual(command.validate_language("foo"), None)
+        self.assertIn(
+            "Invalid language code foo. Skipping...", command.stdout.getvalue()
+        )
+
+    def test_validate_language_not_in_seed(self):
+        """
+        If the language code is not in the project's list of languages, an error should
+        be logged and None returned
+        """
+        command = Command()
+        command.stdout = io.StringIO()
+        self.assertEqual(command.validate_language("arg"), None)
+        self.assertIn(
+            "Invalid language code arg. Skipping...", command.stdout.getvalue()
+        )
