@@ -32,6 +32,7 @@ setup(
         "channels==2.1.3",
         "channels_redis==2.1.0",
         "django-simple-history==2.4.0",
+        "openpyxl==2.5.9",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
