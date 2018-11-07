@@ -1,3 +1,4 @@
+import io
 import random
 import tempfile
 import string
@@ -108,4 +109,47 @@ class TeenMomConnectPostbirthSubscriptionsCommandTests(TestCase):
             list(Command.extract_contacts_from_workbook(f.name))
         self.assertIn(
             "Sheet must have a single 'Phone' column header", str(e.exception)
+        )
+
+    def test_validate_msisdn(self):
+        """
+        If the msisdn is valid, it should be returned in E164 international format
+        """
+        command = Command()
+        self.assertEqual(command.validate_msisdn("0820001001"), "+27820001001")
+
+    def test_validate_msisdn_not_parsable(self):
+        """
+        If it's not a parsable msisdn, an error should be logged and `None` should be
+        returned
+        """
+        command = Command()
+        command.stdout = io.StringIO()
+        self.assertEqual(command.validate_msisdn("gibberish"), None)
+        self.assertIn(
+            "Invalid phone number gibberish. Skipping...", command.stdout.getvalue()
+        )
+
+    def test_validate_msisdn_not_possible(self):
+        """
+        If it's not a possible msisdn, an error should be logged and `None` should be
+        returned
+        """
+        command = Command()
+        command.stdout = io.StringIO()
+        self.assertEqual(command.validate_msisdn("+1200012301"), None)
+        self.assertIn(
+            "Invalid phone number +1200012301. Skipping...", command.stdout.getvalue()
+        )
+
+    def test_validate_msisdn_not_valid(self):
+        """
+        If it's not a valid msisdn, an error should be logged and `None` should be
+        returned
+        """
+        command = Command()
+        command.stdout = io.StringIO()
+        self.assertEqual(command.validate_msisdn("+12001230101"), None)
+        self.assertIn(
+            "Invalid phone number +12001230101. Skipping...", command.stdout.getvalue()
         )

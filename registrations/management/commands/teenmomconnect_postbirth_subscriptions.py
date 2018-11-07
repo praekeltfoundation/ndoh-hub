@@ -1,6 +1,7 @@
 from collections import namedtuple
 from django.core.management.base import BaseCommand, CommandError
 from openpyxl import load_workbook
+import phonenumbers
 
 
 Contact = namedtuple("Contact", ["msisdn", "language"])
@@ -44,25 +45,42 @@ class Command(BaseCommand):
                 row[language_header.column - 1].value,
             )
 
-    @staticmethod
-    def validate_msisdn(msisdn):
+    def validate_msisdn(self, msisdn):
         """
         Returns an E164 internationally formatted msisdn string if valid, else logs an
         error and returns `None`
         """
+        try:
+            p = phonenumbers.parse(msisdn, "ZA")
+            assert phonenumbers.is_possible_number(p)
+            assert phonenumbers.is_valid_number(p)
+            return phonenumbers.format_number(p, phonenumbers.PhoneNumberFormat.E164)
+        except (phonenumbers.phonenumberutil.NumberParseException, AssertionError):
+            self.stdout.write(
+                self.style.NOTICE("Invalid phone number {}. Skipping...".format(msisdn))
+            )
+            return None
 
     @staticmethod
-    def create_or_get_identity(msisdn):
+    def validate_language(language):
+        """
+        Returns the language in the Seed language format if valid, else logs an error
+        and returns `None`
+        """
+
+    @staticmethod
+    def create_or_update_identity(msisdn, language):
         """
         Fetches the identity with the given msisdn, or if identity doesn't exist,
         creates and returns it.
         """
 
     @staticmethod
-    def create_subscription(identity, messageset):
+    def create_subscription_postbirth(identity):
         """
-        Creates a subscription to `messageset` for `identity` if such a subscription
-        does not yet exist.
+        Creates a subscription to the postbirth messageset for `identity` if the
+        identity doesn't have any active subscriptions. Logs an error if the identity
+        already has an active subscription
         """
 
     def handle(self, *args, **options):
