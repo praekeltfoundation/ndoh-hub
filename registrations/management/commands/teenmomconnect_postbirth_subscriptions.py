@@ -1,11 +1,11 @@
 from collections import namedtuple
+
+import phonenumbers
 from django.core.management.base import BaseCommand, CommandError
 from iso639 import languages
 from openpyxl import load_workbook
-import phonenumbers
 
-from ndoh_hub.utils import LANGUAGES
-
+from ndoh_hub.utils import LANGUAGES, is_client
 
 Contact = namedtuple("Contact", ["msisdn", "language"])
 
@@ -13,8 +13,8 @@ Contact = namedtuple("Contact", ["msisdn", "language"])
 class Command(BaseCommand):
     help = (
         "Creates post birth subscriptions for the mothers specified in the xlsx file. "
-        "Doesn't create duplicate subscriptions for mothers that already have a "
-        "postbirth subscription"
+        "Doesn't create subscriptions for mothers that already have an active "
+        "subscription."
     )
 
     def add_arguments(self, parser):
@@ -88,6 +88,27 @@ class Command(BaseCommand):
         Fetches the identity with the given msisdn, ensures that the language code is
         correct, or if identity doesn't exist, creates and returns it.
         """
+        try:
+            identity = is_client.get_identity_by_address("msisdn", msisdn)["results"]
+            identity = next(identity)
+        except StopIteration:
+            identity = is_client.create_identity(
+                {
+                    "details": {
+                        "lang_code": language,
+                        "default_addr_type": "msisdn",
+                        "addresses": {
+                            "msisdn": {msisdn: {"default": True, "optedout": False}}
+                        },
+                    }
+                }
+            )
+        if identity["details"].get("lang_code") != language:
+            identity["details"]["lang_code"] = language
+            identity = is_client.update_identity(
+                identity["id"], {"details": identity["details"]}
+            )
+        return identity
 
     def create_subscription_postbirth(self, identity):
         """

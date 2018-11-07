@@ -1,16 +1,18 @@
 import io
 import random
-import tempfile
 import string
+import tempfile
 import uuid
+from urllib.parse import urlencode
 
+import responses
 from django.core.management.base import CommandError
 from django.test import TestCase
 from openpyxl import Workbook
 
 from registrations.management.commands.teenmomconnect_postbirth_subscriptions import (
-    Contact,
     Command,
+    Contact,
 )
 
 
@@ -183,3 +185,89 @@ class TeenMomConnectPostbirthSubscriptionsCommandTests(TestCase):
         self.assertIn(
             "Invalid language code arg. Skipping...", command.stdout.getvalue()
         )
+
+    @responses.activate
+    def test_create_or_update_identity_exists(self):
+        """
+        If the identity exists, and the language code is correct, it should be returned
+        """
+        identity_details = {
+            "lang_code": "eng_ZA",
+            "default_addr_type": "msisdn",
+            "addresses": {
+                "msisdn": {"+27820001001": {"default": True, "optedout": False}}
+            },
+        }
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/search/?{}".format(
+                urlencode({"details__addresses__msisdn": "+27820001001"})
+            ),
+            json={"results": [{"id": "identity-uuid", "details": identity_details}]},
+        )
+        identity = Command.create_or_update_identity("+27820001001", "eng_ZA")
+        self.assertEqual(identity, {"id": "identity-uuid", "details": identity_details})
+        self.assertEqual(len(responses.calls), 1)
+
+    @responses.activate
+    def test_create_or_update_identity_does_not_exist(self):
+        """
+        If the identity does not exist, it should be created
+        """
+        identity_details = {
+            "lang_code": "eng_ZA",
+            "default_addr_type": "msisdn",
+            "addresses": {
+                "msisdn": {"+27820001001": {"default": True, "optedout": False}}
+            },
+        }
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/search/?{}".format(
+                urlencode({"details__addresses__msisdn": "+27820001001"})
+            ),
+            json={"results": []},
+        )
+        responses.add(
+            responses.POST,
+            "http://is/api/v1/identities/",
+            json={"id": "identity-uuid", "details": identity_details},
+        )
+        identity = Command.create_or_update_identity("+27820001001", "eng_ZA")
+        self.assertEqual(identity, {"id": "identity-uuid", "details": identity_details})
+        self.assertEqual(len(responses.calls), 2)
+
+    @responses.activate
+    def test_create_or_update_identity_language_incorrect(self):
+        """
+        If the identity does not have a language, or an incorrect language, it should
+        be updated
+        """
+        identity_details = {
+            "lang_code": "eng_ZA",
+            "default_addr_type": "msisdn",
+            "addresses": {
+                "msisdn": {"+27820001001": {"default": True, "optedout": False}}
+            },
+        }
+        identity_details_incorrect_lang = identity_details.copy()
+        identity_details_incorrect_lang["lang_code"] = "afr_ZA"
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/search/?{}".format(
+                urlencode({"details__addresses__msisdn": "+27820001001"})
+            ),
+            json={
+                "results": [
+                    {"id": "identity-uuid", "details": identity_details_incorrect_lang}
+                ]
+            },
+        )
+        responses.add(
+            responses.PATCH,
+            "http://is/api/v1/identities/identity-uuid/",
+            json={"id": "identity-uuid", "details": identity_details},
+        )
+        identity = Command.create_or_update_identity("+27820001001", "eng_ZA")
+        self.assertEqual(identity, {"id": "identity-uuid", "details": identity_details})
+        self.assertEqual(len(responses.calls), 2)
