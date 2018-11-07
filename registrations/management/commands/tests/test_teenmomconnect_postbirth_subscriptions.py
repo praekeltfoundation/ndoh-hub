@@ -14,6 +14,7 @@ from registrations.management.commands.teenmomconnect_postbirth_subscriptions im
     Command,
     Contact,
 )
+from registrations.models import SubscriptionRequest
 
 
 def randomword(length):
@@ -271,3 +272,62 @@ class TeenMomConnectPostbirthSubscriptionsCommandTests(TestCase):
         identity = Command.create_or_update_identity("+27820001001", "eng_ZA")
         self.assertEqual(identity, {"id": "identity-uuid", "details": identity_details})
         self.assertEqual(len(responses.calls), 2)
+
+    @responses.activate
+    def test_create_subscription_postbirth_existing(self):
+        """
+        If the mother has an existing active subscription, we should log an error and
+        not create the new subscription
+        """
+        command = Command()
+        command.stdout = io.StringIO()
+        identity = {"id": "identity-uuid", "details": {"lang_code": "eng_ZA"}}
+        responses.add(
+            responses.GET,
+            "http://sbm/api/v1/subscriptions/?{}".format(
+                urlencode({"identity": "identity-uuid", "active": "True"})
+            ),
+            json={"results": [{"id": "subscription-uuid"}]},
+        )
+
+        command.create_subscription_postbirth(identity)
+        self.assertIn(
+            "identity-uuid has active subscriptions, skipping...",
+            command.stdout.getvalue(),
+        )
+        self.assertEqual(SubscriptionRequest.objects.count(), 0)
+
+    @responses.activate
+    def test_create_subscription_postbirth_non_existing(self):
+        """
+        If the mother has no existing active subscriptions, we should create a
+        subscription
+        """
+        command = Command()
+        command.stdout = io.StringIO()
+        identity = {"id": "identity-uuid", "details": {"lang_code": "eng_ZA"}}
+        responses.add(
+            responses.GET,
+            "http://sbm/api/v1/subscriptions/?{}".format(
+                urlencode({"identity": "identity-uuid", "active": "True"})
+            ),
+            json={"results": []},
+        )
+        responses.add(
+            responses.GET,
+            "http://sbm/api/v1/messageset/?{}".format(
+                urlencode({"short_name": "momconnect_postbirth.hw_full.1"})
+            ),
+            json={"results": [{"id": 1, "default_schedule": 2}]},
+        )
+
+        command.create_subscription_postbirth(identity)
+        self.assertIn(
+            "Created subscription for identity-uuid",
+            command.stdout.getvalue(),
+        )
+        [subreq] = SubscriptionRequest.objects.all()
+        self.assertEqual(subreq.identity, "identity-uuid")
+        self.assertEqual(subreq.messageset, 1)
+        self.assertEqual(subreq.lang, "eng_ZA")
+        self.assertEqual(subreq.schedule, 2)

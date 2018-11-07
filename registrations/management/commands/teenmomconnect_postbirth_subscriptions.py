@@ -1,11 +1,13 @@
 from collections import namedtuple
+from functools import lru_cache
 
 import phonenumbers
 from django.core.management.base import BaseCommand, CommandError
 from iso639 import languages
 from openpyxl import load_workbook
 
-from ndoh_hub.utils import LANGUAGES, is_client
+from ndoh_hub.utils import LANGUAGES, is_client, sbm_client
+from registrations.models import SubscriptionRequest
 
 Contact = namedtuple("Contact", ["msisdn", "language"])
 
@@ -110,12 +112,42 @@ class Command(BaseCommand):
             )
         return identity
 
+    @staticmethod
+    @lru_cache()
+    def _get_messageset(short_name):
+        [messageset] = sbm_client.get_messagesets(params={"short_name": short_name})[
+            "results"
+        ]
+        return messageset
+
     def create_subscription_postbirth(self, identity):
         """
         Creates a subscription to the postbirth messageset for `identity` if the
         identity doesn't have any active subscriptions. Logs an error if the identity
         already has an active subscription
         """
+        try:
+            subscriptions = sbm_client.get_subscriptions(
+                params={"identity": identity["id"], "active": True}
+            )["results"]
+            next(subscriptions)
+        except StopIteration:
+            messageset = self._get_messageset("momconnect_postbirth.hw_full.1")
+            sr = SubscriptionRequest.objects.create(
+                identity=identity["id"],
+                messageset=messageset["id"],
+                lang=identity["details"]["lang_code"],
+                schedule=messageset["default_schedule"],
+            )
+            self.stdout.write(
+                self.style.SUCCESS("Created subscription for {}".format(identity["id"]))
+            )
+            return sr
+        self.stdout.write(
+            self.style.NOTICE(
+                "{} has active subscriptions, skipping...".format(identity["id"])
+            )
+        )
 
     def handle(self, *args, **options):
         contacts = self.extract_contacts_from_workbook(options["file_path"])
@@ -129,4 +161,9 @@ class Command(BaseCommand):
         contacts = filter(
             lambda c: c.msisdn is not None and c.language is not None, contacts
         )
-        print(list(contacts))
+        identities = map(
+            lambda c: self.create_or_update_identity(c.msisdn, c.language), contacts
+        )
+        subscriptions = map(lambda i: self.create_subscription_postbirth(i), identities)
+        count = sum(1 for s in subscriptions if s is not None)
+        self.stdout.write(self.style.SUCCESS("Created {} subscriptions".format(count)))
