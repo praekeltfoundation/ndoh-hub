@@ -25,8 +25,8 @@ def randomword(length):
 
 
 class TeenMomConnectPostbirthSubscriptionsCommandTests(TestCase):
-    @classmethod
-    def generate_workbook(cls, contacts):
+    @staticmethod
+    def generate_workbook(contacts):
         """
         Generates a workbook with the specified `contacts`. Returns the file handler
         of the file where the workbook is stored
@@ -48,6 +48,17 @@ class TeenMomConnectPostbirthSubscriptionsCommandTests(TestCase):
         f = tempfile.NamedTemporaryFile(suffix=".xlsx")
         workbook.save(f.name)
         return f
+
+    @staticmethod
+    def generate_identity(msisdn, language):
+        return {
+            "id": "identity-uuid",
+            "details": {
+                "lang_code": language,
+                "default_addr_type": "msisdn",
+                "addresses": {"msisdn": {msisdn: {"default": True, "optedout": False}}},
+            },
+        }
 
     def test_extract_contacts_from_workbook(self):
         """
@@ -194,22 +205,16 @@ class TeenMomConnectPostbirthSubscriptionsCommandTests(TestCase):
         """
         If the identity exists, and the language code is correct, it should be returned
         """
-        identity_details = {
-            "lang_code": "eng_ZA",
-            "default_addr_type": "msisdn",
-            "addresses": {
-                "msisdn": {"+27820001001": {"default": True, "optedout": False}}
-            },
-        }
+        identity = self.generate_identity("+27820001001", "eng_ZA")
         responses.add(
             responses.GET,
             "http://is/api/v1/identities/search/?{}".format(
                 urlencode({"details__addresses__msisdn": "+27820001001"})
             ),
-            json={"results": [{"id": "identity-uuid", "details": identity_details}]},
+            json={"results": [identity]},
         )
-        identity = Command.create_or_update_identity("+27820001001", "eng_ZA")
-        self.assertEqual(identity, {"id": "identity-uuid", "details": identity_details})
+        result = Command.create_or_update_identity("+27820001001", "eng_ZA")
+        self.assertEqual(result, identity)
         self.assertEqual(len(responses.calls), 1)
 
     @responses.activate
@@ -217,13 +222,7 @@ class TeenMomConnectPostbirthSubscriptionsCommandTests(TestCase):
         """
         If the identity does not exist, it should be created
         """
-        identity_details = {
-            "lang_code": "eng_ZA",
-            "default_addr_type": "msisdn",
-            "addresses": {
-                "msisdn": {"+27820001001": {"default": True, "optedout": False}}
-            },
-        }
+        identity = self.generate_identity("+27820001001", "eng_ZA")
         responses.add(
             responses.GET,
             "http://is/api/v1/identities/search/?{}".format(
@@ -231,13 +230,9 @@ class TeenMomConnectPostbirthSubscriptionsCommandTests(TestCase):
             ),
             json={"results": []},
         )
-        responses.add(
-            responses.POST,
-            "http://is/api/v1/identities/",
-            json={"id": "identity-uuid", "details": identity_details},
-        )
-        identity = Command.create_or_update_identity("+27820001001", "eng_ZA")
-        self.assertEqual(identity, {"id": "identity-uuid", "details": identity_details})
+        responses.add(responses.POST, "http://is/api/v1/identities/", json=identity)
+        result = Command.create_or_update_identity("+27820001001", "eng_ZA")
+        self.assertEqual(result, identity)
         self.assertEqual(len(responses.calls), 2)
 
     @responses.activate
@@ -246,33 +241,20 @@ class TeenMomConnectPostbirthSubscriptionsCommandTests(TestCase):
         If the identity does not have a language, or an incorrect language, it should
         be updated
         """
-        identity_details = {
-            "lang_code": "eng_ZA",
-            "default_addr_type": "msisdn",
-            "addresses": {
-                "msisdn": {"+27820001001": {"default": True, "optedout": False}}
-            },
-        }
-        identity_details_incorrect_lang = identity_details.copy()
-        identity_details_incorrect_lang["lang_code"] = "afr_ZA"
+        identity = self.generate_identity("+27820001001", "eng_ZA")
+        identity_incorrect_lang = self.generate_identity("+27820001001", "afr_ZA")
         responses.add(
             responses.GET,
             "http://is/api/v1/identities/search/?{}".format(
                 urlencode({"details__addresses__msisdn": "+27820001001"})
             ),
-            json={
-                "results": [
-                    {"id": "identity-uuid", "details": identity_details_incorrect_lang}
-                ]
-            },
+            json={"results": [identity_incorrect_lang]},
         )
         responses.add(
-            responses.PATCH,
-            "http://is/api/v1/identities/identity-uuid/",
-            json={"id": "identity-uuid", "details": identity_details},
+            responses.PATCH, "http://is/api/v1/identities/identity-uuid/", json=identity
         )
-        identity = Command.create_or_update_identity("+27820001001", "eng_ZA")
-        self.assertEqual(identity, {"id": "identity-uuid", "details": identity_details})
+        result = Command.create_or_update_identity("+27820001001", "eng_ZA")
+        self.assertEqual(result, identity)
         self.assertEqual(len(responses.calls), 2)
 
     @responses.activate
@@ -283,7 +265,7 @@ class TeenMomConnectPostbirthSubscriptionsCommandTests(TestCase):
         """
         command = Command()
         command.stdout = io.StringIO()
-        identity = {"id": "identity-uuid", "details": {"lang_code": "eng_ZA"}}
+        identity = self.generate_identity("+27820001001", "eng_ZA")
         responses.add(
             responses.GET,
             "http://sbm/api/v1/subscriptions/?{}".format(
@@ -307,7 +289,7 @@ class TeenMomConnectPostbirthSubscriptionsCommandTests(TestCase):
         """
         command = Command()
         command.stdout = io.StringIO()
-        identity = {"id": "identity-uuid", "details": {"lang_code": "eng_ZA"}}
+        identity = self.generate_identity("+27820001001", "eng_ZA")
         responses.add(
             responses.GET,
             "http://sbm/api/v1/subscriptions/?{}".format(
