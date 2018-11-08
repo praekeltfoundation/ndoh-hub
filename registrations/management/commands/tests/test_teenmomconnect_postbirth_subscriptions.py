@@ -3,8 +3,8 @@ import random
 import string
 import tempfile
 import uuid
-from urllib.parse import urlencode
 from unittest.mock import call, patch
+from urllib.parse import urlencode
 
 import responses
 from django.core.management import call_command
@@ -348,6 +348,7 @@ class TeenMomConnectPostbirthSubscriptionsCommandTests(TestCase):
         Running the command should filter out bad rows, properly format the data of the
         rest, and create identities and subscriptions for them.
         """
+
         def identity_side_effect(msisdn, lang):
             return {"msisdn": msisdn, "lang": lang}
 
