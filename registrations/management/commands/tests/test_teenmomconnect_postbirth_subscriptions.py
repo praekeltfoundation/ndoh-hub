@@ -4,8 +4,10 @@ import string
 import tempfile
 import uuid
 from urllib.parse import urlencode
+from unittest.mock import call, patch
 
 import responses
+from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
 from openpyxl import Workbook
@@ -323,11 +325,52 @@ class TeenMomConnectPostbirthSubscriptionsCommandTests(TestCase):
 
         command.create_subscription_postbirth(identity)
         self.assertIn(
-            "Created subscription for identity-uuid",
-            command.stdout.getvalue(),
+            "Created subscription for identity-uuid", command.stdout.getvalue()
         )
         [subreq] = SubscriptionRequest.objects.all()
         self.assertEqual(subreq.identity, "identity-uuid")
         self.assertEqual(subreq.messageset, 1)
         self.assertEqual(subreq.lang, "eng_ZA")
         self.assertEqual(subreq.schedule, 2)
+
+    @patch(
+        "registrations.management.commands.teenmomconnect_postbirth_subscriptions."
+        "Command.create_or_update_identity"
+    )
+    @patch(
+        "registrations.management.commands.teenmomconnect_postbirth_subscriptions."
+        "Command.create_subscription_postbirth"
+    )
+    def test_run_command(
+        self, create_subscription_postbirth, create_or_update_identity
+    ):
+        """
+        Running the command should filter out bad rows, properly format the data of the
+        rest, and create identities and subscriptions for them.
+        """
+        def identity_side_effect(msisdn, lang):
+            return {"msisdn": msisdn, "lang": lang}
+
+        create_or_update_identity.side_effect = identity_side_effect
+        contacts = [
+            Contact("0820001001", "eng"),  # Valid contact
+            Contact("invalid", "xho"),  # Invalid phone number
+            Contact("0820001001", "arg"),  # Invalid language
+            Contact("0820001002", "afr"),  # Valid contact
+        ]
+        f = self.generate_workbook(contacts)
+
+        out = io.StringIO()
+        call_command("teenmomconnect_postbirth_subscriptions", f.name, stdout=out)
+        self.assertIn("Invalid phone number invalid. Skipping...", out.getvalue())
+        self.assertIn("Invalid language code arg. Skipping...", out.getvalue())
+        self.assertIn("Created 2 subscription", out.getvalue())
+        create_or_update_identity.assert_has_calls(
+            [call("+27820001001", "eng_ZA"), call("+27820001002", "afr_ZA")]
+        )
+        create_subscription_postbirth.assert_has_calls(
+            [
+                call({"msisdn": "+27820001001", "lang": "eng_ZA"}),
+                call({"msisdn": "+27820001002", "lang": "afr_ZA"}),
+            ]
+        )
