@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.3 (2018-11-09)
+1. Cache junebug lookup for jembi software type.
+   ([#179](https://github.com/praekeltfoundation/ndoh-hub/pull/179))
+2. Handle race condition in Jembi registration endpoint.
+   ([#180](https://github.com/praekeltfoundation/ndoh-hub/pull/180))
+3. No sms messageset notification.
+   ([#181](https://github.com/praekeltfoundation/ndoh-hub/pull/181))
+
 ## 0.4.2 (2018-11-01)
 1. Fix channel switch between WhatsApp and SMS for public subscriptions.
    ([#178](https://github.com/praekeltfoundation/ndoh-hub/pull/178))
