@@ -89,10 +89,14 @@ class ReceiveEngageMessage(serializers.Serializer):
     # We're only interested in text messages
     type = serializers.ChoiceField(["text"])
 
-    # We're only interested in messages sent from Engage UI
     class Vnd(serializers.Serializer):
         class V1(serializers.Serializer):
-            author = serializers.CharField(required=True)
+            class Author(serializers.Serializer):
+                name = serializers.CharField(required=True)
+                # We're only interested in messages sent from Engage UI
+                type = serializers.ChoiceField(["OPERATOR"])
+
+            author = Author()
 
         v1 = V1()
 

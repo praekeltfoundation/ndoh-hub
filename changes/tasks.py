@@ -1490,6 +1490,7 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
             inbound_address: The contact address of the inbound
             reply_text: The text of the outbound
             reply_timestamp: The timestamp of the outbound
+            reply_operator: The operator who sent the outbound
     """
 
     response = requests.get(
@@ -1505,7 +1506,7 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
     # Filter out outbounds that aren't from helpdesk operators
     messages = filter(
         lambda m: m["_vnd"]["v1"]["direction"] == "inbound"
-        or m["_vnd"]["v1"].get("author"),
+        or m["_vnd"]["v1"]["author"]["type"] == "OPERATOR",
         messages,
     )
     # Sort in timestamp order, descending
@@ -1520,7 +1521,7 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
     # For text messages, message is in "body", for media, it's in "caption"
     reply_text = reply_text.get("body") or reply_text.get("caption")
     reply_timestamp = reply["timestamp"]
-    reply_operator = reply["_vnd"]["v1"]["author"]
+    reply_operator = reply["_vnd"]["v1"]["author"]["name"]
 
     # Remove all outbound from beginning now that we have the one we care about
     messages = dropwhile(lambda m: m["_vnd"]["v1"]["direction"] == "outbound", messages)

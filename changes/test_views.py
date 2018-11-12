@@ -125,7 +125,13 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
             "type": "text",
             "text": {"body": "Helpdesk operator to mother"},
             "timestamp": "1540982581",
-            "_vnd": {"v1": {"direction": "outbound", "in_reply_to": None, "author": 2}},
+            "_vnd": {
+                "v1": {
+                    "direction": "outbound",
+                    "in_reply_to": None,
+                    "author": {"id": 2, "name": "Operator Name", "type": "OPERATOR"},
+                }
+            },
         }
 
         response = self.client.post(
@@ -171,7 +177,13 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
             "type": "text",
             "text": {"body": "Helpdesk operator to mother"},
             "timestamp": "1540982581",
-            "_vnd": {"v1": {"direction": "outbound", "in_reply_to": None, "author": 2}},
+            "_vnd": {
+                "v1": {
+                    "direction": "outbound",
+                    "in_reply_to": None,
+                    "author": {"id": 2, "name": "Operator Name", "type": "OPERATOR"},
+                }
+            },
         }
         response = self.client.post(
             url, webhook, format="json", HTTP_X_ENGAGE_HOOK_SUBSCRIPTION="engage"
