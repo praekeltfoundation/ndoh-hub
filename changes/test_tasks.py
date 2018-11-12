@@ -1,3 +1,4 @@
+import json
 from unittest import mock
 from urllib.parse import urlencode
 
@@ -5,15 +6,63 @@ import responses
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.test import TestCase
+from rest_hooks.models import model_saved
 
 from changes.models import Change
 from changes.signals import psh_validate_implement
 from changes.tasks import (
+    get_engage_inbound_and_reply,
+    get_identity_from_msisdn,
+    process_engage_helpdesk_outbound,
     process_whatsapp_contact_check_fail,
     process_whatsapp_system_event,
     process_whatsapp_unsent_event,
+    send_helpdesk_response_to_dhis2,
 )
-from registrations.models import Source
+from registrations.models import Registration, Source
+from registrations.signals import psh_fire_created_metric, psh_validate_subscribe
+
+
+class DisconnectRegistrationSignalsMixin(object):
+    def setUp(self):
+        assert post_save.has_listeners(Registration), (
+            "Registration model has no post_save listeners. Make sure"
+            " helpers cleaned up properly in earlier tests."
+        )
+        post_save.disconnect(
+            receiver=psh_validate_subscribe,
+            sender=Registration,
+            dispatch_uid="psh_validate_subscribe",
+        )
+        post_save.disconnect(
+            receiver=psh_fire_created_metric,
+            sender=Registration,
+            dispatch_uid="psh_fire_created_metric",
+        )
+        post_save.disconnect(receiver=model_saved, dispatch_uid="instance-saved-hook")
+        assert not post_save.has_listeners(Registration), (
+            "Registration model still has post_save listeners. Make sure"
+            " helpers cleaned up properly in earlier tests."
+        )
+        return super().setUp()
+
+    def tearDown(self):
+        assert not post_save.has_listeners(Registration), (
+            "Registration model still has post_save listeners. Make sure"
+            " helpers removed them properly in earlier tests."
+        )
+        post_save.connect(
+            psh_validate_subscribe,
+            sender=Registration,
+            dispatch_uid="psh_validate_subscribe",
+        )
+        post_save.connect(
+            psh_fire_created_metric,
+            sender=Registration,
+            dispatch_uid="psh_fire_created_metric",
+        )
+        post_save.connect(receiver=model_saved, dispatch_uid="instance-saved-hook")
+        return super().tearDown()
 
 
 class WhatsAppBaseTestCase(TestCase):
@@ -341,3 +390,300 @@ class ProcessWhatsAppContactLookupFailTaskTests(WhatsAppBaseTestCase):
         process_whatsapp_contact_check_fail(user.pk, "+27820001001")
 
         self.assertEqual(Change.objects.count(), 0)
+
+
+class GetEngageInboundAndReplyTests(TestCase):
+    @responses.activate
+    def test_get_engage_inbound_and_reply(self):
+        responses.add(
+            responses.GET,
+            "http://engage/v1/contacts/27820001001/messages",
+            status=200,
+            json={
+                "messages": [
+                    {
+                        "_vnd": {
+                            "v1": {
+                                "direction": "outbound",
+                                "in_reply_to": "KCGGK3FVGUV_CiD9cD-KZ7S6UsB76FeJP3sc",
+                                "author": {
+                                    "id": 2,
+                                    "name": "Operator Name",
+                                    "type": "OPERATOR",
+                                },
+                            }
+                        },
+                        "from": "27820001002",
+                        "id": "gBGGJ3EVEUV_AgkC5c71UQ9ug08",
+                        "text": {"body": "Response after the one we care about"},
+                        "timestamp": "1540803400",
+                        "type": "text",
+                    },
+                    {
+                        "_vnd": {
+                            "v1": {
+                                "direction": "outbound",
+                                "in_reply_to": "gBGGJ3EVEUV_AgkC5c71UQ9ug08",
+                                "author": {
+                                    "id": 2,
+                                    "name": "Operator Name",
+                                    "type": "OPERATOR",
+                                },
+                            }
+                        },
+                        "from": "27820001002",
+                        "id": "BCGGJ3FVFUV",
+                        "text": {"body": "Operator response"},
+                        "timestamp": "1540803363",
+                        "type": "text",
+                    },
+                    {
+                        "_vnd": {
+                            "v1": {
+                                "direction": "outbound",
+                                "in_reply_to": "ABGGJ3EVEUV_AhC9cG-UA8S5UsB75FeJP1sb",
+                                "author": {
+                                    "id": 7,
+                                    "name": "Autoresponse Name",
+                                    "type": "SYSTEM",
+                                },
+                            }
+                        },
+                        "from": "27820001002",
+                        "id": "gBGGJ3EVEUV_AgkC5c71UQ9ug08",
+                        "text": {"body": "Autoresponse - should be ignored"},
+                        "timestamp": "1540803295",
+                        "type": "text",
+                    },
+                    {
+                        "_vnd": {"v1": {"direction": "inbound", "in_reply_to": None}},
+                        "from": "27820001001",
+                        "id": "ABGGJ3EVEUV_AhC9cG-UA8S5UsA75FeJP1sb",
+                        "image": {
+                            "caption": "User question as caption",
+                            "file": "/path/to/media/file",
+                            "id": "1260423b-b39a-4283-ba85-623f81f9408d",
+                            "mime_type": "image/jpeg",
+                            "sha256": "f706688d5fc79cd0640cd39086dd3f3885708b7fe2e64fd",
+                        },
+                        "timestamp": "1540803293",
+                        "type": "image",
+                    },
+                    {
+                        "_vnd": {"v1": {"direction": "inbound", "in_reply_to": None}},
+                        "from": "27820001001",
+                        "id": "ABGGJ3EVEUV_AhALwhRTSopsSmF7IxgeYIBz",
+                        "text": {"body": "User question as text"},
+                        "timestamp": "1540802983",
+                        "type": "text",
+                    },
+                    {
+                        "_vnd": {
+                            "v1": {
+                                "direction": "outbound",
+                                "in_reply_to": "BCGGJ3FVFUV_CiC9cG-KZ7S5UsB73FeJP2sc",
+                                "author": {
+                                    "id": 2,
+                                    "name": "Operator Name",
+                                    "type": "OPERATOR",
+                                },
+                            }
+                        },
+                        "from": "27820001002",
+                        "id": "gBGGJ3EVEUV_AgkC5c71UQ9ug08",
+                        "text": {"body": "Previous operator response, should ignore"},
+                        "timestamp": "1540802812",
+                        "type": "text",
+                    },
+                    {
+                        "_vnd": {"v1": {"direction": "inbound", "in_reply_to": None}},
+                        "from": "27820001001",
+                        "id": "GBFGJ8EVEUV_AhBLwhRTSpprSmF7IxhfYIBy",
+                        "text": {"body": "Previous user question, should be ignored"},
+                        "timestamp": "1540802744",
+                        "type": "text",
+                    },
+                ]
+            },
+        )
+        resp = get_engage_inbound_and_reply.delay("27820001001", "BCGGJ3FVFUV")
+        self.assertEqual(
+            resp.get(),
+            {
+                "inbound_address": "27820001001",
+                "inbound_text": "User question as text | User question as caption",
+                "inbound_timestamp": "1540803293",
+                "reply_text": "Operator response",
+                "reply_timestamp": "1540803363",
+                "reply_operator": "Operator Name",
+            },
+        )
+
+
+class SendHelpdeskResponseToDHIS2Tests(DisconnectRegistrationSignalsMixin, TestCase):
+    @responses.activate
+    def test_send_helpdesk_response_to_dhis2(self):
+        """
+        Should send the data to OpenHIM in the correct format to be placed in DHIS2
+        """
+
+        def assert_openhim_request(request):
+            payload = json.loads(request.body)
+            self.assertEqual(
+                payload,
+                {
+                    "encdate": "20181029085453",
+                    "repdate": "20181029085603",
+                    "mha": 1,
+                    "swt": 4,
+                    "cmsisdn": "+27820001001",
+                    "dmsisdn": "+27820001001",
+                    "faccode": "123456",
+                    "data": {
+                        "question": "Mother question",
+                        "answer": "Operator answer",
+                    },
+                    "class": "Unclassified",
+                    "type": 7,
+                    "op": "Operator Name",
+                },
+            )
+            return (200, {}, json.dumps({}))
+
+        responses.add_callback(
+            responses.POST,
+            "http://jembi/ws/rest/v1/helpdesk",
+            callback=assert_openhim_request,
+            content_type="application/json",
+        )
+
+        user = User.objects.create_user("test")
+        source = Source.objects.create(user=user)
+        Registration.objects.create(
+            registrant_id="identity-uuid", data={"faccode": "123456"}, source=source
+        )
+
+        send_helpdesk_response_to_dhis2.delay(
+            {
+                "inbound_text": "Mother question",
+                "inbound_timestamp": "1540803293",
+                "inbound_address": "27820001001",
+                "reply_text": "Operator answer",
+                "reply_timestamp": "1540803363",
+                "reply_operator": "Operator Name",
+                "identity_id": "identity-uuid",
+            }
+        ).get()
+
+        self.assertEqual(len(responses.calls), 1)
+
+
+class GetIdentityFromMsisdnTests(TestCase):
+    @responses.activate
+    def test_get_identity_from_msisdn(self):
+        """
+        Should add the identity to the specified field in the context
+        """
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/search/"
+            "?details__addresses__msisdn=%2B27820001001",
+            json={"results": [{"id": "identity-uuid"}]},
+        )
+
+        context = get_identity_from_msisdn.delay(
+            {"identity_msisdn": "27820001001"}, "identity_msisdn"
+        ).get()
+
+        self.assertEqual(
+            context, {"identity_msisdn": "27820001001", "identity_id": "identity-uuid"}
+        )
+
+
+class ProcessEngageHelpdeskOutboundTests(DisconnectRegistrationSignalsMixin, TestCase):
+    @responses.activate
+    def test_process_engage_helpdesk_outbound(self):
+        """
+        Tests that the workflow combines as expected. This doesn't cover all edge cases,
+        the individual task tests are meant to do that. This just covers that the data
+        passed from one task to another works.
+        """
+        responses.add(
+            responses.GET,
+            "http://engage/v1/contacts/27820001001/messages",
+            status=200,
+            json={
+                "messages": [
+                    {
+                        "_vnd": {
+                            "v1": {
+                                "direction": "outbound",
+                                "in_reply_to": "gBGGJ3EVEUV_AgkC5c71UQ9ug08",
+                                "author": {
+                                    "id": 2,
+                                    "name": "Operator Name",
+                                    "type": "OPERATOR",
+                                },
+                            }
+                        },
+                        "from": "27820001002",
+                        "id": "BCGGJ3FVFUV",
+                        "text": {"body": "Operator answer"},
+                        "timestamp": "1540803363",
+                        "type": "text",
+                    },
+                    {
+                        "_vnd": {"v1": {"direction": "inbound", "in_reply_to": None}},
+                        "from": "27820001001",
+                        "id": "ABGGJ3EVEUV_AhALwhRTSopsSmF7IxgeYIBz",
+                        "text": {"body": "Mother question"},
+                        "timestamp": "1540803293",
+                        "type": "text",
+                    },
+                ]
+            },
+        )
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/search/"
+            "?details__addresses__msisdn=%2B27820001001",
+            json={"results": [{"id": "identity-uuid"}]},
+        )
+
+        def assert_openhim_request(request):
+            payload = json.loads(request.body)
+            self.assertEqual(
+                payload,
+                {
+                    "encdate": "20181029085453",
+                    "repdate": "20181029085603",
+                    "mha": 1,
+                    "swt": 4,
+                    "cmsisdn": "+27820001001",
+                    "dmsisdn": "+27820001001",
+                    "faccode": "123456",
+                    "data": {
+                        "question": "Mother question",
+                        "answer": "Operator answer",
+                    },
+                    "class": "Unclassified",
+                    "type": 7,
+                    "op": "Operator Name",
+                },
+            )
+            return (200, {}, json.dumps({}))
+
+        responses.add_callback(
+            responses.POST,
+            "http://jembi/ws/rest/v1/helpdesk",
+            callback=assert_openhim_request,
+            content_type="application/json",
+        )
+
+        user = User.objects.create_user("test")
+        source = Source.objects.create(user=user)
+        Registration.objects.create(
+            registrant_id="identity-uuid", data={"faccode": "123456"}, source=source
+        )
+
+        process_engage_helpdesk_outbound.delay("27820001001", "BCGGJ3FVFUV").get()

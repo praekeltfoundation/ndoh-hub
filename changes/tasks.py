@@ -1,14 +1,17 @@
 import datetime
 import json
 import re
+from itertools import dropwhile, takewhile
 
+import phonenumbers
 import requests
 from celery import chain
 from celery.task import Task
 from celery.utils.log import get_task_logger
+from demands import HTTPServiceError
 from django.conf import settings
 from django.utils import translation
-from requests.exceptions import HTTPError
+from requests.exceptions import ConnectionError, HTTPError, Timeout
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
 from six import iteritems
@@ -1509,3 +1512,159 @@ class ProcessWhatsAppContactCheckFail(Task):
 
 
 process_whatsapp_contact_check_fail = ProcessWhatsAppContactCheckFail()
+
+
+log = get_task_logger(__name__)
+
+
+@app.task(
+    autoretry_for=(HTTPError, ConnectionError, Timeout),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=15,
+    acks_late=True,
+    time_limit=10,
+)
+def get_engage_inbound_and_reply(wa_contact_id, message_id):
+    """
+    Fetches the messages for `wa_contact_id`, and returns details about the outbound
+    specified by `message_id`, as well as details about the possible inbound/s that
+    the outbound is responding to.
+
+    This is a best-guess effort, and isn't guaranteed to be correct.
+
+    Args:
+        wa_contact_id (str): The whatsapp ID for the contact
+        message_id (str): The message ID for the outbound
+
+    Returns:
+        dict:
+            inbound_text: The concatenated text body of the inbound/s
+            inbound_timestamp: The timestamp of the last inbound
+            inbound_address: The contact address of the inbound
+            reply_text: The text of the outbound
+            reply_timestamp: The timestamp of the outbound
+            reply_operator: The operator who sent the outbound
+    """
+
+    response = requests.get(
+        urljoin(settings.ENGAGE_URL, "v1/contacts/{}/messages".format(wa_contact_id)),
+        headers={
+            "Authorization": "Bearer {}".format(settings.ENGAGE_TOKEN),
+            "Accept": "application/vnd.v1+json",
+        },
+    )
+    response.raise_for_status()
+    messages = response.json()["messages"]
+
+    # Filter out outbounds that aren't from helpdesk operators
+    messages = filter(
+        lambda m: m["_vnd"]["v1"]["direction"] == "inbound"
+        or m["_vnd"]["v1"]["author"]["type"] == "OPERATOR",
+        messages,
+    )
+    # Sort in timestamp order, descending
+    messages = sorted(messages, key=lambda m: m.get("timestamp"), reverse=True)
+    # Filter out all messages that came after after the one we care about
+    messages = dropwhile(lambda m: m["id"] != message_id, messages)
+
+    reply = next(messages)
+    # Text content is in an object placed at a key with the same name as the type,
+    # eg. {"type": "text", "text": {"body": "Message content"}}
+    reply_text = reply[reply["type"]]
+    # For text messages, message is in "body", for media, it's in "caption"
+    reply_text = reply_text.get("body") or reply_text.get("caption")
+    reply_timestamp = reply["timestamp"]
+    reply_operator = reply["_vnd"]["v1"]["author"]["name"]
+
+    # Remove all outbound from beginning now that we have the one we care about
+    messages = dropwhile(lambda m: m["_vnd"]["v1"]["direction"] == "outbound", messages)
+    # Get all the inbounds until the previous outbound, and join into single string
+    inbounds = list(
+        takewhile(lambda m: m["_vnd"]["v1"]["direction"] == "inbound", messages)
+    )
+    inbound_timestamp = inbounds[0]["timestamp"]
+    inbound_address = inbounds[0]["from"]
+    inbound_text = map(lambda m: m[m["type"]], inbounds)
+    inbound_text = map(lambda m: m.get("body") or m.get("caption"), inbound_text)
+    inbound_text = " | ".join(list(inbound_text)[::-1])
+
+    return {
+        "inbound_text": inbound_text or "No Question",
+        "inbound_timestamp": inbound_timestamp,
+        "inbound_address": inbound_address,
+        "reply_text": reply_text or "No Answer",
+        "reply_timestamp": reply_timestamp,
+        "reply_operator": reply_operator,
+    }
+
+
+@app.task(
+    autoretry_for=(HTTPError, ConnectionError, Timeout, HTTPServiceError),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=15,
+    acks_late=True,
+    time_limit=10,
+)
+def get_identity_from_msisdn(context, field):
+    """
+    Fetches the identity from the identity store using `field` inside the context and
+    returns its ID in the context
+
+    Args:
+        context (dict): The context to find the msisdn and add the ID in
+        field (str): The field in the context that contains the MSISDN
+    """
+    msisdn = phonenumbers.parse(context[field], "ZA")
+    msisdn = phonenumbers.format_number(msisdn, phonenumbers.PhoneNumberFormat.E164)
+    identity = next(
+        utils.is_client.get_identity_by_address("msisdn", msisdn)["results"]
+    )
+    context["identity_id"] = identity["id"]
+    return context
+
+
+@app.task
+def send_helpdesk_response_to_dhis2(context):
+    encdate = datetime.datetime.utcfromtimestamp(int(context["inbound_timestamp"]))
+    repdate = datetime.datetime.utcfromtimestamp(int(context["reply_timestamp"]))
+
+    msisdn = phonenumbers.parse(context["inbound_address"], "ZA")
+    msisdn = phonenumbers.format_number(msisdn, phonenumbers.PhoneNumberFormat.E164)
+
+    registration = (
+        Registration.objects.filter(registrant_id=context["identity_id"])
+        .order_by("-created_at")
+        .first()
+    )
+
+    result = requests.post(
+        urljoin(settings.JEMBI_BASE_URL, "helpdesk"),
+        auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+        verify=False,
+        json={
+            "encdate": encdate.strftime("%Y%m%d%H%M%S"),
+            "repdate": repdate.strftime("%Y%m%d%H%M%S"),
+            "mha": 1,  # Praekelt
+            "swt": 4,  # WhatsApp
+            "cmsisdn": msisdn,
+            "dmsisdn": msisdn,
+            "faccode": registration.data.get("faccode") if registration else None,
+            "data": {
+                "question": context["inbound_text"],
+                "answer": context["reply_text"],
+            },
+            "class": "Unclassified",
+            "type": 7,  # Helpdesk
+            "op": str(context["reply_operator"]),
+        },
+    )
+    result.raise_for_status()
+
+
+process_engage_helpdesk_outbound = (
+    get_engage_inbound_and_reply.s()
+    | get_identity_from_msisdn.s("inbound_address")
+    | send_helpdesk_response_to_dhis2.s()
+)
