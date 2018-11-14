@@ -85,18 +85,21 @@ class ReceiveWhatsAppEventSerializer(serializers.Serializer):
 
 
 class ReceiveEngageMessage(serializers.Serializer):
-    to = serializers.CharField(required=True)
     # We're only interested in text messages
     type = serializers.ChoiceField(["text"])
 
     class Vnd(serializers.Serializer):
         class V1(serializers.Serializer):
             class Author(serializers.Serializer):
-                name = serializers.CharField(required=True)
                 # We're only interested in messages sent from Engage UI
                 type = serializers.ChoiceField(["OPERATOR"])
 
+            class Chat(serializers.Serializer):
+                owner = serializers.CharField(required=True)
+
             author = Author()
+            chat = Chat()
+            direction = serializers.ChoiceField(["outbound"])
 
         v1 = V1()
 
