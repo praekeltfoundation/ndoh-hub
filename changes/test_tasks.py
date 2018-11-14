@@ -456,7 +456,18 @@ class GetEngageInboundAndReplyTests(TestCase):
                         "type": "text",
                     },
                     {
-                        "_vnd": {"v1": {"direction": "inbound", "in_reply_to": None}},
+                        "_vnd": {
+                            "v1": {
+                                "direction": "inbound",
+                                "in_reply_to": None,
+                                "labels": [
+                                    {
+                                        "uuid": "cbaf27bc-2ba9-4e4a-84c1-098d5abd80bf",
+                                        "value": "image",
+                                    }
+                                ],
+                            }
+                        },
                         "from": "27820001001",
                         "id": "ABGGJ3EVEUV_AhC9cG-UA8S5UsA75FeJP1sb",
                         "image": {
@@ -470,7 +481,18 @@ class GetEngageInboundAndReplyTests(TestCase):
                         "type": "image",
                     },
                     {
-                        "_vnd": {"v1": {"direction": "inbound", "in_reply_to": None}},
+                        "_vnd": {
+                            "v1": {
+                                "direction": "inbound",
+                                "in_reply_to": None,
+                                "labels": [
+                                    {
+                                        "uuid": "cbaf27bc-2ba9-4e4a-84c1-098d5abd80be",
+                                        "value": "text",
+                                    }
+                                ],
+                            }
+                        },
                         "from": "27820001001",
                         "id": "ABGGJ3EVEUV_AhALwhRTSopsSmF7IxgeYIBz",
                         "text": {"body": "User question as text"},
@@ -513,6 +535,7 @@ class GetEngageInboundAndReplyTests(TestCase):
                 "inbound_address": "27820001001",
                 "inbound_text": "User question as text | User question as caption",
                 "inbound_timestamp": "1540803293",
+                "inbound_labels": ["image", "text"],
                 "reply_text": "Operator response",
                 "reply_timestamp": "1540803363",
                 "reply_operator": "Operator Name",
@@ -543,7 +566,7 @@ class SendHelpdeskResponseToDHIS2Tests(DisconnectRegistrationSignalsMixin, TestC
                         "question": "Mother question",
                         "answer": "Operator answer",
                     },
-                    "class": "Unclassified",
+                    "class": "label1,label2",
                     "type": 7,
                     "op": "Operator Name",
                 },
@@ -572,6 +595,7 @@ class SendHelpdeskResponseToDHIS2Tests(DisconnectRegistrationSignalsMixin, TestC
                 "reply_timestamp": "1540803363",
                 "reply_operator": "Operator Name",
                 "identity_id": "identity-uuid",
+                "inbound_labels": ["label1", "label2"],
             }
         ).get()
 
@@ -624,6 +648,7 @@ class ProcessEngageHelpdeskOutboundTests(DisconnectRegistrationSignalsMixin, Tes
                                     "name": "Operator Name",
                                     "type": "OPERATOR",
                                 },
+                                "labels": [],
                             }
                         },
                         "from": "27820001002",
@@ -633,7 +658,18 @@ class ProcessEngageHelpdeskOutboundTests(DisconnectRegistrationSignalsMixin, Tes
                         "type": "text",
                     },
                     {
-                        "_vnd": {"v1": {"direction": "inbound", "in_reply_to": None}},
+                        "_vnd": {
+                            "v1": {
+                                "direction": "inbound",
+                                "in_reply_to": None,
+                                "labels": [
+                                    {
+                                        "uuid": "cbaf27bc-2ba9-4e4a-84c1-098d5abd80bf",
+                                        "value": "test",
+                                    }
+                                ],
+                            }
+                        },
                         "from": "27820001001",
                         "id": "ABGGJ3EVEUV_AhALwhRTSopsSmF7IxgeYIBz",
                         "text": {"body": "Mother question"},
@@ -666,7 +702,7 @@ class ProcessEngageHelpdeskOutboundTests(DisconnectRegistrationSignalsMixin, Tes
                         "question": "Mother question",
                         "answer": "Operator answer",
                     },
-                    "class": "Unclassified",
+                    "class": "test",
                     "type": 7,
                     "op": "Operator Name",
                 },
