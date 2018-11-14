@@ -121,7 +121,6 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
 
         webhook = {
             "id": "message-id",
-            "to": "27820001001",
             "type": "text",
             "text": {"body": "Helpdesk operator to mother"},
             "timestamp": "1540982581",
@@ -130,7 +129,10 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
                     "direction": "outbound",
                     "in_reply_to": None,
                     "author": {"id": 2, "name": "Operator Name", "type": "OPERATOR"},
-                }
+                    "chat": {
+                        "owner": "+27820001001",
+                    }
+                },
             },
         }
 
@@ -143,7 +145,7 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-        outbound_task.delay.assert_called_once_with("27820001001", "message-id")
+        outbound_task.delay.assert_called_once_with("+27820001001", "message-id")
 
     def test_invalid_hook_type(self, unsent_task, validate_sig):
         """
@@ -173,7 +175,6 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
 
         webhook = {
             "id": "message-id",
-            "to": "27820001001",
             "type": "text",
             "text": {"body": "Helpdesk operator to mother"},
             "timestamp": "1540982581",
@@ -182,6 +183,9 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
                     "direction": "outbound",
                     "in_reply_to": None,
                     "author": {"id": 2, "name": "Operator Name", "type": "OPERATOR"},
+                    "chat": {
+                        "owner": "+27820001001",
+                    }
                 }
             },
         }

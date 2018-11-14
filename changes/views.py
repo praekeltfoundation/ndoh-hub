@@ -266,7 +266,7 @@ class ReceiveWhatsAppEvent(ReceiveWhatsAppBase):
             if not message_id:
                 raise ValidationError("X-WhatsApp-Id header required")
             tasks.process_engage_helpdesk_outbound.delay(
-                serializer.validated_data["to"], message_id
+                serializer.validated_data["_vnd"]["v1"]["chat"]["owner"], message_id
             )
 
         return Response(status=status.HTTP_202_ACCEPTED)
