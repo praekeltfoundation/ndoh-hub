@@ -129,10 +129,8 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
                     "direction": "outbound",
                     "in_reply_to": None,
                     "author": {"id": 2, "name": "Operator Name", "type": "OPERATOR"},
-                    "chat": {
-                        "owner": "+27820001001",
-                    }
-                },
+                    "chat": {"owner": "+27820001001"},
+                }
             },
         }
 
@@ -183,9 +181,7 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
                     "direction": "outbound",
                     "in_reply_to": None,
                     "author": {"id": 2, "name": "Operator Name", "type": "OPERATOR"},
-                    "chat": {
-                        "owner": "+27820001001",
-                    }
+                    "chat": {"owner": "+27820001001"},
                 }
             },
         }
