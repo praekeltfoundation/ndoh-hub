@@ -1,6 +1,7 @@
 import datetime
 import json
 import re
+from itertools import chain as ichain
 from itertools import dropwhile, takewhile
 
 import phonenumbers
@@ -1588,11 +1589,14 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
     inbound_text = map(lambda m: m[m["type"]], inbounds)
     inbound_text = map(lambda m: m.get("body") or m.get("caption"), inbound_text)
     inbound_text = " | ".join(list(inbound_text)[::-1])
+    labels = map(lambda m: m["_vnd"]["v1"]["labels"], inbounds)
+    labels = map(lambda l: l["value"], ichain.from_iterable(labels))
 
     return {
         "inbound_text": inbound_text or "No Question",
         "inbound_timestamp": inbound_timestamp,
         "inbound_address": inbound_address,
+        "inbound_labels": list(labels),
         "reply_text": reply_text or "No Answer",
         "reply_timestamp": reply_timestamp,
         "reply_operator": reply_operator,
@@ -1655,7 +1659,7 @@ def send_helpdesk_response_to_dhis2(context):
                 "question": context["inbound_text"],
                 "answer": context["reply_text"],
             },
-            "class": "Unclassified",
+            "class": ",".join(context["inbound_labels"]) or "Unclassified",
             "type": 7,  # Helpdesk
             "op": str(context["reply_operator"]),
         },
