@@ -407,7 +407,7 @@ class GetEngageInboundAndReplyTests(TestCase):
                                 "direction": "outbound",
                                 "in_reply_to": "KCGGK3FVGUV_CiD9cD-KZ7S6UsB76FeJP3sc",
                                 "author": {
-                                    "id": 2,
+                                    "id": "2ab15df1-082a-4420-8f1a-1fed53b13eba",
                                     "name": "Operator Name",
                                     "type": "OPERATOR",
                                 },
@@ -425,7 +425,7 @@ class GetEngageInboundAndReplyTests(TestCase):
                                 "direction": "outbound",
                                 "in_reply_to": "gBGGJ3EVEUV_AgkC5c71UQ9ug08",
                                 "author": {
-                                    "id": 2,
+                                    "id": "2ab15df1-082a-4420-8f1a-1fed53b13eba",
                                     "name": "Operator Name",
                                     "type": "OPERATOR",
                                 },
@@ -443,7 +443,7 @@ class GetEngageInboundAndReplyTests(TestCase):
                                 "direction": "outbound",
                                 "in_reply_to": "ABGGJ3EVEUV_AhC9cG-UA8S5UsB75FeJP1sb",
                                 "author": {
-                                    "id": 7,
+                                    "id": "6a6d72e8-295d-4a57-bd8a-6fdca598f9a6",
                                     "name": "Autoresponse Name",
                                     "type": "SYSTEM",
                                 },
@@ -505,7 +505,7 @@ class GetEngageInboundAndReplyTests(TestCase):
                                 "direction": "outbound",
                                 "in_reply_to": "BCGGJ3FVFUV_CiC9cG-KZ7S5UsB73FeJP2sc",
                                 "author": {
-                                    "id": 2,
+                                    "id": "2ab15df1-082a-4420-8f1a-1fed53b13eba",
                                     "name": "Operator Name",
                                     "type": "OPERATOR",
                                 },
@@ -538,7 +538,7 @@ class GetEngageInboundAndReplyTests(TestCase):
                 "inbound_labels": ["image", "text"],
                 "reply_text": "Operator response",
                 "reply_timestamp": "1540803363",
-                "reply_operator": "Operator Name",
+                "reply_operator": 56748517727534413379787391391214157498,
             },
         )
 
@@ -568,7 +568,7 @@ class SendHelpdeskResponseToDHIS2Tests(DisconnectRegistrationSignalsMixin, TestC
                     },
                     "class": "label1,label2",
                     "type": 7,
-                    "op": "Operator Name",
+                    "op": 104296490747485586223672247128147036730,
                 },
             )
             return (200, {}, json.dumps({}))
@@ -586,19 +586,20 @@ class SendHelpdeskResponseToDHIS2Tests(DisconnectRegistrationSignalsMixin, TestC
             registrant_id="identity-uuid", data={"faccode": "123456"}, source=source
         )
 
-        send_helpdesk_response_to_dhis2.delay(
+        res = send_helpdesk_response_to_dhis2.delay(
             {
                 "inbound_text": "Mother question",
                 "inbound_timestamp": "1540803293",
                 "inbound_address": "27820001001",
                 "reply_text": "Operator answer",
                 "reply_timestamp": "1540803363",
-                "reply_operator": "Operator Name",
+                "reply_operator": 104296490747485586223672247128147036730,
                 "identity_id": "identity-uuid",
                 "inbound_labels": ["label1", "label2"],
             }
         ).get()
 
+        self.assertEqual(json.loads(res), {})
         self.assertEqual(len(responses.calls), 1)
 
 
@@ -644,7 +645,7 @@ class ProcessEngageHelpdeskOutboundTests(DisconnectRegistrationSignalsMixin, Tes
                                 "direction": "outbound",
                                 "in_reply_to": "gBGGJ3EVEUV_AgkC5c71UQ9ug08",
                                 "author": {
-                                    "id": 2,
+                                    "id": "2ab15df1-082a-4420-8f1a-1fed53b13eba",
                                     "name": "Operator Name",
                                     "type": "OPERATOR",
                                 },
@@ -704,7 +705,7 @@ class ProcessEngageHelpdeskOutboundTests(DisconnectRegistrationSignalsMixin, Tes
                     },
                     "class": "test",
                     "type": 7,
-                    "op": "Operator Name",
+                    "op": 56748517727534413379787391391214157498,
                 },
             )
             return (200, {}, json.dumps({}))
