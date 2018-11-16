@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.4 (2018-11-16)
+1. Send WhatsApp helpdesk replies to DHIS2
+   ([#182](https://github.com/praekeltfoundation/ndoh-hub/pull/182))
+   ([#184](https://github.com/praekeltfoundation/ndoh-hub/pull/184))
+   ([#185](https://github.com/praekeltfoundation/ndoh-hub/pull/185))
+   ([#186](https://github.com/praekeltfoundation/ndoh-hub/pull/186))
+   ([#187](https://github.com/praekeltfoundation/ndoh-hub/pull/187))
+1. Management command for TeenMomConnect post birth subscriptions
+   ([#183](https://github.com/praekeltfoundation/ndoh-hub/pull/183))
+1. Ensure that HMAC signature check is secure
+   ([b1b6a2b](https://github.com/praekeltfoundation/ndoh-hub/commit/b1b6a2b4f8bc5bbd85a94f163c163f367e92c998))
+
 ## 0.4.3 (2018-11-09)
 1. Cache junebug lookup for jembi software type.
    ([#179](https://github.com/praekeltfoundation/ndoh-hub/pull/179))
