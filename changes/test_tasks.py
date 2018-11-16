@@ -568,7 +568,7 @@ class SendHelpdeskResponseToDHIS2Tests(DisconnectRegistrationSignalsMixin, TestC
                     },
                     "class": "label1,label2",
                     "type": 7,
-                    "op": 104296490747485586223672247128147036730,
+                    "op": "104296490747485586223672247128147036730",
                 },
             )
             return (200, {}, json.dumps({}))
@@ -705,7 +705,7 @@ class ProcessEngageHelpdeskOutboundTests(DisconnectRegistrationSignalsMixin, Tes
                     },
                     "class": "test",
                     "type": 7,
-                    "op": 56748517727534413379787391391214157498,
+                    "op": "56748517727534413379787391391214157498",
                 },
             )
             return (200, {}, json.dumps({}))
