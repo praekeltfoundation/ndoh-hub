@@ -1663,7 +1663,7 @@ def send_helpdesk_response_to_dhis2(context):
             },
             "class": ",".join(context["inbound_labels"]) or "Unclassified",
             "type": 7,  # Helpdesk
-            "op": context["reply_operator"],
+            "op": str(context["reply_operator"]),
         },
     )
     result.raise_for_status()
