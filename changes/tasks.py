@@ -3,6 +3,7 @@ import json
 import re
 from itertools import chain as ichain
 from itertools import dropwhile, takewhile
+from uuid import UUID
 
 import phonenumbers
 import requests
@@ -1576,7 +1577,10 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
     # For text messages, message is in "body", for media, it's in "caption"
     reply_text = reply_text.get("body") or reply_text.get("caption")
     reply_timestamp = reply["timestamp"]
-    reply_operator = reply["_vnd"]["v1"]["author"]["name"]
+    reply_operator = reply["_vnd"]["v1"]["author"]["id"]
+    print(reply_operator)
+    reply_operator = UUID(reply_operator).int
+    print(reply_operator)
 
     # Remove all outbound from beginning now that we have the one we care about
     messages = dropwhile(lambda m: m["_vnd"]["v1"]["direction"] == "outbound", messages)
@@ -1661,10 +1665,11 @@ def send_helpdesk_response_to_dhis2(context):
             },
             "class": ",".join(context["inbound_labels"]) or "Unclassified",
             "type": 7,  # Helpdesk
-            "op": str(context["reply_operator"]),
+            "op": context["reply_operator"],
         },
     )
     result.raise_for_status()
+    return result.content
 
 
 process_engage_helpdesk_outbound = (
