@@ -1578,9 +1578,7 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
     reply_text = reply_text.get("body") or reply_text.get("caption")
     reply_timestamp = reply["timestamp"]
     reply_operator = reply["_vnd"]["v1"]["author"]["id"]
-    print(reply_operator)
     reply_operator = UUID(reply_operator).int
-    print(reply_operator)
 
     # Remove all outbound from beginning now that we have the one we care about
     messages = dropwhile(lambda m: m["_vnd"]["v1"]["direction"] == "outbound", messages)
