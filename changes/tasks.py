@@ -1562,7 +1562,7 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
     # Filter out outbounds that aren't from helpdesk operators
     messages = filter(
         lambda m: m["_vnd"]["v1"]["direction"] == "inbound"
-        or m["_vnd"]["v1"]["author"]["type"] == "OPERATOR",
+        or m["_vnd"]["v1"]["author"].get("type") == "OPERATOR",
         messages,
     )
     # Sort in timestamp order, descending
