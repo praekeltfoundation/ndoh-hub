@@ -28,9 +28,6 @@ setup(
         # The latest twisted was released without a wheel distribution, so it
         # required gcc to install, which broke our docker build. So we pin it
         # here until a release with a wheel is created
-        "Twisted==18.7.0",
-        "channels==2.1.3",
-        "channels_redis==2.1.0",
         "django-simple-history==2.4.0",
         "openpyxl==2.5.9",
         "iso-639==0.4.5",
