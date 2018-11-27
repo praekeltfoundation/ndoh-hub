@@ -6,11 +6,9 @@ from datetime import datetime
 from functools import partial
 
 import requests
-from asgiref.sync import async_to_sync
 from celery import chain
 from celery.task import Task
 from celery.utils.log import get_task_logger
-from channels.layers import get_channel_layer
 from django.conf import settings
 from django.utils import translation
 from requests.exceptions import ConnectionError, HTTPError
@@ -35,8 +33,6 @@ is_client = IdentityStoreApiClient(
 sr_client = ServiceRatingApiClient(
     api_url=settings.SERVICE_RATING_URL, auth_token=settings.SERVICE_RATING_TOKEN
 )
-
-group_send = async_to_sync(get_channel_layer().group_send)
 
 
 def get_risk_status(reg_type, mom_dob, edd):
@@ -695,11 +691,6 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         headers = {}
         if token is not None:
             headers["Authorization"] = "Bearer {}".format(token)
-
-        group_send(
-            "user.{}".format(registration.created_by_id),
-            {"type": "registration.event", "data": registration.status},
-        )
 
         if url is not None:
             http_request_with_retries.delay(
