@@ -46,7 +46,6 @@ INSTALLED_APPS = (
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # 3rd party
-    "channels",
     "raven.contrib.django.raven_compat",
     "rest_framework",
     "rest_framework.authtoken",
@@ -234,12 +233,6 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {"hosts": [REDIS_URL]},
-    }
-}
 
 METRICS_REALTIME = ["registrations.created.sum"]
 METRICS_SCHEDULED = []  # type: ignore

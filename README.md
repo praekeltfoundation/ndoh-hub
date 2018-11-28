@@ -275,6 +275,9 @@ To update the translation files from the source, run:
 
     django-admin makemessages -a
 
+To compile translation files from the source, run:
+    django-admin compilemessages
+
 You can then use a tool like POEdit to update the PO files with the relevant
 translations
 
