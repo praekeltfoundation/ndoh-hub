@@ -169,8 +169,9 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         )
 
     @responses.activate
-    @mock.patch("registrations.tasks.validate_subscribe_jembi_app_registration."
-                "send_webhook")
+    @mock.patch(
+        "registrations.tasks.validate_subscribe_jembi_app_registration." "send_webhook"
+    )
     def test_send_webhook(self, websocket):
         """
         Sends a webhook to the specified URL with the registration status
