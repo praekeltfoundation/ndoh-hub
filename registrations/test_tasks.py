@@ -169,10 +169,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         )
 
     @responses.activate
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration." "send_webhook"
-    )
-    def test_send_webhook(self, websocket):
+    def test_send_webhook(self):
         """
         Sends a webhook to the specified URL with the registration status
         Also send the status over websocket
@@ -194,6 +191,27 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         )
 
         task.send_webhook(reg)
+        self.assertEqual(json.loads(responses.calls[-1].request.body), reg.status)
+        self.assertEqual(
+            responses.calls[-1].request.headers["Authorization"], "Bearer test-token"
+        )
+
+    @responses.activate
+    def test_send_webhook_no_url(self):
+        """
+        If no URL is specified, then the webhook should not be sent, but the
+        websocket message should still be sent.
+        """
+        user = User.objects.create_user("test", "test@example.org", "test")
+        source = Source.objects.create(
+            name="testsource", user=user, authority="hw_full"
+        )
+        reg = Registration.objects.create(
+            reg_type="jembi_momconnect", source=source, data={}, created_by=user
+        )
+
+        task.send_webhook(reg)
+        self.assertEqual(len(responses.calls), 0)
 
     @mock.patch(
         "registrations.tasks.validate_subscribe_jembi_app_registration." "send_webhook"
