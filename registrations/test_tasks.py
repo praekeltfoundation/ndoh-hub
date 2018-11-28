@@ -168,6 +168,32 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
             },
         )
 
+    @responses.activate
+    @mock.patch("registrations.tasks.validate_subscribe_jembi_app_registration."
+                "send_webhook")
+    def test_send_webhook(self, websocket):
+        """
+        Sends a webhook to the specified URL with the registration status
+        Also send the status over websocket
+        """
+        responses.add(responses.POST, "http://test/callback")
+
+        user = User.objects.create_user("test", "test@example.org", "test")
+        source = Source.objects.create(
+            name="testsource", user=user, authority="hw_full"
+        )
+        reg = Registration.objects.create(
+            reg_type="jembi_momconnect",
+            source=source,
+            data={
+                "callback_url": "http://test/callback",
+                "callback_auth_token": "test-token",
+            },
+            created_by=user,
+        )
+
+        task.send_webhook(reg)
+
     @mock.patch(
         "registrations.tasks.validate_subscribe_jembi_app_registration." "send_webhook"
     )
