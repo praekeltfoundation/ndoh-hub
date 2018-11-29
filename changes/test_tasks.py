@@ -321,8 +321,7 @@ class ProcessWhatsAppSystemEventTaskTests(WhatsAppBaseTestCase):
         self.create_outbound_lookup()
         self.create_identity_lookup()
 
-        process_whatsapp_timeout_system_event("messageid", 1542844800,
-                                              "undelivered")
+        process_whatsapp_timeout_system_event("messageid", 1542844800, "undelivered")
 
         mock_create_outbound.assert_called_once_with(
             {

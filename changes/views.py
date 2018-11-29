@@ -298,10 +298,9 @@ class ReceiveWhatsAppTimeoutSystemEvent(ReceiveWhatsAppBase):
 
         for item in serializer.validated_data["statuses"]:
             for error in serializer.validated_data["errors"]:
-                tasks.process_whatsapp_timeout_system_event.delay(item["id"],
-                                                                  item["timestamp"],
-                                                                  item["recipient_id"],
-                                                                  item["errors"])
+                tasks.process_whatsapp_timeout_system_event.delay(
+                    item["id"], item["timestamp"], item["recipient_id"], item["errors"]
+                )
 
         return Response(status=status.HTTP_202_ACCEPTED)
 

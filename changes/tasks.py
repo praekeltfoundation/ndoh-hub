@@ -1498,8 +1498,9 @@ class ProcessWhatsAppTimeoutSystemEvent(Task):
             }
         )
 
-    def run(self, vumi_message_id: str, timestamp: int, event_type: str,
-            **kwargs) -> None:
+    def run(
+        self, vumi_message_id: str, timestamp: int, event_type: str, **kwargs
+    ) -> None:
         try:
             identity_uuid: str = next(
                 utils.ms_client.get_outbounds({"vumi_message_id": vumi_message_id})[
@@ -1515,12 +1516,12 @@ class ProcessWhatsAppTimeoutSystemEvent(Task):
         if event_type == "undelivered":
             d1 = datetime.fromtimestamp(timestamp)
             d2 = datetime.today()
-            week1 = (d1 - timedelta(days=d1.weekday()))
-            week2 = (d2 - timedelta(days=d2.weekday()))
+            week1 = d1 - timedelta(days=d1.weekday())
+            week2 = d2 - timedelta(days=d2.weekday())
             # Returns 0 if both dates fall withing one week, 1 if on two weeks etc.
             weeks = int(round((week2 - week1).days / 7))
             months = int(round((week2 - week1).days / 30))
-            if (weeks == 1 and months == 0):
+            if weeks == 1 and months == 0:
                 self.handle_undelivered(identity_uuid)
 
 
