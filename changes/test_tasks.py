@@ -15,6 +15,7 @@ from changes.tasks import (
     get_identity_from_msisdn,
     process_engage_helpdesk_outbound,
     process_whatsapp_contact_check_fail,
+    process_whatsapp_timeout_system_event,
     process_whatsapp_system_event,
     process_whatsapp_unsent_event,
     send_helpdesk_response_to_dhis2,
@@ -310,6 +311,31 @@ class ProcessWhatsAppSystemEventTaskTests(WhatsAppBaseTestCase):
             "http://ms/api/v1/outbound/?vumi_message_id=messageid",
         )
         self.assertFalse(mock_create_outbound.called)
+
+    @mock.patch("changes.tasks.utils.ms_client.create_outbound")
+    @responses.activate
+    def test_timeout_message_sent_delivered(self, mock_create_outbound):
+        """
+        The task should send the correct outbound based on the delivered event.
+        """
+        self.create_outbound_lookup()
+        self.create_identity_lookup()
+
+        process_whatsapp_timeout_system_event("messageid", 1542844800,
+                                              "undelivered")
+
+        mock_create_outbound.assert_called_once_with(
+            {
+                "to_identity": "test-identity-uuid",
+                "content": (
+                    "We see that your MomConnect WhatsApp messages are not being "
+                    "delivered. If you would like to receive your messages over "
+                    "SMS, reply ‘SMS’."
+                ),
+                "channel": "JUNE_TEXT",
+                "metadata": {},
+            }
+        )
 
 
 class ProcessWhatsAppContactLookupFailTaskTests(WhatsAppBaseTestCase):
