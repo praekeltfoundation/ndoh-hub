@@ -1,6 +1,5 @@
 import json
 import re
-import time
 from datetime import datetime, timedelta
 from itertools import chain as ichain
 from itertools import dropwhile, takewhile
@@ -1482,6 +1481,7 @@ class ProcessWhatsAppTimeoutSystemEvent(Task):
         identity = is_client.get_identity(identity_uuid)
         # Transform to django language code
         language = identity["details"]["lang_code"].lower().replace("_", "-")
+        identity["details"]["timeout_timestamp"] = datetime.today()
         with translation.override(language):
             text = translation.ugettext(
                 "We see that your MomConnect WhatsApp messages are not being "
@@ -1499,7 +1499,12 @@ class ProcessWhatsAppTimeoutSystemEvent(Task):
         )
 
     def run(
-        self, vumi_message_id: str, timestamp: int, event_type: str, **kwargs
+        self,
+        vumi_message_id: str,
+        timestamp: int,
+        event_type: str,
+        timeout_timestamp: int,
+        **kwargs
     ) -> None:
         try:
             identity_uuid: str = next(
@@ -1514,15 +1519,18 @@ class ProcessWhatsAppTimeoutSystemEvent(Task):
             return
 
         if event_type == "undelivered":
-            d1 = datetime.fromtimestamp(timestamp)
-            d2 = datetime.today()
-            week1 = d1 - timedelta(days=d1.weekday())
-            week2 = d2 - timedelta(days=d2.weekday())
-            # Returns 0 if both dates fall withing one week, 1 if on two weeks etc.
-            weeks = int(round((week2 - week1).days / 7))
-            months = int(round((week2 - week1).days / 30))
-            if weeks == 1 and months == 0:
+            if timeout_timestamp is None:
                 self.handle_undelivered(identity_uuid)
+            else:
+                d1 = datetime.strptime(timeout_timestamp, "%d/%m/%Y")
+                d2 = datetime.today()
+                week1 = d1 - timedelta(days=d1.weekday())
+                week2 = d2 - timedelta(days=d2.weekday())
+                # Returns 0 if both dates fall withing one week, 1 if on two weeks etc.
+                weeks = int(round((week2 - week1).days / 7))
+                months = int(round((week2 - week1).days / 30))
+                if weeks == 1 and months == 0:
+                    self.handle_undelivered(identity_uuid)
 
 
 process_whatsapp_timeout_system_event = ProcessWhatsAppTimeoutSystemEvent()
