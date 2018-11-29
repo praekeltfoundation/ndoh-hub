@@ -15,8 +15,8 @@ from changes.tasks import (
     get_identity_from_msisdn,
     process_engage_helpdesk_outbound,
     process_whatsapp_contact_check_fail,
-    process_whatsapp_timeout_system_event,
     process_whatsapp_system_event,
+    process_whatsapp_timeout_system_event,
     process_whatsapp_unsent_event,
     send_helpdesk_response_to_dhis2,
 )
