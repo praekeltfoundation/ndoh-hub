@@ -287,6 +287,25 @@ class ReceiveWhatsAppSystemEvent(ReceiveWhatsAppBase):
         return Response(status=status.HTTP_202_ACCEPTED)
 
 
+class ReceiveWhatsAppTimeoutSystemEvent(ReceiveWhatsAppBase):
+    serializer_class = ReceiveWhatsAppSystemEventSerializer
+
+    def post(self, request, *args, **kwargs):
+        self.validate_signature(request)
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        for item in serializer.validated_data["statuses"]:
+            for error in serializer.validated_data["errors"]:
+                tasks.process_whatsapp_timeout_system_event.delay(item["id"],
+                                                                  item["timestamp"],
+                                                                  item["recipient_id"],
+                                                                  item["errors"])
+
+        return Response(status=status.HTTP_202_ACCEPTED)
+
+
 class SeedMessageSenderHook(generics.GenericAPIView):
     """
     Receives events from the Seed Message Sender. Supports:
