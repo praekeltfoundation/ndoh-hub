@@ -1522,7 +1522,7 @@ class ProcessWhatsAppTimeoutSystemEvent(Task):
             if timeout_timestamp is None:
                 self.handle_undelivered(identity_uuid)
             else:
-                d1 = datetime.strptime(timeout_timestamp, "%d/%m/%Y")
+                d1 = datetime.fromtimestamp(timeout_timestamp)
                 d2 = datetime.today()
                 week1 = d1 - timedelta(days=d1.weekday())
                 week2 = d2 - timedelta(days=d2.weekday())

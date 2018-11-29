@@ -353,8 +353,10 @@ class ProcessWhatsAppSystemEventTaskTests(WhatsAppBaseTestCase):
         self.create_identity_lookup()
 
         date = (datetime.now() + timedelta(days=7)).strftime("%d/%m/%Y")
+        last_timeout = (datetime.now() - timedelta(days=14)).strftime("%d/%m/%Y")
         timestamp = time.mktime(datetime.strptime(date, "%d/%m/%Y").timetuple())
-        timeout_timestamp = (datetime.now() - timedelta(days=14)).strftime("%d/%m/%Y")
+        timeout_timestamp = time.mktime(datetime.strptime(last_timeout,
+                                                          "%d/%m/%Y").timetuple())
 
         process_whatsapp_timeout_system_event(
             "messageid", timestamp, "undelivered", timeout_timestamp
