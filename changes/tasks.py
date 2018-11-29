@@ -1,4 +1,5 @@
-import datetime
+import time
+from datetime import datetime, timedelta
 import json
 import re
 from itertools import chain as ichain
@@ -1047,7 +1048,7 @@ def restore_personally_identifiable_fields(change):
 
 class BasePushOptoutToJembi(object):
     def get_today(self):
-        return datetime.datetime.today()
+        return datetime.today()
 
     def get_timestamp(self, change):
         return change.created_at.strftime("%Y%m%d%H%M%S")
@@ -1468,6 +1469,64 @@ class ProcessWhatsAppSystemEvent(Task):
 process_whatsapp_system_event = ProcessWhatsAppSystemEvent()
 
 
+class ProcessWhatsAppTimeoutSystemEvent(Task):
+    """
+    Notifies a user that a message we send them on Whatsapp has not been delivered
+    within 7 days, she will be sent an outbound
+    message informing them and give the option to switch to SMS.
+    """
+
+    name = "ndoh_hub.changes.tasks.process_whatsapp_timeout_system_event"
+
+    def handle_undelivered(self, identity_uuid):
+        identity = is_client.get_identity(identity_uuid)
+        # Transform to django language code
+        language = identity["details"]["lang_code"].lower().replace("_", "-")
+        with translation.override(language):
+            text = translation.ugettext(
+                "We see that your MomConnect WhatsApp messages are not being "
+                "delivered. If you would like to receive your messages over "
+                "SMS, reply ‘SMS’."
+            )
+
+        utils.ms_client.create_outbound(
+            {
+                "to_identity": identity_uuid,
+                "content": text,
+                "channel": "JUNE_TEXT",
+                "metadata": {},
+            }
+        )
+
+    def run(self, vumi_message_id: str, timestamp: int, event_type: str,
+            **kwargs) -> None:
+        try:
+            identity_uuid: str = next(
+                utils.ms_client.get_outbounds({"vumi_message_id": vumi_message_id})[
+                    "results"
+                ]
+            )["to_identity"]
+        except StopIteration:
+            """
+            Outbound with message id doesn't exist, so don't continue
+            """
+            return
+
+        if event_type == "undelivered":
+            d1 = datetime.fromtimestamp(timestamp)
+            d2 = datetime.today()
+            week1 = (d1 - timedelta(days=d1.weekday()))
+            week2 = (d2 - timedelta(days=d2.weekday()))
+            # Returns 0 if both dates fall withing one week, 1 if on two weeks etc.
+            weeks = int(round((week2 - week1).days / 7))
+            months = int(round((week2 - week1).days / 30))
+            if (weeks == 1 and months == 0):
+                self.handle_undelivered(identity_uuid)
+
+
+process_whatsapp_timeout_system_event = ProcessWhatsAppTimeoutSystemEvent()
+
+
 class ProcessWhatsAppContactCheckFail(Task):
     """
     Switches the user back to SMS if they don't exist on the WhatsApp network
@@ -1633,8 +1692,8 @@ def get_identity_from_msisdn(context, field):
 
 @app.task
 def send_helpdesk_response_to_dhis2(context):
-    encdate = datetime.datetime.utcfromtimestamp(int(context["inbound_timestamp"]))
-    repdate = datetime.datetime.utcfromtimestamp(int(context["reply_timestamp"]))
+    encdate = datetime.utcfromtimestamp(int(context["inbound_timestamp"]))
+    repdate = datetime.utcfromtimestamp(int(context["reply_timestamp"]))
 
     msisdn = phonenumbers.parse(context["inbound_address"], "ZA")
     msisdn = phonenumbers.format_number(msisdn, phonenumbers.PhoneNumberFormat.E164)
