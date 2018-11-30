@@ -1,6 +1,4 @@
 import json
-import time
-from datetime import datetime, timedelta
 from unittest import mock
 from urllib.parse import urlencode
 
@@ -316,18 +314,19 @@ class ProcessWhatsAppSystemEventTaskTests(WhatsAppBaseTestCase):
 
     @mock.patch("changes.tasks.utils.ms_client.create_outbound")
     @responses.activate
-    def test_timeout_message_sent_delivered(self, mock_create_outbound):
+    def test_timeout_error(self, mock_create_outbound):
         """
-        The task should send the correct outbound based on the delivered event.
+        The task should create a Change according to the details received from the
+        message sender
         """
+        user = User.objects.create_user("test")
+        source = Source.objects.create(user=user)
+
         self.create_outbound_lookup()
         self.create_identity_lookup()
 
-        date = (datetime.now() + timedelta(days=7)).strftime("%d/%m/%Y")
-        timestamp = time.mktime(datetime.strptime(date, "%d/%m/%Y").timetuple())
-
         process_whatsapp_timeout_system_event(
-            "messageid", timestamp, "undelivered", None
+            "messageid", source.pk, [{"code": 410, "title": ("Message expired")}]
         )
 
         mock_create_outbound.assert_called_once_with(
@@ -342,32 +341,6 @@ class ProcessWhatsAppSystemEventTaskTests(WhatsAppBaseTestCase):
                 "metadata": {},
             }
         )
-
-    @mock.patch("changes.tasks.utils.ms_client.create_outbound")
-    @responses.activate
-    def test_timeout_message_not_delivered(self, mock_create_outbound):
-        """
-        The task should send the correct outbound based on the delivered event.
-        """
-        self.create_outbound_lookup()
-        self.create_identity_lookup()
-
-        date = (datetime.now() + timedelta(days=7)).strftime("%d/%m/%Y")
-        last_timeout = (datetime.now() - timedelta(days=14)).strftime("%d/%m/%Y")
-        timestamp = time.mktime(datetime.strptime(date, "%d/%m/%Y").timetuple())
-        timeout_timestamp = time.mktime(
-            datetime.strptime(last_timeout, "%d/%m/%Y").timetuple()
-        )
-
-        process_whatsapp_timeout_system_event(
-            "messageid", timestamp, "undelivered", timeout_timestamp
-        )
-
-        self.assertEqual(
-            responses.calls[0].request.url,
-            "http://ms/api/v1/outbound/?vumi_message_id=messageid",
-        )
-        self.assertFalse(mock_create_outbound.called)
 
 
 class ProcessWhatsAppContactLookupFailTaskTests(WhatsAppBaseTestCase):
