@@ -258,9 +258,14 @@ class ReceiveWhatsAppEvent(ReceiveWhatsAppBase):
 
         if webhook_type == "whatsapp":
             for item in serializer.validated_data["statuses"]:
-                tasks.process_whatsapp_unsent_event.delay(
-                    item["id"], request.user.pk, item["errors"]
-                )
+                if any(error["code"] == 410 for error in item["errors"]):
+                    tasks.process_whatsapp_timeout_system_event.delay(
+                        item["id"], request.user.pk, item["errors"]
+                    )
+                else:
+                    tasks.process_whatsapp_unsent_event.delay(
+                        item["id"], request.user.pk, item["errors"]
+                    )
         else:
             message_id = request.META.get("HTTP_X_WHATSAPP_ID")
             if not message_id:
@@ -283,24 +288,6 @@ class ReceiveWhatsAppSystemEvent(ReceiveWhatsAppBase):
 
         for item in serializer.validated_data["events"]:
             tasks.process_whatsapp_system_event.delay(item["message_id"], item["type"])
-
-        return Response(status=status.HTTP_202_ACCEPTED)
-
-
-class ReceiveWhatsAppTimeoutSystemEvent(ReceiveWhatsAppBase):
-    serializer_class = ReceiveWhatsAppSystemEventSerializer
-
-    def post(self, request, *args, **kwargs):
-        self.validate_signature(request)
-        serializer = self.get_serializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        for item in serializer.validated_data["statuses"]:
-            for error in serializer.validated_data["errors"]:
-                tasks.process_whatsapp_timeout_system_event.delay(
-                    item["id"], item["timestamp"], item["recipient_id"], item["errors"]
-                )
 
         return Response(status=status.HTTP_202_ACCEPTED)
 
