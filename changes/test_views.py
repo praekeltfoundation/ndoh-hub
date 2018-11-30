@@ -108,6 +108,39 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
             "41c377a47b064eba9abee5a1ea827b3d", user.pk, errors
         )
 
+    @mock.patch("changes.views.tasks.process_whatsapp_timeout_system_event")
+    def test_timeout_serializer_succeeded(self, task, mock, mock_validate_signature):
+        """
+        If the serializer passes, then the task should be called with the
+        correct parameters
+        """
+        user = User.objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_change"))
+        self.client.force_authenticate(user=user)
+        url = reverse("whatsapp_event")
+
+        errors = [{"code": 410, "title": ("Message expired")}]
+
+        response = self.client.post(
+            url,
+            {
+                "statuses": [
+                    {
+                        "errors": errors,
+                        "id": "41c377a47b064eba9abee5a1ea827b3d",
+                        "recipient_id": "27831112222",
+                        "status": "failed",
+                        "timestamp": "1538388353",
+                    }
+                ]
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        task.delay.assert_called_once_with(
+            "41c377a47b064eba9abee5a1ea827b3d", user.pk, errors
+        )
+
     @mock.patch("changes.views.tasks.process_engage_helpdesk_outbound")
     def test_engage_outbound_webhook(self, outbound_task, unsent_task, validate_sig):
         """
