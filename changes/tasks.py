@@ -1477,35 +1477,59 @@ class ProcessWhatsAppTimeoutSystemEvent(Task):
 
     name = "ndoh_hub.changes.tasks.process_whatsapp_timeout_system_event"
 
-    def handle_undelivered(self, identity_uuid):
+    def handle_undelivered(self, user_id, source_id, identity_uuid):
         identity = is_client.get_identity(identity_uuid)
-        # Transform to django language code
-        language = identity["details"]["lang_code"].lower().replace("_", "-")
-        identity["details"]["timeout_timestamp"] = datetime.today()
-        with translation.override(language):
-            text = translation.ugettext(
-                "We see that your MomConnect WhatsApp messages are not being "
-                "delivered. If you would like to receive your messages over "
-                "SMS, reply ‘SMS’."
-            )
+        details = identity["details"]
+        if "timeout_timestamp" not in details:
+            identity["details"]["timeout_timestamp"] = datetime.today()
+            # Transform to django language code
+            language = identity["details"]["lang_code"].lower().replace("_", "-")
+            with translation.override(language):
+                text = translation.ugettext(
+                    "We see that your MomConnect WhatsApp messages are not being "
+                    "delivered. If you would like to receive your messages over "
+                    "SMS, reply ‘SMS’."
+                )
 
-        utils.ms_client.create_outbound(
-            {
-                "to_identity": identity_uuid,
-                "content": text,
-                "channel": "JUNE_TEXT",
-                "metadata": {},
-            }
-        )
+                utils.ms_client.create_outbound(
+                    {
+                        "to_identity": identity_uuid,
+                        "content": text,
+                        "channel": "JUNE_TEXT",
+                        "metadata": {},
+                    }
+                )
+        else:
+            d1 = datetime.fromtimestamp(details["timeout_timestamp"])
+            d2 = datetime.today()
+            week1 = d1 - timedelta(days=d1.weekday())
+            week2 = d2 - timedelta(days=d2.weekday())
+            # Returns 0 if both dates fall withing one week, 1 if on two weeks etc.
+            weeks = int(round((week2 - week1).days / 7))
+            months = int(round((week2 - week1).days / 30))
+            if weeks == 1 and months == 0:
+                identity["details"]["timeout_timestamp"] = datetime.today()
 
-    def run(
-        self,
-        vumi_message_id: str,
-        timestamp: int,
-        event_type: str,
-        timeout_timestamp: int,
-        **kwargs
-    ) -> None:
+                # Transform to django language code
+                language = identity["details"]["lang_code"].lower().replace("_", "-")
+                with translation.override(language):
+                    text = translation.ugettext(
+                        "We see that your MomConnect WhatsApp messages are not being "
+                        "delivered. If you would like to receive your messages over "
+                        "SMS, reply ‘SMS’."
+                    )
+
+                    utils.ms_client.create_outbound(
+                        {
+                            "to_identity": identity_uuid,
+                            "content": text,
+                            "channel": "JUNE_TEXT",
+                            "metadata": {},
+                        }
+                    )
+
+    def run(self, vumi_message_id: str, user_id: str, errors: list, **kwargs) -> None:
+        source_id: int = Source.objects.values("pk").get(user=user_id)["pk"]
         try:
             identity_uuid: str = next(
                 utils.ms_client.get_outbounds({"vumi_message_id": vumi_message_id})[
@@ -1518,19 +1542,9 @@ class ProcessWhatsAppTimeoutSystemEvent(Task):
             """
             return
 
-        if event_type == "undelivered":
-            if timeout_timestamp is None:
-                self.handle_undelivered(identity_uuid)
-            else:
-                d1 = datetime.fromtimestamp(timeout_timestamp)
-                d2 = datetime.today()
-                week1 = d1 - timedelta(days=d1.weekday())
-                week2 = d2 - timedelta(days=d2.weekday())
-                # Returns 0 if both dates fall withing one week, 1 if on two weeks etc.
-                weeks = int(round((week2 - week1).days / 7))
-                months = int(round((week2 - week1).days / 30))
-                if weeks == 1 and months == 0:
-                    self.handle_undelivered(identity_uuid)
+        for error in errors:
+            if "Message expired" in error["title"]:
+                self.handle_undelivered(user_id, source_id, identity_uuid)
 
 
 process_whatsapp_timeout_system_event = ProcessWhatsAppTimeoutSystemEvent()
