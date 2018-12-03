@@ -12,7 +12,7 @@ from celery.task import Task
 from celery.utils.log import get_task_logger
 from demands import HTTPServiceError
 from django.conf import settings
-from django.utils import translation
+from django.utils import translation, dateparse
 from requests.exceptions import ConnectionError, HTTPError, Timeout
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
@@ -1545,6 +1545,19 @@ def get_text_or_caption_from_turn_message(message: dict) -> str:
     return message["image"]["caption"]
 
 
+def get_timestamp_from_turn_message(message: dict) -> datetime.datetime:
+    """
+    Gets the timestamp from a turn message, returns it as a timezone aware datetime
+    object.
+    """
+    try:
+        return datetime.datetime.fromtimestamp(
+            int(message["timestamp"]), tz=datetime.timezone.utc
+        )
+    except TypeError:
+        return dateparse.parse_datetime(message["_vnd"]["v1"]["inserted_at"])
+
+
 @app.task(
     autoretry_for=(HTTPError, ConnectionError, Timeout),
     retry_backoff=True,
@@ -1592,7 +1605,7 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
         messages,
     )
     # Sort in timestamp order, descending
-    messages = sorted(messages, key=lambda m: m.get("timestamp"), reverse=True)
+    messages = sorted(messages, key=get_timestamp_from_turn_message, reverse=True)
     # Filter out all messages that came after after the one we care about
     messages = dropwhile(lambda m: m["id"] != message_id, messages)
 
@@ -1602,7 +1615,7 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
     reply_text = reply[reply["type"]]
     # For text messages, message is in "body", for media, it's in "caption"
     reply_text = reply_text.get("body") or reply_text.get("caption")
-    reply_timestamp = reply["timestamp"]
+    reply_timestamp = get_timestamp_from_turn_message(reply)
     reply_operator = reply["_vnd"]["v1"]["author"]["id"]
     reply_operator = UUID(reply_operator).int
 
@@ -1612,7 +1625,7 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
     inbounds = list(
         takewhile(lambda m: m["_vnd"]["v1"]["direction"] == "inbound", messages)
     )
-    inbound_timestamp = inbounds[0]["timestamp"]
+    inbound_timestamp = get_timestamp_from_turn_message(inbounds[0])
     inbound_address = inbounds[0]["from"]
     inbound_text = map(get_text_or_caption_from_turn_message, inbounds)
     inbound_text = " | ".join(list(inbound_text)[::-1])
@@ -1621,11 +1634,11 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
 
     return {
         "inbound_text": inbound_text or "No Question",
-        "inbound_timestamp": inbound_timestamp,
+        "inbound_timestamp": inbound_timestamp.timestamp(),
         "inbound_address": inbound_address,
         "inbound_labels": list(labels),
         "reply_text": reply_text or "No Answer",
-        "reply_timestamp": reply_timestamp,
+        "reply_timestamp": reply_timestamp.timestamp(),
         "reply_operator": reply_operator,
     }
 

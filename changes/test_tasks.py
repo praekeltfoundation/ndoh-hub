@@ -466,6 +466,7 @@ class GetEngageInboundAndReplyTests(TestCase):
                                         "value": "image",
                                     }
                                 ],
+                                "inserted_at": "2018-10-29T08:54:53.123456Z"
                             }
                         },
                         "from": "27820001001",
@@ -477,7 +478,7 @@ class GetEngageInboundAndReplyTests(TestCase):
                             "mime_type": "image/jpeg",
                             "sha256": "f706688d5fc79cd0640cd39086dd3f3885708b7fe2e64fd",
                         },
-                        "timestamp": "1540803293",
+                        "timestamp": None,
                         "type": None,
                     },
                     {
@@ -534,10 +535,10 @@ class GetEngageInboundAndReplyTests(TestCase):
             {
                 "inbound_address": "27820001001",
                 "inbound_text": "User question as text | User question as caption",
-                "inbound_timestamp": "1540803293",
+                "inbound_timestamp": 1540803293.123456,
                 "inbound_labels": ["image", "text"],
                 "reply_text": "Operator response",
-                "reply_timestamp": "1540803363",
+                "reply_timestamp": 1540803363,
                 "reply_operator": 56748517727534413379787391391214157498,
             },
         )
