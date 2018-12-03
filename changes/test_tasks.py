@@ -478,7 +478,7 @@ class GetEngageInboundAndReplyTests(TestCase):
                             "sha256": "f706688d5fc79cd0640cd39086dd3f3885708b7fe2e64fd",
                         },
                         "timestamp": "1540803293",
-                        "type": "image",
+                        "type": None,
                     },
                     {
                         "_vnd": {

@@ -1519,6 +1519,32 @@ process_whatsapp_contact_check_fail = ProcessWhatsAppContactCheckFail()
 log = get_task_logger(__name__)
 
 
+def get_text_or_caption_from_turn_message(message: dict) -> str:
+    """
+    Gets the text content of the message, or the caption if it's a media message, and
+    returns. Returns an empty string if no text content can be found.
+    """
+    # We first try to get the text using the type of message
+    try:
+        return message[message["type"]]["body"]
+    except KeyError:
+        pass
+    try:
+        return message[message["type"]]["caption"]
+    except KeyError:
+        pass
+    # If there's no type, then we try the ones we know about
+    try:
+        return message["text"]["body"]
+    except KeyError:
+        pass
+    try:
+        return message["document"]["caption"]
+    except KeyError:
+        pass
+    return message["image"]["caption"]
+
+
 @app.task(
     autoretry_for=(HTTPError, ConnectionError, Timeout),
     retry_backoff=True,
@@ -1588,8 +1614,7 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
     )
     inbound_timestamp = inbounds[0]["timestamp"]
     inbound_address = inbounds[0]["from"]
-    inbound_text = map(lambda m: m[m["type"]], inbounds)
-    inbound_text = map(lambda m: m.get("body") or m.get("caption"), inbound_text)
+    inbound_text = map(get_text_or_caption_from_turn_message, inbounds)
     inbound_text = " | ".join(list(inbound_text)[::-1])
     labels = map(lambda m: m["_vnd"]["v1"]["labels"], inbounds)
     labels = map(lambda l: l["value"], ichain.from_iterable(labels))
