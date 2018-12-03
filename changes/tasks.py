@@ -12,7 +12,7 @@ from celery.task import Task
 from celery.utils.log import get_task_logger
 from demands import HTTPServiceError
 from django.conf import settings
-from django.utils import translation, dateparse
+from django.utils import dateparse, translation
 from requests.exceptions import ConnectionError, HTTPError, Timeout
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient

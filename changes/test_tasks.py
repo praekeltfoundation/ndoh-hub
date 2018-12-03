@@ -466,7 +466,7 @@ class GetEngageInboundAndReplyTests(TestCase):
                                         "value": "image",
                                     }
                                 ],
-                                "inserted_at": "2018-10-29T08:54:53.123456Z"
+                                "inserted_at": "2018-10-29T08:54:53.123456Z",
                             }
                         },
                         "from": "27820001001",
