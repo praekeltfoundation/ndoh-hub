@@ -245,6 +245,9 @@ METRICS_AUTH = (
 )
 
 PREBIRTH_MIN_WEEKS = int(os.environ.get("PREBIRTH_MIN_WEEKS", "4"))
+WHATSAPP_EXPIRY_SMS_BOUNCE_DAYS = int(
+    os.environ.get("WHATSAPP_EXPIRY_SMS_BOUNCE_DAYS", "30")
+)
 
 STAGE_BASED_MESSAGING_URL = os.environ.get(
     "STAGE_BASED_MESSAGING_URL", "http://sbm/api/v1"
