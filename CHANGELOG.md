@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 (2018-11-28)
+1. Fix author field for helpdesk submissions to OpenHIM
+   ([#188](https://github.com/praekeltfoundation/ndoh-hub/pull/188))
+1. Remove websockets + django channels
+   ([#189](https://github.com/praekeltfoundation/ndoh-hub/pull/189))
+
 ## 0.4.4 (2018-11-16)
 1. Send WhatsApp helpdesk replies to DHIS2
    ([#182](https://github.com/praekeltfoundation/ndoh-hub/pull/182))
