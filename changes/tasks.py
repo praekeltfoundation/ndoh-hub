@@ -6,6 +6,7 @@ from itertools import dropwhile, takewhile
 from uuid import UUID
 
 import phonenumbers
+import pytz
 import requests
 from celery import chain
 from celery.task import Task
@@ -1621,15 +1622,13 @@ def get_text_or_caption_from_turn_message(message: dict) -> str:
     return message["image"]["caption"]
 
 
-def get_timestamp_from_turn_message(message: dict) -> datetime.datetime:
+def get_timestamp_from_turn_message(message: dict) -> datetime:
     """
     Gets the timestamp from a turn message, returns it as a timezone aware datetime
     object.
     """
     try:
-        return datetime.datetime.fromtimestamp(
-            int(message["timestamp"]), tz=datetime.timezone.utc
-        )
+        return datetime.fromtimestamp(int(message["timestamp"]), tz=pytz.utc)
     except TypeError:
         return dateparse.parse_datetime(message["_vnd"]["v1"]["inserted_at"])
 
