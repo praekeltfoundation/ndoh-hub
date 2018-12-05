@@ -12,7 +12,6 @@ from rest_hooks.models import model_saved
 from changes.models import Change
 from changes.signals import psh_validate_implement
 from changes.tasks import (
-    ProcessWhatsAppTimeoutSystemEvent,
     get_engage_inbound_and_reply,
     get_identity_from_msisdn,
     process_engage_helpdesk_outbound,
