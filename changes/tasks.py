@@ -1478,6 +1478,9 @@ class ProcessWhatsAppTimeoutSystemEvent(Task):
 
     name = "ndoh_hub.changes.tasks.process_whatsapp_timeout_system_event"
 
+    def return_date_time(self):
+        return datetime.utcnow()
+
     def send_outbound(self, user_id, source_id, identity_uuid):
         identity = is_client.get_identity(identity_uuid)
         # Transform to django language code
@@ -1506,16 +1509,17 @@ class ProcessWhatsAppTimeoutSystemEvent(Task):
         for item in identity["results"]:
             details = item["details"]
             if "timeout_timestamp" not in details:
-                details["timeout_timestamp"] = time.mktime(datetime.now().timetuple())
+                date = self.return_date_time()
+                details["timeout_timestamp"] = date.timestamp()
                 is_client.update_identity({"id": item["id"], "details": details})
                 self.send_outbound(user_id, source_id, identity_uuid)
 
             else:
                 d1 = datetime.fromtimestamp(details["timeout_timestamp"])
-                d2 = datetime.now()
+                d2 = self.return_date_time()
                 delta = (d2 - d1).days
                 if delta >= settings.WHATSAPP_EXPIRY_SMS_BOUNCE_DAYS:
-                    details["timeout_timestamp"] = time.mktime(d2.timetuple())
+                    details["timeout_timestamp"] = d2.timestamp()
                     is_client.update_identity({"id": item["id"], "details": details})
                     self.send_outbound(user_id, source_id, identity_uuid)
 
