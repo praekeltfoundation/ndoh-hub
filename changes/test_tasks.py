@@ -82,30 +82,13 @@ class WhatsAppBaseTestCase(TestCase):
             match_querystring=True,
         )
 
-    def create_identity_lookup_with_id_field(self, lang="eng_ZA"):
-        responses.add(
-            responses.GET,
-            "http://is/api/v1/identities/test-identity-uuid/",
-            json={
-                "results": [
-                    {"id": "test_identity-uuid", "details": {"lang_code": lang}}
-                ]
-            },
-            status=200,
-            match_querystring=True,
-        )
-
-    def update_identity_lookup_with_id_field(self, lang="eng_ZA"):
+    def update_identity_lookup(self, lang="eng_ZA"):
         responses.add(
             responses.PATCH,
             "http://is/api/v1/identities/test-identity-uuid/",
             json={
-                "results": [
-                    {
-                        "id": "test_identity-uuid",
-                        "details": {"lang_code": lang, "timeout_timestamp": "time"},
-                    }
-                ]
+                "id": "test_identity-uuid",
+                "details": {"lang_code": lang, "timeout_timestamp": "time"},
             },
             status=200,
             match_querystring=True,
@@ -115,7 +98,7 @@ class WhatsAppBaseTestCase(TestCase):
         responses.add(
             responses.GET,
             "http://is/api/v1/identities/test-identity-uuid/",
-            json={"identity": "result", "details": {"lang_code": lang}},
+            json={"id": "test_identity-uuid", "details": {"lang_code": lang}},
             status=200,
             match_querystring=True,
         )
@@ -125,15 +108,8 @@ class WhatsAppBaseTestCase(TestCase):
             responses.GET,
             "http://is/api/v1/identities/test-identity-uuid/",
             json={
-                "results": [
-                    {
-                        "id": "test_identity-uuid",
-                        "details": {
-                            "lang_code": "eng_ZA",
-                            "timeout_timestamp": timestamp,
-                        },
-                    }
-                ]
+                "id": "test_identity-uuid",
+                "details": {"lang_code": "eng_ZA", "timeout_timestamp": timestamp},
             },
             status=200,
             match_querystring=True,
@@ -376,8 +352,8 @@ class ProcessWhatsAppSystemEventTaskTests(WhatsAppBaseTestCase):
         source = Source.objects.create(user=user)
 
         self.create_outbound_lookup()
-        self.create_identity_lookup_with_id_field()
-        self.update_identity_lookup_with_id_field()
+        self.create_identity_lookup()
+        self.update_identity_lookup()
 
         timestamp = 1543999390.069308
         mock_get_utc_now.return_value = datetime.fromtimestamp(timestamp)
@@ -400,10 +376,8 @@ class ProcessWhatsAppSystemEventTaskTests(WhatsAppBaseTestCase):
         )
 
         mock_update_identiity.assert_called_once_with(
-            {
-                "id": "test_identity-uuid",
-                "details": {"lang_code": "eng_ZA", "timeout_timestamp": timestamp},
-            }
+            "test_identity-uuid",
+            {"details": {"lang_code": "eng_ZA", "timeout_timestamp": timestamp}},
         )
 
     @mock.patch("changes.tasks.utils.ms_client.create_outbound")
@@ -428,7 +402,7 @@ class ProcessWhatsAppSystemEventTaskTests(WhatsAppBaseTestCase):
 
         self.create_outbound_lookup()
         self.create_identity_lookup_with_timestamp(timeout_timestamp)
-        self.update_identity_lookup_with_id_field()
+        self.update_identity_lookup()
 
         process_whatsapp_timeout_system_event.delay(
             "messageid", source.pk, [{"code": 410, "title": ("Message expired")}]
@@ -448,10 +422,8 @@ class ProcessWhatsAppSystemEventTaskTests(WhatsAppBaseTestCase):
         )
 
         mock_update_identiity.assert_called_once_with(
-            {
-                "id": "test_identity-uuid",
-                "details": {"lang_code": "eng_ZA", "timeout_timestamp": timestamp},
-            }
+            "test_identity-uuid",
+            {"details": {"lang_code": "eng_ZA", "timeout_timestamp": timestamp}},
         )
 
     @mock.patch("changes.tasks.utils.ms_client.create_outbound")
@@ -477,7 +449,7 @@ class ProcessWhatsAppSystemEventTaskTests(WhatsAppBaseTestCase):
 
         self.create_outbound_lookup()
         self.create_identity_lookup_with_timestamp(timeout_timestamp)
-        self.update_identity_lookup_with_id_field()
+        self.update_identity_lookup()
 
         process_whatsapp_timeout_system_event.delay(
             "messageid", source.pk, [{"code": 410, "title": ("Message expired")}]
