@@ -1481,47 +1481,43 @@ class ProcessWhatsAppTimeoutSystemEvent(Task):
     def return_date_time(self):
         return datetime.utcnow()
 
-    def send_outbound(self, user_id, source_id, identity_uuid):
-        identity = is_client.get_identity(identity_uuid)
+    def send_outbound(self, user_id, source_id, identity, identity_uuid):
         # Transform to django language code
-        for item in identity["results"]:
-            details = item["details"]
-            if "lang_code" in details:
-                language = details["lang_code"].lower().replace("_", "-")
-                with translation.override(language):
-                    text = translation.ugettext(
-                        "We see that your MomConnect WhatsApp messages are not being "
-                        "delivered. If you would like to receive your messages over "
-                        "SMS, reply ‘SMS’."
-                    )
-
-                utils.ms_client.create_outbound(
-                    {
-                        "to_identity": identity_uuid,
-                        "content": text,
-                        "channel": "JUNE_TEXT",
-                        "metadata": {},
-                    }
+        details = identity["details"]
+        if "lang_code" in details:
+            language = details["lang_code"].lower().replace("_", "-")
+            with translation.override(language):
+                text = translation.ugettext(
+                    "We see that your MomConnect WhatsApp messages are not being "
+                    "delivered. If you would like to receive your messages over "
+                    "SMS, reply ‘SMS’."
                 )
+
+            utils.ms_client.create_outbound(
+                {
+                    "to_identity": identity_uuid,
+                    "content": text,
+                    "channel": "JUNE_TEXT",
+                    "metadata": {},
+                }
+            )
 
     def handle_undelivered(self, user_id, source_id, identity_uuid):
         identity = is_client.get_identity(identity_uuid)
-        for item in identity["results"]:
-            details = item["details"]
-            if "timeout_timestamp" not in details:
-                date = self.return_date_time()
-                details["timeout_timestamp"] = date.timestamp()
-                is_client.update_identity({"id": item["id"], "details": details})
-                self.send_outbound(user_id, source_id, identity_uuid)
-
-            else:
-                d1 = datetime.fromtimestamp(details["timeout_timestamp"])
-                d2 = self.return_date_time()
-                delta = (d2 - d1).days
-                if delta >= settings.WHATSAPP_EXPIRY_SMS_BOUNCE_DAYS:
-                    details["timeout_timestamp"] = d2.timestamp()
-                    is_client.update_identity({"id": item["id"], "details": details})
-                    self.send_outbound(user_id, source_id, identity_uuid)
+        details = identity["details"]
+        if "timeout_timestamp" not in details:
+            date = self.return_date_time()
+            details["timeout_timestamp"] = date.timestamp()
+            is_client.update_identity(identity["id"], {"details": details})
+            self.send_outbound(user_id, source_id, identity, identity_uuid)
+        else:
+            d1 = datetime.fromtimestamp(details["timeout_timestamp"])
+            d2 = self.return_date_time()
+            delta = (d2 - d1).days
+            if delta >= settings.WHATSAPP_EXPIRY_SMS_BOUNCE_DAYS:
+                details["timeout_timestamp"] = d2.timestamp()
+                is_client.update_identity(identity["id"], {"details": details})
+                self.send_outbound(user_id, source_id, identity, identity_uuid)
 
     def run(self, vumi_message_id: str, user_id: str, errors: list, **kwargs) -> None:
         source_id: int = Source.objects.values("pk").get(user=user_id)["pk"]
