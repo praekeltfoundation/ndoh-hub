@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timedelta
 from unittest import mock
 from urllib.parse import urlencode
 
@@ -16,6 +17,7 @@ from changes.tasks import (
     process_engage_helpdesk_outbound,
     process_whatsapp_contact_check_fail,
     process_whatsapp_system_event,
+    process_whatsapp_timeout_system_event,
     process_whatsapp_unsent_event,
     send_helpdesk_response_to_dhis2,
 )
@@ -80,11 +82,35 @@ class WhatsAppBaseTestCase(TestCase):
             match_querystring=True,
         )
 
+    def update_identity_lookup(self, lang="eng_ZA"):
+        responses.add(
+            responses.PATCH,
+            "http://is/api/v1/identities/test-identity-uuid/",
+            json={
+                "id": "test_identity-uuid",
+                "details": {"lang_code": lang, "timeout_timestamp": "time"},
+            },
+            status=200,
+            match_querystring=True,
+        )
+
     def create_identity_lookup(self, lang="eng_ZA"):
         responses.add(
             responses.GET,
             "http://is/api/v1/identities/test-identity-uuid/",
-            json={"identity": "result", "details": {"lang_code": lang}},
+            json={"id": "test_identity-uuid", "details": {"lang_code": lang}},
+            status=200,
+            match_querystring=True,
+        )
+
+    def create_identity_lookup_with_timestamp(self, timestamp):
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/test-identity-uuid/",
+            json={
+                "id": "test_identity-uuid",
+                "details": {"lang_code": "eng_ZA", "timeout_timestamp": timestamp},
+            },
             status=200,
             match_querystring=True,
         )
@@ -310,6 +336,127 @@ class ProcessWhatsAppSystemEventTaskTests(WhatsAppBaseTestCase):
             "http://ms/api/v1/outbound/?vumi_message_id=messageid",
         )
         self.assertFalse(mock_create_outbound.called)
+
+    @mock.patch("changes.tasks.utils.ms_client.create_outbound")
+    @mock.patch("changes.tasks.is_client.update_identity")
+    @mock.patch("changes.tasks.ProcessWhatsAppTimeoutSystemEvent.return_date_time")
+    @responses.activate
+    def test_timeout_error(
+        self, mock_get_utc_now, mock_update_identiity, mock_create_outbound
+    ):
+        """
+        The task should send the correct outbound based on the delivered event,
+        for a timeout error
+        """
+        user = User.objects.create_user("test")
+        source = Source.objects.create(user=user)
+
+        self.create_outbound_lookup()
+        self.create_identity_lookup()
+        self.update_identity_lookup()
+
+        timestamp = 1543999390.069308
+        mock_get_utc_now.return_value = datetime.fromtimestamp(timestamp)
+
+        process_whatsapp_timeout_system_event.delay(
+            "messageid", source.pk, [{"code": 410, "title": ("Message expired")}]
+        ).get()
+
+        mock_create_outbound.assert_called_once_with(
+            {
+                "to_identity": "test-identity-uuid",
+                "content": (
+                    "We see that your MomConnect WhatsApp messages are not being "
+                    "delivered. If you would like to receive your messages over "
+                    "SMS, reply ‘SMS’."
+                ),
+                "channel": "JUNE_TEXT",
+                "metadata": {},
+            }
+        )
+
+        mock_update_identiity.assert_called_once_with(
+            "test_identity-uuid",
+            {"details": {"lang_code": "eng_ZA", "timeout_timestamp": timestamp}},
+        )
+
+    @mock.patch("changes.tasks.utils.ms_client.create_outbound")
+    @mock.patch("changes.tasks.is_client.update_identity")
+    @mock.patch("changes.tasks.ProcessWhatsAppTimeoutSystemEvent.return_date_time")
+    @responses.activate
+    def test_timeout_error_with_timestamp(
+        self, mock_get_utc_now, mock_update_identiity, mock_create_outbound
+    ):
+        """
+        The task should send the correct outbound based on the delivered event,
+        for a timeout error
+        """
+        user = User.objects.create_user("test")
+        source = Source.objects.create(user=user)
+
+        timestamp = 1543999390.069308
+        date = mock_get_utc_now.return_value = datetime.fromtimestamp(timestamp)
+
+        date_N_days_ago = date - timedelta(days=31)
+        timeout_timestamp = date_N_days_ago.timestamp()
+
+        self.create_outbound_lookup()
+        self.create_identity_lookup_with_timestamp(timeout_timestamp)
+        self.update_identity_lookup()
+
+        process_whatsapp_timeout_system_event.delay(
+            "messageid", source.pk, [{"code": 410, "title": ("Message expired")}]
+        ).get()
+
+        mock_create_outbound.assert_called_once_with(
+            {
+                "to_identity": "test-identity-uuid",
+                "content": (
+                    "We see that your MomConnect WhatsApp messages are not being "
+                    "delivered. If you would like to receive your messages over "
+                    "SMS, reply ‘SMS’."
+                ),
+                "channel": "JUNE_TEXT",
+                "metadata": {},
+            }
+        )
+
+        mock_update_identiity.assert_called_once_with(
+            "test_identity-uuid",
+            {"details": {"lang_code": "eng_ZA", "timeout_timestamp": timestamp}},
+        )
+
+    @mock.patch("changes.tasks.utils.ms_client.create_outbound")
+    @mock.patch("changes.tasks.is_client.update_identity")
+    @mock.patch("changes.tasks.ProcessWhatsAppTimeoutSystemEvent.return_date_time")
+    @responses.activate
+    def test_timeout_error_no_outbound_send(
+        self, mock_get_utc_now, mock_update_identiity, mock_create_outbound
+    ):
+        """
+        The task should not create a outbound if number of days since
+        last send has not exceeded WHATSAPP_EXPIRY_SMS_BOUNCE_DAYS
+        found
+        """
+        user = User.objects.create_user("test")
+        source = Source.objects.create(user=user)
+
+        timestamp = 1543999390.069309
+        date = mock_get_utc_now.return_value = datetime.fromtimestamp(timestamp)
+
+        date_N_days_ago = date - timedelta(days=21)
+        timeout_timestamp = date_N_days_ago.timestamp()
+
+        self.create_outbound_lookup()
+        self.create_identity_lookup_with_timestamp(timeout_timestamp)
+        self.update_identity_lookup()
+
+        process_whatsapp_timeout_system_event.delay(
+            "messageid", source.pk, [{"code": 410, "title": ("Message expired")}]
+        ).get()
+
+        self.assertFalse(mock_create_outbound.called)
+        self.assertFalse(mock_update_identiity.called)
 
 
 class ProcessWhatsAppContactLookupFailTaskTests(WhatsAppBaseTestCase):

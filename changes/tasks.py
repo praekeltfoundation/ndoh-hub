@@ -1,11 +1,12 @@
-import datetime
 import json
 import re
+from datetime import datetime
 from itertools import chain as ichain
 from itertools import dropwhile, takewhile
 from uuid import UUID
 
 import phonenumbers
+import pytz
 import requests
 from celery import chain
 from celery.task import Task
@@ -1047,7 +1048,7 @@ def restore_personally_identifiable_fields(change):
 
 class BasePushOptoutToJembi(object):
     def get_today(self):
-        return datetime.datetime.today()
+        return datetime.today()
 
     def get_timestamp(self, change):
         return change.created_at.strftime("%Y%m%d%H%M%S")
@@ -1468,6 +1469,78 @@ class ProcessWhatsAppSystemEvent(Task):
 process_whatsapp_system_event = ProcessWhatsAppSystemEvent()
 
 
+class ProcessWhatsAppTimeoutSystemEvent(Task):
+    """
+    Notifies a user that a message we send them on Whatsapp has not been delivered
+    within 7 days, she will be sent an outbound
+    message informing them and give the option to switch to SMS.
+    """
+
+    name = "ndoh_hub.changes.tasks.process_whatsapp_timeout_system_event"
+
+    def return_date_time(self):
+        return datetime.utcnow()
+
+    def send_outbound(self, user_id, source_id, identity, identity_uuid):
+        # Transform to django language code
+        details = identity["details"]
+        if "lang_code" in details:
+            language = details["lang_code"].lower().replace("_", "-")
+            with translation.override(language):
+                text = translation.ugettext(
+                    "We see that your MomConnect WhatsApp messages are not being "
+                    "delivered. If you would like to receive your messages over "
+                    "SMS, reply ‘SMS’."
+                )
+
+            utils.ms_client.create_outbound(
+                {
+                    "to_identity": identity_uuid,
+                    "content": text,
+                    "channel": "JUNE_TEXT",
+                    "metadata": {},
+                }
+            )
+
+    def handle_undelivered(self, user_id, source_id, identity_uuid):
+        identity = is_client.get_identity(identity_uuid)
+        details = identity["details"]
+        if "timeout_timestamp" not in details:
+            date = self.return_date_time()
+            details["timeout_timestamp"] = date.timestamp()
+            is_client.update_identity(identity["id"], {"details": details})
+            self.send_outbound(user_id, source_id, identity, identity_uuid)
+        else:
+            d1 = datetime.fromtimestamp(details["timeout_timestamp"])
+            d2 = self.return_date_time()
+            delta = (d2 - d1).days
+            if delta >= settings.WHATSAPP_EXPIRY_SMS_BOUNCE_DAYS:
+                details["timeout_timestamp"] = d2.timestamp()
+                is_client.update_identity(identity["id"], {"details": details})
+                self.send_outbound(user_id, source_id, identity, identity_uuid)
+
+    def run(self, vumi_message_id: str, user_id: str, errors: list, **kwargs) -> None:
+        source_id: int = Source.objects.values("pk").get(user=user_id)["pk"]
+        try:
+            identity_uuid: str = next(
+                utils.ms_client.get_outbounds({"vumi_message_id": vumi_message_id})[
+                    "results"
+                ]
+            )["to_identity"]
+        except StopIteration:
+            """
+            Outbound with message id doesn't exist, so don't continue
+            """
+            return
+
+        for error in errors:
+            if "Message expired" in error["title"]:
+                self.handle_undelivered(user_id, source_id, identity_uuid)
+
+
+process_whatsapp_timeout_system_event = ProcessWhatsAppTimeoutSystemEvent()
+
+
 class ProcessWhatsAppContactCheckFail(Task):
     """
     Switches the user back to SMS if they don't exist on the WhatsApp network
@@ -1545,15 +1618,13 @@ def get_text_or_caption_from_turn_message(message: dict) -> str:
     return message["image"]["caption"]
 
 
-def get_timestamp_from_turn_message(message: dict) -> datetime.datetime:
+def get_timestamp_from_turn_message(message: dict) -> datetime:
     """
     Gets the timestamp from a turn message, returns it as a timezone aware datetime
     object.
     """
     try:
-        return datetime.datetime.fromtimestamp(
-            int(message["timestamp"]), tz=datetime.timezone.utc
-        )
+        return datetime.fromtimestamp(int(message["timestamp"]), tz=pytz.utc)
     except TypeError:
         return dateparse.parse_datetime(message["_vnd"]["v1"]["inserted_at"])
 
@@ -1671,8 +1742,8 @@ def get_identity_from_msisdn(context, field):
 
 @app.task
 def send_helpdesk_response_to_dhis2(context):
-    encdate = datetime.datetime.utcfromtimestamp(int(context["inbound_timestamp"]))
-    repdate = datetime.datetime.utcfromtimestamp(int(context["reply_timestamp"]))
+    encdate = datetime.utcfromtimestamp(int(context["inbound_timestamp"]))
+    repdate = datetime.utcfromtimestamp(int(context["reply_timestamp"]))
 
     msisdn = phonenumbers.parse(context["inbound_address"], "ZA")
     msisdn = phonenumbers.format_number(msisdn, phonenumbers.PhoneNumberFormat.E164)
