@@ -7,17 +7,17 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-10-05 15:50+0200\n"
-"PO-Revision-Date: 2018-10-05 15:33+0200\n"
+"POT-Creation-Date: 2018-12-11 07:53+0200\n"
+"PO-Revision-Date: 2018-10-31 23:16+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ssw_ZA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 2.1.1\n"
+"X-Generator: Poedit 2.2\n"
 
-#: changes/tasks.py:1287
+#: changes/tasks.py:1379
 #, python-format
 msgid ""
 "Sorry but we can't send WhatsApp msgs to this phone. We'll send your "
@@ -28,13 +28,16 @@ msgstr ""
 "yeMomConnect ngeSMS. Kuyekela shaya %(optout_ussd)s, kutfola leminye shaya "
 "%(popi_ussd)s."
 
-#: changes/tasks.py:1343
+#: changes/tasks.py:1438 changes/tasks.py:1491
 msgid ""
 "We see that your MomConnect WhatsApp messages are not being delivered. If "
 "you would like to receive your messages over SMS, reply ‘SMS’."
 msgstr ""
+"Siyabona kutsi imilayeto yakho yeMomConnect yeWhatsApp ayifiki kuwe. Uma "
+"ufuna kuyitfola nge-SMS, phendvula utsi ‘SMS’ (utawukhokha tindleko "
+"letetayelekile)."
 
-#: changes/tasks.py:1404
+#: changes/tasks.py:1575
 msgid ""
 "Oh no! You can't get MomConnect messages on WhatsApp. We'll keep sending "
 "your MomConnect messages on SMS."
@@ -42,7 +45,7 @@ msgstr ""
 "Awu nebakitsi! Awukhoni kutfola imilayeto yeMomConnect nge-WhatsApp. "
 "Sitochubeka sikutfumele imilayeto ye-MomConnect nge-SMS."
 
-#: registrations/tasks.py:786
+#: registrations/tasks.py:782
 #, python-format
 msgid ""
 "Welcome to MomConnect! For more services dial %(popi_ussd)s, to stop dial "
