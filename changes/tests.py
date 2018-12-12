@@ -14,7 +14,7 @@ from rest_hooks.models import model_saved
 
 from ndoh_hub import utils, utils_tests
 from registrations.models import Registration, Source, SubscriptionRequest
-from registrations.signals import psh_fire_created_metric, psh_validate_subscribe
+from registrations.signals import psh_validate_subscribe
 
 from .models import Change
 from .signals import psh_validate_implement
@@ -542,11 +542,6 @@ class AuthenticatedAPITestCase(APITestCase):
             sender=Registration,
             dispatch_uid="psh_validate_subscribe",
         )
-        post_save.disconnect(
-            receiver=psh_fire_created_metric,
-            sender=Registration,
-            dispatch_uid="psh_fire_created_metric",
-        )
         post_save.disconnect(receiver=model_saved, dispatch_uid="instance-saved-hook")
         assert not has_listeners(), (
             "Registration model still has post_save listeners. Make sure"
@@ -565,11 +560,6 @@ class AuthenticatedAPITestCase(APITestCase):
             psh_validate_subscribe,
             sender=Registration,
             dispatch_uid="psh_validate_subscribe",
-        )
-        post_save.connect(
-            psh_fire_created_metric,
-            sender=Registration,
-            dispatch_uid="psh_fire_created_metric",
         )
 
     def make_source_adminuser(self):

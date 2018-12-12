@@ -229,7 +229,6 @@ CELERY_TASK_ROUTES = {
     "ndoh_hub.registrations.tasks.validate_subscribe": {"queue": "mediumpriority"},
     "ndoh_hub.changes.tasks.validate_implement": {"queue": "mediumpriority"},
     "registrations.tasks.DeliverHook": {"queue": "priority"},
-    "ndoh_hub.tasks.fire_metric": {"queue": "metrics"},
 }
 
 CELERY_TASK_SERIALIZER = "json"
@@ -241,12 +240,6 @@ REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 METRICS_REALTIME = []  # type: ignore
 METRICS_SCHEDULED = []  # type: ignore
 METRICS_SCHEDULED_TASKS = []  # type: ignore
-
-METRICS_URL = os.environ.get("METRICS_URL", "http://metrics/api/v1")
-METRICS_AUTH = (
-    os.environ.get("METRICS_AUTH_USER", "REPLACEME"),
-    os.environ.get("METRICS_AUTH_PASSWORD", "REPLACEME"),
-)
 
 PREBIRTH_MIN_WEEKS = int(os.environ.get("PREBIRTH_MIN_WEEKS", "4"))
 WHATSAPP_EXPIRY_SMS_BOUNCE_DAYS = int(

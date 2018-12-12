@@ -8,7 +8,6 @@ from django.conf import settings
 from rest_framework.authentication import TokenAuthentication
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.message_sender import MessageSenderApiClient
-from seed_services_client.metrics import MetricsApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
 
 from registrations.models import PositionTracker
@@ -306,12 +305,6 @@ def get_available_metrics():
     available_metrics.extend(settings.METRICS_REALTIME)
     available_metrics.extend(settings.METRICS_SCHEDULED)
     return available_metrics
-
-
-def get_metric_client(session=None):
-    return MetricsApiClient(
-        url=settings.METRICS_URL, auth=settings.METRICS_AUTH, session=session
-    )
 
 
 def json_decode(data):

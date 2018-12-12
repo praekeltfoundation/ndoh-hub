@@ -22,7 +22,7 @@ from changes.tasks import (
     send_helpdesk_response_to_dhis2,
 )
 from registrations.models import Registration, Source
-from registrations.signals import psh_fire_created_metric, psh_validate_subscribe
+from registrations.signals import psh_validate_subscribe
 
 
 class DisconnectRegistrationSignalsMixin(object):
@@ -35,11 +35,6 @@ class DisconnectRegistrationSignalsMixin(object):
             receiver=psh_validate_subscribe,
             sender=Registration,
             dispatch_uid="psh_validate_subscribe",
-        )
-        post_save.disconnect(
-            receiver=psh_fire_created_metric,
-            sender=Registration,
-            dispatch_uid="psh_fire_created_metric",
         )
         post_save.disconnect(receiver=model_saved, dispatch_uid="instance-saved-hook")
         assert not post_save.has_listeners(Registration), (
@@ -57,11 +52,6 @@ class DisconnectRegistrationSignalsMixin(object):
             psh_validate_subscribe,
             sender=Registration,
             dispatch_uid="psh_validate_subscribe",
-        )
-        post_save.connect(
-            psh_fire_created_metric,
-            sender=Registration,
-            dispatch_uid="psh_fire_created_metric",
         )
         post_save.connect(receiver=model_saved, dispatch_uid="instance-saved-hook")
         return super().tearDown()
