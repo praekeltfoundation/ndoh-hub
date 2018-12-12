@@ -238,7 +238,7 @@ CELERY_ACCEPT_CONTENT = ["json"]
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 
-METRICS_REALTIME = ["registrations.created.sum"]
+METRICS_REALTIME = []  # type: ignore
 METRICS_SCHEDULED = []  # type: ignore
 METRICS_SCHEDULED_TASKS = []  # type: ignore
 

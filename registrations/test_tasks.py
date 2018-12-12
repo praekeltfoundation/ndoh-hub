@@ -10,7 +10,7 @@ from django.test import TestCase
 from ndoh_hub import utils_tests
 from registrations.models import Registration, Source, SubscriptionRequest
 from registrations.serializers import RegistrationSerializer
-from registrations.signals import psh_fire_created_metric, psh_validate_subscribe
+from registrations.signals import psh_validate_subscribe
 from registrations.tasks import validate_subscribe
 from registrations.tasks import validate_subscribe_jembi_app_registration as task
 
@@ -24,22 +24,12 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
             sender=Registration,
             dispatch_uid="psh_validate_subscribe",
         )
-        post_save.disconnect(
-            receiver=psh_fire_created_metric,
-            sender=Registration,
-            dispatch_uid="psh_fire_created_metric",
-        )
 
     def tearDown(self):
         post_save.connect(
             psh_validate_subscribe,
             sender=Registration,
             dispatch_uid="psh_validate_subscribe",
-        )
-        post_save.connect(
-            psh_fire_created_metric,
-            sender=Registration,
-            dispatch_uid="psh_fire_created_metric",
         )
 
     @responses.activate
