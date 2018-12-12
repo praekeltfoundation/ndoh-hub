@@ -52,12 +52,14 @@ INSTALLED_APPS = (
     "django_filters",
     "rest_hooks",
     "simple_history",
+    "django_prometheus",
     # us
     "registrations",
     "changes",
 )
 
 MIDDLEWARE = (
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -65,6 +67,7 @@ MIDDLEWARE = (
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
 )
 
 ROOT_URLCONF = "ndoh_hub.urls"
@@ -110,7 +113,8 @@ DATABASES = {
     "default": dj_database_url.config(
         default=os.environ.get(
             "HUB_DATABASE", "postgres://postgres:@localhost/ndoh_hub"
-        )
+        ),
+        engine="django_prometheus.db.backends.postgresql",
     )
 }
 

@@ -1,5 +1,6 @@
 import os
 
+import django_prometheus.urls
 from django.conf.urls import include, url
 from django.contrib import admin
 from django.urls import path
@@ -20,4 +21,5 @@ urlpatterns = [
     url(r"^docs/", include_docs_urls(title="NDOH Hub")),
     url(r"^", include("registrations.urls")),
     url(r"^", include("changes.urls")),
+    path("", include(django_prometheus.urls)),
 ]
