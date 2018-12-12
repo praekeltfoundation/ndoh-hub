@@ -28,7 +28,7 @@ setup(
         "django-simple-history==2.4.0",
         "openpyxl==2.5.9",
         "iso-639==0.4.5",
-        "django-prometheus=1.0.15",
+        "django-prometheus==1.0.15",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
