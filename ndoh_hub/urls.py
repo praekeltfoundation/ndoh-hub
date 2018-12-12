@@ -1,12 +1,13 @@
 import os
 
-import django_prometheus.urls
 from django.conf.urls import include, url
 from django.contrib import admin
 from django.urls import path
+from django_prometheus import exports as django_prometheus
 from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.documentation import include_docs_urls
 
+from ndoh_hub.decorators import internal_only
 from registrations import views
 
 admin.site.site_header = os.environ.get("HUB_TITLE", "NDOH Hub Admin")
@@ -21,5 +22,7 @@ urlpatterns = [
     url(r"^docs/", include_docs_urls(title="NDOH Hub")),
     url(r"^", include("registrations.urls")),
     url(r"^", include("changes.urls")),
-    path("", include(django_prometheus.urls)),
+    path(
+        "metrics", internal_only(django_prometheus.ExportToDjangoView), name="metrics"
+    ),
 ]
