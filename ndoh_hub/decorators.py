@@ -1,9 +1,6 @@
 import functools
-import logging
 
 from django.core.exceptions import PermissionDenied
-
-logger = logging.getLogger(__name__)
 
 
 def internal_only(view_func):
