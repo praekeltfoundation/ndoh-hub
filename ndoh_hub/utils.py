@@ -4,12 +4,10 @@ import datetime
 import json
 
 import six
-from celery.task import Task
 from django.conf import settings
 from rest_framework.authentication import TokenAuthentication
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.message_sender import MessageSenderApiClient
-from seed_services_client.metrics import MetricsApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
 
 from registrations.models import PositionTracker
@@ -307,30 +305,6 @@ def get_available_metrics():
     available_metrics.extend(settings.METRICS_REALTIME)
     available_metrics.extend(settings.METRICS_SCHEDULED)
     return available_metrics
-
-
-def get_metric_client(session=None):
-    return MetricsApiClient(
-        url=settings.METRICS_URL, auth=settings.METRICS_AUTH, session=session
-    )
-
-
-class FireMetric(Task):
-
-    """ Fires a metric using the MetricsApiClient
-    """
-
-    name = "ndoh_hub.tasks.fire_metric"
-
-    def run(self, metric_name, metric_value, session=None, **kwargs):
-        metric_value = float(metric_value)
-        metric = {metric_name: metric_value}
-        metric_client = get_metric_client(session=session)
-        metric_client.fire_metrics(**metric)
-        return "Fired metric <%s> with value <%s>" % (metric_name, metric_value)
-
-
-fire_metric = FireMetric()
 
 
 def json_decode(data):

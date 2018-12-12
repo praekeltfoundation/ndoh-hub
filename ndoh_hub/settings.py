@@ -52,12 +52,14 @@ INSTALLED_APPS = (
     "django_filters",
     "rest_hooks",
     "simple_history",
+    "django_prometheus",
     # us
     "registrations",
     "changes",
 )
 
 MIDDLEWARE = (
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -65,6 +67,7 @@ MIDDLEWARE = (
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
 )
 
 ROOT_URLCONF = "ndoh_hub.urls"
@@ -110,9 +113,12 @@ DATABASES = {
     "default": dj_database_url.config(
         default=os.environ.get(
             "HUB_DATABASE", "postgres://postgres:@localhost/ndoh_hub"
-        )
+        ),
+        engine="django_prometheus.db.backends.postgresql",
     )
 }
+
+PROMETHEUS_EXPORT_MIGRATIONS = False
 
 
 # Internationalization
@@ -225,7 +231,6 @@ CELERY_TASK_ROUTES = {
     "ndoh_hub.registrations.tasks.validate_subscribe": {"queue": "mediumpriority"},
     "ndoh_hub.changes.tasks.validate_implement": {"queue": "mediumpriority"},
     "registrations.tasks.DeliverHook": {"queue": "priority"},
-    "ndoh_hub.tasks.fire_metric": {"queue": "metrics"},
 }
 
 CELERY_TASK_SERIALIZER = "json"
@@ -234,15 +239,9 @@ CELERY_ACCEPT_CONTENT = ["json"]
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 
-METRICS_REALTIME = ["registrations.created.sum"]
+METRICS_REALTIME = []  # type: ignore
 METRICS_SCHEDULED = []  # type: ignore
 METRICS_SCHEDULED_TASKS = []  # type: ignore
-
-METRICS_URL = os.environ.get("METRICS_URL", "http://metrics/api/v1")
-METRICS_AUTH = (
-    os.environ.get("METRICS_AUTH_USER", "REPLACEME"),
-    os.environ.get("METRICS_AUTH_PASSWORD", "REPLACEME"),
-)
 
 PREBIRTH_MIN_WEEKS = int(os.environ.get("PREBIRTH_MIN_WEEKS", "4"))
 WHATSAPP_EXPIRY_SMS_BOUNCE_DAYS = int(

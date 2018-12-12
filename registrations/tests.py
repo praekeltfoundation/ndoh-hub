@@ -3,7 +3,6 @@ import datetime
 import uuid
 from datetime import timedelta
 from unittest import mock
-from urllib.parse import urlparse
 
 import requests
 import responses
@@ -23,7 +22,7 @@ from rest_hooks.models import model_saved
 from ndoh_hub import utils, utils_tests
 
 from .models import PositionTracker, Registration, Source, SubscriptionRequest
-from .signals import psh_fire_created_metric, psh_validate_subscribe
+from .signals import psh_validate_subscribe
 from .tasks import (
     PushRegistrationToJembi,
     add_personally_identifiable_fields,
@@ -582,11 +581,6 @@ class AuthenticatedAPITestCase(APITestCase):
             sender=Registration,
             dispatch_uid="psh_validate_subscribe",
         )
-        post_save.disconnect(
-            receiver=psh_fire_created_metric,
-            sender=Registration,
-            dispatch_uid="psh_fire_created_metric",
-        )
         post_save.disconnect(receiver=model_saved, dispatch_uid="instance-saved-hook")
         assert not has_listeners(), (
             "Registration model still has post_save listeners. Make sure"
@@ -605,11 +599,6 @@ class AuthenticatedAPITestCase(APITestCase):
             psh_validate_subscribe,
             sender=Registration,
             dispatch_uid="psh_validate_subscribe",
-        )
-        post_save.connect(
-            psh_fire_created_metric,
-            sender=Registration,
-            dispatch_uid="psh_fire_created_metric",
         )
 
     def make_source_adminuser(self):
@@ -4410,10 +4399,7 @@ class TestMetricsAPI(AuthenticatedAPITestCase):
         )
         # Check
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(
-            sorted(response.data["metrics_available"]),
-            sorted(["registrations.created.sum"]),
-        )
+        self.assertEqual(response.data["metrics_available"], [])
 
     @responses.activate
     def test_post_metrics(self):
@@ -4434,66 +4420,6 @@ class TestMetricsAPI(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["scheduled_metrics_initiated"], True)
-
-
-class TestMetrics(AuthenticatedAPITestCase):
-    def setUp(self):
-        responses.add(responses.POST, "http://metrics/api/v1/metrics/", json={})
-        return super(TestMetrics, self).setUp()
-
-    def _check_request(self, request, method, params=None, data=None, headers=None):
-        self.assertEqual(request.method, method)
-        if params is not None:
-            url = urlparse.urlparse(request.url)
-            qs = urlparse.parse_qsl(url.query)
-            self.assertEqual(dict(qs), params)
-        if headers is not None:
-            for key, value in headers.items():
-                self.assertEqual(request.headers[key], value)
-        if data is None:
-            self.assertEqual(request.body, None)
-        else:
-            self.assertEqual(json.loads(request.body), data)
-
-    @responses.activate
-    def test_direct_fire(self):
-        # Execute
-        result = utils.fire_metric.apply_async(
-            kwargs={"metric_name": "foo.last", "metric_value": 1}
-        )
-        # Check
-        [request] = responses.calls
-        self._check_request(request.request, "POST", data={"foo.last": 1.0})
-        self.assertEqual(result.get(), "Fired metric <foo.last> with value <1.0>")
-
-    @responses.activate
-    def test_created_metric(self):
-        # reconnect metric post_save hook
-        post_save.connect(
-            psh_fire_created_metric,
-            sender=Registration,
-            dispatch_uid="psh_fire_created_metric",
-        )
-
-        # Execute
-        self.make_registration_adminuser()
-        self.make_registration_adminuser()
-
-        # Check
-        [request1, request3] = responses.calls
-        self._check_request(
-            request1.request, "POST", data={"registrations.created.sum": 1.0}
-        )
-        self._check_request(
-            request3.request, "POST", data={"registrations.created.sum": 1.0}
-        )
-
-        # remove post_save hooks to prevent teardown errors
-        post_save.disconnect(
-            psh_fire_created_metric,
-            sender=Registration,
-            dispatch_uid="psh_fire_created_metric",
-        )
 
 
 class UpdateInitialSequenceCommand(AuthenticatedAPITestCase):
