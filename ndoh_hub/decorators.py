@@ -1,6 +1,9 @@
 import functools
+import logging
 
 from django.core.exceptions import PermissionDenied
+
+logger = logging.getLogger(__name__)
 
 
 def internal_only(view_func):
@@ -10,7 +13,11 @@ def internal_only(view_func):
 
     @functools.wraps(view_func)
     def wrapper(request, *args, **kwargs):
-        if request.META.get("HTTP_X_FORWARDED_FOR"):
+        forwards = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")
+        # The nginx in the docker container adds the loadbalancer IP to the list inside
+        # X-Forwarded-For, so if the list contains more than a single item, we know
+        # that it went through our loadbalancer
+        if len(forwards) > 1:
             raise PermissionDenied()
         return view_func(request, *args, **kwargs)
 
