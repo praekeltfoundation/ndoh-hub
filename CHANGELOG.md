@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0 (2018-12-18)
+1. Add WhatsApp message expiry event handling
+   ([#190](https://github.com/praekeltfoundation/ndoh-hub/pull/190))
+1. Bug fixes for submission of Turn helpdesk responses to DHIS2
+   ([#191](https://github.com/praekeltfoundation/ndoh-hub/pull/191))
+1. Updating of translations for SMSes
+   ([#192](https://github.com/praekeltfoundation/ndoh-hub/pull/192))
+1. Adding prometheus metrics
+   ([#193](https://github.com/praekeltfoundation/ndoh-hub/pull/193))
+
 ## 0.5.0 (2018-11-28)
 1. Fix author field for helpdesk submissions to OpenHIM
    ([#188](https://github.com/praekeltfoundation/ndoh-hub/pull/188))
