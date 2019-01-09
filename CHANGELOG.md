@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.1 (2019-01-09)
+1. Add handling for additional message types from Turn
+   ([#197](https://github.com/praekeltfoundation/ndoh-hub/pull/197))
+
 ## 0.6.0 (2018-12-18)
 1. Add WhatsApp message expiry event handling
    ([#190](https://github.com/praekeltfoundation/ndoh-hub/pull/190))
