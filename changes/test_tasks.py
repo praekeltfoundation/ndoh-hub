@@ -20,6 +20,7 @@ from changes.tasks import (
     process_whatsapp_timeout_system_event,
     process_whatsapp_unsent_event,
     send_helpdesk_response_to_dhis2,
+    get_text_or_caption_from_turn_message,
 )
 from registrations.models import Registration, Source
 from registrations.signals import psh_validate_subscribe
@@ -678,6 +679,177 @@ class GetEngageInboundAndReplyTests(TestCase):
                 "reply_timestamp": 1540803363,
                 "reply_operator": 56748517727534413379787391391214157498,
             },
+        )
+
+
+class TestGetTextOrCaptionFromTurnMessage(TestCase):
+    def test_text_type_body(self):
+        """
+        If the message is a text, the body should be returned.
+        """
+        self.assertEqual(
+            get_text_or_caption_from_turn_message(
+                {
+                    "from": "16315551234",
+                    "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+                    "timestamp": "1518694235",
+                    "text": {"body": "Hello this is an answer"},
+                    "type": "text",
+                }
+            ),
+            "Hello this is an answer",
+        )
+
+    def test_media_type_caption(self):
+        """
+        If the message is one of the known media types, the caption should be returned
+        """
+        self.assertEqual(
+            get_text_or_caption_from_turn_message(
+                {
+                    "from": "16315551234",
+                    "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+                    "image": {
+                        "file": (
+                            "/usr/local/wamedia/shared/"
+                            "b1cf38-8734-4ad3-b4a1-ef0c10d0d683"
+                        ),
+                        "id": "b1c68f38-8734-4ad3-b4a1-ef0c10d683",
+                        "mime_type": "image/jpeg",
+                        "sha256": (
+                            "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944db"
+                        ),
+                        "caption": "Check out my new phone!",
+                    },
+                    "timestamp": "1521497954",
+                    "type": "image",
+                }
+            ),
+            "Check out my new phone!",
+        )
+
+    def test_media_type_no_caption(self):
+        """
+        If the message is one of the known media types, and there is no caption, the
+        message type should be returned
+        """
+        self.assertEqual(
+            get_text_or_caption_from_turn_message(
+                {
+                    "from": "16315551234",
+                    "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+                    "image": {
+                        "file": (
+                            "/usr/local/wamedia/shared/"
+                            "b1cf38-8734-4ad3-b4a1-ef0c10d0d683"
+                        ),
+                        "id": "b1c68f38-8734-4ad3-b4a1-ef0c10d683",
+                        "mime_type": "image/jpeg",
+                        "sha256": (
+                            "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944db"
+                        ),
+                    },
+                    "timestamp": "1521497954",
+                    "type": "image",
+                }
+            ),
+            "<image>",
+        )
+
+    def test_contacts_type(self):
+        """
+        If it's a contacts message type, the string <contacts> should be returned
+        """
+        self.assertEqual(
+            get_text_or_caption_from_turn_message(
+                {
+                    "contacts": [
+                        {
+                            "addresses": [
+                                {
+                                    "city": "Menlo Park",
+                                    "country": "United States",
+                                    "country_code": "us",
+                                    "state": "CA",
+                                    "street": "1 Hacker Way",
+                                    "type": "WORK",
+                                    "zip": "94025",
+                                }
+                            ],
+                            "birthday": "2012-08-18",
+                            "emails": [{"email": "kfish@fb.com", "type": "WORK"}],
+                            "name": {
+                                "first_name": "Kerry",
+                                "formatted_name": "Kerry Fisher",
+                                "last_name": "Fisher",
+                            },
+                            "org": {"company": "Facebook"},
+                            "phones": [
+                                {"phone": "+1 (940) 555-1234", "type": "CELL"},
+                                {
+                                    "phone": "+1 (650) 555-1234",
+                                    "type": "WORK",
+                                    "wa_id": "16505551234",
+                                },
+                            ],
+                            "urls": [
+                                {"url": "https://www.facebook.com", "type": "WORK"}
+                            ],
+                        }
+                    ],
+                    "from": "16505551234",
+                    "id": "ABGGFlA4dSRvAgo6C4Z53hMh1ugR",
+                    "timestamp": "1537248012",
+                    "type": "contacts",
+                }
+            ),
+            "<contacts>",
+        )
+
+    def test_location_type(self):
+        """
+        If the message is a location type, the logitude and latitude should be returned
+        """
+        self.assertEqual(
+            get_text_or_caption_from_turn_message(
+                {
+                    "from": "16315551234",
+                    "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+                    "location": {
+                        "address": "Main Street Beach, Santa Cruz, CA",
+                        "latitude": 38.9806263495,
+                        "longitude": -131.9428612257,
+                        "name": "Main Street Beach",
+                        "url": "https://foursquare.com/v/4d7031d35b5df7744",
+                    },
+                    "timestamp": "1521497875",
+                    "type": "location",
+                }
+            ),
+            "<location 38.9806263495,-131.9428612257>",
+        )
+
+    def test_unknown_type(self):
+        """
+        The unknown message type should return <unknown>
+        """
+        self.assertEqual(
+            get_text_or_caption_from_turn_message(
+                {
+                    "errors": [
+                        {
+                            "code": 501,
+                            "details": "Message type is not currently supported",
+                            "title": "Unknown message type",
+                        }
+                    ],
+                    "from": "16315551234",
+                    "id": "ABGGFRBzFymPAgo6N9KKs7HsN6eB",
+                    "timestamp": "1531933468",
+                    "type": "unknown",
+                }
+            ),
+            "<unknown>",
         )
 
 
