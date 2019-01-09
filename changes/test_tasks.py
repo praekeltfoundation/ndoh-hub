@@ -14,13 +14,13 @@ from changes.signals import psh_validate_implement
 from changes.tasks import (
     get_engage_inbound_and_reply,
     get_identity_from_msisdn,
+    get_text_or_caption_from_turn_message,
     process_engage_helpdesk_outbound,
     process_whatsapp_contact_check_fail,
     process_whatsapp_system_event,
     process_whatsapp_timeout_system_event,
     process_whatsapp_unsent_event,
     send_helpdesk_response_to_dhis2,
-    get_text_or_caption_from_turn_message,
 )
 from registrations.models import Registration, Source
 from registrations.signals import psh_validate_subscribe
