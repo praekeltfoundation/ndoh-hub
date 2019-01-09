@@ -7,7 +7,7 @@ HUB_IMAGE = pytest.config.getoption("--hub-image")
 
 
 class HubContainer(ContainerDefinition):
-    WAIT_PATTERNS = (r"Listening at: unix:/var/run/gunicorn/gunicorn.sock",)
+    WAIT_PATTERNS = (r"Listening at: unix:/run/gunicorn/gunicorn.sock",)
 
     def __init__(self, name, db_url, image=HUB_IMAGE):
         super().__init__(name, image, self.WAIT_PATTERNS)

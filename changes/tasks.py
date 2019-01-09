@@ -1597,25 +1597,32 @@ def get_text_or_caption_from_turn_message(message: dict) -> str:
     Gets the text content of the message, or the caption if it's a media message, and
     returns. Returns an empty string if no text content can be found.
     """
-    # We first try to get the text using the type of message
-    try:
-        return message[message["type"]]["body"]
-    except KeyError:
-        pass
-    try:
-        return message[message["type"]]["caption"]
-    except KeyError:
-        pass
-    # If there's no type, then we try the ones we know about
     try:
         return message["text"]["body"]
     except KeyError:
         pass
+    for message_type in ("image", "document", "audio", "video", "voice"):
+        try:
+            return message[message_type].get("caption", "<{}>".format(message_type))
+        except KeyError:
+            pass
     try:
-        return message["document"]["caption"]
+        assert "contacts" in message
+        return "<contacts>"
+    except AssertionError:
+        pass
+    try:
+        print(message["location"])
+        return "<location {0[latitude]},{0[longitude]}>".format(message["location"])
     except KeyError:
         pass
-    return message["image"]["caption"]
+    try:
+        assert message["type"] == "unknown"
+        return "<unknown>"
+    except AssertionError:
+        pass
+
+    raise ValueError("Unknown message type")
 
 
 def get_timestamp_from_turn_message(message: dict) -> datetime:
