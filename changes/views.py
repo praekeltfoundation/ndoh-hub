@@ -260,7 +260,9 @@ class ReceiveWhatsAppEvent(ReceiveWhatsAppBase):
             for item in serializer.validated_data["statuses"]:
                 if any(error["code"] == 410 for error in item["errors"]):
                     tasks.process_whatsapp_timeout_system_event.delay(
-                        item["id"], request.user.pk, item["errors"]
+                        {
+                            "message_id": item["id"],
+                        }
                     )
                 else:
                     tasks.process_whatsapp_unsent_event.delay(

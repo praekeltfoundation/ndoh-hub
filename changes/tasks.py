@@ -9,6 +9,7 @@ import phonenumbers
 import pytz
 import requests
 from celery import chain
+from celery.exceptions import SoftTimeLimitExceeded
 from celery.task import Task
 from celery.utils.log import get_task_logger
 from demands import HTTPServiceError
@@ -1469,75 +1470,158 @@ class ProcessWhatsAppSystemEvent(Task):
 process_whatsapp_system_event = ProcessWhatsAppSystemEvent()
 
 
-class ProcessWhatsAppTimeoutSystemEvent(Task):
+@app.task(
+    autoretry_for=(
+        HTTPError,
+        ConnectionError,
+        Timeout,
+        HTTPServiceError,
+        SoftTimeLimitExceeded,
+    ),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+    bind=True,
+)
+def get_identity_uuid_from_message_id(self, context):
     """
-    Notifies a user that a message we send them on Whatsapp has not been delivered
-    within 7 days, she will be sent an outbound
-    message informing them and give the option to switch to SMS.
+    Gets the identity UUID from the message ID
     """
+    try:
+        context["identity_uuid"] = next(
+            utils.ms_client.get_outbounds({"vumi_message_id": context["message_id"]})[
+                "results"
+            ]
+        )["to_identity"]
+    except StopIteration:
+        # Outbound doesn't exist, break the chain
+        return {}
+    return context
 
-    name = "ndoh_hub.changes.tasks.process_whatsapp_timeout_system_event"
 
-    def return_date_time(self):
-        return datetime.utcnow()
+@app.task(
+    autoretry_for=(
+        HTTPError,
+        ConnectionError,
+        Timeout,
+        HTTPServiceError,
+        SoftTimeLimitExceeded,
+    ),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def get_identity(context):
+    """
+    Gets the identity from the identity UUID
+    """
+    if "identity_uuid" not in context:
+        return context
 
-    def send_outbound(self, user_id, identity, identity_uuid):
-        # Transform to django language code
-        details = identity["details"]
-        if "lang_code" in details:
-            language = details["lang_code"].lower().replace("_", "-")
-            with translation.override(language):
-                text = translation.ugettext(
-                    "We see that your MomConnect WhatsApp messages are not being "
-                    "delivered. If you would like to receive your messages over "
-                    "SMS, reply ‘SMS’."
-                )
+    context["identity"] = is_client.get_identity(context["identity_uuid"])
+    return context
 
-            utils.ms_client.create_outbound(
-                {
-                    "to_identity": identity_uuid,
-                    "content": text,
-                    "channel": "JUNE_TEXT",
-                    "metadata": {},
-                }
-            )
 
-    def handle_undelivered(self, user_id, identity_uuid):
-        identity = is_client.get_identity(identity_uuid)
-        details = identity["details"]
-        if "timeout_timestamp" not in details:
-            date = self.return_date_time()
-            details["timeout_timestamp"] = date.timestamp()
+def get_utc_now():
+    return datetime.utcnow()
+
+
+@app.task(
+    autoretry_for=(
+        HTTPError,
+        ConnectionError,
+        Timeout,
+        HTTPServiceError,
+        SoftTimeLimitExceeded,
+    ),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+    bind=True,
+)
+def update_identity_timeout_timestamp(self, context):
+    """
+    Updates the timestamp if the required time has passed, and sends failure SMS if
+    required
+    """
+    if "identity" not in context:
+        return context
+
+    identity = context["identity"]
+    details = identity["details"]
+    if "timeout_timestamp" not in details:
+        details["timeout_timestamp"] = get_utc_now().timestamp()
+        is_client.update_identity(identity["id"], {"details": details})
+    else:
+        d1 = datetime.fromtimestamp(details["timeout_timestamp"])
+        d2 = get_utc_now()
+        if (d2 - d1).days >= settings.WHATSAPP_EXPIRY_SMS_BOUNCE_DAYS:
+            details["timeout_timestamp"] = d2.timestamp()
             is_client.update_identity(identity["id"], {"details": details})
-            self.send_outbound(user_id, identity, identity_uuid)
         else:
-            d1 = datetime.fromtimestamp(details["timeout_timestamp"])
-            d2 = self.return_date_time()
-            delta = (d2 - d1).days
-            if delta >= settings.WHATSAPP_EXPIRY_SMS_BOUNCE_DAYS:
-                details["timeout_timestamp"] = d2.timestamp()
-                is_client.update_identity(identity["id"], {"details": details})
-                self.send_outbound(user_id, identity, identity_uuid)
-
-    def run(self, vumi_message_id: str, user_id: str, errors: list, **kwargs) -> None:
-        try:
-            identity_uuid: str = next(
-                utils.ms_client.get_outbounds({"vumi_message_id": vumi_message_id})[
-                    "results"
-                ]
-            )["to_identity"]
-        except StopIteration:
-            """
-            Outbound with message id doesn't exist, so don't continue
-            """
-            return
-
-        for error in errors:
-            if "Message expired" in error["title"]:
-                self.handle_undelivered(user_id, identity_uuid)
+            # Cancel the rest of the chain, it's too soon to send the message
+            return {}
+    return context
 
 
-process_whatsapp_timeout_system_event = ProcessWhatsAppTimeoutSystemEvent()
+@app.task(
+    autoretry_for=(
+        HTTPError,
+        ConnectionError,
+        Timeout,
+        HTTPServiceError,
+        SoftTimeLimitExceeded,
+    ),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def send_whatsapp_failure_sms(context):
+    """
+    Sends an sms to the user telling them that their messages have been failing
+    """
+    if "identity" not in context:
+        return context
+
+    identity = context["identity"]
+    details = identity["details"]
+    # Transform to django language code
+    language = details.get("lang_code", "eng_ZA").lower().replace("_", "-")
+    with translation.override(language):
+        text = translation.ugettext(
+            "We see that your MomConnect WhatsApp messages are not being "
+            "delivered. If you would like to receive your messages over "
+            "SMS, reply ‘SMS’."
+        )
+
+    utils.ms_client.create_outbound(
+        {
+            "to_identity": identity["id"],
+            "content": text,
+            "channel": "JUNE_TEXT",
+            "metadata": {},
+        }
+    )
+
+
+process_whatsapp_timeout_system_event = (
+    get_identity_uuid_from_message_id.s()
+    | get_identity.s()
+    | update_identity_timeout_timestamp.s()
+    | send_whatsapp_failure_sms.s()
+)
 
 
 class ProcessWhatsAppContactCheckFail(Task):
@@ -1611,7 +1695,6 @@ def get_text_or_caption_from_turn_message(message: dict) -> str:
     except AssertionError:
         pass
     try:
-        print(message["location"])
         return "<location {0[latitude]},{0[longitude]}>".format(message["location"])
     except KeyError:
         pass
