@@ -1481,7 +1481,7 @@ class ProcessWhatsAppTimeoutSystemEvent(Task):
     def return_date_time(self):
         return datetime.utcnow()
 
-    def send_outbound(self, user_id, source_id, identity, identity_uuid):
+    def send_outbound(self, user_id, identity, identity_uuid):
         # Transform to django language code
         details = identity["details"]
         if "lang_code" in details:
@@ -1502,14 +1502,14 @@ class ProcessWhatsAppTimeoutSystemEvent(Task):
                 }
             )
 
-    def handle_undelivered(self, user_id, source_id, identity_uuid):
+    def handle_undelivered(self, user_id, identity_uuid):
         identity = is_client.get_identity(identity_uuid)
         details = identity["details"]
         if "timeout_timestamp" not in details:
             date = self.return_date_time()
             details["timeout_timestamp"] = date.timestamp()
             is_client.update_identity(identity["id"], {"details": details})
-            self.send_outbound(user_id, source_id, identity, identity_uuid)
+            self.send_outbound(user_id, identity, identity_uuid)
         else:
             d1 = datetime.fromtimestamp(details["timeout_timestamp"])
             d2 = self.return_date_time()
@@ -1517,10 +1517,9 @@ class ProcessWhatsAppTimeoutSystemEvent(Task):
             if delta >= settings.WHATSAPP_EXPIRY_SMS_BOUNCE_DAYS:
                 details["timeout_timestamp"] = d2.timestamp()
                 is_client.update_identity(identity["id"], {"details": details})
-                self.send_outbound(user_id, source_id, identity, identity_uuid)
+                self.send_outbound(user_id, identity, identity_uuid)
 
     def run(self, vumi_message_id: str, user_id: str, errors: list, **kwargs) -> None:
-        source_id: int = Source.objects.values("pk").get(user=user_id)["pk"]
         try:
             identity_uuid: str = next(
                 utils.ms_client.get_outbounds({"vumi_message_id": vumi_message_id})[
@@ -1535,7 +1534,7 @@ class ProcessWhatsAppTimeoutSystemEvent(Task):
 
         for error in errors:
             if "Message expired" in error["title"]:
-                self.handle_undelivered(user_id, source_id, identity_uuid)
+                self.handle_undelivered(user_id, identity_uuid)
 
 
 process_whatsapp_timeout_system_event = ProcessWhatsAppTimeoutSystemEvent()
