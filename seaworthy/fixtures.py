@@ -1,4 +1,5 @@
 import pytest
+
 from seaworthy.containers.postgresql import PostgreSQLContainer
 from seaworthy.definitions import ContainerDefinition
 
