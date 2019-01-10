@@ -346,11 +346,7 @@ class ProcessWhatsAppSystemEventTaskTests(WhatsAppBaseTestCase):
         timestamp = 1543999390.069308
         mock_get_utc_now.return_value = datetime.fromtimestamp(timestamp)
 
-        process_whatsapp_timeout_system_event.delay(
-            {
-                "message_id": "messageid",
-            }
-        ).get()
+        process_whatsapp_timeout_system_event.delay({"message_id": "messageid"}).get()
 
         mock_create_outbound.assert_called_once_with(
             {
@@ -391,9 +387,7 @@ class ProcessWhatsAppSystemEventTaskTests(WhatsAppBaseTestCase):
         self.create_identity_lookup_with_timestamp(timeout_timestamp)
         self.update_identity_lookup()
 
-        process_whatsapp_timeout_system_event.delay({
-            "message_id": "messageid",
-        }).get()
+        process_whatsapp_timeout_system_event.delay({"message_id": "messageid"}).get()
 
         mock_create_outbound.assert_called_once_with(
             {
@@ -435,9 +429,7 @@ class ProcessWhatsAppSystemEventTaskTests(WhatsAppBaseTestCase):
         self.create_identity_lookup_with_timestamp(timeout_timestamp)
         self.update_identity_lookup()
 
-        process_whatsapp_timeout_system_event.delay({
-            "message_id": "messageid",
-        }).get()
+        process_whatsapp_timeout_system_event.delay({"message_id": "messageid"}).get()
 
         self.assertFalse(mock_create_outbound.called)
         self.assertFalse(mock_update_identiity.called)
