@@ -138,7 +138,7 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         task.delay.assert_called_once_with(
-            "41c377a47b064eba9abee5a1ea827b3d", user.pk, errors
+            {"message_id": "41c377a47b064eba9abee5a1ea827b3d"}
         )
 
     @mock.patch("changes.views.tasks.process_engage_helpdesk_outbound")
