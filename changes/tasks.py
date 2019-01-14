@@ -145,6 +145,7 @@ class ValidateImplement(Task):
         whatsapp = False
         messagesets = list(sbm_client.get_messagesets()["results"])
         for sub in active_subs:
+            lang = sub["lang"]
             for ms in messagesets:
                 if ms["id"] == sub["messageset"]:
                     short_name = ms["short_name"]
@@ -172,14 +173,11 @@ class ValidateImplement(Task):
             r = utils.get_messageset_schedule_sequence(short_name, 0)
             msgset_id, msgset_schedule, next_sequence_number = r
 
-            self.log.info("Determining language")
-            identity = is_client.get_identity(change.registrant_id)
-
             subscription = {
                 "identity": change.registrant_id,
                 "messageset": msgset_id,
                 "next_sequence_number": next_sequence_number,
-                "lang": identity["details"]["lang_code"],
+                "lang": lang,
                 "schedule": msgset_schedule,
             }
 
