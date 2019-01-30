@@ -310,3 +310,32 @@ class SeedMessageSenderHook(generics.GenericAPIView):
         msisdn = phonenumbers.format_number(msisdn, phonenumbers.PhoneNumberFormat.E164)
         tasks.process_whatsapp_contact_check_fail.delay(str(request.user.pk), msisdn)
         return Response(status=status.HTTP_202_ACCEPTED)
+
+
+class SeedMessageSenderFailedMsisdnHook(generics.GenericAPIView):
+    """
+    Receives events from the Seed Message Sender. Supports:
+    * identity.no_address hook
+
+    Requires token auth in the querystring "token" field.
+    """
+
+    serializer_class = SeedMessageSenderHookSerializer
+
+    def post(self, request, *args, **kwargs):
+        try:
+            # The hooks send the request data as {"hook":{}, "data":{}}
+            data = request.data["data"]
+        except KeyError:
+            raise ValidationError('"data" must be supplied')
+        identity_id = data.get("identity_id", None)
+        if identity_id is None or identity_id == "":
+            raise ValidationError('"identity_id" must be supplied')
+        source = Source.objects.get(user=request.user)
+        Change.objects.create(
+            source=source,
+            registrant_id=identity_id,
+            action="momconnect_nonloss_optout",
+            data={"reason": "missing_to_addr"},
+        )
+        return Response(status=status.HTTP_201_CREATED)
