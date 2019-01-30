@@ -379,6 +379,7 @@ class ValidateImplement(Task):
 
         if (
             change.data["reason"] == "unknown" or change.data["reason"] == "sms_failure"
+            or change.data["reason"] == "missing_to_addr"
         ):  # SMS optout
             self.deactivate_all(change)
         else:
@@ -754,7 +755,8 @@ class ValidateImplement(Task):
             return []
 
     def check_momconnect_nonloss_optout_reason(self, data_fields, change):
-        nonloss_reasons = ["not_useful", "other", "unknown", "sms_failure"]
+        nonloss_reasons = ["not_useful", "other", "unknown", "sms_failure",
+                           "missing_to_addr"]
         if "reason" not in data_fields:
             return ["Optout reason is missing"]
         elif change.data["reason"] not in nonloss_reasons:
