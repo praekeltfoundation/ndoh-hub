@@ -28,8 +28,8 @@ from .serializers import (
     ReceiveEngageMessage,
     ReceiveWhatsAppEventSerializer,
     ReceiveWhatsAppSystemEventSerializer,
-    SeedMessageSenderHookSerializer,
     SeedMessageSenderFailedMsisdnHookSerializer,
+    SeedMessageSenderHookSerializer,
 )
 
 
