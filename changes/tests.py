@@ -1426,7 +1426,7 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         change_data = {
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "action": "momconnect_nonloss_optout",
-            "data": {"reason": "other"},
+            "data": {"reason": "missing_to_addr"},
             "source": self.make_source_normaluser(),
         }
         change = Change.objects.create(**change_data)
