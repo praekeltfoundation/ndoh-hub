@@ -127,3 +127,17 @@ class SeedMessageSenderHookSerializer(serializers.Serializer):
         address = PhoneNumberField(country_code="ZA")
 
     data = Data()
+
+
+class SeedMessageSenderFailedMsisdnHookSerializer(serializers.Serializer):
+    class Hook(serializers.Serializer):
+        id = serializers.IntegerField()
+        event = serializers.ChoiceField(choices=["identity.no_address"])
+        target = serializers.CharField()
+
+    hook = Hook()
+
+    class Data(serializers.Serializer):
+        address = PhoneNumberField(country_code="ZA")
+
+    data = Data()
