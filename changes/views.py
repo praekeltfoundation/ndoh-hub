@@ -29,6 +29,7 @@ from .serializers import (
     ReceiveWhatsAppEventSerializer,
     ReceiveWhatsAppSystemEventSerializer,
     SeedMessageSenderHookSerializer,
+    SeedMessageSenderFailedMsisdnHookSerializer,
 )
 
 
@@ -320,7 +321,7 @@ class SeedMessageSenderFailedMsisdnHook(generics.GenericAPIView):
     Requires token auth in the querystring "token" field.
     """
 
-    serializer_class = SeedMessageSenderHookSerializer
+    serializer_class = SeedMessageSenderFailedMsisdnHookSerializer
 
     def post(self, request, *args, **kwargs):
         try:
