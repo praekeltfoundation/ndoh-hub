@@ -426,3 +426,40 @@ class ReceiveSeedMessageSenderHookViewTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         task.delay.assert_called_once_with(str(user.pk), "+27820001001")
+
+
+class ReceiveSeedMessageSenderFailedMsisdnViewTests(APITestCase):
+    def test_token_querystring_auth(self):
+        """
+        The token should be required in the querystring for requests to be
+        processed.
+        """
+        url = reverse("message_sender_failed_msisdn_hook")
+        response = self.client.post(url, data={}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_failed_msidn_lookup_hook(self):
+        """
+        If the message sender sends us an event for failed msisdn lookup
+        the hook should be called
+        """
+        user = User.objects.create_user("test")
+        token = Token.objects.create(user=user).key
+        url = "{}?{}".format(
+            reverse("message_sender_failed_msisdn_hook"), urlencode({"token": token})
+        )
+
+        response = self.client.post(
+            url,
+            data={
+                "hook": {
+                    "id": 1,
+                    "event": "identity.no_address",
+                    "target": "http://example.org",
+                },
+                "data": {"to_identity": "cbaf27bc-2ba9-4e4a-84c1-098d5abd80bf"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
