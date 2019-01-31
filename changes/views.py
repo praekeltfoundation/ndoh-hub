@@ -322,21 +322,9 @@ class SeedMessageSenderFailedMsisdnHook(generics.GenericAPIView):
     """
 
     serializer_class = SeedMessageSenderFailedMsisdnHookSerializer
+    authentication_classes = (TokenAuthQueryString,)
 
     def post(self, request, *args, **kwargs):
-        try:
-            # The hooks send the request data as {"hook":{}, "data":{}}
-            data = request.data["data"]
-        except KeyError:
-            raise ValidationError('"data" must be supplied')
-        identity_id = data.get("identity_id", None)
-        if identity_id is None or identity_id == "":
-            raise ValidationError('"identity_id" must be supplied')
-        source = Source.objects.get(user=request.user)
-        Change.objects.create(
-            source=source,
-            registrant_id=identity_id,
-            action="momconnect_nonloss_optout",
-            data={"reason": "missing_to_addr"},
-        )
-        return Response(status=status.HTTP_201_CREATED)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(status=status.HTTP_202_ACCEPTED)
