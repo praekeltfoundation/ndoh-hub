@@ -13,7 +13,9 @@ urlpatterns = [
     url(r"^api/v1/", include(router.urls)),
     url(r"^api/v1/change/inactive/$", views.OptOutInactiveIdentity.as_view()),
     url(
-        r"^api/v1/change/inactive/$", views.SeedMessageSenderFailedMsisdnHook.as_view()
+        r"^api/v1/message_sender/failed_msisdn_lookup/$",
+        views.SeedMessageSenderFailedMsisdnHook.as_view(),
+        name="message_sender_failed_msisdn_hook",
     ),
     url(r"^api/v1/change/", views.ChangePost.as_view()),
     url(
