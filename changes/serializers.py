@@ -1,3 +1,5 @@
+import uuid
+
 from rest_framework import serializers
 
 from .fields import PhoneNumberField
@@ -138,6 +140,6 @@ class SeedMessageSenderFailedMsisdnHookSerializer(serializers.Serializer):
     hook = Hook()
 
     class Data(serializers.Serializer):
-        address = PhoneNumberField(country_code="ZA")
+        identity = str(uuid.uuid4())
 
     data = Data()
