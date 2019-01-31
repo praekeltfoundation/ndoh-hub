@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.2 (2019-01-31)
+1. Add retries for HTTP failures for process_whatsapp_system_event task
+   ([#198](https://github.com/praekeltfoundation/ndoh-hub/pull/198))
+1. Fix loss switch change missing language code
+   ([#199](https://github.com/praekeltfoundation/ndoh-hub/pull/199))
+
 ## 0.6.1 (2019-01-09)
 1. Add handling for additional message types from Turn
    ([#197](https://github.com/praekeltfoundation/ndoh-hub/pull/197))
