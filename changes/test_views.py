@@ -12,7 +12,6 @@ from rest_framework.test import APITestCase
 from registrations.models import Source
 
 from .models import Change
-from .tasks import validate_implement
 
 
 @mock.patch("changes.views.ReceiveWhatsAppBase.validate_signature")
@@ -481,8 +480,8 @@ class ReceiveSeedMessageSenderFailedMsisdnViewTests(APITestCase):
         url = "{}?{}".format(
             reverse("message_sender_failed_msisdn_hook"), urlencode({"token": token})
         )
-        registrant_id = "cbaf27bc-2ba9-4e4a-84c1-098d5abd80bf"
-        source = self.make_source_normaluser()
+        to_identity = "cbaf27bc-2ba9-4e4a-84c1-098d5abd80bf"
+        self.make_source_normaluser()
 
         response = self.client.post(
             url,
@@ -492,24 +491,18 @@ class ReceiveSeedMessageSenderFailedMsisdnViewTests(APITestCase):
                     "event": "identity.no_address",
                     "target": "http://example.org",
                 },
-                "data": {"registrant_id": registrant_id},
+                "data": {"to_identity": to_identity},
             },
             format="json",
         )
 
         self.subscription_lookup()
-        self.identity_lookup(registrant_id)
+        self.identity_lookup(to_identity)
         self.jembi_post()
+        d = Change.objects.last()
 
-        change_data = {
-            "registrant_id": "cbaf27bc-2ba9-4e4a-84c1-098d5abd80bf",
-            "action": "momconnect_nonloss_optout",
-            "data": {"reason": "missing_to_addr"},
-            "source": source,
-        }
-        change = Change.objects.create(**change_data)
-
-        validate_implement.validate(change)
-        change.refresh_from_db()
-        self.assertEqual(change.validated, True)
+        self.assertEqual(d.source.name, "test")
+        self.assertEqual(d.action, "momconnect_nonloss_optout")
+        self.assertEqual(d.validated, True)
+        self.assertEqual(d.data, {"reason": "missing_to_addr"})
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
