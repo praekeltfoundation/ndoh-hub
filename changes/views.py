@@ -28,6 +28,7 @@ from .serializers import (
     ReceiveEngageMessage,
     ReceiveWhatsAppEventSerializer,
     ReceiveWhatsAppSystemEventSerializer,
+    SeedMessageSenderFailedMsisdnHookSerializer,
     SeedMessageSenderHookSerializer,
 )
 
@@ -309,4 +310,29 @@ class SeedMessageSenderHook(generics.GenericAPIView):
         msisdn = serializer.validated_data["data"]["address"]
         msisdn = phonenumbers.format_number(msisdn, phonenumbers.PhoneNumberFormat.E164)
         tasks.process_whatsapp_contact_check_fail.delay(str(request.user.pk), msisdn)
+        return Response(status=status.HTTP_202_ACCEPTED)
+
+
+class SeedMessageSenderFailedMsisdnHook(generics.GenericAPIView):
+    """
+    Receives events from the Seed Message Sender. Supports:
+    * identity.no_address hook
+
+    Requires token auth in the querystring "token" field.
+    """
+
+    serializer_class = SeedMessageSenderFailedMsisdnHookSerializer
+    authentication_classes = (TokenAuthQueryString,)
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        to_identity = serializer.validated_data["data"]["to_identity"]
+        source = Source.objects.get(user=request.user)
+        Change.objects.create(
+            source=source,
+            registrant_id=to_identity,
+            action="momconnect_nonloss_optout",
+            data={"reason": "missing_to_addr"},
+        )
         return Response(status=status.HTTP_202_ACCEPTED)

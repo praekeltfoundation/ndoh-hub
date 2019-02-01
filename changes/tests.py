@@ -1421,6 +1421,20 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         self.assertEqual(c, True)
         self.assertEqual(change.validated, True)
 
+    def test_validate_missing_to_addr_optout(self):
+        # Setup
+        change_data = {
+            "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "action": "momconnect_nonloss_optout",
+            "data": {"reason": "missing_to_addr"},
+            "source": self.make_source_normaluser(),
+        }
+        change = Change.objects.create(**change_data)
+
+        validate_implement.validate(change)
+        change.refresh_from_db()
+        self.assertEqual(change.validated, True)
+
     def test_validate_momconnect_nonloss_optouts_malformed_data(self):
         """ Loss optout data blobs are essentially identical between different
         forms of loss optout for momconnect, so just test one malformed one.

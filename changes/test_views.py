@@ -2,11 +2,16 @@ import json
 from unittest import mock
 from urllib.parse import urlencode
 
+import responses
 from django.contrib.auth.models import Permission, User
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
+
+from registrations.models import Source
+
+from .models import Change
 
 
 @mock.patch("changes.views.ReceiveWhatsAppBase.validate_signature")
@@ -426,3 +431,79 @@ class ReceiveSeedMessageSenderHookViewTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         task.delay.assert_called_once_with(str(user.pk), "+27820001001")
+
+
+class ReceiveSeedMessageSenderFailedMsisdnViewTests(APITestCase):
+    def make_source_normaluser(self):
+        data = {
+            "name": "test",
+            "authority": "patient",
+            "user": User.objects.get(username="test"),
+        }
+        return Source.objects.create(**data)
+
+    def subscription_lookup(self):
+        responses.add(
+            responses.GET, "http://sbm/api/v1/subscriptions/", json={}, status=200
+        )
+
+    def identity_lookup(self, identity):
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/%s/" % (identity),
+            json={},
+            status=200,
+        )
+
+    def jembi_post(self):
+        responses.add(
+            responses.POST, "http://jembi/ws/rest/v1/optout", json={}, status=200
+        )
+
+    def test_token_querystring_auth(self):
+        """
+        The token should be required in the querystring for requests to be
+        processed.
+        """
+        url = reverse("message_sender_failed_msisdn_hook")
+        response = self.client.post(url, data={}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    @responses.activate
+    def test_failed_msidn_lookup_hook(self):
+        """
+        If the message sender sends us an event for failed msisdn lookup
+        the hook should be called
+        """
+        user = User.objects.create_user("test")
+        token = Token.objects.create(user=user).key
+        url = "{}?{}".format(
+            reverse("message_sender_failed_msisdn_hook"), urlencode({"token": token})
+        )
+        to_identity = "cbaf27bc-2ba9-4e4a-84c1-098d5abd80bf"
+        self.make_source_normaluser()
+
+        response = self.client.post(
+            url,
+            data={
+                "hook": {
+                    "id": 1,
+                    "event": "identity.no_address",
+                    "target": "http://example.org",
+                },
+                "data": {"to_identity": to_identity},
+            },
+            format="json",
+        )
+
+        self.subscription_lookup()
+        self.identity_lookup(to_identity)
+        self.jembi_post()
+        [change] = Change.objects.all()
+
+        self.assertEqual(change.source.name, "test")
+        self.assertEqual(change.registrant_id, to_identity)
+        self.assertEqual(change.action, "momconnect_nonloss_optout")
+        self.assertEqual(change.validated, True)
+        self.assertEqual(change.data, {"reason": "missing_to_addr"})
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
