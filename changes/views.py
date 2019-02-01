@@ -327,4 +327,12 @@ class SeedMessageSenderFailedMsisdnHook(generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        registrant_id = serializer.validated_data["data"]["registrant_id"]
+        source = Source.objects.get(user=request.user)
+        Change.objects.create(
+            source=source,
+            registrant_id=registrant_id,
+            action="momconnect_nonloss_optout",
+            data={"reason": "missing_to_addr"},
+        )
         return Response(status=status.HTTP_202_ACCEPTED)
