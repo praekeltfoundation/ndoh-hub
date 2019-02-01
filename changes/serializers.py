@@ -138,6 +138,6 @@ class SeedMessageSenderFailedMsisdnHookSerializer(serializers.Serializer):
     hook = Hook()
 
     class Data(serializers.Serializer):
-        registrant_id = serializers.UUIDField()
+        to_identity = serializers.UUIDField()
 
     data = Data()
