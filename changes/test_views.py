@@ -2,11 +2,17 @@ import json
 from unittest import mock
 from urllib.parse import urlencode
 
+import responses
 from django.contrib.auth.models import Permission, User
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
+
+from registrations.models import Source
+
+from .models import Change
+from .tasks import validate_implement
 
 
 @mock.patch("changes.views.ReceiveWhatsAppBase.validate_signature")
@@ -429,6 +435,32 @@ class ReceiveSeedMessageSenderHookViewTests(APITestCase):
 
 
 class ReceiveSeedMessageSenderFailedMsisdnViewTests(APITestCase):
+    def make_source_normaluser(self):
+        data = {
+            "name": "test",
+            "authority": "patient",
+            "user": User.objects.get(username="test"),
+        }
+        return Source.objects.create(**data)
+
+    def subscription_lookup(self):
+        responses.add(
+            responses.GET, "http://sbm/api/v1/subscriptions/", json={}, status=200
+        )
+
+    def identity_lookup(self, identity):
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/%s/" % (identity),
+            json={},
+            status=200,
+        )
+
+    def jembi_post(self):
+        responses.add(
+            responses.POST, "http://jembi/ws/rest/v1/optout", json={}, status=200
+        )
+
     def test_token_querystring_auth(self):
         """
         The token should be required in the querystring for requests to be
@@ -438,6 +470,7 @@ class ReceiveSeedMessageSenderFailedMsisdnViewTests(APITestCase):
         response = self.client.post(url, data={}, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    @responses.activate
     def test_failed_msidn_lookup_hook(self):
         """
         If the message sender sends us an event for failed msisdn lookup
@@ -448,6 +481,8 @@ class ReceiveSeedMessageSenderFailedMsisdnViewTests(APITestCase):
         url = "{}?{}".format(
             reverse("message_sender_failed_msisdn_hook"), urlencode({"token": token})
         )
+        registrant_id = "cbaf27bc-2ba9-4e4a-84c1-098d5abd80bf"
+        source = self.make_source_normaluser()
 
         response = self.client.post(
             url,
@@ -457,9 +492,24 @@ class ReceiveSeedMessageSenderFailedMsisdnViewTests(APITestCase):
                     "event": "identity.no_address",
                     "target": "http://example.org",
                 },
-                "data": {"to_identity": "cbaf27bc-2ba9-4e4a-84c1-098d5abd80bf"},
+                "data": {"registrant_id": registrant_id},
             },
             format="json",
         )
 
+        self.subscription_lookup()
+        self.identity_lookup(registrant_id)
+        self.jembi_post()
+
+        change_data = {
+            "registrant_id": "cbaf27bc-2ba9-4e4a-84c1-098d5abd80bf",
+            "action": "momconnect_nonloss_optout",
+            "data": {"reason": "missing_to_addr"},
+            "source": source,
+        }
+        change = Change.objects.create(**change_data)
+
+        validate_implement.validate(change)
+        change.refresh_from_db()
+        self.assertEqual(change.validated, True)
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
