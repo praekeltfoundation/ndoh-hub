@@ -327,11 +327,11 @@ class SeedMessageSenderFailedMsisdnHook(generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        registrant_id = serializer.validated_data["data"]["registrant_id"]
+        to_identity = serializer.validated_data["data"]["to_identity"]
         source = Source.objects.get(user=request.user)
         Change.objects.create(
             source=source,
-            registrant_id=registrant_id,
+            registrant_id=to_identity,
             action="momconnect_nonloss_optout",
             data={"reason": "missing_to_addr"},
         )
