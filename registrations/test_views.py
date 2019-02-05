@@ -359,6 +359,46 @@ class EngageContextViewTests(APITestCase):
         self.assertIn("Invalid hook signature", response.json()["detail"])
 
     @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
+    def test_returns_handshake(self):
+        """
+        Returns the handhshake info when the handshake key is found
+        """
+        self.add_authorization_token()
+        data = {"handshake": True}
+        url = reverse("engage-context")
+        response = self.client.post(
+            url,
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.json(),
+            {
+                "capabilities": {
+                    "actions": False,
+                    "context_objects": [
+                        {
+                            "title": "Mother's Details",
+                            "code": "mother_details",
+                            "icon": "info-circle",
+                            "type": "table",
+                        },
+                        {
+                            "title": "Subscriptions",
+                            "code": "subscriptions",
+                            "icon": "profile",
+                            "type": "ordered-list",
+                        },
+                    ],
+                }
+            },
+        )
+
+    @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
     def test_returns_no_information(self):
         """
         Returns no information when there are no inbound messages
@@ -374,7 +414,9 @@ class EngageContextViewTests(APITestCase):
             ),
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json(), {"version": "1.0.0-alpha", "context": []})
+        self.assertEqual(
+            response.json(), {"version": "1.0.0-alpha", "context_objects": {}}
+        )
 
     @responses.activate
     @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
@@ -414,34 +456,20 @@ class EngageContextViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response = response.json()
-        [mother_details, subscriptions] = response.pop("context")
+        contect_objects = response.pop("context_objects")
         self.assertEqual(response, {"version": "1.0.0-alpha"})
 
-        self.assertDateTime(mother_details.pop("timestamp"))
         self.assertEqual(
-            mother_details,
+            contect_objects["mother_details"],
             {
-                "icon": "info-circle",
-                "title": "Mother's Details",
-                "type": "table",
-                "uuid": "7eb448be-3180-417e-823c-0c6d5da24e00",
-                "payload": {
-                    "Facility Code": "123456",
-                    "Registration Type": "MomConnect pregnancy registration",
-                    "Date of Birth": "1980-08-08",
-                    "Expected Due Date": "2018-12-15",
-                },
+                "Facility Code": "123456",
+                "Registration Type": "MomConnect pregnancy registration",
+                "Date of Birth": "1980-08-08",
+                "Expected Due Date": "2018-12-15",
             },
         )
 
-        self.assertDateTime(subscriptions.pop("timestamp"))
         self.assertEqual(
-            subscriptions,
-            {
-                "icon": "profile",
-                "title": "Subscriptions",
-                "type": "ordered-list",
-                "uuid": "ff758121-ea24-446d-9d15-709ad92d2056",
-                "payload": ["MomConnect Pregnancy WhatsApp", "Service Info WhatsApp"],
-            },
+            contect_objects["subscriptions"],
+            ["MomConnect Pregnancy WhatsApp", "Service Info WhatsApp"],
         )

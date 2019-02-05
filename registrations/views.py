@@ -785,38 +785,42 @@ class EngageContextView(generics.CreateAPIView):
     def post(self, request):
         self.validate_signature(request)
 
+        if "handshake" in request.data:
+            resp = {
+                "capabilities": {
+                    "actions": False,
+                    "context_objects": [
+                        {
+                            "title": "Mother's Details",
+                            "code": "mother_details",
+                            "icon": "info-circle",
+                            "type": "table",
+                        },
+                        {
+                            "title": "Subscriptions",
+                            "code": "subscriptions",
+                            "icon": "profile",
+                            "type": "ordered-list",
+                        },
+                    ],
+                }
+            }
+            return Response(resp, status=status.HTTP_200_OK)
+
         serializer = self.get_serializer_class()(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        context = []
+        context = {}
 
         msisdn = self.get_msisdn(serializer.validated_data)
         identity = self.get_identity(msisdn)
         registrations = self.get_registrations(identity)
         info = self.extract_registration_info(identity, registrations)
         if info:
-            context.append(
-                {
-                    "icon": "info-circle",
-                    "title": "Mother's Details",
-                    "type": "table",
-                    "timestamp": timezone.now().isoformat(),
-                    "uuid": "7eb448be-3180-417e-823c-0c6d5da24e00",
-                    "payload": info,
-                }
-            )
+            context["mother_details"] = info
 
         subscriptions = self.get_subscriptions(identity)
         if subscriptions:
-            context.append(
-                {
-                    "icon": "profile",
-                    "title": "Subscriptions",
-                    "type": "ordered-list",
-                    "timestamp": timezone.now().isoformat(),
-                    "uuid": "ff758121-ea24-446d-9d15-709ad92d2056",
-                    "payload": subscriptions,
-                }
-            )
+            context["subscriptions"] = subscriptions
 
-        return Response({"version": "1.0.0-alpha", "context": context})
+        return Response({"version": "1.0.0-alpha", "context_objects": context})
