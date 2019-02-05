@@ -810,7 +810,7 @@ class EngageContextView(generics.CreateAPIView):
         serializer = self.get_serializer_class()(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        context = {}
+        context = {"mother_details": {}, "subscriptions": []}
 
         msisdn = self.get_msisdn(serializer.validated_data)
         identity = self.get_identity(msisdn)

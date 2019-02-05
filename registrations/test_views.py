@@ -404,18 +404,19 @@ class EngageContextViewTests(APITestCase):
         Returns no information when there are no inbound messages
         """
         self.add_authorization_token()
+        data = {"mother_details": {}, "subscriptions": []}
         url = reverse("engage-context")
         response = self.client.post(
             url,
-            {},
+            data,
             format="json",
             HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
-                {}, "hmac-secret"
+                data, "hmac-secret"
             ),
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
-            response.json(), {"version": "1.0.0-alpha", "context_objects": {}}
+            response.json(), {"version": "1.0.0-alpha", "context_objects": data}
         )
 
     @responses.activate
