@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.3 (2019-02-06)
+1. Add endpoint for receiving failed address lookup webhooks from the message sender
+   ([#200](https://github.com/praekeltfoundation/ndoh-hub/pull/200))
+1. Change to new Turn API for context objects
+   ([#201](https://github.com/praekeltfoundation/ndoh-hub/pull/201))
+   ([#202](https://github.com/praekeltfoundation/ndoh-hub/pull/202))
+1. Add flag for toggling the WhatsApp unsent event action
+   ([#203](https://github.com/praekeltfoundation/ndoh-hub/pull/203))
+
 ## 0.6.2 (2019-01-31)
 1. Add retries for HTTP failures for process_whatsapp_system_event task
    ([#198](https://github.com/praekeltfoundation/ndoh-hub/pull/198))
