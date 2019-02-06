@@ -4,6 +4,7 @@ from urllib.parse import urlencode
 
 import responses
 from django.contrib.auth.models import Permission, User
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -112,6 +113,45 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
         task.delay.assert_called_once_with(
             "41c377a47b064eba9abee5a1ea827b3d", user.pk, errors
         )
+
+    @override_settings(ENABLE_UNSENT_EVENT_ACTION=False)
+    def test_unsent_event_setting(self, task, mock_validate_signature):
+        """
+        If the serializer passes, but the ENABLE_UNSENT_EVENT_ACTION setting is set to
+        False, then the task should not be called
+        """
+        user = User.objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_change"))
+        self.client.force_authenticate(user=user)
+        url = reverse("whatsapp_event")
+
+        errors = [
+            {
+                "code": 500,
+                "title": (
+                    "structure unavailable: Client could not display highly structured "
+                    "message"
+                ),
+            }
+        ]
+
+        response = self.client.post(
+            url,
+            {
+                "statuses": [
+                    {
+                        "errors": errors,
+                        "id": "41c377a47b064eba9abee5a1ea827b3d",
+                        "recipient_id": "27831112222",
+                        "status": "failed",
+                        "timestamp": "1538388353",
+                    }
+                ]
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        task.delay.assert_not_called()
 
     @mock.patch("changes.views.tasks.process_whatsapp_timeout_system_event")
     def test_timeout_serializer_succeeded(self, task, mock, mock_validate_signature):

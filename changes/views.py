@@ -259,14 +259,16 @@ class ReceiveWhatsAppEvent(ReceiveWhatsAppBase):
 
         if webhook_type == "whatsapp":
             for item in serializer.validated_data["statuses"]:
+                # 410: Message expired
                 if any(error["code"] == 410 for error in item["errors"]):
                     tasks.process_whatsapp_timeout_system_event.delay(
                         {"message_id": item["id"]}
                     )
                 else:
-                    tasks.process_whatsapp_unsent_event.delay(
-                        item["id"], request.user.pk, item["errors"]
-                    )
+                    if settings.ENABLE_UNSENT_EVENT_ACTION:
+                        tasks.process_whatsapp_unsent_event.delay(
+                            item["id"], request.user.pk, item["errors"]
+                        )
         else:
             message_id = request.META.get("HTTP_X_WHATSAPP_ID")
             if not message_id:

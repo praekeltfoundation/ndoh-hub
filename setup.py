@@ -14,6 +14,7 @@ setup(
         "djangorestframework==3.8.2",
         "coreapi==2.3.3",
         "dj-database-url==0.5.0",
+        "django-environ==0.4.5",
         "psycopg2==2.7.5",
         "raven==6.9.0",
         "django-filter==2.0.0",
