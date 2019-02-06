@@ -13,7 +13,10 @@ import os
 
 import dj_database_url
 import django.conf.locale
+import environ
 from kombu import Exchange, Queue
+
+env = environ.Env(ENABLE_UNSENT_EVENT_ACTION=(bool, True))
 
 # Support SVG on admin
 mimetypes.add_type("image/svg+xml", ".svg", True)
@@ -275,3 +278,5 @@ OPTOUT_USSD_CODE = os.environ.get("OPTOUT_USSD_CODE", "*134*550*1#")
 
 ENGAGE_HMAC_SECRET = os.environ.get("ENGAGE_HMAC_SECRET", "REPLACEME")
 ENGAGE_CONTEXT_HMAC_SECRET = os.environ.get("ENGAGE_CONTEXT_HMAC_SECRET", "REPLACEME")
+
+ENABLE_UNSENT_EVENT_ACTION = env("ENABLE_UNSENT_EVENT_ACTION")
