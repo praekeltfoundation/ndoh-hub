@@ -788,7 +788,7 @@ class EngageContextView(generics.CreateAPIView):
         if "handshake" in request.data:
             resp = {
                 "capabilities": {
-                    "actions": False,
+                    "actions": True,
                     "context_objects": [
                         {
                             "title": "Mother's Details",

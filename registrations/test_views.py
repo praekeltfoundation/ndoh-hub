@@ -379,7 +379,7 @@ class EngageContextViewTests(APITestCase):
             response.json(),
             {
                 "capabilities": {
-                    "actions": False,
+                    "actions": True,
                     "context_objects": [
                         {
                             "title": "Mother's Details",
