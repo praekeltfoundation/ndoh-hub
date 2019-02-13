@@ -823,4 +823,6 @@ class EngageContextView(generics.CreateAPIView):
         if subscriptions:
             context["subscriptions"] = subscriptions
 
-        return Response({"version": "1.0.0-alpha", "context_objects": context})
+        return Response(
+            {"version": "1.0.0-alpha", "context_objects": context, "actions": {}}
+        )

@@ -416,7 +416,8 @@ class EngageContextViewTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
-            response.json(), {"version": "1.0.0-alpha", "context_objects": data}
+            response.json(),
+            {"version": "1.0.0-alpha", "context_objects": data, "actions": {}},
         )
 
     @responses.activate
@@ -457,11 +458,12 @@ class EngageContextViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response = response.json()
-        contect_objects = response.pop("context_objects")
+        context_objects = response.pop("context_objects")
+        actions = response.pop("actions")
         self.assertEqual(response, {"version": "1.0.0-alpha"})
 
         self.assertEqual(
-            contect_objects["mother_details"],
+            context_objects["mother_details"],
             {
                 "Facility Code": "123456",
                 "Registration Type": "MomConnect pregnancy registration",
@@ -471,6 +473,8 @@ class EngageContextViewTests(APITestCase):
         )
 
         self.assertEqual(
-            contect_objects["subscriptions"],
+            context_objects["subscriptions"],
             ["MomConnect Pregnancy WhatsApp", "Service Info WhatsApp"],
         )
+
+        self.assertEqual(actions, {})
