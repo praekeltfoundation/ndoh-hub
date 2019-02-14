@@ -5,6 +5,7 @@ from rest_framework.validators import UniqueValidator
 from rest_hooks.models import Hook
 
 from changes.fields import PhoneNumberField
+from changes.serializers import ChangeSerializer
 from ndoh_hub import utils
 from registrations import validators
 from registrations.models import PositionTracker
@@ -332,3 +333,8 @@ class EngageContextSerializer(serializers.Serializer):
             return result
 
     messages = serializers.ListField(child=Message(), required=False)
+
+
+class EngageActionSerializer(serializers.Serializer):
+    address = PhoneNumberField(country_code="ZA")
+    payload = ChangeSerializer()

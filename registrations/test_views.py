@@ -5,6 +5,7 @@ import json
 from hashlib import sha256
 from unittest import mock
 from urllib.parse import urlencode
+from uuid import uuid4
 
 import responses
 from django.contrib.auth.models import Permission, User
@@ -16,6 +17,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.renderers import JSONRenderer
 from rest_framework.test import APITestCase
 
+from changes.models import Change
 from registrations.models import PositionTracker, Registration, Source
 from registrations.serializers import RegistrationSerializer
 from registrations.tests import AuthenticatedAPITestCase
@@ -259,6 +261,7 @@ class EngageContextViewTests(APITestCase):
         Adds credentials to the current client
         """
         user = User.objects.create_user("test")
+        Source.objects.create(user=user)
         token = Token.objects.create(user=user)
         self.client.credentials(HTTP_AUTHORIZATION="Token {}".format(token.key))
 
@@ -477,4 +480,111 @@ class EngageContextViewTests(APITestCase):
             ["MomConnect Pregnancy WhatsApp", "Service Info WhatsApp"],
         )
 
-        self.assertEqual(actions, {})
+        self.assertEqual(
+            actions,
+            {
+                "baby_switch": {
+                    "description": "Switch to baby messaging",
+                    "url": "/api/v1/engage/action",
+                    "payload": {
+                        "registrant_id": "mother-uuid",
+                        "action": "baby_switch",
+                        "data": {},
+                    },
+                }
+            },
+        )
+
+    @responses.activate
+    @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
+    def test_no_baby_action_on_postbirth(self):
+        """
+        The switch to baby actions should only display when on pregnant messaging
+        """
+        mother_uuid = str(uuid4())
+        self.add_authorization_token()
+        self.add_identity_lookup_by_address_fixture(
+            msisdn="+27820001001",
+            identity_uuid=mother_uuid,
+            details={"mom_dob": "1980-08-08"},
+        )
+        self.add_subscription_lookup(
+            identity_uuid=mother_uuid,
+            subscriptions=["MomConnect Baby WhatsApp", "Service Info WhatsApp"],
+        )
+        user = User.objects.create_user("test2")
+        source = Source.objects.create(user=user)
+        Registration.objects.create(
+            reg_type="momconnect_prebirth",
+            registrant_id=mother_uuid,
+            data={"faccode": "123456", "edd": "2018-12-15"},
+            source=source,
+        )
+
+        url = reverse("engage-context")
+        data = {"messages": [{"from": "27820001001"}]}
+        response = self.client.post(
+            url,
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["actions"].get("baby_switch"), None)
+
+    @responses.activate
+    @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
+    def test_baby_action(self):
+        """
+        Making a POST request with the returned body should create a valid baby switch
+        """
+        mother_uuid = str(uuid4())
+        self.add_authorization_token()
+        self.add_identity_lookup_by_address_fixture(
+            msisdn="+27820001001",
+            identity_uuid=mother_uuid,
+            details={"mom_dob": "1980-08-08"},
+        )
+        self.add_subscription_lookup(
+            identity_uuid=mother_uuid,
+            subscriptions=["MomConnect Pregnancy WhatsApp", "Service Info WhatsApp"],
+        )
+        user = User.objects.create_user("test2")
+        source = Source.objects.create(user=user)
+        Registration.objects.create(
+            reg_type="momconnect_prebirth",
+            registrant_id=mother_uuid,
+            data={"faccode": "123456", "edd": "2018-12-15"},
+            source=source,
+        )
+
+        url = reverse("engage-context")
+        data = {"messages": [{"from": "27820001001"}]}
+        response = self.client.post(
+            url,
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        action = response.json()["actions"]["baby_switch"]
+        data = {"address": "+27820001001", "payload": action["payload"]}
+        response = self.client.post(
+            action["url"],
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [change] = Change.objects.all()
+        self.assertEqual(change.registrant_id, mother_uuid)
+        self.assertEqual(change.action, "baby_switch")
+        self.assertTrue(change.validated)
