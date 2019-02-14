@@ -865,6 +865,29 @@ class EngageContextView(EngageBaseView, generics.CreateAPIView):
                 "babyloss": "Baby died",
             },
         }
+
+        actions["switch_language"] = {
+            "description": "Change language",
+            "url": reverse("engage-action"),
+            "payload": {
+                "registrant_id": identity_id,
+                "action": "momconnect_change_language",
+            },
+            "options": {
+                "zul_ZA": "isiZulu",
+                "xho_ZA": "isiXhosa",
+                "afr_ZA": "Afrikaans",
+                "eng_ZA": "English",
+                "nso_ZA": "Sesotho sa Leboa / Sepedi",
+                "tsn_ZA": "Setswana",
+                "sot_ZA": "Sesotho",
+                "tso_ZA": "Xitsonga",
+                "ssw_ZA": "siSwati",
+                "ven_ZA": "Tshivenda",
+                "nbl_ZA": "isiNdebele",
+            },
+        }
+
         return actions
 
     def post(self, request):
@@ -936,6 +959,8 @@ class EngageActionView(EngageBaseView, generics.CreateAPIView):
                 change_data["action"] = "momconnect_nonloss_optout"
         if change_data.get("action") == "momconnect_loss_switch":
             change_data["data"] = {"reason": option}
+        if change_data.get("action") == "momconnect_change_language":
+            change_data["data"] = {"language": option}
 
         change = Change.objects.create(**change_data)
 

@@ -530,6 +530,27 @@ class EngageContextViewTests(APITestCase):
                         "babyloss": "Baby died",
                     },
                 },
+                "switch_language": {
+                    "description": "Change language",
+                    "url": "/api/v1/engage/action",
+                    "payload": {
+                        "registrant_id": "mother-uuid",
+                        "action": "momconnect_change_language",
+                    },
+                    "options": {
+                        "zul_ZA": "isiZulu",
+                        "xho_ZA": "isiXhosa",
+                        "afr_ZA": "Afrikaans",
+                        "eng_ZA": "English",
+                        "nso_ZA": "Sesotho sa Leboa / Sepedi",
+                        "tsn_ZA": "Setswana",
+                        "sot_ZA": "Sesotho",
+                        "tso_ZA": "Xitsonga",
+                        "ssw_ZA": "siSwati",
+                        "ven_ZA": "Tshivenda",
+                        "nbl_ZA": "isiNdebele",
+                    },
+                },
             },
         )
 
@@ -860,4 +881,60 @@ class EngageContextViewTests(APITestCase):
         self.assertEqual(change.registrant_id, mother_uuid)
         self.assertEqual(change.action, "momconnect_loss_switch")
         self.assertEqual(change.data, {"reason": "miscarriage"})
+        self.assertTrue(change.validated)
+
+    @responses.activate
+    @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
+    def test_switch_language(self):
+        """
+        If one of the language switches is selected, a language switch should be created
+        """
+        mother_uuid = str(uuid4())
+        self.add_authorization_token()
+        self.add_identity_lookup_by_address_fixture(
+            msisdn="+27820001001",
+            identity_uuid=mother_uuid,
+            details={"mom_dob": "1980-08-08"},
+        )
+        self.add_subscription_lookup(
+            identity_uuid=mother_uuid, subscriptions=["MomConnect Pregnancy"]
+        )
+        user = User.objects.create_user("test2")
+        source = Source.objects.create(user=user)
+        Registration.objects.create(
+            reg_type="momconnect_prebirth",
+            registrant_id=mother_uuid,
+            data={"faccode": "123456", "edd": "2018-12-15"},
+            source=source,
+        )
+
+        url = reverse("engage-context")
+        data = {"messages": [{"from": "27820001001"}]}
+        response = self.client.post(
+            url,
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        action = response.json()["actions"]["switch_language"]
+        action["payload"]["option"] = "zul_ZA"
+        data = {"address": "+27820001001", "payload": action["payload"]}
+        response = self.client.post(
+            action["url"],
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [change] = Change.objects.all()
+        self.assertEqual(change.registrant_id, mother_uuid)
+        self.assertEqual(change.action, "momconnect_change_language")
+        self.assertEqual(change.data, {"language": "zul_ZA"})
         self.assertTrue(change.validated)
