@@ -852,6 +852,19 @@ class EngageContextView(EngageBaseView, generics.CreateAPIView):
             },
         }
 
+        actions["switch_to_loss"] = {
+            "description": "Switch to loss messaging",
+            "url": reverse("engage-action"),
+            "payload": {
+                "registrant_id": identity_id,
+                "action": "momconnect_loss_switch",
+            },
+            "options": {
+                "miscarriage": "Miscarriage",
+                "stillbirth": "Baby was stillborn",
+                "babyloss": "Baby died",
+            },
+        }
         return actions
 
     def post(self, request):
@@ -921,6 +934,8 @@ class EngageActionView(EngageBaseView, generics.CreateAPIView):
             change_data["data"] = {"reason": option}
             if option in ["not_useful", "other", "unknown"]:
                 change_data["action"] = "momconnect_nonloss_optout"
+        if change_data.get("action") == "momconnect_loss_switch":
+            change_data["data"] = {"reason": option}
 
         change = Change.objects.create(**change_data)
 

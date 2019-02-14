@@ -517,6 +517,19 @@ class EngageContextViewTests(APITestCase):
                         "unknown": "Unknown",
                     },
                 },
+                "switch_to_loss": {
+                    "description": "Switch to loss messaging",
+                    "url": "/api/v1/engage/action",
+                    "payload": {
+                        "registrant_id": "mother-uuid",
+                        "action": "momconnect_loss_switch",
+                    },
+                    "options": {
+                        "miscarriage": "Miscarriage",
+                        "stillbirth": "Baby was stillborn",
+                        "babyloss": "Baby died",
+                    },
+                },
             },
         )
 
@@ -790,5 +803,61 @@ class EngageContextViewTests(APITestCase):
         [change] = Change.objects.all()
         self.assertEqual(change.registrant_id, mother_uuid)
         self.assertEqual(change.action, "momconnect_loss_optout")
+        self.assertEqual(change.data, {"reason": "miscarriage"})
+        self.assertTrue(change.validated)
+
+    @responses.activate
+    @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
+    def test_loss_switch(self):
+        """
+        If one of the loss switches is selected, a loss switch should be created
+        """
+        mother_uuid = str(uuid4())
+        self.add_authorization_token()
+        self.add_identity_lookup_by_address_fixture(
+            msisdn="+27820001001",
+            identity_uuid=mother_uuid,
+            details={"mom_dob": "1980-08-08"},
+        )
+        self.add_subscription_lookup(
+            identity_uuid=mother_uuid, subscriptions=["MomConnect Pregnancy"]
+        )
+        user = User.objects.create_user("test2")
+        source = Source.objects.create(user=user)
+        Registration.objects.create(
+            reg_type="momconnect_prebirth",
+            registrant_id=mother_uuid,
+            data={"faccode": "123456", "edd": "2018-12-15"},
+            source=source,
+        )
+
+        url = reverse("engage-context")
+        data = {"messages": [{"from": "27820001001"}]}
+        response = self.client.post(
+            url,
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        action = response.json()["actions"]["switch_to_loss"]
+        action["payload"]["option"] = "miscarriage"
+        data = {"address": "+27820001001", "payload": action["payload"]}
+        response = self.client.post(
+            action["url"],
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [change] = Change.objects.all()
+        self.assertEqual(change.registrant_id, mother_uuid)
+        self.assertEqual(change.action, "momconnect_loss_switch")
         self.assertEqual(change.data, {"reason": "miscarriage"})
         self.assertTrue(change.validated)
