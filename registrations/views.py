@@ -17,6 +17,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django.utils import timezone
 from requests.exceptions import RequestException
 from rest_framework import generics, mixins, status, viewsets
@@ -37,11 +38,14 @@ from rest_hooks.models import Hook
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
 
+from changes.models import Change
+from changes.serializers import ChangeSerializer
 from ndoh_hub.utils import get_available_metrics
 
 from .models import PositionTracker, Registration, Source
 from .serializers import (
     CreateUserSerializer,
+    EngageActionSerializer,
     EngageContextSerializer,
     GroupSerializer,
     HookSerializer,
@@ -651,7 +655,25 @@ class PositionTrackerViewset(
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class EngageContextView(generics.CreateAPIView):
+class EngageBaseView(object):
+    """
+    A base view for shared functionality between Engage views
+    """
+
+    def validate_signature(self, request):
+        secret = settings.ENGAGE_CONTEXT_HMAC_SECRET
+        try:
+            signature = request.META["HTTP_X_ENGAGE_HOOK_SIGNATURE"]
+        except KeyError:
+            raise AuthenticationFailed("X-Engage-Hook-Signature header required")
+
+        h = hmac.new(secret.encode(), request.body, sha256)
+
+        if not hmac.compare_digest(base64.b64encode(h.digest()).decode(), signature):
+            raise AuthenticationFailed("Invalid hook signature")
+
+
+class EngageContextView(EngageBaseView, generics.CreateAPIView):
     serializer_class = EngageContextSerializer
 
     # Since these external requests are happening in the request loop, we need to
@@ -674,18 +696,6 @@ class EngageContextView(generics.CreateAPIView):
         ("edd", "Expected Due Date"),
         ("mom_dob", "Date of Birth"),
     )
-
-    def validate_signature(self, request):
-        secret = settings.ENGAGE_CONTEXT_HMAC_SECRET
-        try:
-            signature = request.META["HTTP_X_ENGAGE_HOOK_SIGNATURE"]
-        except KeyError:
-            raise AuthenticationFailed("X-Engage-Hook-Signature header required")
-
-        h = hmac.new(secret.encode(), request.body, sha256)
-
-        if not hmac.compare_digest(base64.b64encode(h.digest()).decode(), signature):
-            raise AuthenticationFailed("Invalid hook signature")
 
     def get_msisdn(self, data):
         """
@@ -782,13 +792,111 @@ class EngageContextView(generics.CreateAPIView):
 
         return result
 
+    def generate_actions(self, identity, subscriptions):
+        """
+        Returns an object describing the list of available actions
+        """
+        actions = {}
+
+        try:
+            identity_id = identity["id"]
+        except (KeyError, TypeError):
+            return actions
+
+        if any("pregnancy" in sub.lower() for sub in subscriptions):
+            actions["baby_switch"] = {
+                "description": "Switch to baby messaging",
+                "url": reverse("engage-action"),
+                "payload": {
+                    "registrant_id": identity_id,
+                    "action": "baby_switch",
+                    "data": {},
+                },
+            }
+
+        if any("whatsapp" in sub.lower() for sub in subscriptions):
+            actions["switch_to_sms"] = {
+                "description": "Switch channel to SMS",
+                "url": reverse("engage-action"),
+                "payload": {
+                    "registrant_id": identity_id,
+                    "action": "switch_channel",
+                    "data": {"channel": "sms"},
+                },
+            }
+        else:
+            actions["switch_to_whatsapp"] = {
+                "description": "Switch channel to WhatsApp",
+                "url": reverse("engage-action"),
+                "payload": {
+                    "registrant_id": identity_id,
+                    "action": "switch_channel",
+                    "data": {"channel": "whatsapp"},
+                },
+            }
+
+        actions["opt_out"] = {
+            "description": "Opt out",
+            "url": reverse("engage-action"),
+            "payload": {
+                "registrant_id": identity_id,
+                "action": "momconnect_loss_optout",
+            },
+            "options": {
+                "miscarriage": "Miscarriage",
+                "stillbirth": "Baby was stillborn",
+                "babyloss": "Baby died",
+                "not_useful": "Messages not useful",
+                "other": "Other",
+                "unknown": "Unknown",
+            },
+        }
+
+        actions["switch_to_loss"] = {
+            "description": "Switch to loss messaging",
+            "url": reverse("engage-action"),
+            "payload": {
+                "registrant_id": identity_id,
+                "action": "momconnect_loss_switch",
+            },
+            "options": {
+                "miscarriage": "Miscarriage",
+                "stillbirth": "Baby was stillborn",
+                "babyloss": "Baby died",
+            },
+        }
+
+        actions["switch_language"] = {
+            "description": "Change language",
+            "url": reverse("engage-action"),
+            "payload": {
+                "registrant_id": identity_id,
+                "action": "momconnect_change_language",
+            },
+            "options": {
+                "zul_ZA": "isiZulu",
+                "xho_ZA": "isiXhosa",
+                "afr_ZA": "Afrikaans",
+                "eng_ZA": "English",
+                "nso_ZA": "Sesotho sa Leboa / Sepedi",
+                "tsn_ZA": "Setswana",
+                "sot_ZA": "Sesotho",
+                "tso_ZA": "Xitsonga",
+                "ssw_ZA": "siSwati",
+                "ven_ZA": "Tshivenda",
+                "nbl_ZA": "isiNdebele",
+            },
+        }
+
+        return actions
+
     def post(self, request):
         self.validate_signature(request)
 
         if "handshake" in request.data:
             resp = {
                 "capabilities": {
-                    "actions": False,
+                    "actions": True,
                     "context_objects": [
                         {
                             "title": "Mother's Details",
@@ -823,4 +931,37 @@ class EngageContextView(generics.CreateAPIView):
         if subscriptions:
             context["subscriptions"] = subscriptions
 
-        return Response({"version": "1.0.0-alpha", "context_objects": context})
+        return Response(
+            {
+                "version": "1.0.0-alpha",
+                "context_objects": context,
+                "actions": self.generate_actions(identity, subscriptions),
+            }
+        )
+
+
+class EngageActionView(EngageBaseView, generics.CreateAPIView):
+    serializer_class = EngageActionSerializer
+
+    def post(self, request):
+        self.validate_signature(request)
+
+        serializer = self.get_serializer(data=request.data)
+        option = request.data.get("payload", {}).pop("option", None)
+        serializer.is_valid(raise_exception=True)
+        change_data = serializer.validated_data["payload"]
+        change_data["created_by"] = change_data["updated_by"] = request.user
+        change_data["source"] = Source.objects.get(user=self.request.user)
+
+        if change_data.get("action") == "momconnect_loss_optout":
+            change_data["data"] = {"reason": option}
+            if option in ["not_useful", "other", "unknown"]:
+                change_data["action"] = "momconnect_nonloss_optout"
+        if change_data.get("action") == "momconnect_loss_switch":
+            change_data["data"] = {"reason": option}
+        if change_data.get("action") == "momconnect_change_language":
+            change_data["data"] = {"language": option}
+
+        change = Change.objects.create(**change_data)
+
+        return Response(ChangeSerializer(change).data, status=status.HTTP_201_CREATED)

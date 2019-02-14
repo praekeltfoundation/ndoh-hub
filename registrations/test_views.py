@@ -5,6 +5,7 @@ import json
 from hashlib import sha256
 from unittest import mock
 from urllib.parse import urlencode
+from uuid import uuid4
 
 import responses
 from django.contrib.auth.models import Permission, User
@@ -16,6 +17,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.renderers import JSONRenderer
 from rest_framework.test import APITestCase
 
+from changes.models import Change
 from registrations.models import PositionTracker, Registration, Source
 from registrations.serializers import RegistrationSerializer
 from registrations.tests import AuthenticatedAPITestCase
@@ -259,6 +261,7 @@ class EngageContextViewTests(APITestCase):
         Adds credentials to the current client
         """
         user = User.objects.create_user("test")
+        Source.objects.create(user=user)
         token = Token.objects.create(user=user)
         self.client.credentials(HTTP_AUTHORIZATION="Token {}".format(token.key))
 
@@ -379,7 +382,7 @@ class EngageContextViewTests(APITestCase):
             response.json(),
             {
                 "capabilities": {
-                    "actions": False,
+                    "actions": True,
                     "context_objects": [
                         {
                             "title": "Mother's Details",
@@ -416,7 +419,8 @@ class EngageContextViewTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
-            response.json(), {"version": "1.0.0-alpha", "context_objects": data}
+            response.json(),
+            {"version": "1.0.0-alpha", "context_objects": data, "actions": {}},
         )
 
     @responses.activate
@@ -457,11 +461,12 @@ class EngageContextViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response = response.json()
-        contect_objects = response.pop("context_objects")
+        context_objects = response.pop("context_objects")
+        actions = response.pop("actions")
         self.assertEqual(response, {"version": "1.0.0-alpha"})
 
         self.assertEqual(
-            contect_objects["mother_details"],
+            context_objects["mother_details"],
             {
                 "Facility Code": "123456",
                 "Registration Type": "MomConnect pregnancy registration",
@@ -471,6 +476,465 @@ class EngageContextViewTests(APITestCase):
         )
 
         self.assertEqual(
-            contect_objects["subscriptions"],
+            context_objects["subscriptions"],
             ["MomConnect Pregnancy WhatsApp", "Service Info WhatsApp"],
         )
+
+        self.assertEqual(
+            actions,
+            {
+                "baby_switch": {
+                    "description": "Switch to baby messaging",
+                    "url": "/api/v1/engage/action",
+                    "payload": {
+                        "registrant_id": "mother-uuid",
+                        "action": "baby_switch",
+                        "data": {},
+                    },
+                },
+                "switch_to_sms": {
+                    "description": "Switch channel to SMS",
+                    "url": "/api/v1/engage/action",
+                    "payload": {
+                        "registrant_id": "mother-uuid",
+                        "action": "switch_channel",
+                        "data": {"channel": "sms"},
+                    },
+                },
+                "opt_out": {
+                    "description": "Opt out",
+                    "url": "/api/v1/engage/action",
+                    "payload": {
+                        "registrant_id": "mother-uuid",
+                        "action": "momconnect_loss_optout",
+                    },
+                    "options": {
+                        "miscarriage": "Miscarriage",
+                        "stillbirth": "Baby was stillborn",
+                        "babyloss": "Baby died",
+                        "not_useful": "Messages not useful",
+                        "other": "Other",
+                        "unknown": "Unknown",
+                    },
+                },
+                "switch_to_loss": {
+                    "description": "Switch to loss messaging",
+                    "url": "/api/v1/engage/action",
+                    "payload": {
+                        "registrant_id": "mother-uuid",
+                        "action": "momconnect_loss_switch",
+                    },
+                    "options": {
+                        "miscarriage": "Miscarriage",
+                        "stillbirth": "Baby was stillborn",
+                        "babyloss": "Baby died",
+                    },
+                },
+                "switch_language": {
+                    "description": "Change language",
+                    "url": "/api/v1/engage/action",
+                    "payload": {
+                        "registrant_id": "mother-uuid",
+                        "action": "momconnect_change_language",
+                    },
+                    "options": {
+                        "zul_ZA": "isiZulu",
+                        "xho_ZA": "isiXhosa",
+                        "afr_ZA": "Afrikaans",
+                        "eng_ZA": "English",
+                        "nso_ZA": "Sesotho sa Leboa / Sepedi",
+                        "tsn_ZA": "Setswana",
+                        "sot_ZA": "Sesotho",
+                        "tso_ZA": "Xitsonga",
+                        "ssw_ZA": "siSwati",
+                        "ven_ZA": "Tshivenda",
+                        "nbl_ZA": "isiNdebele",
+                    },
+                },
+            },
+        )
+
+    @responses.activate
+    @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
+    def test_no_baby_action_on_postbirth(self):
+        """
+        The switch to baby actions should only display when on pregnant messaging
+        """
+        mother_uuid = str(uuid4())
+        self.add_authorization_token()
+        self.add_identity_lookup_by_address_fixture(
+            msisdn="+27820001001",
+            identity_uuid=mother_uuid,
+            details={"mom_dob": "1980-08-08"},
+        )
+        self.add_subscription_lookup(
+            identity_uuid=mother_uuid,
+            subscriptions=["MomConnect Baby WhatsApp", "Service Info WhatsApp"],
+        )
+        user = User.objects.create_user("test2")
+        source = Source.objects.create(user=user)
+        Registration.objects.create(
+            reg_type="momconnect_prebirth",
+            registrant_id=mother_uuid,
+            data={"faccode": "123456", "edd": "2018-12-15"},
+            source=source,
+        )
+
+        url = reverse("engage-context")
+        data = {"messages": [{"from": "27820001001"}]}
+        response = self.client.post(
+            url,
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["actions"].get("baby_switch"), None)
+
+    @responses.activate
+    @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
+    def test_baby_action(self):
+        """
+        Making a POST request with the returned body should create a valid baby switch
+        """
+        mother_uuid = str(uuid4())
+        self.add_authorization_token()
+        self.add_identity_lookup_by_address_fixture(
+            msisdn="+27820001001",
+            identity_uuid=mother_uuid,
+            details={"mom_dob": "1980-08-08"},
+        )
+        self.add_subscription_lookup(
+            identity_uuid=mother_uuid,
+            subscriptions=["MomConnect Pregnancy WhatsApp", "Service Info WhatsApp"],
+        )
+        user = User.objects.create_user("test2")
+        source = Source.objects.create(user=user)
+        Registration.objects.create(
+            reg_type="momconnect_prebirth",
+            registrant_id=mother_uuid,
+            data={"faccode": "123456", "edd": "2018-12-15"},
+            source=source,
+        )
+
+        url = reverse("engage-context")
+        data = {"messages": [{"from": "27820001001"}]}
+        response = self.client.post(
+            url,
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        action = response.json()["actions"]["baby_switch"]
+        data = {"address": "+27820001001", "payload": action["payload"]}
+        response = self.client.post(
+            action["url"],
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [change] = Change.objects.all()
+        self.assertEqual(change.registrant_id, mother_uuid)
+        self.assertEqual(change.action, "baby_switch")
+        self.assertTrue(change.validated)
+
+    @responses.activate
+    @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
+    def test_switch_channel_whatsapp(self):
+        """
+        If the user isn't subscribed to a whatsapp messageset, then there should
+        instead be a change to whatsapp action.
+        """
+        mother_uuid = str(uuid4())
+        self.add_authorization_token()
+        self.add_identity_lookup_by_address_fixture(
+            msisdn="+27820001001",
+            identity_uuid=mother_uuid,
+            details={"mom_dob": "1980-08-08"},
+        )
+        self.add_subscription_lookup(
+            identity_uuid=mother_uuid, subscriptions=["MomConnect Pregnancy"]
+        )
+        user = User.objects.create_user("test2")
+        source = Source.objects.create(user=user)
+        Registration.objects.create(
+            reg_type="momconnect_prebirth",
+            registrant_id=mother_uuid,
+            data={"faccode": "123456", "edd": "2018-12-15"},
+            source=source,
+        )
+
+        url = reverse("engage-context")
+        data = {"messages": [{"from": "27820001001"}]}
+        response = self.client.post(
+            url,
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.json()["actions"]["switch_to_whatsapp"],
+            {
+                "description": "Switch channel to WhatsApp",
+                "url": "/api/v1/engage/action",
+                "payload": {
+                    "registrant_id": mother_uuid,
+                    "action": "switch_channel",
+                    "data": {"channel": "whatsapp"},
+                },
+            },
+        )
+
+        action = response.json()["actions"]["switch_to_whatsapp"]
+        data = {"address": "+27820001001", "payload": action["payload"]}
+        response = self.client.post(
+            action["url"],
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [change] = Change.objects.all()
+        self.assertEqual(change.registrant_id, mother_uuid)
+        self.assertEqual(change.action, "switch_channel")
+        self.assertTrue(change.validated)
+
+    @responses.activate
+    @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
+    def test_nonloss_optout(self):
+        """
+        If one of the nonloss optouts is selected, a nonloss optout should be created
+        """
+        mother_uuid = str(uuid4())
+        self.add_authorization_token()
+        self.add_identity_lookup_by_address_fixture(
+            msisdn="+27820001001",
+            identity_uuid=mother_uuid,
+            details={"mom_dob": "1980-08-08"},
+        )
+        self.add_subscription_lookup(
+            identity_uuid=mother_uuid, subscriptions=["MomConnect Pregnancy"]
+        )
+        user = User.objects.create_user("test2")
+        source = Source.objects.create(user=user)
+        Registration.objects.create(
+            reg_type="momconnect_prebirth",
+            registrant_id=mother_uuid,
+            data={"faccode": "123456", "edd": "2018-12-15"},
+            source=source,
+        )
+
+        url = reverse("engage-context")
+        data = {"messages": [{"from": "27820001001"}]}
+        response = self.client.post(
+            url,
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        action = response.json()["actions"]["opt_out"]
+        action["payload"]["option"] = "not_useful"
+        data = {"address": "+27820001001", "payload": action["payload"]}
+        response = self.client.post(
+            action["url"],
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [change] = Change.objects.all()
+        self.assertEqual(change.registrant_id, mother_uuid)
+        self.assertEqual(change.action, "momconnect_nonloss_optout")
+        self.assertEqual(change.data, {"reason": "not_useful"})
+        self.assertTrue(change.validated)
+
+    @responses.activate
+    @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
+    def test_loss_optout(self):
+        """
+        If one of the loss optouts is selected, a loss optout should be created
+        """
+        mother_uuid = str(uuid4())
+        self.add_authorization_token()
+        self.add_identity_lookup_by_address_fixture(
+            msisdn="+27820001001",
+            identity_uuid=mother_uuid,
+            details={"mom_dob": "1980-08-08"},
+        )
+        self.add_subscription_lookup(
+            identity_uuid=mother_uuid, subscriptions=["MomConnect Pregnancy"]
+        )
+        user = User.objects.create_user("test2")
+        source = Source.objects.create(user=user)
+        Registration.objects.create(
+            reg_type="momconnect_prebirth",
+            registrant_id=mother_uuid,
+            data={"faccode": "123456", "edd": "2018-12-15"},
+            source=source,
+        )
+
+        url = reverse("engage-context")
+        data = {"messages": [{"from": "27820001001"}]}
+        response = self.client.post(
+            url,
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        action = response.json()["actions"]["opt_out"]
+        action["payload"]["option"] = "miscarriage"
+        data = {"address": "+27820001001", "payload": action["payload"]}
+        response = self.client.post(
+            action["url"],
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [change] = Change.objects.all()
+        self.assertEqual(change.registrant_id, mother_uuid)
+        self.assertEqual(change.action, "momconnect_loss_optout")
+        self.assertEqual(change.data, {"reason": "miscarriage"})
+        self.assertTrue(change.validated)
+
+    @responses.activate
+    @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
+    def test_loss_switch(self):
+        """
+        If one of the loss switches is selected, a loss switch should be created
+        """
+        mother_uuid = str(uuid4())
+        self.add_authorization_token()
+        self.add_identity_lookup_by_address_fixture(
+            msisdn="+27820001001",
+            identity_uuid=mother_uuid,
+            details={"mom_dob": "1980-08-08"},
+        )
+        self.add_subscription_lookup(
+            identity_uuid=mother_uuid, subscriptions=["MomConnect Pregnancy"]
+        )
+        user = User.objects.create_user("test2")
+        source = Source.objects.create(user=user)
+        Registration.objects.create(
+            reg_type="momconnect_prebirth",
+            registrant_id=mother_uuid,
+            data={"faccode": "123456", "edd": "2018-12-15"},
+            source=source,
+        )
+
+        url = reverse("engage-context")
+        data = {"messages": [{"from": "27820001001"}]}
+        response = self.client.post(
+            url,
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        action = response.json()["actions"]["switch_to_loss"]
+        action["payload"]["option"] = "miscarriage"
+        data = {"address": "+27820001001", "payload": action["payload"]}
+        response = self.client.post(
+            action["url"],
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [change] = Change.objects.all()
+        self.assertEqual(change.registrant_id, mother_uuid)
+        self.assertEqual(change.action, "momconnect_loss_switch")
+        self.assertEqual(change.data, {"reason": "miscarriage"})
+        self.assertTrue(change.validated)
+
+    @responses.activate
+    @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
+    def test_switch_language(self):
+        """
+        If one of the language switches is selected, a language switch should be created
+        """
+        mother_uuid = str(uuid4())
+        self.add_authorization_token()
+        self.add_identity_lookup_by_address_fixture(
+            msisdn="+27820001001",
+            identity_uuid=mother_uuid,
+            details={"mom_dob": "1980-08-08"},
+        )
+        self.add_subscription_lookup(
+            identity_uuid=mother_uuid, subscriptions=["MomConnect Pregnancy"]
+        )
+        user = User.objects.create_user("test2")
+        source = Source.objects.create(user=user)
+        Registration.objects.create(
+            reg_type="momconnect_prebirth",
+            registrant_id=mother_uuid,
+            data={"faccode": "123456", "edd": "2018-12-15"},
+            source=source,
+        )
+
+        url = reverse("engage-context")
+        data = {"messages": [{"from": "27820001001"}]}
+        response = self.client.post(
+            url,
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        action = response.json()["actions"]["switch_language"]
+        action["payload"]["option"] = "zul_ZA"
+        data = {"address": "+27820001001", "payload": action["payload"]}
+        response = self.client.post(
+            action["url"],
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [change] = Change.objects.all()
+        self.assertEqual(change.registrant_id, mother_uuid)
+        self.assertEqual(change.action, "momconnect_change_language")
+        self.assertEqual(change.data, {"language": "zul_ZA"})
+        self.assertTrue(change.validated)

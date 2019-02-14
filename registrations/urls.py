@@ -33,5 +33,8 @@ urlpatterns = [
         views.EngageContextView.as_view(),
         name="engage-context",
     ),
+    path(
+        "api/v1/engage/action", views.EngageActionView.as_view(), name="engage-action"
+    ),
     url(r"^api/v1/", include(router.urls)),
 ]
