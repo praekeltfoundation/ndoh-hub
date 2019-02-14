@@ -814,6 +814,27 @@ class EngageContextView(EngageBaseView, generics.CreateAPIView):
                 },
             }
 
+        if any("whatsapp" in sub.lower() for sub in subscriptions):
+            actions["switch_to_sms"] = {
+                "description": "Switch channel to SMS",
+                "url": reverse("engage-action"),
+                "payload": {
+                    "registrant_id": identity_id,
+                    "action": "switch_channel",
+                    "data": {"channel": "sms"},
+                },
+            }
+        else:
+            actions["switch_to_whatsapp"] = {
+                "description": "Switch channel to WhatsApp",
+                "url": reverse("engage-action"),
+                "payload": {
+                    "registrant_id": identity_id,
+                    "action": "switch_channel",
+                    "data": {"channel": "whatsapp"},
+                },
+            }
+
         return actions
 
     def post(self, request):
