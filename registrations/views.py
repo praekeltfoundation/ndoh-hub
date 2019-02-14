@@ -835,6 +835,23 @@ class EngageContextView(EngageBaseView, generics.CreateAPIView):
                 },
             }
 
+        actions["opt_out"] = {
+            "description": "Opt out",
+            "url": reverse("engage-action"),
+            "payload": {
+                "registrant_id": identity_id,
+                "action": "momconnect_loss_optout",
+            },
+            "options": {
+                "miscarriage": "Miscarriage",
+                "stillbirth": "Baby was stillborn",
+                "babyloss": "Baby died",
+                "not_useful": "Messages not useful",
+                "other": "Other",
+                "unknown": "Unknown",
+            },
+        }
+
         return actions
 
     def post(self, request):
@@ -894,10 +911,17 @@ class EngageActionView(EngageBaseView, generics.CreateAPIView):
         self.validate_signature(request)
 
         serializer = self.get_serializer(data=request.data)
+        option = request.data.get("payload", {}).pop("option", None)
         serializer.is_valid(raise_exception=True)
         change_data = serializer.validated_data["payload"]
         change_data["created_by"] = change_data["updated_by"] = request.user
         change_data["source"] = Source.objects.get(user=self.request.user)
+
+        if change_data.get("action") == "momconnect_loss_optout":
+            change_data["data"] = {"reason": option}
+            if option in ["not_useful", "other", "unknown"]:
+                change_data["action"] = "momconnect_nonloss_optout"
+
         change = Change.objects.create(**change_data)
 
         return Response(ChangeSerializer(change).data, status=status.HTTP_201_CREATED)
