@@ -3644,9 +3644,10 @@ class TestChangeActions(AuthenticatedAPITestCase):
         Switching the channel should skip all inactive subscriptions.
         """
         registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
-        mock_get_messagesets([])
+        mock_get_messagesets(["skip.this.messageset"])
         mock_get_subscriptions(
-            "?identity={}&active=True".format(registrant_id), [{"active": False}]
+            "?identity={}&active=True".format(registrant_id),
+            [{"messageset": 0, "active": False}],
         )
 
         # . mock get identity by id
@@ -3830,7 +3831,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                     "messageset": 0,
                     "identity": registrant_id,
                     "next_sequence_number": 7,
-                    "lang": "eng",
+                    "lang": "nbl_ZA",
                     "schedule": 2,
                     "active": True,
                 },
@@ -3868,10 +3869,23 @@ class TestChangeActions(AuthenticatedAPITestCase):
                     "WhatsApp for children between 1 - 2. Messages for children "
                     "between 1 - 2 are only available on WhatsApp - switching to "
                     "SMS means you will not receive any messages. You can stop "
-                    "your MomConnect messages completely by replying ‘STOP‘"
+                    "your MomConnect messages completely by replying 'STOP'"
                 ),
                 "channel": "WHATSAPP",
-                "metadata": {},
+                "metadata": {
+                    "template": {
+                        "name": "important_info",
+                        "language": "nb",
+                        "variables": [
+                            "We notice that you have been receiving MomConnect msgs "
+                            "on WhatsApp for children between 1 - 2. Messages for "
+                            "children between 1 - 2 are only available on WhatsApp - "
+                            "switching to SMS means you will not receive any "
+                            "messages. You can stop your MomConnect messages "
+                            "completely by replying 'STOP'"
+                        ],
+                    }
+                },
             }
         )
 
