@@ -7,18 +7,18 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-12-11 07:53+0200\n"
-"PO-Revision-Date: 2018-10-31 23:13+0200\n"
+"POT-Creation-Date: 2019-02-21 13:09+0000\n"
+"PO-Revision-Date: 2019-02-21 15:13+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: afr_ZA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 2.2\n"
+"X-Generator: Poedit 2.2.1\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: changes/tasks.py:1379
+#: changes/tasks.py:1390
 #, python-format
 msgid ""
 "Sorry but we can't send WhatsApp msgs to this phone. We'll send your "
@@ -29,7 +29,7 @@ msgstr ""
 "boodskappe via SMS stuur. Om te stop skakel %(optout_ussd)s vir meer skakel "
 "%(popi_ussd)s."
 
-#: changes/tasks.py:1438 changes/tasks.py:1491
+#: changes/tasks.py:1449 changes/tasks.py:1614
 msgid ""
 "We see that your MomConnect WhatsApp messages are not being delivered. If "
 "you would like to receive your messages over SMS, reply ‘SMS’."
@@ -38,7 +38,7 @@ msgstr ""
 "jy nie jou boodskappe as SMSse wil kry  nie, antwoord ‘SMS’ (standaard "
 "tariewe geld)"
 
-#: changes/tasks.py:1575
+#: changes/tasks.py:1668
 msgid ""
 "Oh no! You can't get MomConnect messages on WhatsApp. We'll keep sending "
 "your MomConnect messages on SMS."
@@ -46,12 +46,22 @@ msgstr ""
 "Ag nee! Jy kan nie MomConnect boodskappe via WhatsApp kry nie. Ons sal "
 "aanhou om dit via SMS te stuur."
 
-#: registrations/tasks.py:782
+#: registrations/tasks.py:778
 #, python-format
 msgid ""
-"Welcome to MomConnect! For more services dial %(popi_ussd)s, to stop dial "
-"%(optout_ussd)s (Free). To move to WhatsApp, reply “WA”. Std SMS rates apply."
+"Welcome! MomConnect will send helpful WhatsApp msgs. To stop dial "
+"%(optout_ussd)s (Free). To get msgs via SMS instead, reply \"SMS\" (std "
+"rates apply)."
 msgstr ""
-"Welkom by MomConnect! Vir meer dienste bel %(popi_ussd)s, om te stop bel "
-"%(optout_ussd)s (gratis). Om na WhatsApp oor te skakel stuur “WA”. Standaard "
-"SMS fooie geld."
+"Welkom! MomConnect sal nuttige boodskappe aan jou via WhatsApp stuur. Om te "
+"stop skakel %(optout_ussd)s. Vir boodskappe liewers via SMS, antw \"SMS"
+"\" (std fooie)."
+
+#: registrations/tasks.py:784
+#, python-format
+msgid ""
+"Congratulations on your pregnancy! MomConnect will send you helpful SMS "
+"msgs. To stop dial %(optout_ussd)s, for more dial %(popi_ussd)s (Free)."
+msgstr ""
+"Welkom! MomConnect sal nuttige boodskappe via SMS aan jou stuur. Om te stop "
+"skakel %(optout_ussd)s, vir meer skakel %(popi_ussd)s (Gratis)."

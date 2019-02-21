@@ -766,33 +766,38 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         Sends the welcome message to the user in the user's language using the
         message sender
         """
-
-        def format_ussd_code(reg_type: str, ussd_code: str) -> str:
-            """
-            Prevent *'s in the USSD code being interpreted as markup
-            """
-            if channel == "WHATSAPP":
-                return "```{}```".format(ussd_code)
-            return ussd_code
-
         # Transform to django language code
         language = language.lower().replace("_", "-")
         with translation.override(language):
-            text = translation.ugettext(
-                "Welcome to MomConnect! For more services dial %(popi_ussd)s, "
-                "to stop dial %(optout_ussd)s (Free). To move to WhatsApp, "
-                "reply “WA”. Std SMS rates apply."
-            ) % {
-                "popi_ussd": format_ussd_code(channel, settings.POPI_USSD_CODE),
-                "optout_ussd": format_ussd_code(channel, settings.OPTOUT_USSD_CODE),
+            translation_context = {
+                "popi_ussd": settings.POPI_USSD_CODE,
+                "optout_ussd": settings.OPTOUT_USSD_CODE,
             }
+            if channel == "WHATSAPP":
+                text = (
+                    translation.ugettext(
+                        "Welcome! MomConnect will send helpful WhatsApp msgs. To stop "
+                        "dial %(optout_ussd)s (Free). To get msgs via SMS instead, "
+                        'reply "SMS" (std rates apply).'
+                    )
+                    % translation_context
+                )
+            else:
+                text = (
+                    translation.ugettext(
+                        "Congratulations on your pregnancy! MomConnect will send you "
+                        "helpful SMS msgs. To stop dial %(optout_ussd)s, for more dial "
+                        "%(popi_ussd)s (Free)."
+                    )
+                    % translation_context
+                )
 
         utils.ms_client.create_outbound(
             {
                 "to_addr": msisdn,
                 "to_identity": identity_id,
                 "content": text,
-                "channel": channel,
+                "channel": "JUNE_TEXT",
                 "metadata": {},
             }
         )
