@@ -3,21 +3,24 @@ import io
 import json
 import unittest
 
-from scripts.migrate_to_whatsapp_templates import prebirth1
+from scripts.migrate_to_whatsapp_templates.prebirth1 import Prebirth1Migration
 
 
 class TestPrebirth1(unittest.TestCase):
+    def setUp(self):
+        self.prebirth1 = Prebirth1Migration()
+
     def test_sequence_number_to_weeks(self):
         """
         Given a certain sequence number for the prebirth 1 messageset, it should return
         the correct number of weeks pregnant
         """
-        self.assertEqual(prebirth1.sequence_number_to_weeks(1), 5)
-        self.assertEqual(prebirth1.sequence_number_to_weeks(2), 5)
-        self.assertEqual(prebirth1.sequence_number_to_weeks(35), 22)
-        self.assertEqual(prebirth1.sequence_number_to_weeks(36), 22)
-        self.assertEqual(prebirth1.sequence_number_to_weeks(73), 41)
-        self.assertEqual(prebirth1.sequence_number_to_weeks(74), 41)
+        self.assertEqual(self.prebirth1.sequence_number_to_weeks(1), 5)
+        self.assertEqual(self.prebirth1.sequence_number_to_weeks(2), 5)
+        self.assertEqual(self.prebirth1.sequence_number_to_weeks(35), 22)
+        self.assertEqual(self.prebirth1.sequence_number_to_weeks(36), 22)
+        self.assertEqual(self.prebirth1.sequence_number_to_weeks(73), 41)
+        self.assertEqual(self.prebirth1.sequence_number_to_weeks(74), 41)
 
     def test_prebirth_1(self):
         """
@@ -39,7 +42,7 @@ class TestPrebirth1(unittest.TestCase):
             ]
         )
         writer.writerow(["1", "2", "3", "zul_ZA", "Test message", "", '{"foo": "bar"}'])
-        prebirth1.run(io.StringIO(input.getvalue()), output)
+        self.prebirth1.run(io.StringIO(input.getvalue()), output)
 
         reader = csv.DictReader(io.StringIO(output.getvalue()))
         [row] = list(reader)
