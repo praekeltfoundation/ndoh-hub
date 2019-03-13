@@ -4,7 +4,7 @@ from .base import BaseMigration
 
 
 class Prebirth1Migration(BaseMigration):
-    TEMPLATE_NAME = "prebirth"
+    TEMPLATE_NAME = "mc_prebirth"
 
     def sequence_number_to_weeks(self, sequence_number):
         MSGS_PER_WEEK = 2
