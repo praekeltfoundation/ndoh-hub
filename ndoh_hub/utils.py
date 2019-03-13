@@ -10,16 +10,14 @@ from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.message_sender import MessageSenderApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
 
-from registrations.models import PositionTracker
-
 # Import these here for backwards compatibility
 from ndoh_hub.constants import (  # noqa:F401
     ID_TYPES,
-    PASSPORT_ORIGINS,
     LANGUAGES,
+    PASSPORT_ORIGINS,
     WHATSAPP_LANGUAGE_MAP,
 )
-
+from registrations.models import PositionTracker
 
 sbm_client = StageBasedMessagingApiClient(
     api_url=settings.STAGE_BASED_MESSAGING_URL,
