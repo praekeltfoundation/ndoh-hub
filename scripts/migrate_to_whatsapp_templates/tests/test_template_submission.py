@@ -1,11 +1,11 @@
 import csv
 import json
-from io import StringIO
 import unittest
+from io import StringIO
 from unittest.mock import patch
 
-from requests.exceptions import HTTPError
 import responses
+from requests.exceptions import HTTPError
 
 from scripts.migrate_to_whatsapp_templates import template_submission
 

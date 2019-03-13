@@ -17,7 +17,6 @@ import requests
 
 from ndoh_hub.constants import WHATSAPP_LANGUAGE_MAP
 
-
 WHATSAPP_URL = "https://whatsapp.praekelt.org"
 WHATSAPP_TEMPLATE_URL = urllib.parse.urljoin(WHATSAPP_URL, "/v1/message_templates")
 
