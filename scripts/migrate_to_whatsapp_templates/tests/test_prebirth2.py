@@ -21,44 +21,14 @@ class TestPrebirth2(unittest.TestCase):
         self.assertEqual(self.prebirth2.sequence_number_to_weeks(30), 40)
         self.assertEqual(self.prebirth2.sequence_number_to_weeks(31), 41)
 
-    def test_prebirth_2(self):
-        """
-        With a valid CSV, it should output a valid CSV with all the same fields, except
-        the metadata field should have a template key with the appropriate details.
-        """
-        input = io.StringIO()
-        output = io.StringIO()
-        writer = csv.writer(input)
-        writer.writerow(
-            [
-                "id",
-                "messageset",
-                "sequence_number",
-                "lang",
-                "text_content",
-                "binary_content",
-                "metadata",
-            ]
-        )
-        writer.writerow(["1", "2", "3", "zul_ZA", "Test message", "", '{"foo": "bar"}'])
-        self.prebirth2.run(io.StringIO(input.getvalue()), output)
-
-        reader = csv.DictReader(io.StringIO(output.getvalue()))
-        [row] = list(reader)
-        self.assertEqual(row["id"], "1")
-        self.assertEqual(row["messageset"], "2")
-        self.assertEqual(row["sequence_number"], "3")
-        self.assertEqual(row["lang"], "zul_ZA")
-        self.assertEqual(row["text_content"], "Test message")
-        self.assertEqual(row["binary_content"], "")
-        self.assertEqual(
-            json.loads(row["metadata"]),
-            {
-                "foo": "bar",
-                "template": {
-                    "name": "mc_prebirth",
-                    "language": "uz",
-                    "variables": ["31", "Test message"],
-                },
-            },
-        )
+    def test_get_template_variables(self):
+        message = {
+            "id": "1",
+            "messageset": "2",
+            "sequence_number": "3",
+            "lang": "zul_ZA",
+            "text_content": "test",
+            "binary_content": "",
+            "metadata": "{}",
+        }
+        self.assertEqual(self.prebirth2.get_template_variables(message), ["31", "test"])
