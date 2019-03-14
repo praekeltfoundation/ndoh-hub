@@ -8,7 +8,7 @@ class PMTCTPostbirth1Migration(BaseMigration):
 
     def sequence_number_to_weeks(self, sequence_number):
         MSGS_PER_WEEK = 2
-        return ((sequence_number - 1) // MSGS_PER_WEEK)
+        return (sequence_number - 1) // MSGS_PER_WEEK
 
     def get_template_variables(self, message):
         return [

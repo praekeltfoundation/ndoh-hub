@@ -1,6 +1,8 @@
 from unittest import TestCase
 
-from scripts.migrate_to_whatsapp_templates.pmtct_postbirth2 import PMTCTPostbirth2Migration
+from scripts.migrate_to_whatsapp_templates.pmtct_postbirth2 import (
+    PMTCTPostbirth2Migration,
+)
 
 
 class PMTCTPostbirth2MigrationTests(TestCase):
