@@ -9,15 +9,15 @@ class Postbirth1MigrationTests(TestCase):
 
     def test_get_template_name(self):
         """
-        If the sequence number is < 15, should be the first postbirth template, else
+        If the sequence number is < 17, should be the first postbirth template, else
         should be the second postbirth template.
         """
         self.assertEqual(
-            self.postbirth1.get_template_name({"sequence_number": "14"}),
+            self.postbirth1.get_template_name({"sequence_number": "16"}),
             "mc_postbirth1",
         )
         self.assertEqual(
-            self.postbirth1.get_template_name({"sequence_number": "15"}),
+            self.postbirth1.get_template_name({"sequence_number": "17"}),
             "mc_postbirth2",
         )
 
@@ -28,7 +28,7 @@ class Postbirth1MigrationTests(TestCase):
         """
         self.assertEqual(
             self.postbirth1.get_template_variables(
-                {"sequence_number": "14", "text_content": "Test message"}
+                {"sequence_number": "16", "text_content": "Test message"}
             ),
             ["7", "Test message"],
         )
@@ -40,25 +40,25 @@ class Postbirth1MigrationTests(TestCase):
         """
         self.assertEqual(
             self.postbirth1.get_template_variables(
-                {"sequence_number": "15", "text_content": "Test message"}
+                {"sequence_number": "17", "text_content": "Test message"}
             ),
-            ["2", "Test message"],
+            ["1", "Test message"],
         )
 
     def test_get_weeks_from_sequence_number(self):
         """
         Should return the correct number of weeks for the sequence number of the message
         """
-        self.assertEqual(self.postbirth1.get_weeks_from_sequence_number(1), 1)
-        self.assertEqual(self.postbirth1.get_weeks_from_sequence_number(2), 1)
-        self.assertEqual(self.postbirth1.get_weeks_from_sequence_number(3), 2)
-        self.assertEqual(self.postbirth1.get_weeks_from_sequence_number(14), 7)
+        self.assertEqual(self.postbirth1.get_weeks_from_sequence_number(1), 0)
+        self.assertEqual(self.postbirth1.get_weeks_from_sequence_number(2), 0)
+        self.assertEqual(self.postbirth1.get_weeks_from_sequence_number(3), 1)
+        self.assertEqual(self.postbirth1.get_weeks_from_sequence_number(16), 7)
 
     def test_get_months_from_sequence_number(self):
         """
         Returns correct number of months for the given sequence number
         """
-        self.assertEqual(self.postbirth1.get_months_from_sequence_number(1), 1)
-        self.assertEqual(self.postbirth1.get_months_from_sequence_number(16), 2)
-        self.assertEqual(self.postbirth1.get_months_from_sequence_number(17), 3)
-        self.assertEqual(self.postbirth1.get_months_from_sequence_number(30), 4)
+        self.assertEqual(self.postbirth1.get_months_from_sequence_number(1), 0)
+        self.assertEqual(self.postbirth1.get_months_from_sequence_number(18), 1)
+        self.assertEqual(self.postbirth1.get_months_from_sequence_number(19), 2)
+        self.assertEqual(self.postbirth1.get_months_from_sequence_number(30), 3)
