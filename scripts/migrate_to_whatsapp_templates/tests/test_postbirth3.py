@@ -9,8 +9,7 @@ class Postbirth3MigrationTests(TestCase):
 
     def test_get_template_variables(self):
         """
-        Returns the number of months as the first variable, and the message content as
-        the second variable
+        Returns the message content as the variable
         """
         self.assertEqual(
             self.postbirth3.get_template_variables({"text_content": "Test message"}),
