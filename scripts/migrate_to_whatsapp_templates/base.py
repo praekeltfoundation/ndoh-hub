@@ -10,7 +10,7 @@ class BaseMigration(object):
     def get_template_variables(self, message):
         raise NotImplementedError()
 
-    def get_template_name(self):
+    def get_template_name(self, message):
         if self.TEMPLATE_NAME == "":
             raise NotImplementedError()
         return self.TEMPLATE_NAME
@@ -22,7 +22,7 @@ class BaseMigration(object):
         for row in reader:
             metadata = json.loads(row["metadata"])
             metadata["template"] = {
-                "name": self.TEMPLATE_NAME,
+                "name": self.get_template_name(row),
                 "language": WHATSAPP_LANGUAGE_MAP[row["lang"]],
                 "variables": self.get_template_variables(row),
             }
