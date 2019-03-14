@@ -1,6 +1,3 @@
-import csv
-import io
-import json
 import unittest
 
 from scripts.migrate_to_whatsapp_templates.prebirth4 import Prebirth4Migration
