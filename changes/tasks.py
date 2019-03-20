@@ -557,7 +557,7 @@ class ValidateImplement(Task):
                         "channel": "WHATSAPP",
                         "metadata": {
                             "template": {
-                                "name": "important_info",
+                                "name": "mc_important_info",
                                 "language": utils.WHATSAPP_LANGUAGE_MAP[
                                     subscriptions[0]["lang"]
                                 ],
