@@ -499,10 +499,12 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
             {
                 "to_addr": "+27820001000",
                 "to_identity": "identity-uuid",
-                "channel": "WHATSAPP",
-                "content": "Welcome to MomConnect! For more services dial "
-                "```*134*550*7#```, to stop dial ```*134*550*1#``` (Free). To "
-                "move to WhatsApp, reply “WA”. Std SMS rates apply.",
+                "channel": "JUNE_TEXT",
+                "content": (
+                    "Welcome! MomConnect will send helpful WhatsApp msgs. To stop dial "
+                    '*134*550*1# (Free). To get msgs via SMS instead, reply "SMS" '
+                    "(std rates apply)."
+                ),
                 "metadata": {},
             },
         )
@@ -523,9 +525,10 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
                 "to_addr": "+27820001000",
                 "to_identity": "identity-uuid",
                 "channel": "JUNE_TEXT",
-                "content": "O amogetšwe go MomConnect! Go hwetša ditirelo "
-                "leletša*134*550*7#, go emiša letša*134*550*1# (Mahala)."
-                "Go iša go WhatsApp, fetola WA. Go šoma ditefelo tša Std SMS.",
+                "content": (
+                    "O amogetšwe. Momconnect e tla go romela melaetša ka SMS. Emiša ka "
+                    "*134*550*1#, go hwetša tše ntši taela *134*550*7# (Mahala)"
+                ),
                 "metadata": {},
             },
         )

@@ -327,3 +327,20 @@ class TokenAuthQueryString(TokenAuthentication):
         if token is not None:
             return self.authenticate_credentials(token)
         return None
+
+
+# Since WhatsApp doesn't support most of South Africa's official languages, we create
+# a mapping to languages that we don't use for missing languages
+WHATSAPP_LANGUAGE_MAP = {
+    "zul_ZA": "uz",
+    "xho_ZA": "th",
+    "afr_ZA": "af",
+    "eng_ZA": "en",
+    "nso_ZA": "sl",
+    "tsn_ZA": "bn",
+    "sot_ZA": "ta",
+    "tso_ZA": "sv",
+    "ssw_ZA": "sw",
+    "ven_ZA": "vi",
+    "nbl_ZA": "nb",
+}

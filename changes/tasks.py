@@ -534,7 +534,43 @@ class ValidateImplement(Task):
         }
         messagesets_rev = {v: k for k, v in messagesets.items()}
         params = {"identity": change.registrant_id, "active": True}
-        for sub in sbm_client.get_subscriptions(params)["results"]:
+        subscriptions = list(sbm_client.get_subscriptions(params)["results"])
+
+        # Check if they're in 1-2 messaging, in which case they cannot switch
+        short_names = [messagesets[sub["messageset"]] for sub in subscriptions]
+        if "whatsapp_momconnect_postbirth.hw_full.3" in short_names:
+            translation_lang = subscriptions[0]["lang"].lower().replace("_", "-")
+            with translation.override(translation_lang):
+                text = translation.ugettext(
+                    "We notice that you have been receiving MomConnect msgs on "
+                    "WhatsApp for children between 1 - 2. Messages for children "
+                    "between 1 - 2 are only available on WhatsApp - switching to "
+                    "SMS means you will not receive any messages. You can stop "
+                    "your MomConnect messages completely by replying 'STOP'"
+                )
+            reason = change.data and change.data.get("reason")
+            if reason != "whatsapp_unsent_event":
+                utils.ms_client.create_outbound(
+                    {
+                        "to_identity": change.registrant_id,
+                        "content": text,
+                        "channel": "WHATSAPP",
+                        "metadata": {
+                            "template": {
+                                "name": "mc_important_info",
+                                "language": utils.WHATSAPP_LANGUAGE_MAP[
+                                    subscriptions[0]["lang"]
+                                ],
+                                "variables": [text],
+                            }
+                        },
+                    }
+                )
+            change.data["error"] = "WhatsApp-only messagesets cannot be switched to SMS"
+            change.save()
+            return
+
+        for sub in subscriptions:
             if not sub["active"]:
                 continue
             short_name = messagesets[sub["messageset"]]
@@ -579,30 +615,6 @@ class ValidateImplement(Task):
                 )
 
             elif change.data["channel"] == "sms" and "whatsapp" in short_name:
-
-                if short_name == "whatsapp_momconnect_postbirth.hw_full.3":
-                    text = (
-                        "We notice that you have been receiving MomConnect msgs on "
-                        "WhatsApp for children between 1 - 2. Messages for children "
-                        "between 1 - 2 are only available on WhatsApp - switching to "
-                        "SMS means you will not receive any messages. You can stop "
-                        "your MomConnect messages completely by replying ‘STOP‘"
-                    )
-
-                    utils.ms_client.create_outbound(
-                        {
-                            "to_identity": change.registrant_id,
-                            "content": text,
-                            "channel": "WHATSAPP",
-                            "metadata": {},
-                        }
-                    )
-                    change.data[
-                        "error"
-                    ] = "WhatsApp-only messagesets cannot be switched to SMS"
-                    change.save()
-                    return
-
                 # Change any WhatsApp subscriptions to SMS
                 sbm_client.update_subscription(sub["id"], {"active": False})
 
