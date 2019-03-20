@@ -3874,7 +3874,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 "channel": "WHATSAPP",
                 "metadata": {
                     "template": {
-                        "name": "important_info",
+                        "name": "mc_important_info",
                         "language": "nb",
                         "variables": [
                             "We notice that you have been receiving MomConnect msgs "
