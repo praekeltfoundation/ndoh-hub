@@ -1,6 +1,6 @@
 import sys
 
-from .base import BaseMigration
+from scripts.migrate_to_whatsapp_templates.base import BaseMigration
 
 
 class Prebirth4Migration(BaseMigration):
