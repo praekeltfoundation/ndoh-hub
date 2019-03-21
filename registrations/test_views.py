@@ -256,7 +256,7 @@ class PositionTrackerViewsetTests(AuthenticatedAPITestCase):
 
 
 class EngageActionViewTests(APITestCase):
-     
+
     def add_authorization_token(self):
         """
         Adds credentials to the current client

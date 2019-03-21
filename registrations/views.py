@@ -965,8 +965,8 @@ class EngageActionView(EngageBaseView, generics.CreateAPIView):
         change = Change.objects.create(**change_data)
 
         return Response(
-            ChangeSerializer(change).data, 
-            status=status.HTTP_201_CREATED, 
+            ChangeSerializer(change).data,
+            status=status.HTTP_201_CREATED,
             headers={
                 'X-Turn-Integration-Refresh': 'true'
             })
