@@ -756,7 +756,7 @@ class EngageContextViewTests(APITestCase):
         action = response.json()["actions"]["opt_out"]
         data = {
             "address": "+27820001001",
-            "option": "no_useful",
+            "option": "not_useful",
             "payload": action["payload"]
         }
         response = self.client.post(
