@@ -643,7 +643,7 @@ class EngageContextViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.headers["X-Turn-Integration-Refresh"], "true")
+        self.assertEqual(response["X-Turn-Integration-Refresh"], "true")
         [change] = Change.objects.all()
         self.assertEqual(change.registrant_id, mother_uuid)
         self.assertEqual(change.action, "baby_switch")
@@ -769,7 +769,7 @@ class EngageContextViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.headers["X-Turn-Integration-Refresh"], "true")
+        self.assertEqual(response["X-Turn-Integration-Refresh"], "true")
         [change] = Change.objects.all()
         self.assertEqual(change.registrant_id, mother_uuid)
         self.assertEqual(change.action, "momconnect_nonloss_optout")
@@ -829,7 +829,7 @@ class EngageContextViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.headers["X-Turn-Integration-Refresh"], "true")
+        self.assertEqual(response["X-Turn-Integration-Refresh"], "true")
 
         [change] = Change.objects.all()
         self.assertEqual(change.registrant_id, mother_uuid)
@@ -890,7 +890,7 @@ class EngageContextViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.headers["X-Turn-Integration-Refresh"], "true")
+        self.assertEqual(response["X-Turn-Integration-Refresh"], "true")
         [change] = Change.objects.all()
         self.assertEqual(change.registrant_id, mother_uuid)
         self.assertEqual(change.action, "momconnect_loss_switch")
@@ -950,7 +950,7 @@ class EngageContextViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.headers["X-Turn-Integration-Refresh"], "true")
+        self.assertEqual(response["X-Turn-Integration-Refresh"], "true")
         [change] = Change.objects.all()
         self.assertEqual(change.registrant_id, mother_uuid)
         self.assertEqual(change.action, "momconnect_change_language")
