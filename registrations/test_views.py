@@ -344,7 +344,7 @@ class EngageActionViewTests(APITestCase):
             ),
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.headers, %{"foo": "bar"})
+        self.assertEqual(response.headers, {"foo": "bar"})
         self.assertEqual(
             response.json(),
             {"version": "1.0.0-alpha", "context_objects": data, "actions": {}},
