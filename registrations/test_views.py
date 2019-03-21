@@ -255,6 +255,102 @@ class PositionTrackerViewsetTests(AuthenticatedAPITestCase):
         self.assertEqual(pt.position, 2)
 
 
+class EngageActionViewTests(APITestCase):
+     
+    def add_authorization_token(self):
+        """
+        Adds credentials to the current client
+        """
+        user = User.objects.create_user("test")
+        Source.objects.create(user=user)
+        token = Token.objects.create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION="Token {}".format(token.key))
+
+    def add_identity_lookup_by_address_fixture(
+        self, msisdn="+27820001001", identity_uuid=None, details=None
+    ):
+        """
+        Adds the fixtures for the identity lookup. If details aren't specified, then
+        an empty result is returned.
+        """
+        if identity_uuid is None and details is None:
+            results = []
+        else:
+            details["addresses"] = {"msisdn": {msisdn: {"default": True}}}
+            results = [{"id": identity_uuid, "details": details}]
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/search/?{}".format(
+                urlencode({"details__addresses__msisdn": msisdn})
+            ),
+            json={"results": results},
+            status=200,
+        )
+
+    @override_settings(ENGAGE_CONTEXT_HMAC_SECRET="hmac-secret")
+    def test_action_returns_refresh_header(self):
+        """
+        Returns no information when there are no inbound messages
+        """
+        self.add_authorization_token()
+        self.add_identity_lookup_by_address_fixture(
+            msisdn="+271234567890",
+            identity_uuid="mother-uuid",
+            details={"mom_dob": "1980-08-08"},
+        )
+        data = {
+            "address": "+271234567890",
+            "integration_action_uuid": "e386da0d-a5ca-451f-b126-e593295a87c7",
+            "integration_uuid": "1b5e199f-99bb-98f3-6f13-50230384d2dd",
+            "message": {
+                "_vnd": {
+                    "v1": {
+                        "author": {},
+                        "chat": {
+                            "assigned_to": None,
+                            "owner": "+271234567890",
+                            "state": "OPEN",
+                            "state_reason": "Re-opened by inbound message.",
+                            "unread_count": 0
+                        },
+                        "direction": "inbound",
+                        "in_reply_to": None,
+                        "inserted_at": "2019-03-01T14:09:50Z",
+                        "labels": []
+                    }
+                },
+                "from": "271234567890",
+                "id": "the-external-id",
+                "text": {
+                    "body": "hello inbound world"
+                },
+                "timestamp": "1551449274",
+                "type": "text"
+            },
+            "option": "other",
+            "payload": {
+                "registrant_id": "mother-uuid",
+                "action": "baby_switch",
+                "data": {},
+            }
+        }
+        url = reverse("engage-action")
+        response = self.client.post(
+            url,
+            data,
+            format="json",
+            HTTP_X_ENGAGE_HOOK_SIGNATURE=self.generate_hmac_signature(
+                data, "hmac-secret"
+            ),
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.headers, %{"foo": "bar"})
+        self.assertEqual(
+            response.json(),
+            {"version": "1.0.0-alpha", "context_objects": data, "actions": {}},
+        )
+
+
 class EngageContextViewTests(APITestCase):
     def add_authorization_token(self):
         """
