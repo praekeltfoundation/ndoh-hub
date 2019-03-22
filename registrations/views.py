@@ -947,7 +947,7 @@ class EngageActionView(EngageBaseView, generics.CreateAPIView):
         self.validate_signature(request)
 
         serializer = self.get_serializer(data=request.data)
-        option = request.data.get("payload", {}).pop("option", None)
+        option = request.data.pop("option", None)
         serializer.is_valid(raise_exception=True)
         change_data = serializer.validated_data["payload"]
         change_data["created_by"] = change_data["updated_by"] = request.user
@@ -964,4 +964,8 @@ class EngageActionView(EngageBaseView, generics.CreateAPIView):
 
         change = Change.objects.create(**change_data)
 
-        return Response(ChangeSerializer(change).data, status=status.HTTP_201_CREATED)
+        return Response(
+            ChangeSerializer(change).data,
+            status=status.HTTP_201_CREATED,
+            headers={"X-Turn-Integration-Refresh": "true"},
+        )

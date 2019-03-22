@@ -643,6 +643,7 @@ class EngageContextViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response["X-Turn-Integration-Refresh"], "true")
         [change] = Change.objects.all()
         self.assertEqual(change.registrant_id, mother_uuid)
         self.assertEqual(change.action, "baby_switch")
@@ -753,8 +754,11 @@ class EngageContextViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         action = response.json()["actions"]["opt_out"]
-        action["payload"]["option"] = "not_useful"
-        data = {"address": "+27820001001", "payload": action["payload"]}
+        data = {
+            "address": "+27820001001",
+            "option": "not_useful",
+            "payload": action["payload"],
+        }
         response = self.client.post(
             action["url"],
             data,
@@ -765,6 +769,7 @@ class EngageContextViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response["X-Turn-Integration-Refresh"], "true")
         [change] = Change.objects.all()
         self.assertEqual(change.registrant_id, mother_uuid)
         self.assertEqual(change.action, "momconnect_nonloss_optout")
@@ -809,8 +814,11 @@ class EngageContextViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         action = response.json()["actions"]["opt_out"]
-        action["payload"]["option"] = "miscarriage"
-        data = {"address": "+27820001001", "payload": action["payload"]}
+        data = {
+            "address": "+27820001001",
+            "option": "miscarriage",
+            "payload": action["payload"],
+        }
         response = self.client.post(
             action["url"],
             data,
@@ -821,6 +829,8 @@ class EngageContextViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response["X-Turn-Integration-Refresh"], "true")
+
         [change] = Change.objects.all()
         self.assertEqual(change.registrant_id, mother_uuid)
         self.assertEqual(change.action, "momconnect_loss_optout")
@@ -865,8 +875,11 @@ class EngageContextViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         action = response.json()["actions"]["switch_to_loss"]
-        action["payload"]["option"] = "miscarriage"
-        data = {"address": "+27820001001", "payload": action["payload"]}
+        data = {
+            "address": "+27820001001",
+            "option": "miscarriage",
+            "payload": action["payload"],
+        }
         response = self.client.post(
             action["url"],
             data,
@@ -877,6 +890,7 @@ class EngageContextViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response["X-Turn-Integration-Refresh"], "true")
         [change] = Change.objects.all()
         self.assertEqual(change.registrant_id, mother_uuid)
         self.assertEqual(change.action, "momconnect_loss_switch")
@@ -921,8 +935,11 @@ class EngageContextViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         action = response.json()["actions"]["switch_language"]
-        action["payload"]["option"] = "zul_ZA"
-        data = {"address": "+27820001001", "payload": action["payload"]}
+        data = {
+            "address": "+27820001001",
+            "option": "zul_ZA",
+            "payload": action["payload"],
+        }
         response = self.client.post(
             action["url"],
             data,
@@ -933,6 +950,7 @@ class EngageContextViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response["X-Turn-Integration-Refresh"], "true")
         [change] = Change.objects.all()
         self.assertEqual(change.registrant_id, mother_uuid)
         self.assertEqual(change.action, "momconnect_change_language")
