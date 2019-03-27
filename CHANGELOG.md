@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.4 (2019-03-27)
+1. Add actions to Turn context
+   ([#204](https://github.com/praekeltfoundation/ndoh-hub/pull/204))
+   ([#208](https://github.com/praekeltfoundation/ndoh-hub/pull/208))
+1. Change to using new WhatsApp templates for outbounds WhatsApp messages
+   ([#205](https://github.com/praekeltfoundation/ndoh-hub/pull/205))
+1. Add helper scripts for migrating existing messagesets to use WhatsApp templates
+   ([#206](https://github.com/praekeltfoundation/ndoh-hub/pull/206))
+   ([#207](https://github.com/praekeltfoundation/ndoh-hub/pull/207))
+
 ## 0.6.3 (2019-02-06)
 1. Add endpoint for receiving failed address lookup webhooks from the message sender
    ([#200](https://github.com/praekeltfoundation/ndoh-hub/pull/200))
