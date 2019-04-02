@@ -20,3 +20,7 @@ to the first argument. Also removes the channel. Allows you to split according
 to channel.
 
 get_msisdn.sh - takes in identity ids, and returns msisdns for those identities
+
+If the number of elements in large, then you might run into an "Argument list too long" error. In this case, using GNU Parallel can help, eg:
+
+cat registrations.csv | parallel --pipe -N 1000 ./get_current_channel.sh > output.csv
