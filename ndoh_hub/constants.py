@@ -29,15 +29,15 @@ LANGUAGES = [
 # Since WhatsApp doesn't support most of South Africa's official languages, we create
 # a mapping to languages that we don't use for missing languages
 WHATSAPP_LANGUAGE_MAP = {
-    "zul_ZA": "uz",
-    "xho_ZA": "th",
+    "zul_ZA": "en",
+    "xho_ZA": "en",
     "afr_ZA": "af",
     "eng_ZA": "en",
-    "nso_ZA": "sl",
-    "tsn_ZA": "bn",
-    "sot_ZA": "ta",
-    "tso_ZA": "sv",
-    "ssw_ZA": "sw",
-    "ven_ZA": "vi",
-    "nbl_ZA": "nb",
+    "nso_ZA": "en",
+    "tsn_ZA": "en",
+    "sot_ZA": "en",
+    "tso_ZA": "en",
+    "ssw_ZA": "en",
+    "ven_ZA": "en",
+    "nbl_ZA": "en",
 }
