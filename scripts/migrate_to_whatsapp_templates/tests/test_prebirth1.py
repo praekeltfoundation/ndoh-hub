@@ -58,7 +58,7 @@ class TestPrebirth1(unittest.TestCase):
                 "foo": "bar",
                 "template": {
                     "name": "mc_prebirth",
-                    "language": "uz",
+                    "language": "en",
                     "variables": ["6", "Test message"],
                 },
             },

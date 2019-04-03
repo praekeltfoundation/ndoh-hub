@@ -3875,7 +3875,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 "metadata": {
                     "template": {
                         "name": "mc_important_info",
-                        "language": "nb",
+                        "language": "en",
                         "variables": [
                             "We notice that you have been receiving MomConnect msgs "
                             "on WhatsApp for children between 1 - 2. Messages for "
