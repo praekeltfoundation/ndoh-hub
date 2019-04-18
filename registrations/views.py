@@ -949,7 +949,8 @@ class EngageActionView(EngageBaseView, generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         option = request.data.pop("option", None)
         serializer.is_valid(raise_exception=True)
-        change_data = serializer.validated_data["payload"]
+        data = serializer.validated_data
+        change_data = data["payload"]
         change_data["created_by"] = change_data["updated_by"] = request.user
         change_data["source"] = Source.objects.get(user=self.request.user)
 
@@ -962,10 +963,11 @@ class EngageActionView(EngageBaseView, generics.CreateAPIView):
         if change_data.get("action") == "momconnect_change_language":
             change_data["data"] = {"language": option}
 
+        change_data["data"]["engage"] = {
+            "integration_uuid": data["integration_uuid"],
+            "integration_action_uuid": data["integration_action_uuid"],
+        }
+
         change = Change.objects.create(**change_data)
 
-        return Response(
-            ChangeSerializer(change).data,
-            status=status.HTTP_201_CREATED,
-            headers={"X-Turn-Integration-Refresh": "true"},
-        )
+        return Response(ChangeSerializer(change).data, status=status.HTTP_201_CREATED)
