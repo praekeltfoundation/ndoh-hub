@@ -1,11 +1,10 @@
-import django
-
 import argparse
 import asyncio
 import csv
-from requests.exceptions import RequestException
 import sys
 
+import django
+from requests.exceptions import RequestException
 
 django.setup()
 
