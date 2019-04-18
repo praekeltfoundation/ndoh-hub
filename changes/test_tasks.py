@@ -20,8 +20,10 @@ from changes.tasks import (
     process_whatsapp_system_event,
     process_whatsapp_timeout_system_event,
     process_whatsapp_unsent_event,
+    refresh_engage_context,
     send_helpdesk_response_to_dhis2,
 )
+from ndoh_hub import utils
 from registrations.models import Registration, Source
 from registrations.signals import psh_validate_subscribe
 
@@ -1019,3 +1021,31 @@ class ProcessEngageHelpdeskOutboundTests(DisconnectRegistrationSignalsMixin, Tes
         )
 
         process_engage_helpdesk_outbound.delay("27820001001", "BCGGJ3FVFUV").get()
+
+
+class RefreshEngageContextTests(TestCase):
+    @responses.activate
+    def test_http_request(self):
+        """
+        Makes the correct HTTP request with the correct parameters to request a refresh
+        of the engage context
+        """
+        responses.add(
+            responses.POST,
+            "http://engage/api/integrations/8cf3d402-7b25-47fd-8ef2-3e2537fccc14/"
+            "notify/finish",
+        )
+        refresh_engage_context(
+            "8cf3d402-7b25-47fd-8ef2-3e2537fccc14",
+            "009d3a39-326c-42f3-af72-b5ddbece219a",
+        )
+        [call] = responses.calls
+        self.assertEqual(
+            json.loads(call.request.body),
+            {"integration_action_uuid": "009d3a39-326c-42f3-af72-b5ddbece219a"},
+        )
+        self.assertEqual(
+            call.request.headers["User-Agent"], "ndoh-hub/{}".format(utils.VERSION)
+        )
+        self.assertEqual(call.request.headers["Authorization"], "Bearer engage-token")
+        self.assertEqual(call.request.headers["Content-Type"], "application/json")

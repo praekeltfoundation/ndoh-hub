@@ -3,6 +3,7 @@ from __future__ import absolute_import, division
 import datetime
 import json
 
+import pkg_resources
 import six
 from django.conf import settings
 from rest_framework.authentication import TokenAuthentication
@@ -31,6 +32,8 @@ is_client = IdentityStoreApiClient(
 ms_client = MessageSenderApiClient(
     api_url=settings.MESSAGE_SENDER_URL, auth_token=settings.MESSAGE_SENDER_TOKEN
 )
+
+VERSION = pkg_resources.require("ndoh-hub")[0].version
 
 
 def get_identity_msisdn(registrant_id):

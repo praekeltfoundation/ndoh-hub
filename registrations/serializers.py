@@ -337,4 +337,6 @@ class EngageContextSerializer(serializers.Serializer):
 
 class EngageActionSerializer(serializers.Serializer):
     address = PhoneNumberField(country_code="ZA")
+    integration_uuid = serializers.CharField()
+    integration_action_uuid = serializers.CharField()
     payload = ChangeSerializer()

@@ -632,7 +632,12 @@ class EngageContextViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         action = response.json()["actions"]["baby_switch"]
-        data = {"address": "+27820001001", "payload": action["payload"]}
+        data = {
+            "address": "+27820001001",
+            "payload": action["payload"],
+            "integration_uuid": "8cf3d402-7b25-47fd-8ef2-3e2537fccc14",
+            "integration_action_uuid": "009d3a39-326c-42f3-af72-b5ddbece219a",
+        }
         response = self.client.post(
             action["url"],
             data,
@@ -643,10 +648,18 @@ class EngageContextViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response["X-Turn-Integration-Refresh"], "true")
         [change] = Change.objects.all()
         self.assertEqual(change.registrant_id, mother_uuid)
         self.assertEqual(change.action, "baby_switch")
+        self.assertEqual(
+            change.data,
+            {
+                "engage": {
+                    "integration_uuid": "8cf3d402-7b25-47fd-8ef2-3e2537fccc14",
+                    "integration_action_uuid": "009d3a39-326c-42f3-af72-b5ddbece219a",
+                }
+            },
+        )
         self.assertTrue(change.validated)
 
     @responses.activate
@@ -700,7 +713,12 @@ class EngageContextViewTests(APITestCase):
         )
 
         action = response.json()["actions"]["switch_to_whatsapp"]
-        data = {"address": "+27820001001", "payload": action["payload"]}
+        data = {
+            "address": "+27820001001",
+            "payload": action["payload"],
+            "integration_uuid": "8cf3d402-7b25-47fd-8ef2-3e2537fccc14",
+            "integration_action_uuid": "009d3a39-326c-42f3-af72-b5ddbece219a",
+        }
         response = self.client.post(
             action["url"],
             data,
@@ -714,6 +732,16 @@ class EngageContextViewTests(APITestCase):
         [change] = Change.objects.all()
         self.assertEqual(change.registrant_id, mother_uuid)
         self.assertEqual(change.action, "switch_channel")
+        self.assertEqual(
+            change.data,
+            {
+                "channel": "whatsapp",
+                "engage": {
+                    "integration_uuid": "8cf3d402-7b25-47fd-8ef2-3e2537fccc14",
+                    "integration_action_uuid": "009d3a39-326c-42f3-af72-b5ddbece219a",
+                },
+            },
+        )
         self.assertTrue(change.validated)
 
     @responses.activate
@@ -758,6 +786,8 @@ class EngageContextViewTests(APITestCase):
             "address": "+27820001001",
             "option": "not_useful",
             "payload": action["payload"],
+            "integration_uuid": "8cf3d402-7b25-47fd-8ef2-3e2537fccc14",
+            "integration_action_uuid": "009d3a39-326c-42f3-af72-b5ddbece219a",
         }
         response = self.client.post(
             action["url"],
@@ -769,11 +799,19 @@ class EngageContextViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response["X-Turn-Integration-Refresh"], "true")
         [change] = Change.objects.all()
         self.assertEqual(change.registrant_id, mother_uuid)
         self.assertEqual(change.action, "momconnect_nonloss_optout")
-        self.assertEqual(change.data, {"reason": "not_useful"})
+        self.assertEqual(
+            change.data,
+            {
+                "reason": "not_useful",
+                "engage": {
+                    "integration_uuid": "8cf3d402-7b25-47fd-8ef2-3e2537fccc14",
+                    "integration_action_uuid": "009d3a39-326c-42f3-af72-b5ddbece219a",
+                },
+            },
+        )
         self.assertTrue(change.validated)
 
     @responses.activate
@@ -818,6 +856,8 @@ class EngageContextViewTests(APITestCase):
             "address": "+27820001001",
             "option": "miscarriage",
             "payload": action["payload"],
+            "integration_uuid": "8cf3d402-7b25-47fd-8ef2-3e2537fccc14",
+            "integration_action_uuid": "009d3a39-326c-42f3-af72-b5ddbece219a",
         }
         response = self.client.post(
             action["url"],
@@ -829,12 +869,20 @@ class EngageContextViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response["X-Turn-Integration-Refresh"], "true")
 
         [change] = Change.objects.all()
         self.assertEqual(change.registrant_id, mother_uuid)
         self.assertEqual(change.action, "momconnect_loss_optout")
-        self.assertEqual(change.data, {"reason": "miscarriage"})
+        self.assertEqual(
+            change.data,
+            {
+                "reason": "miscarriage",
+                "engage": {
+                    "integration_uuid": "8cf3d402-7b25-47fd-8ef2-3e2537fccc14",
+                    "integration_action_uuid": "009d3a39-326c-42f3-af72-b5ddbece219a",
+                },
+            },
+        )
         self.assertTrue(change.validated)
 
     @responses.activate
@@ -879,6 +927,8 @@ class EngageContextViewTests(APITestCase):
             "address": "+27820001001",
             "option": "miscarriage",
             "payload": action["payload"],
+            "integration_uuid": "8cf3d402-7b25-47fd-8ef2-3e2537fccc14",
+            "integration_action_uuid": "009d3a39-326c-42f3-af72-b5ddbece219a",
         }
         response = self.client.post(
             action["url"],
@@ -890,11 +940,19 @@ class EngageContextViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response["X-Turn-Integration-Refresh"], "true")
         [change] = Change.objects.all()
         self.assertEqual(change.registrant_id, mother_uuid)
         self.assertEqual(change.action, "momconnect_loss_switch")
-        self.assertEqual(change.data, {"reason": "miscarriage"})
+        self.assertEqual(
+            change.data,
+            {
+                "reason": "miscarriage",
+                "engage": {
+                    "integration_uuid": "8cf3d402-7b25-47fd-8ef2-3e2537fccc14",
+                    "integration_action_uuid": "009d3a39-326c-42f3-af72-b5ddbece219a",
+                },
+            },
+        )
         self.assertTrue(change.validated)
 
     @responses.activate
@@ -939,6 +997,8 @@ class EngageContextViewTests(APITestCase):
             "address": "+27820001001",
             "option": "zul_ZA",
             "payload": action["payload"],
+            "integration_uuid": "8cf3d402-7b25-47fd-8ef2-3e2537fccc14",
+            "integration_action_uuid": "009d3a39-326c-42f3-af72-b5ddbece219a",
         }
         response = self.client.post(
             action["url"],
@@ -950,9 +1010,17 @@ class EngageContextViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response["X-Turn-Integration-Refresh"], "true")
         [change] = Change.objects.all()
         self.assertEqual(change.registrant_id, mother_uuid)
         self.assertEqual(change.action, "momconnect_change_language")
-        self.assertEqual(change.data, {"language": "zul_ZA"})
+        self.assertEqual(
+            change.data,
+            {
+                "language": "zul_ZA",
+                "engage": {
+                    "integration_uuid": "8cf3d402-7b25-47fd-8ef2-3e2537fccc14",
+                    "integration_action_uuid": "009d3a39-326c-42f3-af72-b5ddbece219a",
+                },
+            },
+        )
         self.assertTrue(change.validated)

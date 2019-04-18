@@ -15,7 +15,7 @@ from celery.utils.log import get_task_logger
 from demands import HTTPServiceError
 from django.conf import settings
 from django.utils import dateparse, translation
-from requests.exceptions import ConnectionError, HTTPError, Timeout
+from requests.exceptions import ConnectionError, HTTPError, RequestException, Timeout
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
 from six import iteritems
@@ -969,6 +969,10 @@ class ValidateImplement(Task):
                 )
                 task.delay()
             self.log.info("Task executed successfully")
+
+            if change.is_engage_action:
+                change.async_refresh_engage_context()
+
             return True
         else:
             self.log.info("Task terminated due to validation issues")
@@ -976,6 +980,29 @@ class ValidateImplement(Task):
 
 
 validate_implement = ValidateImplement()
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def refresh_engage_context(integration_uuid, integration_action_uuid):
+    response = requests.post(
+        urljoin(
+            settings.ENGAGE_URL,
+            "api/integrations/{}/notify/finish".format(integration_uuid),
+        ),
+        headers={
+            "Authorization": "Bearer {}".format(settings.ENGAGE_TOKEN),
+            "User-Agent": "ndoh-hub/{}".format(utils.VERSION),
+        },
+        json={"integration_action_uuid": integration_action_uuid},
+    )
+    response.raise_for_status()
 
 
 @app.task()
