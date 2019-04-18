@@ -4049,6 +4049,35 @@ class TestChangeActions(AuthenticatedAPITestCase):
             },
         )
 
+    @mock.patch("changes.tasks.refresh_engage_context")
+    @mock.patch("changes.tasks.validate_implement.switch_channel")
+    @mock.patch("changes.tasks.validate_implement.validate")
+    def test_update_engage_context(self, validate, switch_channel, refresh):
+        """
+        A successful change that is from an engage action should notify engage to
+        update the context.
+        """
+        validate.return_value = True
+        change = Change.objects.create(
+            registrant_id="registrant-id",
+            action="switch_channel",
+            data={
+                "channel": "whatsapp",
+                "engage": {
+                    "integration_uuid": "8cf3d402-7b25-47fd-8ef2-3e2537fccc14",
+                    "integration_action_uuid": "009d3a39-326c-42f3-af72-b5ddbece219a",
+                },
+            },
+            source=self.make_source_normaluser(),
+        )
+
+        validate_implement(change.id)
+
+        refresh.delay.assert_called_once_with(
+            "8cf3d402-7b25-47fd-8ef2-3e2537fccc14",
+            "009d3a39-326c-42f3-af72-b5ddbece219a",
+        )
+
 
 class TestRemovePersonallyIdentifiableInformation(AuthenticatedAPITestCase):
     @responses.activate

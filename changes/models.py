@@ -73,5 +73,17 @@ class Change(models.Model):
     )
     user = property(lambda self: self.created_by)
 
+    @property
+    def is_engage_action(self):
+        return "engage" in self.data
+
+    def async_refresh_engage_context(self):
+        from changes.tasks import refresh_engage_context
+
+        engage = self.data["engage"]
+        refresh_engage_context.delay(
+            engage["integration_uuid"], engage["integration_action_uuid"]
+        )
+
     def __str__(self):
         return str(self.id)
