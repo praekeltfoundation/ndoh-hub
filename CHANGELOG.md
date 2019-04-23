@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.5 (2019-04-23)
+1. Add scripts for extract for GrowGreat send
+   ([#209](https://github.com/praekeltfoundation/ndoh-hub/pull/209))
+1. Update WhatsApp language mapping to use english for all languages
+   ([#210](https://github.com/praekeltfoundation/ndoh-hub/pull/210))
+1. Add script for annotating export with registration data
+   ([#211](https://github.com/praekeltfoundation/ndoh-hub/pull/211))
+1. Use async refreshing of Turn helpdesk context on action completion
+   ([#211](https://github.com/praekeltfoundation/ndoh-hub/pull/212))
+
 ## 0.6.4 (2019-03-27)
 1. Add actions to Turn context
    ([#204](https://github.com/praekeltfoundation/ndoh-hub/pull/204))
