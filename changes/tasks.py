@@ -570,16 +570,7 @@ class ValidateImplement(Task):
                     {
                         "to_identity": change.registrant_id,
                         "content": fail_contact_check_text,
-                        "channel": "sms",
-                        "metadata": {
-                            "template": {
-                                "name": "mc_important_info",
-                                "language": utils.WHATSAPP_LANGUAGE_MAP[
-                                    subscriptions[0]["lang"]
-                                ],
-                                "variables": [fail_contact_check_text],
-                            }
-                        },
+                        "channel": "JUNE_TEXT",
                     }
                 )
 
@@ -588,16 +579,7 @@ class ValidateImplement(Task):
                     {
                         "to_identity": change.registrant_id,
                         "content": unsent_event_text,
-                        "channel": "sms",
-                        "metadata": {
-                            "template": {
-                                "name": "mc_important_info",
-                                "language": utils.WHATSAPP_LANGUAGE_MAP[
-                                    subscriptions[0]["lang"]
-                                ],
-                                "variables": [unsent_event_text],
-                            }
-                        },
+                        "channel": "JUNE_TEXT",
                     }
                 )
 
