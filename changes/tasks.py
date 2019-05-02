@@ -570,7 +570,7 @@ class ValidateImplement(Task):
                     {
                         "to_identity": change.registrant_id,
                         "content": fail_contact_check_text,
-                        "channel": "WHATSAPP",
+                        "channel": "sms",
                         "metadata": {
                             "template": {
                                 "name": "mc_important_info",
@@ -588,7 +588,7 @@ class ValidateImplement(Task):
                     {
                         "to_identity": change.registrant_id,
                         "content": unsent_event_text,
-                        "channel": "WHATSAPP",
+                        "channel": "sms",
                         "metadata": {
                             "template": {
                                 "name": "mc_important_info",
