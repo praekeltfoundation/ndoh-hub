@@ -539,6 +539,12 @@ class ValidateImplement(Task):
         # Check if they're in 1-2 messaging, in which case they cannot switch
         short_names = [messagesets[sub["messageset"]] for sub in subscriptions]
         if "whatsapp_momconnect_postbirth.hw_full.3" in short_names:
+
+            reason = change.data and change.data.get("reason")
+
+            if reason == "whatsapp_unsent_event":
+                change.data["reason"] = "postbirth_wa_unsent_event"
+
             translation_lang = subscriptions[0]["lang"].lower().replace("_", "-")
             with translation.override(translation_lang):
                 text = translation.ugettext(
@@ -548,8 +554,36 @@ class ValidateImplement(Task):
                     "SMS means you will not receive any messages. You can stop "
                     "your MomConnect messages completely by replying 'STOP'"
                 )
-            reason = change.data and change.data.get("reason")
-            if reason != "whatsapp_unsent_event":
+                fail_contact_check_text = translation.ugettext(
+                    "It seems you dont have an active Whatsapp account. "
+                    "MomConnect msgs for kids aged 1-2 are only on WA. "
+                    "To stop msgs, reply 'STOP' (std rates apply)"
+                )
+                unsent_event_text = translation.ugettext(
+                    "Sorry - we can't send WhatsApp msgs to this phone. "
+                    "MomConnect msgs for kids aged 1-2 are only on WA. "
+                    "To stop msgs, reply 'STOP' (std rates apply)"
+                )
+
+            if reason == "whatsapp_contact_check_fail":
+                utils.ms_client.create_outbound(
+                    {
+                        "to_identity": change.registrant_id,
+                        "content": fail_contact_check_text,
+                        "channel": "JUNE_TEXT",
+                    }
+                )
+
+            elif reason == "postbirth_wa_unsent_event":
+                utils.ms_client.create_outbound(
+                    {
+                        "to_identity": change.registrant_id,
+                        "content": unsent_event_text,
+                        "channel": "JUNE_TEXT",
+                    }
+                )
+
+            else:
                 utils.ms_client.create_outbound(
                     {
                         "to_identity": change.registrant_id,

@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-02-21 13:09+0000\n"
-"PO-Revision-Date: 2019-02-21 15:23+0200\n"
+"POT-Creation-Date: 2019-04-25 03:45+0000\n"
+"PO-Revision-Date: 2019-04-25 06:10+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ssw_ZA\n"
@@ -17,7 +17,33 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.2.1\n"
 
-#: changes/tasks.py:1390
+#: changes/tasks.py:545
+msgid ""
+"We notice that you have been receiving MomConnect msgs on WhatsApp for "
+"children between 1 - 2. Messages for children between 1 - 2 are only "
+"available on WhatsApp - switching to SMS means you will not receive any "
+"messages. You can stop your MomConnect messages completely by replying 'STOP'"
+msgstr ""
+
+#: changes/tasks.py:552
+msgid ""
+"It seems you dont have an active Whatsapp account. MomConnect msgs for kids "
+"aged 1-2 are only on WA. To stop msgs, reply 'STOP' (std rates apply)"
+msgstr ""
+"Kubonakala sengatsi iWhatsapp yakho ayisebenti.Ema-smg eMomConnect "
+"ebantfwana beminyaka-1-2 aku-WA.Kuwayekela, phendvula utsi ‘STOP’ (tindleko "
+"tetayelekile)"
+
+#: changes/tasks.py:557
+msgid ""
+"Sorry - we can't send WhatsApp msgs to this phone. MomConnect msgs for kids "
+"aged 1-2 are only on WA. To stop msgs, reply 'STOP' (std rates apply)"
+msgstr ""
+"Ncesi-asikhoni kutfumela ema-smg eWhatsApp kulucingo.Ema-msg eMomCo "
+"ebantfwana beminyaka-1-2 akuWA.Kuwayekela,phendvula utsi ‘STOP’  (tindleko "
+"letetayelekile)"
+
+#: changes/tasks.py:1472
 #, python-format
 msgid ""
 "Sorry but we can't send WhatsApp msgs to this phone. We'll send your "
@@ -28,7 +54,7 @@ msgstr ""
 "yeMomConnect ngeSMS. Kuyekela shaya %(optout_ussd)s, kutfola leminye shaya "
 "%(popi_ussd)s."
 
-#: changes/tasks.py:1449 changes/tasks.py:1614
+#: changes/tasks.py:1531 changes/tasks.py:1696
 msgid ""
 "We see that your MomConnect WhatsApp messages are not being delivered. If "
 "you would like to receive your messages over SMS, reply ‘SMS’."
@@ -37,7 +63,7 @@ msgstr ""
 "ufuna kuyitfola nge-SMS, phendvula utsi ‘SMS’ (utawukhokha tindleko "
 "letetayelekile)."
 
-#: changes/tasks.py:1668
+#: changes/tasks.py:1750
 msgid ""
 "Oh no! You can't get MomConnect messages on WhatsApp. We'll keep sending "
 "your MomConnect messages on SMS."
@@ -45,7 +71,7 @@ msgstr ""
 "Awu nebakitsi! Awukhoni kutfola imilayeto yeMomConnect nge-WhatsApp. "
 "Sitochubeka sikutfumele imilayeto ye-MomConnect nge-SMS."
 
-#: registrations/tasks.py:778
+#: registrations/tasks.py:779
 #, python-format
 msgid ""
 "Welcome! MomConnect will send helpful WhatsApp msgs. To stop dial "
@@ -55,7 +81,7 @@ msgstr ""
 "Siyakwamukela! iMomConnect itotfumela imilayeto lelusito ngeWhatsApp. Yekela "
 "shaya %(optout_ussd)s. Kuyitfola ngeSMS, bhala utsi \"SMS\" (imali levamile)."
 
-#: registrations/tasks.py:784
+#: registrations/tasks.py:788
 #, python-format
 msgid ""
 "Congratulations on your pregnancy! MomConnect will send you helpful SMS "
