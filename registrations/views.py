@@ -400,7 +400,10 @@ class JembiFacilityCheckHealthcheckView(APIView):
             #     {"name":"name","column":"name","type":"java.lang.String",
             #     "hidden":false,"meta":false}],"rows":[["xxxxx","xxxxx",
             #     "Test Clinic"]],"width":3,"height":1}
-            # raise Http404()
+            # if result.get('rows')[0]['rows']:
+            # return resp = {"up": True, "result": {"Facility": result.get('rows')[0]['rows']}}
+            # else:
+            #     raise Http404()
 
         except (requests.exceptions.HTTPError,) as e:
             if e.response.status_code == 400:
