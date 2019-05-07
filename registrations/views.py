@@ -363,6 +363,63 @@ class HealthcheckView(APIView):
         return Response(resp, status=status)
 
 
+class JembiFacilityCheckHealthcheckView(APIView):
+
+    """ Jembi Facility Check Healthcheck Interaction
+        GET - returns service up - getting auth'd requires DB
+    """
+
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        if not (settings.JEMBI_BASE_URL and
+                settings.JEMBI_USERNAME and
+                settings.JEMBI_PASSWORD):
+
+            return Response(
+                "Jembi integration is not configured properly.",
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        try:
+            faccode = kwargs.get('faccode')
+            result = requests.get(
+                urljoin(settings.JEMBI_BASE_URL, 'NCfacilityCheck'),
+                headers={"Content-Type": "application/json"},
+                auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+                params={'criteria': "value:{}".format(faccode)},
+                verify=False,
+            )
+            result.raise_for_status()
+
+            # validate that the api returned a valid response
+            #     e.g {"title":"Facility Check Nurse Connect","headers":
+            #     [{"name":"value","column":"value","type":"java.lang.String",
+            #     "hidden":false,"meta":false},{"name":"uid","column":"uid",
+            #     "type":"java.lang.String","hidden":false,"meta":false},
+            #     {"name":"name","column":"name","type":"java.lang.String",
+            #     "hidden":false,"meta":false}],"rows":[["xxxxx","xxxxx",
+            #     "Test Clinic"]],"width":3,"height":1}
+            # raise Http404()
+
+        except (requests.exceptions.HTTPError,) as e:
+            if e.response.status_code == 400:
+                logger.warning(
+                    "400 Error when posting to Jembi.\n"
+                    "Response: %s\nPayload:%s"
+                    % (e.response.text, json.dumps(post_data))
+                )
+                return Response(
+                    "Error when posting to Jembi. Body: %s Payload: %r"
+                    % (e.response.content, post_data),
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            else:
+                raise e
+
+        return Response(status=status.HTTP_200_OK)
+
+
 class ThirdPartyRegistration(APIView):
     permission_classes = (IsAuthenticated,)
 
