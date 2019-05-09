@@ -66,7 +66,7 @@ class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
 
         """
             Test on Jembi Facility Check Healthcheck Interaction
-            GET - returns service up. If service is down, return 404 response
+            GET - returns service up.
         """
         self.make_source_normaluser()
         self.add_jembi_healthcheck_fixture(111111)
@@ -83,7 +83,8 @@ class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
     def test_jembi_facility_check_down_healthcheck(self):
 
         """
-            change
+            Test on Jembi Facility Check Healthcheck Interaction
+            GET - returns 404 response for when service is down
         """
         self.make_source_normaluser()
         self.add_jembi_down_healthcheck_fixture(111111)
