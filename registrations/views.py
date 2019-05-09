@@ -372,9 +372,11 @@ class JembiFacilityCheckHealthcheckView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
-        if not (settings.JEMBI_BASE_URL and
-                settings.JEMBI_USERNAME and
-                settings.JEMBI_PASSWORD):
+        if not (
+            settings.JEMBI_BASE_URL
+            and settings.JEMBI_USERNAME
+            and settings.JEMBI_PASSWORD
+        ):
 
             return Response(
                 "Jembi integration is not configured properly.",
@@ -382,45 +384,41 @@ class JembiFacilityCheckHealthcheckView(APIView):
             )
 
         try:
-            faccode = kwargs.get('faccode')
+            clinic_code = request.query_params.get("clinic_code")
             result = requests.get(
-                urljoin(settings.JEMBI_BASE_URL, 'NCfacilityCheck'),
+                urljoin(settings.JEMBI_BASE_URL, "NCfacilityCheck"),
                 headers={"Content-Type": "application/json"},
                 auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
-                params={'criteria': "value:{}".format(faccode)},
+                params={"criteria": "value:{}".format(clinic_code)},
                 verify=False,
             )
             result.raise_for_status()
 
-            # validate that the api returned a valid response
-            #     e.g {"title":"Facility Check Nurse Connect","headers":
-            #     [{"name":"value","column":"value","type":"java.lang.String",
-            #     "hidden":false,"meta":false},{"name":"uid","column":"uid",
-            #     "type":"java.lang.String","hidden":false,"meta":false},
-            #     {"name":"name","column":"name","type":"java.lang.String",
-            #     "hidden":false,"meta":false}],"rows":[["xxxxx","xxxxx",
-            #     "Test Clinic"]],"width":3,"height":1}
-            # if result.get('rows')[0]['rows']:
-            # return resp = {"up": True, "result": {"Facility": result.get('rows')[0]['rows']}}
-            # else:
-            #     raise Http404()
+            jembi_result = result.json()
+
+            if len(jembi_result.get("rows")) > 0:
+                resp = {
+                    "up": True,
+                    "result": {"Facility": jembi_result.get("rows")[0][2]},
+                }
+            else:
+                raise Http404()
 
         except (requests.exceptions.HTTPError,) as e:
             if e.response.status_code == 400:
                 logger.warning(
                     "400 Error when posting to Jembi.\n"
-                    "Response: %s\nPayload:%s"
-                    % (e.response.text, json.dumps(post_data))
+                    "Response: %s\nPayload:%s" % (e.response.text)
                 )
                 return Response(
                     "Error when posting to Jembi. Body: %s Payload: %r"
-                    % (e.response.content, post_data),
+                    % (e.response.content),
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             else:
                 raise e
 
-        return Response(status=status.HTTP_200_OK)
+        return Response(resp, status=status.HTTP_200_OK)
 
 
 class ThirdPartyRegistration(APIView):
