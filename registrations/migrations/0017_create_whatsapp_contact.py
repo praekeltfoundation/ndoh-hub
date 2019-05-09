@@ -5,20 +5,31 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('registrations', '0016_add_index_for_registrant_id'),
-    ]
+    dependencies = [("registrations", "0016_add_index_for_registrant_id")]
 
     operations = [
         migrations.CreateModel(
-            name='WhatsAppContact',
+            name="WhatsAppContact",
             fields=[
-                ('msisdn', models.CharField(help_text='The MSISDN of the contact', max_length=100, primary_key=True, serialize=False)),
-                ('whatsapp_id', models.CharField(blank=True, help_text='The WhatsApp ID of the contact', max_length=100)),
-                ('created', models.DateTimeField(auto_now_add=True)),
+                (
+                    "msisdn",
+                    models.CharField(
+                        help_text="The MSISDN of the contact",
+                        max_length=100,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "whatsapp_id",
+                    models.CharField(
+                        blank=True,
+                        help_text="The WhatsApp ID of the contact",
+                        max_length=100,
+                    ),
+                ),
+                ("created", models.DateTimeField(auto_now_add=True)),
             ],
-            options={
-                'verbose_name': 'WhatsApp Contact',
-            },
-        ),
+            options={"verbose_name": "WhatsApp Contact"},
+        )
     ]
