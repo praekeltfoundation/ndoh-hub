@@ -391,6 +391,7 @@ class JembiFacilityCheckHealthcheckView(APIView):
                 auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
                 params={"criteria": "value:{}".format(clinic_code)},
                 verify=False,
+                timeout=300.0,
             )
             result.raise_for_status()
 
@@ -417,6 +418,7 @@ class JembiFacilityCheckHealthcheckView(APIView):
                 )
             else:
                 raise e
+                return Response("Timeout", status.HTTP_504_GATEWAY_TIMEOUT)
 
         return Response(resp, status=status.HTTP_200_OK)
 
