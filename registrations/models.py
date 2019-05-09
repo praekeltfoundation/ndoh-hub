@@ -212,3 +212,26 @@ class PositionTracker(models.Model):
 
     def __str__(self):
         return "{}: {}".format(self.label, self.position)
+
+
+class WhatsAppContact(models.Model):
+    """
+    Caches the results of the WhatsApp contact check
+    """
+
+    msisdn = models.CharField(
+        max_length=100, primary_key=True, help_text="The MSISDN of the contact"
+    )
+    whatsapp_id = models.CharField(
+        max_length=100, blank=True, help_text="The WhatsApp ID of the contact"
+    )
+    created = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def api_format(self):
+        if self.whatsapp_id:
+            return {"input": self.msisdn, "status": "valid", "wa_id": self.whatsapp_id}
+        return {"input": self.msisdn, "status": "invalid"}
+
+    class Meta:
+        verbose_name = "WhatsApp Contact"

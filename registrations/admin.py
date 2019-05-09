@@ -1,7 +1,13 @@
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
 
-from .models import PositionTracker, Registration, Source, SubscriptionRequest
+from .models import (
+    PositionTracker,
+    Registration,
+    Source,
+    SubscriptionRequest,
+    WhatsAppContact,
+)
 from .tasks import remove_personally_identifiable_fields
 
 
@@ -41,7 +47,14 @@ class SubscriptionRequestAdmin(admin.ModelAdmin):
     search_fields = ["identity"]
 
 
+class WhatsAppContactAdmin(admin.ModelAdmin):
+    list_display = ["msisdn", "whatsapp_id", "created"]
+    search_fields = ["msisdn"]
+    list_filter = ["created"]
+
+
 admin.site.register(Source)
 admin.site.register(Registration, RegistrationAdmin)
 admin.site.register(SubscriptionRequest, SubscriptionRequestAdmin)
 admin.site.register(PositionTracker, SimpleHistoryAdmin)
+admin.site.register(WhatsAppContact, WhatsAppContactAdmin)
