@@ -234,4 +234,5 @@ class WhatsAppContact(models.Model):
         return {"input": self.msisdn, "status": "invalid"}
 
     class Meta:
+        permissions = (("can_prune_whatsappcontact", "Can prune WhatsApp contact"),)
         verbose_name = "WhatsApp Contact"

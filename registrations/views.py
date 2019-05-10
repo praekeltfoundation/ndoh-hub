@@ -980,6 +980,14 @@ class BearerTokenAuthentication(TokenAuthentication):
     keyword = "Bearer"
 
 
+class PruneContactsPermission(DjangoModelPermissions):
+    """
+    Allows POST requests if the user has the can_prune_contacts permission
+    """
+
+    perms_map = {"POST": ["%(app_label)s.can_prune_%(model_name)s"]}
+
+
 class WhatsAppContactCheckViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     authentication_classes = (SessionAuthentication, BearerTokenAuthentication)
     permission_classes = (DjangoModelPermissions,)
@@ -1006,3 +1014,15 @@ class WhatsAppContactCheckViewSet(mixins.CreateModelMixin, viewsets.GenericViewS
 
         results = map(partial(self.get_status, data["blocking"]), data["contacts"])
         return Response({"contacts": results}, status=status.HTTP_201_CREATED)
+
+    @action(
+        detail=False, methods=["post"], permission_classes=[PruneContactsPermission]
+    )
+    def prune(self, request):
+        """
+        Prunes any contacts older than 7 days in the database
+        """
+        WhatsAppContact.objects.filter(
+            created__lt=timezone.now() - datetime.timedelta(days=7)
+        ).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

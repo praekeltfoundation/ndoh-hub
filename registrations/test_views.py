@@ -1098,3 +1098,41 @@ class WhatsAppContactCheckViewTests(AuthenticatedAPITestCase):
         )
 
         task.delay.assert_called_once_with(msisdn="0820001003")
+
+    def test_prune_contacts_permission_required(self):
+        """
+        You need to be authenticated and have the correct permission to be able to prune
+        whatsapp contacts from the database
+        """
+        url = reverse("whatsappcontact-prune")
+        response = self.normalclient.post(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.normaluser.user_permissions.add(
+            Permission.objects.get(name="Can prune WhatsApp contact")
+        )
+        response = self.normalclient.post(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_prune_contacts(self):
+        """
+        The prune action should delete all contacts older than 7 days from the database
+        """
+        contact1 = WhatsAppContact.objects.create(
+            msisdn="0820001001", whatsapp_id="27820001001"
+        )
+        contact2 = WhatsAppContact.objects.create(
+            msisdn="0820001002", whatsapp_id="27820001002"
+        )
+        contact2.created = timezone.now() - datetime.timedelta(days=7)
+        contact2.save()
+
+        self.normaluser.user_permissions.add(
+            Permission.objects.get(name="Can prune WhatsApp contact")
+        )
+        url = reverse("whatsappcontact-prune")
+        response = self.normalclient.post(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        [contact] = WhatsAppContact.objects.all()
+        self.assertEqual(contact, contact1)
