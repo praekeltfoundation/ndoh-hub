@@ -397,13 +397,8 @@ class JembiFacilityCheckHealthcheckView(APIView):
 
             jembi_result = result.json()
 
-            if len(jembi_result.get("rows")) > 0:
-                resp = {
-                    "up": True,
-                    "result": {"Facility": jembi_result.get("rows")[0][2]},
-                }
-            else:
-                return Response("Timeout", status.HTTP_504_GATEWAY_TIMEOUT)
+            if "rows" in jembi_result:
+                resp = {"up": True}
 
         except (requests.exceptions.HTTPError,) as e:
             if e.response.status_code == 400:
@@ -418,6 +413,18 @@ class JembiFacilityCheckHealthcheckView(APIView):
                 )
             else:
                 raise e
+
+        except (requests.exceptions.Timeout,) as e:
+            if e.response.status_code == 504:
+                logger.warning(
+                    "504 Timeout Error when posting to Jembi.\n"
+                    "Response: %s\nPayload:%s" % (e.response.text)
+                )
+                return Response(
+                    "Timeout Error when posting to Jembi. Body: %s Payload: %r"
+                    % (e.response.content),
+                    status=status.HTTP_504_GATEWAY_TIMEOUT,
+                )
 
         return Response(resp, status=status.HTTP_200_OK)
 
