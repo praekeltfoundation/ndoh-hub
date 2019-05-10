@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from registrations.models import Registration
+from registrations.models import Registration, WhatsAppContact
 
 
 class RegistrationTests(TestCase):
@@ -50,3 +50,20 @@ class RegistrationTests(TestCase):
         """
         reg = Registration(data={})
         self.assertEqual(reg.status["status"], "processing")
+
+
+class WhatsAppContactTests(TestCase):
+    def test_api_format(self):
+        """
+        api_format should return valid if there's a whatsapp id, or invalid otherwise
+        """
+        contact = WhatsAppContact(msisdn="+27820001001")
+        self.assertEqual(
+            contact.api_format, {"input": "+27820001001", "status": "invalid"}
+        )
+
+        contact.whatsapp_id = "27820001001"
+        self.assertEqual(
+            contact.api_format,
+            {"input": "+27820001001", "status": "valid", "wa_id": "27820001001"},
+        )

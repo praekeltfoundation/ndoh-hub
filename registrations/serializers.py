@@ -340,3 +340,17 @@ class EngageActionSerializer(serializers.Serializer):
     integration_uuid = serializers.CharField()
     integration_action_uuid = serializers.CharField()
     payload = ChangeSerializer()
+
+
+class WhatsAppContactCheckSerializer(serializers.Serializer):
+    blocking = serializers.ChoiceField(
+        choices=["wait", "no_wait"],
+        default="no_wait",
+        label="Blocking",
+        help_text="Whether or not to do a background or foreground check",
+    )
+    contacts = serializers.ListField(
+        child=PhoneNumberField(country_code="ZA"),
+        label="Contacts",
+        help_text="A list of phone numbers to do the contact check for",
+    )

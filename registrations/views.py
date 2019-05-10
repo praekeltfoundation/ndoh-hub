@@ -3,6 +3,7 @@ import datetime
 import hmac
 import json
 import logging
+from functools import partial
 from hashlib import sha256
 from typing import Tuple
 
@@ -21,6 +22,7 @@ from django.urls import reverse
 from django.utils import timezone
 from requests.exceptions import RequestException
 from rest_framework import generics, mixins, status, viewsets
+from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.exceptions import AuthenticationFailed
@@ -42,7 +44,7 @@ from changes.models import Change
 from changes.serializers import ChangeSerializer
 from ndoh_hub.utils import get_available_metrics
 
-from .models import PositionTracker, Registration, Source
+from .models import PositionTracker, Registration, Source, WhatsAppContact
 from .serializers import (
     CreateUserSerializer,
     EngageActionSerializer,
@@ -56,8 +58,9 @@ from .serializers import (
     SourceSerializer,
     ThirdPartyRegistrationSerializer,
     UserSerializer,
+    WhatsAppContactCheckSerializer,
 )
-from .tasks import validate_subscribe_jembi_app_registration
+from .tasks import get_whatsapp_contact, validate_subscribe_jembi_app_registration
 
 try:
     from urlparse import urljoin
@@ -971,3 +974,55 @@ class EngageActionView(EngageBaseView, generics.CreateAPIView):
         change = Change.objects.create(**change_data)
 
         return Response(ChangeSerializer(change).data, status=status.HTTP_201_CREATED)
+
+
+class BearerTokenAuthentication(TokenAuthentication):
+    keyword = "Bearer"
+
+
+class PruneContactsPermission(DjangoModelPermissions):
+    """
+    Allows POST requests if the user has the can_prune_contacts permission
+    """
+
+    perms_map = {"POST": ["%(app_label)s.can_prune_%(model_name)s"]}
+
+
+class WhatsAppContactCheckViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
+    authentication_classes = (SessionAuthentication, BearerTokenAuthentication)
+    permission_classes = (DjangoModelPermissions,)
+    serializer_class = WhatsAppContactCheckSerializer
+    queryset = WhatsAppContact.objects.all()
+
+    def get_status(self, blocking, msisdn):
+        msisdn = msisdn.raw_input
+        try:
+            contact = WhatsAppContact.objects.get(msisdn=msisdn)
+            return contact.api_format
+        except WhatsAppContact.DoesNotExist:
+            if blocking == "wait":
+                # Default to the contact not existing
+                return {"input": msisdn, "status": "invalid"}
+            else:
+                get_whatsapp_contact.delay(msisdn=msisdn)
+                return {"input": msisdn, "status": "processing"}
+
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        results = map(partial(self.get_status, data["blocking"]), data["contacts"])
+        return Response({"contacts": results}, status=status.HTTP_201_CREATED)
+
+    @action(
+        detail=False, methods=["post"], permission_classes=[PruneContactsPermission]
+    )
+    def prune(self, request):
+        """
+        Prunes any contacts older than 7 days in the database
+        """
+        WhatsAppContact.objects.filter(
+            created__lt=timezone.now() - datetime.timedelta(days=7)
+        ).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
