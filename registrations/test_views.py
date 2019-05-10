@@ -42,17 +42,6 @@ class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
             status=200,
         )
 
-    def add_jembi_down_healthcheck_fixture(self, clinic_code=111111):
-        result = {"title": "", "headers": [], "rows": [], "width": 0, "height": 0}
-        responses.add(
-            responses.GET,
-            "http://jembi/ws/rest/v1/NCfacilityCheck?{}".format(
-                urlencode({"criteria": "value:{}".format(clinic_code)})
-            ),
-            json=result,
-            status=200,
-        )
-
     def test_authentication_required(self):
         """
         Authentication must be provided in order to access the endpoint
@@ -74,25 +63,6 @@ class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
             "/api/health/jembi-facility/?clinic_code=111111"
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            json.loads(response.content)["result"]["Facility"], "test facility code"
-        )
-
-    @responses.activate
-    @override_settings(JEMBI_BASE_URL="http://jembi/ws/rest/v1/")
-    def test_jembi_facility_check_down_healthcheck(self):
-
-        """
-            Test on Jembi Facility Check Healthcheck Interaction
-            GET - returns 504 response for when timeout reached
-            and service is down
-        """
-        self.make_source_normaluser()
-        self.add_jembi_down_healthcheck_fixture(111111)
-        response = self.normalclient.get(
-            "/api/health/jembi-facility/?clinic_code=111111"
-        )
-        self.assertEqual(response.status_code, 504)
 
     def test_invalid_request(self):
         """
