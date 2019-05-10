@@ -403,7 +403,7 @@ class JembiFacilityCheckHealthcheckView(APIView):
                     "result": {"Facility": jembi_result.get("rows")[0][2]},
                 }
             else:
-                raise Http404()
+                return Response("Timeout", status.HTTP_504_GATEWAY_TIMEOUT)
 
         except (requests.exceptions.HTTPError,) as e:
             if e.response.status_code == 400:
@@ -418,7 +418,6 @@ class JembiFacilityCheckHealthcheckView(APIView):
                 )
             else:
                 raise e
-                return Response("Timeout", status.HTTP_504_GATEWAY_TIMEOUT)
 
         return Response(resp, status=status.HTTP_200_OK)
 
