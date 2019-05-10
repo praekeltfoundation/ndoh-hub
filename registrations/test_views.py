@@ -84,14 +84,15 @@ class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
 
         """
             Test on Jembi Facility Check Healthcheck Interaction
-            GET - returns 404 response for when service is down
+            GET - returns 504 response for when timeout reached
+            and service is down
         """
         self.make_source_normaluser()
         self.add_jembi_down_healthcheck_fixture(111111)
         response = self.normalclient.get(
             "/api/health/jembi-facility/?clinic_code=111111"
         )
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 504)
 
     def test_invalid_request(self):
         """
