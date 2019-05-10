@@ -60,7 +60,7 @@ from .serializers import (
     UserSerializer,
     WhatsAppContactCheckSerializer,
 )
-from .tasks import validate_subscribe_jembi_app_registration
+from .tasks import get_whatsapp_contact, validate_subscribe_jembi_app_registration
 
 try:
     from urlparse import urljoin
@@ -996,7 +996,7 @@ class WhatsAppContactCheckViewSet(mixins.CreateModelMixin, viewsets.GenericViewS
                 # Default to the contact not existing
                 return {"input": msisdn, "status": "invalid"}
             else:
-                # TODO: run background task to make request to whatsapp API
+                get_whatsapp_contact.delay(msisdn=msisdn)
                 return {"input": msisdn, "status": "processing"}
 
     def create(self, request):

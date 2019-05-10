@@ -1048,7 +1048,8 @@ class WhatsAppContactCheckViewTests(AuthenticatedAPITestCase):
         response = self.normalclient.post(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_get_statuses(self):
+    @mock.patch("registrations.views.get_whatsapp_contact")
+    def test_get_statuses(self, task):
         """
         Contacts without whatsapp IDs should return invalid, with IDs valid, and no
         entry in the database, either "processing" for no_wait or "invalid" for wait
@@ -1095,3 +1096,5 @@ class WhatsAppContactCheckViewTests(AuthenticatedAPITestCase):
                 ]
             },
         )
+
+        task.delay.assert_called_once_with(msisdn="0820001003")

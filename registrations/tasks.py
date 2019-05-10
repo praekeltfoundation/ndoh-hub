@@ -7,18 +7,20 @@ from functools import partial
 
 import requests
 from celery import chain
+from celery.exceptions import SoftTimeLimitExceeded
 from celery.task import Task
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.utils import translation
-from requests.exceptions import ConnectionError, HTTPError
+from requests.exceptions import ConnectionError, HTTPError, RequestException
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.service_rating import ServiceRatingApiClient
+from wabclient.exceptions import AddressException
 
 from ndoh_hub import utils
 from ndoh_hub.celery import app
 
-from .models import Registration
+from .models import Registration, WhatsAppContact
 
 try:
     from urlparse import urljoin
@@ -1272,3 +1274,27 @@ class HTTPRequestWithRetries(HTTPRetryMixin, Task):
 
 
 http_request_with_retries = HTTPRequestWithRetries()
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def get_whatsapp_contact(msisdn):
+    """
+    Fetches the whatsapp contact ID from the API, and stores it in the database.
+
+    Args:
+        msisdn (str): The MSISDN to perform the lookup for.
+    """
+    try:
+        whatsapp_id = utils.wab_client.get_address(msisdn)
+    except AddressException:
+        whatsapp_id = ""
+    WhatsAppContact.objects.update_or_create(
+        msisdn=msisdn, defaults={"whatsapp_id": whatsapp_id}
+    )
