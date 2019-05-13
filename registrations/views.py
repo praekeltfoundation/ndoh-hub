@@ -415,16 +415,15 @@ class JembiFacilityCheckHealthcheckView(APIView):
                 raise e
 
         except (requests.exceptions.Timeout,) as e:
-            if e.response.status_code == 504:
-                logger.warning(
-                    "504 Timeout Error when posting to Jembi.\n"
-                    "Response: %s\nPayload:%s" % (e.response.text)
-                )
-                return Response(
-                    "Timeout Error when posting to Jembi. Body: %s Payload: %r"
-                    % (e.response.content),
-                    status=status.HTTP_504_GATEWAY_TIMEOUT,
-                )
+            logger.warning(
+                "504 Timeout Error when posting to Jembi.\n"
+                "Response: %s\nPayload:%s" % (e.response.text)
+            )
+            return Response(
+                "Timeout Error when posting to Jembi. Body: %s Payload: %r"
+                % (e.response.content),
+                status=status.HTTP_504_GATEWAY_TIMEOUT,
+            )
 
         return Response(resp, status=status.HTTP_200_OK)
 
