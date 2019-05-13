@@ -42,6 +42,17 @@ class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
             status=200,
         )
 
+    def add_jembi_down_healthcheck_fixture(self, clinic_code=111111):
+        result = {"request_error": "HTTP 400 Bad Request"}
+        responses.add(
+            responses.GET,
+            "http://jembi/ws/rest/v1/NCfacilityCheck?{}".format(
+                urlencode({"criteria": "value:{}".format(clinic_code)})
+            ),
+            json=result,
+            status=400,
+        )
+
     def test_authentication_required(self):
         """
         Authentication must be provided in order to access the endpoint
@@ -63,6 +74,21 @@ class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
             "/api/health/jembi-facility/?clinic_code=111111"
         )
         self.assertEqual(response.status_code, 200)
+
+    @responses.activate
+    @override_settings(JEMBI_BASE_URL="http://jembi/ws/rest/v1/")
+    def test_jembi_facility_check_down_healthcheck(self):
+
+        """
+            Test on Jembi Facility Check Healthcheck Interaction
+            GET - returns 400 response service is down
+        """
+        self.make_source_normaluser()
+        self.add_jembi_down_healthcheck_fixture(111111)
+        response = self.normalclient.get(
+            "/api/health/jembi-facility/?clinic_code=111111"
+        )
+        self.assertEqual(response.status_code, 400)
 
     def test_invalid_request(self):
         """

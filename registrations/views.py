@@ -402,13 +402,13 @@ class JembiFacilityCheckHealthcheckView(APIView):
 
         except (requests.exceptions.HTTPError,) as e:
             if e.response.status_code == 400:
+                print(e.response.text)
                 logger.warning(
                     "400 Error when posting to Jembi.\n"
-                    "Response: %s\nPayload:%s" % (e.response.text)
+                    "Response: Payload:%s" % (e.response.content)
                 )
                 return Response(
-                    "Error when posting to Jembi. Body: %s Payload: %r"
-                    % (e.response.content),
+                    {"request_error": "HTTP 400 Bad Request"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             else:
