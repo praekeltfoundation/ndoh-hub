@@ -10,6 +10,7 @@ from rest_framework.authentication import TokenAuthentication
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.message_sender import MessageSenderApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
+from wabclient import Client as WABClient
 
 # Import these here for backwards compatibility
 from ndoh_hub.constants import (  # noqa:F401
@@ -32,6 +33,9 @@ is_client = IdentityStoreApiClient(
 ms_client = MessageSenderApiClient(
     api_url=settings.MESSAGE_SENDER_URL, auth_token=settings.MESSAGE_SENDER_TOKEN
 )
+
+wab_client = WABClient(url=settings.ENGAGE_URL)
+wab_client.connection.set_token(settings.ENGAGE_TOKEN)
 
 VERSION = pkg_resources.require("ndoh-hub")[0].version
 

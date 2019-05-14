@@ -3,6 +3,7 @@ import datetime
 import hmac
 import json
 import logging
+from functools import partial
 from hashlib import sha256
 from typing import Tuple
 
@@ -21,6 +22,7 @@ from django.urls import reverse
 from django.utils import timezone
 from requests.exceptions import RequestException
 from rest_framework import generics, mixins, status, viewsets
+from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.exceptions import AuthenticationFailed
@@ -42,7 +44,7 @@ from changes.models import Change
 from changes.serializers import ChangeSerializer
 from ndoh_hub.utils import get_available_metrics
 
-from .models import PositionTracker, Registration, Source
+from .models import PositionTracker, Registration, Source, WhatsAppContact
 from .serializers import (
     CreateUserSerializer,
     EngageActionSerializer,
@@ -56,8 +58,9 @@ from .serializers import (
     SourceSerializer,
     ThirdPartyRegistrationSerializer,
     UserSerializer,
+    WhatsAppContactCheckSerializer,
 )
-from .tasks import validate_subscribe_jembi_app_registration
+from .tasks import get_whatsapp_contact, validate_subscribe_jembi_app_registration
 
 try:
     from urlparse import urljoin
@@ -361,6 +364,71 @@ class HealthcheckView(APIView):
         status = 200
         resp = {"up": True, "result": {"database": "Accessible"}}
         return Response(resp, status=status)
+
+
+class JembiFacilityCheckHealthcheckView(APIView):
+
+    """ Jembi Facility Check Healthcheck Interaction
+        GET - returns service up - getting auth'd requires DB
+    """
+
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        if not (
+            settings.JEMBI_BASE_URL
+            and settings.JEMBI_USERNAME
+            and settings.JEMBI_PASSWORD
+        ):
+
+            return Response(
+                "Jembi integration is not configured properly.",
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        try:
+            clinic_code = request.query_params.get("clinic_code")
+            result = requests.get(
+                urljoin(settings.JEMBI_BASE_URL, "NCfacilityCheck"),
+                headers={"Content-Type": "application/json"},
+                auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+                params={"criteria": "value:{}".format(clinic_code)},
+                verify=False,
+                timeout=10.0,
+            )
+            result.raise_for_status()
+
+            jembi_result = result.json()
+
+            if "rows" in jembi_result:
+                resp = {"up": True}
+
+        except (requests.exceptions.HTTPError,) as e:
+            if e.response.status_code == 400:
+                print(e.response.text)
+                logger.warning(
+                    "400 Error when posting to Jembi.\n"
+                    "Response: Payload:%s" % (e.response.content)
+                )
+                return Response(
+                    {"request_error": "HTTP 400 Bad Request"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            else:
+                raise e
+
+        except (requests.exceptions.Timeout,) as e:
+            logger.warning(
+                "504 Timeout Error when posting to Jembi.\n"
+                "Response: %s\nPayload:%s" % (e.response.text)
+            )
+            return Response(
+                "Timeout Error when posting to Jembi. Body: %s Payload: %r"
+                % (e.response.content),
+                status=status.HTTP_504_GATEWAY_TIMEOUT,
+            )
+
+        return Response(resp, status=status.HTTP_200_OK)
 
 
 class ThirdPartyRegistration(APIView):
@@ -971,3 +1039,55 @@ class EngageActionView(EngageBaseView, generics.CreateAPIView):
         change = Change.objects.create(**change_data)
 
         return Response(ChangeSerializer(change).data, status=status.HTTP_201_CREATED)
+
+
+class BearerTokenAuthentication(TokenAuthentication):
+    keyword = "Bearer"
+
+
+class PruneContactsPermission(DjangoModelPermissions):
+    """
+    Allows POST requests if the user has the can_prune_contacts permission
+    """
+
+    perms_map = {"POST": ["%(app_label)s.can_prune_%(model_name)s"]}
+
+
+class WhatsAppContactCheckViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
+    authentication_classes = (SessionAuthentication, BearerTokenAuthentication)
+    permission_classes = (DjangoModelPermissions,)
+    serializer_class = WhatsAppContactCheckSerializer
+    queryset = WhatsAppContact.objects.all()
+
+    def get_status(self, blocking, msisdn):
+        msisdn = msisdn.raw_input
+        try:
+            contact = WhatsAppContact.objects.get(msisdn=msisdn)
+            return contact.api_format
+        except WhatsAppContact.DoesNotExist:
+            if blocking == "wait":
+                # Default to the contact not existing
+                return {"input": msisdn, "status": "invalid"}
+            else:
+                get_whatsapp_contact.delay(msisdn=msisdn)
+                return {"input": msisdn, "status": "processing"}
+
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        results = map(partial(self.get_status, data["blocking"]), data["contacts"])
+        return Response({"contacts": results}, status=status.HTTP_201_CREATED)
+
+    @action(
+        detail=False, methods=["post"], permission_classes=[PruneContactsPermission]
+    )
+    def prune(self, request):
+        """
+        Prunes any contacts older than 7 days in the database
+        """
+        WhatsAppContact.objects.filter(
+            created__lt=timezone.now() - datetime.timedelta(days=7)
+        ).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

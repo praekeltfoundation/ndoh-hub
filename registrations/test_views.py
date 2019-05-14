@@ -18,19 +18,77 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.test import APITestCase
 
 from changes.models import Change
-from registrations.models import PositionTracker, Registration, Source
+from registrations.models import PositionTracker, Registration, Source, WhatsAppContact
 from registrations.serializers import RegistrationSerializer
 from registrations.tests import AuthenticatedAPITestCase
 from registrations.views import EngageContextView
 
 
 class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
+    def add_jembi_healthcheck_fixture(self, clinic_code=111111):
+        result = {
+            "title": "Facility Check Nurse Connect",
+            "headers": [],
+            "rows": [[clinic_code, "abcdefg", "test facility code"]],
+            "width": 1,
+            "height": 1,
+        }
+        responses.add(
+            responses.GET,
+            "http://jembi/ws/rest/v1/NCfacilityCheck?{}".format(
+                urlencode({"criteria": "value:{}".format(clinic_code)})
+            ),
+            json=result,
+            status=200,
+        )
+
+    def add_jembi_down_healthcheck_fixture(self, clinic_code=111111):
+        result = {"request_error": "HTTP 400 Bad Request"}
+        responses.add(
+            responses.GET,
+            "http://jembi/ws/rest/v1/NCfacilityCheck?{}".format(
+                urlencode({"criteria": "value:{}".format(clinic_code)})
+            ),
+            json=result,
+            status=400,
+        )
+
     def test_authentication_required(self):
         """
         Authentication must be provided in order to access the endpoint
         """
         response = self.client.post("/api/v1/jembiregistration/")
         self.assertEqual(response.status_code, 401)
+
+    @responses.activate
+    @override_settings(JEMBI_BASE_URL="http://jembi/ws/rest/v1/")
+    def test_jembi_facility_check_healthcheck(self):
+
+        """
+            Test on Jembi Facility Check Healthcheck Interaction
+            GET - returns service up.
+        """
+        self.make_source_normaluser()
+        self.add_jembi_healthcheck_fixture(111111)
+        response = self.normalclient.get(
+            "/api/health/jembi-facility/?clinic_code=111111"
+        )
+        self.assertEqual(response.status_code, 200)
+
+    @responses.activate
+    @override_settings(JEMBI_BASE_URL="http://jembi/ws/rest/v1/")
+    def test_jembi_facility_check_down_healthcheck(self):
+
+        """
+            Test on Jembi Facility Check Healthcheck Interaction
+            GET - returns 400 response service is down
+        """
+        self.make_source_normaluser()
+        self.add_jembi_down_healthcheck_fixture(111111)
+        response = self.normalclient.get(
+            "/api/health/jembi-facility/?clinic_code=111111"
+        )
+        self.assertEqual(response.status_code, 400)
 
     def test_invalid_request(self):
         """
@@ -1024,3 +1082,115 @@ class EngageContextViewTests(APITestCase):
             },
         )
         self.assertTrue(change.validated)
+
+
+class WhatsAppContactCheckViewTests(AuthenticatedAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.normalclient.credentials(HTTP_AUTHORIZATION="Bearer %s" % self.normaltoken)
+
+    def test_authentication_required(self):
+        """
+        Authentication must be provided in order to access the endpoint
+        """
+        url = reverse("whatsappcontact-list")
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        response = self.normalclient.post(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.normaluser.user_permissions.add(
+            Permission.objects.get(name="Can add WhatsApp Contact")
+        )
+        response = self.normalclient.post(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @mock.patch("registrations.views.get_whatsapp_contact")
+    def test_get_statuses(self, task):
+        """
+        Contacts without whatsapp IDs should return invalid, with IDs valid, and no
+        entry in the database, either "processing" for no_wait or "invalid" for wait
+        """
+        url = reverse("whatsappcontact-list")
+        WhatsAppContact.objects.create(msisdn="0820001001")
+        WhatsAppContact.objects.create(msisdn="0820001002", whatsapp_id="27820001002")
+
+        self.normaluser.user_permissions.add(
+            Permission.objects.get(name="Can add WhatsApp Contact")
+        )
+        response = self.normalclient.post(
+            url,
+            data={
+                "blocking": "wait",
+                "contacts": ["0820001001", "0820001002", "0820001003"],
+            },
+        )
+        self.assertEqual(
+            json.loads(response.content),
+            {
+                "contacts": [
+                    {"input": "0820001001", "status": "invalid"},
+                    {"input": "0820001002", "status": "valid", "wa_id": "27820001002"},
+                    {"input": "0820001003", "status": "invalid"},
+                ]
+            },
+        )
+
+        response = self.normalclient.post(
+            url,
+            data={
+                "blocking": "no_wait",
+                "contacts": ["0820001001", "0820001002", "0820001003"],
+            },
+        )
+        self.assertEqual(
+            json.loads(response.content),
+            {
+                "contacts": [
+                    {"input": "0820001001", "status": "invalid"},
+                    {"input": "0820001002", "status": "valid", "wa_id": "27820001002"},
+                    {"input": "0820001003", "status": "processing"},
+                ]
+            },
+        )
+
+        task.delay.assert_called_once_with(msisdn="0820001003")
+
+    def test_prune_contacts_permission_required(self):
+        """
+        You need to be authenticated and have the correct permission to be able to prune
+        whatsapp contacts from the database
+        """
+        url = reverse("whatsappcontact-prune")
+        response = self.normalclient.post(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.normaluser.user_permissions.add(
+            Permission.objects.get(name="Can prune WhatsApp contact")
+        )
+        response = self.normalclient.post(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_prune_contacts(self):
+        """
+        The prune action should delete all contacts older than 7 days from the database
+        """
+        contact1 = WhatsAppContact.objects.create(
+            msisdn="0820001001", whatsapp_id="27820001001"
+        )
+        contact2 = WhatsAppContact.objects.create(
+            msisdn="0820001002", whatsapp_id="27820001002"
+        )
+        contact2.created = timezone.now() - datetime.timedelta(days=7)
+        contact2.save()
+
+        self.normaluser.user_permissions.add(
+            Permission.objects.get(name="Can prune WhatsApp contact")
+        )
+        url = reverse("whatsappcontact-prune")
+        response = self.normalclient.post(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        [contact] = WhatsAppContact.objects.all()
+        self.assertEqual(contact, contact1)

@@ -29,4 +29,5 @@ class PhoneNumberField(serializers.Field):
             self.fail("not_possible")
         if not phonenumbers.is_valid_number(p):
             self.fail("not_valid")
+        p.raw_input = data
         return p
