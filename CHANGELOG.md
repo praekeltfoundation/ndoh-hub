@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.6 (2019-05-14)
+1. Add missing translations
+   ([#213](https://github.com/praekeltfoundation/ndoh-hub/pull/213))
+1. Add new view for proxying the health check to the OpenHIM API
+   ([#214](https://github.com/praekeltfoundation/ndoh-hub/pull/214))
+1. Add new view for proxying WhatsApp contact checks
+   ([#215](https://github.com/praekeltfoundation/ndoh-hub/pull/215))
+
 ## 0.6.5 (2019-04-23)
 1. Add scripts for extract for GrowGreat send
    ([#209](https://github.com/praekeltfoundation/ndoh-hub/pull/209))
@@ -8,7 +16,7 @@
 1. Add script for annotating export with registration data
    ([#211](https://github.com/praekeltfoundation/ndoh-hub/pull/211))
 1. Use async refreshing of Turn helpdesk context on action completion
-   ([#211](https://github.com/praekeltfoundation/ndoh-hub/pull/212))
+   ([#212](https://github.com/praekeltfoundation/ndoh-hub/pull/212))
 
 ## 0.6.4 (2019-03-27)
 1. Add actions to Turn context
