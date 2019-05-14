@@ -366,6 +366,71 @@ class HealthcheckView(APIView):
         return Response(resp, status=status)
 
 
+class JembiFacilityCheckHealthcheckView(APIView):
+
+    """ Jembi Facility Check Healthcheck Interaction
+        GET - returns service up - getting auth'd requires DB
+    """
+
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        if not (
+            settings.JEMBI_BASE_URL
+            and settings.JEMBI_USERNAME
+            and settings.JEMBI_PASSWORD
+        ):
+
+            return Response(
+                "Jembi integration is not configured properly.",
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        try:
+            clinic_code = request.query_params.get("clinic_code")
+            result = requests.get(
+                urljoin(settings.JEMBI_BASE_URL, "NCfacilityCheck"),
+                headers={"Content-Type": "application/json"},
+                auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+                params={"criteria": "value:{}".format(clinic_code)},
+                verify=False,
+                timeout=10.0,
+            )
+            result.raise_for_status()
+
+            jembi_result = result.json()
+
+            if "rows" in jembi_result:
+                resp = {"up": True}
+
+        except (requests.exceptions.HTTPError,) as e:
+            if e.response.status_code == 400:
+                print(e.response.text)
+                logger.warning(
+                    "400 Error when posting to Jembi.\n"
+                    "Response: Payload:%s" % (e.response.content)
+                )
+                return Response(
+                    {"request_error": "HTTP 400 Bad Request"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            else:
+                raise e
+
+        except (requests.exceptions.Timeout,) as e:
+            logger.warning(
+                "504 Timeout Error when posting to Jembi.\n"
+                "Response: %s\nPayload:%s" % (e.response.text)
+            )
+            return Response(
+                "Timeout Error when posting to Jembi. Body: %s Payload: %r"
+                % (e.response.content),
+                status=status.HTTP_504_GATEWAY_TIMEOUT,
+            )
+
+        return Response(resp, status=status.HTTP_200_OK)
+
+
 class ThirdPartyRegistration(APIView):
     permission_classes = (IsAuthenticated,)
 

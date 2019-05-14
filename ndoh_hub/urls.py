@@ -18,6 +18,10 @@ urlpatterns = [
     url(r"^api/auth/", include("rest_framework.urls", namespace="rest_framework")),
     url(r"^api/token-auth/", obtain_auth_token),
     url(r"^api/metrics/", views.MetricsView.as_view()),
+    url(
+        r"^api/health/jembi-facility/",
+        views.JembiFacilityCheckHealthcheckView.as_view(),
+    ),
     url(r"^api/health/", views.HealthcheckView.as_view()),
     url(r"^docs/", include_docs_urls(title="NDOH Hub")),
     url(r"^", include("registrations.urls")),
