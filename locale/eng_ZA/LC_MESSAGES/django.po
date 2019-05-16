@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-04-25 03:45+0000\n"
-"PO-Revision-Date: 2019-04-25 05:53+0200\n"
+"POT-Creation-Date: 2019-05-16 11:34+0200\n"
+"PO-Revision-Date: 2019-05-16 11:31+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: eng_ZA\n"
@@ -17,35 +17,31 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.2.1\n"
 
-#: changes/tasks.py:545
+#: changes/tasks.py:558
 msgid ""
 "We notice that you have been receiving MomConnect msgs on WhatsApp for "
 "children between 1 - 2. Messages for children between 1 - 2 are only "
 "available on WhatsApp - switching to SMS means you will not receive any "
 "messages. You can stop your MomConnect messages completely by replying 'STOP'"
 msgstr ""
-"We notice that you have been receiving MomConnect msgs on WhatsApp for "
-"children between 1 - 2. Messages for children between 1 - 2 are only "
-"available on WhatsApp - switching to SMS means you will not receive any "
-"messages. You can stop your MomConnect messages completely by replying ‘STOP’"
 
-#: changes/tasks.py:552
+#: changes/tasks.py:565
 msgid ""
 "It seems you dont have an active Whatsapp account. MomConnect msgs for kids "
 "aged 1-2 are only on WA. To stop msgs, reply 'STOP' (std rates apply)"
 msgstr ""
 "It seems you don’t have an active Whatsapp account. MomConnect msgs for kids "
-"aged 1-2 are only on WA. To stop msgs, reply ‘STOP’ (std rates apply)"
+"aged 1-2 are only on WA. To stop msgs, reply 'STOP' (std rates apply)"
 
-#: changes/tasks.py:557
+#: changes/tasks.py:570
 msgid ""
 "Sorry - we can't send WhatsApp msgs to this phone. MomConnect msgs for kids "
 "aged 1-2 are only on WA. To stop msgs, reply 'STOP' (std rates apply)"
 msgstr ""
 "Sorry - we can’t send WhatsApp msgs to this phone. MomConnect msgs for kids "
-"aged 1-2 are only on WA. To stop msgs, reply ‘STOP’ (std rates apply)"
+"aged 1-2 are only on WA. To stop msgs, reply 'STOP' (std rates apply)"
 
-#: changes/tasks.py:1472
+#: changes/tasks.py:1463
 #, python-format
 msgid ""
 "Sorry but we can't send WhatsApp msgs to this phone. We'll send your "
@@ -55,7 +51,7 @@ msgstr ""
 "Sorry, we can't send WhatsApp msgs to this phone. We'll send your MomConnect "
 "msgs on SMS. To stop dial %(optout_ussd)s, for more dial %(popi_ussd)s."
 
-#: changes/tasks.py:1531 changes/tasks.py:1696
+#: changes/tasks.py:1522 changes/tasks.py:1687
 msgid ""
 "We see that your MomConnect WhatsApp messages are not being delivered. If "
 "you would like to receive your messages over SMS, reply ‘SMS’."
@@ -63,7 +59,7 @@ msgstr ""
 "We see that your MomConnect WhatsApp messages are not being delivered. If "
 "you would like to receive your messages over SMS, reply ‘SMS’."
 
-#: changes/tasks.py:1750
+#: changes/tasks.py:1741
 msgid ""
 "Oh no! You can't get MomConnect messages on WhatsApp. We'll keep sending "
 "your MomConnect messages on SMS."
