@@ -3932,7 +3932,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         validate_implement(change.id)
         change.refresh_from_db()
         self.assertTrue(change.validated)
-        self.assertTrue(change.data["reason"], "postbirth_whatsapp_unsent_event")
+        self.assertEqual(change.data["reason"], "postbirth_whatsapp_unsent_event")
 
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
 
@@ -3994,7 +3994,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         validate_implement(change.id)
         change.refresh_from_db()
         self.assertTrue(change.validated)
-        self.assertTrue(change.data["reason"], "postbirth_whatsapp_contact_check_fail")
+        self.assertEqual(change.data["reason"], "postbirth_whatsapp_contact_check_fail")
 
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
 
