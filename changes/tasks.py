@@ -543,7 +543,14 @@ class ValidateImplement(Task):
             reason = change.data and change.data.get("reason")
 
             if reason == "whatsapp_unsent_event":
-                change.data["reason"] = "postbirth_wa_unsent_event"
+                change.data["reason"] = "postbirth_whatsapp_unsent_event"
+            elif reason == "whatsapp_contact_check_fail":
+                change.data["reason"] = "postbirth_whatsapp_contact_check_fail"
+            else:
+                change.data[
+                    "error"
+                ] = "WhatsApp-only messagesets cannot be switched to SMS"
+            change.save()
 
             translation_lang = subscriptions[0]["lang"].lower().replace("_", "-")
             with translation.override(translation_lang):
@@ -555,7 +562,7 @@ class ValidateImplement(Task):
                     "your MomConnect messages completely by replying 'STOP'"
                 )
                 fail_contact_check_text = translation.ugettext(
-                    "It seems you dont have an active Whatsapp account. "
+                    "It seems you don't have an active Whatsapp account. "
                     "MomConnect msgs for kids aged 1-2 are only on WA. "
                     "To stop msgs, reply 'STOP' (std rates apply)"
                 )
@@ -573,8 +580,7 @@ class ValidateImplement(Task):
                         "channel": "JUNE_TEXT",
                     }
                 )
-
-            elif reason == "postbirth_wa_unsent_event":
+            elif reason == "whatsapp_unsent_event":
                 utils.ms_client.create_outbound(
                     {
                         "to_identity": change.registrant_id,
@@ -600,8 +606,6 @@ class ValidateImplement(Task):
                         },
                     }
                 )
-            change.data["error"] = "WhatsApp-only messagesets cannot be switched to SMS"
-            change.save()
             return
 
         for sub in subscriptions:
