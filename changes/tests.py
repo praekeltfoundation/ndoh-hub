@@ -1,6 +1,7 @@
 import datetime
 import json
 from unittest import mock
+from urllib.parse import urlencode
 
 import responses
 from django.contrib.auth.models import User
@@ -22,6 +23,8 @@ from .tasks import (
     remove_personally_identifiable_fields,
     restore_personally_identifiable_fields,
     validate_implement,
+    process_whatsapp_contact_check_fail,
+    process_whatsapp_unsent_event,
 )
 
 try:
@@ -3886,6 +3889,125 @@ class TestChangeActions(AuthenticatedAPITestCase):
                         ],
                     }
                 },
+            }
+        )
+
+    @mock.patch("changes.tasks.utils.ms_client.create_outbound")
+    @responses.activate
+    def test_switch_channel_postbirth_whatsapp_unsent_event(self, mock_create_outbound):
+        """
+        Switching to SMS when a WhatsApp unsent event for postbirth message sets
+        is received, and should send a notification to the user.
+        """
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        mock_get_messagesets(
+            ["whatsapp_momconnect_postbirth.hw_full.3", "not_momconnect_prebirth"]
+        )
+        mock_get_subscriptions(
+            "?identity={}&active=True".format(registrant_id),
+            [
+                {
+                    "id": "sub1",
+                    "messageset": 0,
+                    "identity": registrant_id,
+                    "next_sequence_number": 7,
+                    "lang": "eng_ZA",
+                    "schedule": 2,
+                    "active": True,
+                },
+                {"messageset": 1, "active": True},
+            ],
+        )
+
+        # . mock get identity by id
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267",
+            {"addresses": {"msisdn": {"+27821112222": {}}}},
+        )
+
+        change = Change.objects.create(
+            registrant_id=registrant_id,
+            action="switch_channel",
+            data={"channel": "sms", "reason": "whatsapp_unsent_event"},
+            source=self.make_source_normaluser(),
+        )
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertTrue(change.validated)
+        self.assertTrue(change.data["reason"], "postbirth_whatsapp_unsent_event")
+
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+
+        mock_create_outbound.assert_called_once_with(
+            {
+                "to_identity": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "content": (
+                    "Sorry - we can't send WhatsApp msgs to this phone. "
+                    "MomConnect msgs for kids aged 1-2 are only on WA. "
+                    "To stop msgs, reply ‘STOP’ (std rates apply)"
+                ),
+                "channel": "JUNE_TEXT",
+            }
+        )
+
+    @mock.patch("changes.tasks.utils.ms_client.create_outbound")
+    @responses.activate
+    def test_switch_channel_postbirth_whatsapp_contact_check_fail(self, mock_create_outbound):
+        """
+        Switching to SMS when a WhatsApp contact check fail event
+        for postbirth message sets is received,
+        and should send a notification to the user.
+        """
+        registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
+        mock_get_messagesets(
+            ["whatsapp_momconnect_postbirth.hw_full.3", "not_momconnect_prebirth"]
+        )
+        mock_get_subscriptions(
+            "?identity={}&active=True".format(registrant_id),
+            [
+                {
+                    "id": "sub1",
+                    "messageset": 0,
+                    "identity": registrant_id,
+                    "next_sequence_number": 7,
+                    "lang": "eng_ZA",
+                    "schedule": 2,
+                    "active": True,
+                },
+                {"messageset": 1, "active": True},
+            ],
+        )
+
+        # . mock get identity by id
+        utils_tests.mock_get_identity_by_id(
+            "mother01-63e2-4acc-9b94-26663b9bc267",
+            {"addresses": {"msisdn": {"+27821112222": {}}}},
+        )
+
+        change = Change.objects.create(
+            registrant_id=registrant_id,
+            action="switch_channel",
+            data={"channel": "sms", "reason": "whatsapp_contact_check_fail"},
+            source=self.make_source_normaluser(),
+        )
+
+        validate_implement(change.id)
+        change.refresh_from_db()
+        self.assertTrue(change.validated)
+        self.assertTrue(change.data["reason"], "postbirth_whatsapp_contact_check_fail")
+
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
+
+        mock_create_outbound.assert_called_once_with(
+            {
+                "to_identity": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "content": (
+                    "It seems you dont have an active Whatsapp account. "
+                    "MomConnect msgs for kids aged 1-2 are only on WA. "
+                    "To stop msgs, reply ‘STOP’ (std rates apply)"
+                ),
+                "channel": "JUNE_TEXT",
             }
         )
 
