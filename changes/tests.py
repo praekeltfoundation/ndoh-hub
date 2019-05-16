@@ -20,11 +20,11 @@ from registrations.signals import psh_validate_subscribe
 from .models import Change
 from .signals import psh_validate_implement
 from .tasks import (
+    process_whatsapp_contact_check_fail,
+    process_whatsapp_unsent_event,
     remove_personally_identifiable_fields,
     restore_personally_identifiable_fields,
     validate_implement,
-    process_whatsapp_contact_check_fail,
-    process_whatsapp_unsent_event,
 )
 
 try:
@@ -3953,7 +3953,9 @@ class TestChangeActions(AuthenticatedAPITestCase):
 
     @mock.patch("changes.tasks.utils.ms_client.create_outbound")
     @responses.activate
-    def test_switch_channel_postbirth_whatsapp_contact_check_fail(self, mock_create_outbound):
+    def test_switch_channel_postbirth_whatsapp_contact_check_fail(
+        self, mock_create_outbound
+    ):
         """
         Switching to SMS when a WhatsApp contact check fail event
         for postbirth message sets is received,
