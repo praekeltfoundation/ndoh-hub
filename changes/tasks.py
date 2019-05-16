@@ -562,7 +562,7 @@ class ValidateImplement(Task):
                     "your MomConnect messages completely by replying 'STOP'"
                 )
                 fail_contact_check_text = translation.ugettext(
-                    "It seems you dont have an active Whatsapp account. "
+                    "It seems you don't have an active Whatsapp account. "
                     "MomConnect msgs for kids aged 1-2 are only on WA. "
                     "To stop msgs, reply 'STOP' (std rates apply)"
                 )

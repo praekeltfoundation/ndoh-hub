@@ -3940,9 +3940,9 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {
                 "to_identity": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "content": (
-                    "Sorry - we can’t send WhatsApp msgs to this phone. "
+                    "Sorry - we can't send WhatsApp msgs to this phone. "
                     "MomConnect msgs for kids aged 1-2 are only on WA. "
-                    "To stop msgs, reply ‘STOP’ (std rates apply)"
+                    "To stop msgs, reply 'STOP' (std rates apply)"
                 ),
                 "channel": "JUNE_TEXT",
             }
@@ -4002,9 +4002,9 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {
                 "to_identity": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "content": (
-                    "It seems you don’t have an active Whatsapp account. "
+                    "It seems you don't have an active Whatsapp account. "
                     "MomConnect msgs for kids aged 1-2 are only on WA. "
-                    "To stop msgs, reply ‘STOP’ (std rates apply)"
+                    "To stop msgs, reply 'STOP' (std rates apply)"
                 ),
                 "channel": "JUNE_TEXT",
             }
