@@ -1,7 +1,6 @@
 import datetime
 import json
 from unittest import mock
-from urllib.parse import urlencode
 
 import responses
 from django.contrib.auth.models import User
@@ -20,8 +19,6 @@ from registrations.signals import psh_validate_subscribe
 from .models import Change
 from .signals import psh_validate_implement
 from .tasks import (
-    process_whatsapp_contact_check_fail,
-    process_whatsapp_unsent_event,
     remove_personally_identifiable_fields,
     restore_personally_identifiable_fields,
     validate_implement,
@@ -3943,7 +3940,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {
                 "to_identity": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "content": (
-                    "Sorry - we can't send WhatsApp msgs to this phone. "
+                    "Sorry - we can’t send WhatsApp msgs to this phone. "
                     "MomConnect msgs for kids aged 1-2 are only on WA. "
                     "To stop msgs, reply ‘STOP’ (std rates apply)"
                 ),
@@ -4005,7 +4002,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {
                 "to_identity": "mother01-63e2-4acc-9b94-26663b9bc267",
                 "content": (
-                    "It seems you dont have an active Whatsapp account. "
+                    "It seems you don’t have an active Whatsapp account. "
                     "MomConnect msgs for kids aged 1-2 are only on WA. "
                     "To stop msgs, reply ‘STOP’ (std rates apply)"
                 ),
