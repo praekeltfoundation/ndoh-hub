@@ -578,6 +578,7 @@ class ValidateImplement(Task):
                         "to_identity": change.registrant_id,
                         "content": fail_contact_check_text,
                         "channel": "JUNE_TEXT",
+                        "metadata": {},
                     }
                 )
             elif reason == "whatsapp_unsent_event":
@@ -586,6 +587,7 @@ class ValidateImplement(Task):
                         "to_identity": change.registrant_id,
                         "content": unsent_event_text,
                         "channel": "JUNE_TEXT",
+                        "metadata": {},
                     }
                 )
 
