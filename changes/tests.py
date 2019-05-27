@@ -3945,6 +3945,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                     "To stop msgs, reply 'STOP' (std rates apply)"
                 ),
                 "channel": "JUNE_TEXT",
+                "metadata": {},
             }
         )
 
@@ -4007,6 +4008,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                     "To stop msgs, reply 'STOP' (std rates apply)"
                 ),
                 "channel": "JUNE_TEXT",
+                "metadata": {},
             }
         )
 
