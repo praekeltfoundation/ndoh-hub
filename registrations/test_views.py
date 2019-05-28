@@ -23,8 +23,8 @@ from registrations.serializers import RegistrationSerializer
 from registrations.tests import AuthenticatedAPITestCase
 from registrations.views import (
     EngageContextView,
-    SubscriptionCheckView,
     ServiceUnavailable,
+    SubscriptionCheckView,
 )
 
 
@@ -1384,3 +1384,23 @@ class SubscriptionCheckViewTests(APITestCase):
         self.assertEqual(
             json.loads(response.content), {"subscription_status": "clinic"}
         )
+
+    @mock.patch("registrations.views.SubscriptionCheckView.get_identity")
+    def test_get_no_identity(self, get_identity):
+        """
+        If we don't have an identity for the msisdn, we should return that they don't
+        have any active subscriptions
+        """
+        get_identity.return_value = None
+        user = User.objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(name="Can perform a subscription check")
+        )
+        self.client.force_authenticate(user)
+
+        url = reverse("subscription-check")
+        response = self.client.get(
+            "{}?{}".format(url, urlencode({"msisdn": "+27820001001"}))
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(json.loads(response.content), {"subscription_status": "none"})

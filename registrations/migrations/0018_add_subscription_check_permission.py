@@ -5,13 +5,18 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('registrations', '0017_create_whatsapp_contact'),
-    ]
+    dependencies = [("registrations", "0017_create_whatsapp_contact")]
 
     operations = [
         migrations.AlterModelOptions(
-            name='registration',
-            options={'permissions': [('subscription_check_registration', 'Can perform a subscription check')]},
-        ),
+            name="registration",
+            options={
+                "permissions": [
+                    (
+                        "subscription_check_registration",
+                        "Can perform a subscription check",
+                    )
+                ]
+            },
+        )
     ]
