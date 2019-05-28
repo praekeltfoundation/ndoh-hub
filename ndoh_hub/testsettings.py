@@ -14,3 +14,6 @@ CELERY_TASK_ALWAYS_EAGER = True
 PASSWORD_HASHERS = ("django.contrib.auth.hashers.MD5PasswordHasher",)
 
 REST_FRAMEWORK["PAGE_SIZE"] = 2
+
+IDENTITY_STORE_URL = "http://is/api/v1"
+STAGE_BASED_MESSAGING_URL = "http://sbm/api/v1"

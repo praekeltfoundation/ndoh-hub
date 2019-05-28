@@ -21,7 +21,11 @@ from changes.models import Change
 from registrations.models import PositionTracker, Registration, Source, WhatsAppContact
 from registrations.serializers import RegistrationSerializer
 from registrations.tests import AuthenticatedAPITestCase
-from registrations.views import EngageContextView
+from registrations.views import (
+    EngageContextView,
+    SubscriptionCheckView,
+    ServiceUnavailable,
+)
 
 
 class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
@@ -1194,3 +1198,189 @@ class WhatsAppContactCheckViewTests(AuthenticatedAPITestCase):
 
         [contact] = WhatsAppContact.objects.all()
         self.assertEqual(contact, contact1)
+
+
+class SubscriptionCheckViewTests(APITestCase):
+    @responses.activate
+    def test_identity_success(self):
+        """
+        Returns the identity data if the request is successful
+        """
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/search/?{}".format(
+                urlencode({"details__addresses__msisdn": "+27820001001"})
+            ),
+            json={"results": [{"id": "test-identity-id"}]},
+            match_querystring=True,
+        )
+        self.assertEqual(
+            SubscriptionCheckView().get_identity("+27820001001"),
+            {"id": "test-identity-id"},
+        )
+
+    @responses.activate
+    def test_no_identity(self):
+        """
+        If there isn't an identity for the given msisdn, then None should be returned
+        """
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/search/?{}".format(
+                urlencode({"details__addresses__msisdn": "+27820001001"})
+            ),
+            json={"results": []},
+            match_querystring=True,
+        )
+        self.assertEqual(SubscriptionCheckView().get_identity("+27820001001"), None)
+
+    @responses.activate
+    def test_invalid_response(self):
+        """
+        If the identity store is down, we should return a service unavailable error
+        """
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/search/?{}".format(
+                urlencode({"details__addresses__msisdn": "+27820001001"})
+            ),
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            match_querystring=True,
+        )
+        with self.assertRaises(ServiceUnavailable):
+            SubscriptionCheckView().get_identity("+27820001001")
+
+    def create_messagesets_fixture(self, *messagesets):
+        responses.add(
+            responses.GET,
+            "http://sbm/api/v1/messageset/",
+            json={
+                "results": [
+                    {"id": i + 1, "short_name": ms} for i, ms in enumerate(messagesets)
+                ]
+            },
+        )
+
+    @responses.activate
+    def test_get_messagesets_success(self):
+        """
+        Returns a mapping between messagesets and short_names
+        """
+        self.create_messagesets_fixture("ms1", "ms2")
+        self.assertEqual(
+            SubscriptionCheckView().get_messagesets(), {1: "ms1", 2: "ms2"}
+        )
+
+    @responses.activate
+    def test_get_messagesets_failure(self):
+        """
+        If the stage based messenger is down, we should return a service unavailable
+        error
+        """
+        responses.add(
+            responses.GET,
+            "http://sbm/api/v1/messageset/",
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+        with self.assertRaises(ServiceUnavailable):
+            SubscriptionCheckView().get_messagesets()
+
+    @responses.activate
+    def test_get_subscriptions(self):
+        """
+        Returns a list of short names of the active subscriptions for the identity
+        """
+        self.create_messagesets_fixture("ms1", "ms2")
+        responses.add(
+            responses.GET,
+            "http://sbm/api/v1/subscriptions/?{}".format(
+                urlencode({"identity": "identity-uuid", "active": True})
+            ),
+            json={"results": [{"messageset": 2}]},
+        )
+        self.assertEqual(
+            SubscriptionCheckView().get_subscriptions("identity-uuid"), ["ms2"]
+        )
+
+    @responses.activate
+    def test_get_subscriptions_failure(self):
+        """
+        If the stage based messenger is down, we should return a service unavailable
+        error
+        """
+        self.create_messagesets_fixture()
+        responses.add(
+            responses.GET,
+            "http://sbm/api/v1/subscriptions/?{}".format(
+                urlencode({"identity": "identity-uuid", "active": True})
+            ),
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+        with self.assertRaises(ServiceUnavailable):
+            SubscriptionCheckView().get_subscriptions("identity-uuid")
+
+    def test_derive_subscriptions_status(self):
+        """
+        Returns the correct status depending on the list of subscriptions
+        """
+        self.assertEqual(
+            SubscriptionCheckView().derive_subscription_status(
+                [
+                    "whatsapp_pmtct_prebirth.patient.1",
+                    "whatsapp_momconnect_prebirth.hw_full.1",
+                ]
+            ),
+            "clinic",
+        )
+        self.assertEqual(
+            SubscriptionCheckView().derive_subscription_status(
+                ["whatsapp_momconnect_prebirth.patient.1"]
+            ),
+            "public",
+        )
+        self.assertEqual(SubscriptionCheckView().derive_subscription_status([]), "none")
+
+    def test_get_request_authentication_required(self):
+        """
+        Authentication is required to access the endpoint
+        """
+        url = reverse("subscription-check")
+        response = self.client.get(
+            "{}?{}".format(url, urlencode({"msisdn": "+27820001001"}))
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_get_permission_required(self):
+        """
+        Permission is required to access the endpoint
+        """
+        user = User.objects.create_user("test")
+        self.client.force_authenticate(user)
+        url = reverse("subscription-check")
+        response = self.client.get(
+            "{}?{}".format(url, urlencode({"msisdn": "+27820001001"}))
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    @mock.patch("registrations.views.SubscriptionCheckView.get_identity")
+    @mock.patch("registrations.views.SubscriptionCheckView.get_subscriptions")
+    def test_get_success(self, get_subscriptions, get_identity):
+        """
+        Returns the current subscription status of the user
+        """
+        get_subscriptions.return_value = ["whatsapp_momconnect_prebirth.hw_full.1"]
+        get_identity.return_value = {"id": "test-identity-uuid"}
+        user = User.objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(name="Can perform a subscription check")
+        )
+        self.client.force_authenticate(user)
+
+        url = reverse("subscription-check")
+        response = self.client.get(
+            "{}?{}".format(url, urlencode({"msisdn": "+27820001001"}))
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            json.loads(response.content), {"subscription_status": "clinic"}
+        )

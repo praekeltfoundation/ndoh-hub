@@ -3,10 +3,11 @@ import datetime
 import hmac
 import json
 import logging
-from functools import partial
+from functools import lru_cache, partial
 from hashlib import sha256
 from typing import Tuple
 
+from demands import HTTPServiceError
 import django_filters
 import django_filters.rest_framework as filters
 import phonenumbers
@@ -25,7 +26,7 @@ from rest_framework import generics, mixins, status, viewsets
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import APIException, AuthenticationFailed
 from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import (
     DjangoModelPermissions,
@@ -42,7 +43,7 @@ from seed_services_client.stage_based_messaging import StageBasedMessagingApiCli
 
 from changes.models import Change
 from changes.serializers import ChangeSerializer
-from ndoh_hub.utils import get_available_metrics
+from ndoh_hub.utils import get_available_metrics, is_client, sbm_client
 
 from .models import PositionTracker, Registration, Source, WhatsAppContact
 from .serializers import (
@@ -56,6 +57,7 @@ from .serializers import (
     PositionTrackerSerializer,
     RegistrationSerializer,
     SourceSerializer,
+    SubscriptionsCheckSerializer,
     ThirdPartyRegistrationSerializer,
     UserSerializer,
     WhatsAppContactCheckSerializer,
@@ -1091,3 +1093,81 @@ class WhatsAppContactCheckViewSet(mixins.CreateModelMixin, viewsets.GenericViewS
             created__lt=timezone.now() - datetime.timedelta(days=7)
         ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ServiceUnavailable(APIException):
+    status_code = 503
+    default_detail = "Service temporarily unavailable, try again later."
+    default_code = "service_unavailable"
+
+
+class SubscriptionCheckPermission(DjangoModelPermissions):
+    """
+    Allows GET requests if the user has the subscription_check permission
+    """
+
+    perms_map = {"GET": ["%(app_label)s.subscription_check_%(model_name)s"]}
+
+
+class SubscriptionCheckView(APIView):
+    queryset = Registration.objects.none()  # For DjangoModelPermissions
+    permission_classes = (SubscriptionCheckPermission,)
+
+    def get_msisdn(self, data):
+        return phonenumbers.format_number(
+            data["msisdn"], phonenumbers.PhoneNumberFormat.E164
+        )
+
+    def get_identity(self, msisdn):
+        try:
+            [identity] = is_client.get_identity_by_address("msisdn", msisdn)["results"]
+            return identity
+        except ValueError:
+            return None
+        except (RequestException, HTTPServiceError):
+            raise ServiceUnavailable()
+
+    def _get_messagesets(self):
+        print("external request")
+        try:
+            return {
+                ms["id"]: ms["short_name"]
+                for ms in sbm_client.get_messagesets()["results"]
+            }
+        except (RequestException, HTTPServiceError):
+            raise ServiceUnavailable()
+
+    def get_messagesets(self):
+        return cache.get_or_set("messagesets", self._get_messagesets, 300)
+
+    def get_subscriptions(self, identity_id):
+        messagesets = self.get_messagesets()
+        try:
+            subscriptions = sbm_client.get_subscriptions(
+                {"identity": identity_id, "active": True}
+            )["results"]
+            return [messagesets[s["messageset"]] for s in subscriptions]
+        except (RequestException, HTTPServiceError):
+            raise ServiceUnavailable()
+
+    def derive_subscription_status(self, subscriptions):
+        for subscription in subscriptions:
+            if "momconnect_prebirth.hw_full" in subscription:
+                return "clinic"
+            if (
+                "momconnect_prebirth.hw_partial" in subscription
+                or "momconnect_prebirth.patient" in subscription
+            ):
+                return "public"
+        return "none"
+
+    def get(self, request):
+        serializer = SubscriptionsCheckSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        msisdn = self.get_msisdn(serializer.validated_data)
+        identity = self.get_identity(msisdn)
+        if identity is None:
+            return Response({"subscription_status": "none"})
+        subscriptions = self.get_subscriptions(identity["id"])
+        subscription_status = self.derive_subscription_status(subscriptions)
+        return Response({"subscription_status": subscription_status})
