@@ -1340,6 +1340,27 @@ class SubscriptionCheckViewTests(APITestCase):
         )
         self.assertEqual(SubscriptionCheckView().derive_subscription_status([]), "none")
 
+    def test_derive_optout_status(self):
+        """
+        Should return whether or not the specified msisdn on the identity has opted out
+        """
+        identity = {
+            "details": {
+                "addresses": {
+                    "msisdn": {
+                        "+27820001001": {},
+                        "+27820001002": {"optedout": True},
+                        "+27820001003": {"optedout": False},
+                    }
+                }
+            }
+        }
+        view = SubscriptionCheckView()
+        self.assertFalse(view.derive_optout_status(identity, "+27820001001"))
+        self.assertTrue(view.derive_optout_status(identity, "+27820001002"))
+        self.assertFalse(view.derive_optout_status(identity, "+27820001003"))
+        self.assertFalse(view.derive_optout_status(identity, "+27820001004"))
+
     def test_get_request_authentication_required(self):
         """
         Authentication is required to access the endpoint
@@ -1366,7 +1387,7 @@ class SubscriptionCheckViewTests(APITestCase):
     @mock.patch("registrations.views.SubscriptionCheckView.get_subscriptions")
     def test_get_success(self, get_subscriptions, get_identity):
         """
-        Returns the current subscription status of the user
+        Returns the current subscription and opt out status of the user
         """
         get_subscriptions.return_value = ["whatsapp_momconnect_prebirth.hw_full.1"]
         get_identity.return_value = {"id": "test-identity-uuid"}
@@ -1382,14 +1403,15 @@ class SubscriptionCheckViewTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
-            json.loads(response.content), {"subscription_status": "clinic"}
+            json.loads(response.content),
+            {"subscription_status": "clinic", "opted_out": False},
         )
 
     @mock.patch("registrations.views.SubscriptionCheckView.get_identity")
     def test_get_no_identity(self, get_identity):
         """
         If we don't have an identity for the msisdn, we should return that they don't
-        have any active subscriptions
+        have any active subscriptions, and that they aren't opted out
         """
         get_identity.return_value = None
         user = User.objects.create_user("test")
@@ -1403,4 +1425,7 @@ class SubscriptionCheckViewTests(APITestCase):
             "{}?{}".format(url, urlencode({"msisdn": "+27820001001"}))
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(json.loads(response.content), {"subscription_status": "none"})
+        self.assertEqual(
+            json.loads(response.content),
+            {"subscription_status": "none", "opted_out": False},
+        )

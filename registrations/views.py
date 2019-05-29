@@ -1161,13 +1161,25 @@ class SubscriptionCheckView(APIView):
                 return "public"
         return "none"
 
+    def derive_optout_status(self, identity, msisdn):
+        return (
+            identity.get("details", {})
+            .get("addresses", {})
+            .get("msisdn", {})
+            .get(msisdn, {})
+            .get("optedout", False)
+        )
+
     def get(self, request):
         serializer = SubscriptionsCheckSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
         msisdn = self.get_msisdn(serializer.validated_data)
         identity = self.get_identity(msisdn)
         if identity is None:
-            return Response({"subscription_status": "none"})
+            return Response({"subscription_status": "none", "opted_out": False})
         subscriptions = self.get_subscriptions(identity["id"])
         subscription_status = self.derive_subscription_status(subscriptions)
-        return Response({"subscription_status": subscription_status})
+        opted_out = self.derive_optout_status(identity, msisdn)
+        return Response(
+            {"subscription_status": subscription_status, "opted_out": opted_out}
+        )
