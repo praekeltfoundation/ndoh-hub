@@ -135,6 +135,11 @@ class Registration(models.Model):
             data["status"] = "processing"
         return data
 
+    class Meta:
+        permissions = [
+            ("subscription_check_registration", "Can perform a subscription check")
+        ]
+
 
 @python_2_unicode_compatible
 class SubscriptionRequest(models.Model):

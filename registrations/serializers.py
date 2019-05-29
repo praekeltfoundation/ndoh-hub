@@ -354,3 +354,7 @@ class WhatsAppContactCheckSerializer(serializers.Serializer):
         label="Contacts",
         help_text="A list of phone numbers to do the contact check for",
     )
+
+
+class SubscriptionsCheckSerializer(serializers.Serializer):
+    msisdn = PhoneNumberField(country_code="ZA")

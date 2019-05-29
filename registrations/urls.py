@@ -39,5 +39,10 @@ urlpatterns = [
     path(
         "api/v1/engage/action", views.EngageActionView.as_view(), name="engage-action"
     ),
+    path(
+        "api/v1/subscription_check/",
+        views.SubscriptionCheckView.as_view(),
+        name="subscription-check",
+    ),
     url(r"^api/v1/", include(router.urls)),
 ]
