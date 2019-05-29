@@ -1128,7 +1128,6 @@ class SubscriptionCheckView(APIView):
             raise ServiceUnavailable()
 
     def _get_messagesets(self):
-        print("external request")
         try:
             return {
                 ms["id"]: ms["short_name"]
