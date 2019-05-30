@@ -1235,6 +1235,27 @@ class SubscriptionCheckViewTests(APITestCase):
         self.assertEqual(SubscriptionCheckView().get_identity("+27820001001"), None)
 
     @responses.activate
+    def test_multiple_identities(self):
+        """
+        If multiple identities are returned for a phone number, we should choose the
+        first one.
+        """
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/search/?{}".format(
+                urlencode({"details__addresses__msisdn": "+27820001001"})
+            ),
+            json={
+                "results": [{"id": "test-identity-id1"}, {"id": "test-identity-id2"}]
+            },
+            match_querystring=True,
+        )
+        self.assertEqual(
+            SubscriptionCheckView().get_identity("+27820001001"),
+            {"id": "test-identity-id1"},
+        )
+
+    @responses.activate
     def test_invalid_response(self):
         """
         If the identity store is down, we should return a service unavailable error

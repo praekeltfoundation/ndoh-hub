@@ -1120,9 +1120,8 @@ class SubscriptionCheckView(APIView):
 
     def get_identity(self, msisdn):
         try:
-            [identity] = is_client.get_identity_by_address("msisdn", msisdn)["results"]
-            return identity
-        except ValueError:
+            return next(is_client.get_identity_by_address("msisdn", msisdn)["results"])
+        except StopIteration:
             return None
         except (RequestException, HTTPServiceError):
             raise ServiceUnavailable()
