@@ -1129,7 +1129,7 @@ class FacilityCodeCheckView(APIView):
                 facility = jembi_result.get("rows")[0][2]
                 resp = {"result": {"Facility": facility}}
             else:
-                resp = {"result": {"Facility": "incorrect clinic code"}}
+                resp = {"result": {"Facility": "invalid"}}
 
         except (requests.exceptions.HTTPError,) as e:
             if e.response.status_code == 400:

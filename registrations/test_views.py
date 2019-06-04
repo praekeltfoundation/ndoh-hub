@@ -326,6 +326,9 @@ class FacilityCodeCheckViewTests(AuthenticatedAPITestCase):
         )
         response = self.normalclient.get(url)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            json.loads(response.content)["result"]["Facility"], "invalid"
+        )
 
 
 class PositionTrackerViewsetTests(AuthenticatedAPITestCase):
