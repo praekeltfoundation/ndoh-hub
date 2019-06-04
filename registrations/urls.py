@@ -30,6 +30,11 @@ urlpatterns = [
         views.JembiHelpdeskOutgoingView.as_view(),
         name="jembi-helpdesk-outgoing",
     ),
+    url(
+        r"^api/v1/facilitycode_check/",
+        views.FacilityCodeCheckView.as_view(),
+        name="facilitycode-check",
+    ),
     url(r"^api/v1/user/token/$", views.UserView.as_view(), name="create-user-token"),
     path(
         "api/v1/engage/context",

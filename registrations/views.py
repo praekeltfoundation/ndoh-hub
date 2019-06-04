@@ -1095,6 +1095,57 @@ class WhatsAppContactCheckViewSet(mixins.CreateModelMixin, viewsets.GenericViewS
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class FacilityCodeCheckView(APIView):
+    """ Facility Code Check
+        GET - returns clinic name and clinic code for varification
+        getting auth'd requires DB
+    """
+
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        if not (
+            settings.JEMBI_BASE_URL
+            and settings.JEMBI_USERNAME
+            and settings.JEMBI_PASSWORD
+        ):
+            return Response(
+                "Jembi integration is not configured properly.",
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        try:
+            clinic_code = request.query_params.get("clinic_code")
+            result = requests.get(
+                urljoin(settings.JEMBI_BASE_URL, "facilityCheck"),
+                headers={"Content-Type": "application/json"},
+                auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+                params={"criteria": "value:{}".format(clinic_code)},
+                verify=False,
+            )
+            result.raise_for_status()
+            jembi_result = result.json()
+            print(jembi_result)
+            resp = {"Facility": jembi_result.get("rows")[0][2]}
+            print("views.resp")
+            print(resp)
+
+        except (requests.exceptions.HTTPError,) as e:
+            if e.response.status_code == 400:
+                logger.warning(
+                    "400 Error when posting to Jembi.\n"
+                    "Response: %s\nPayload:" % (e.response.text)
+                )
+                return Response(
+                    "Error when posting to Jembi. Body: %s" % (e.response.content),
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            else:
+                raise e
+
+        return Response(resp, status=status.HTTP_200_OK)
+
+
 class ServiceUnavailable(APIException):
     status_code = 503
     default_detail = "Service temporarily unavailable, try again later."
