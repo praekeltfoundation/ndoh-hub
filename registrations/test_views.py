@@ -306,7 +306,7 @@ class FacilityCodeCheckViewTests(AuthenticatedAPITestCase):
         """
             Test on Facility Code Check when Jembi return empty array for
             wrong code given
-            GET - returns 404 response
+            GET - returns 200 response
         """
 
         clinic_code = 111111
@@ -325,7 +325,7 @@ class FacilityCodeCheckViewTests(AuthenticatedAPITestCase):
             reverse("facilitycode-check"), urlencode({"clinic_code": clinic_code})
         )
         response = self.normalclient.get(url)
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 200)
 
 
 class PositionTrackerViewsetTests(AuthenticatedAPITestCase):
