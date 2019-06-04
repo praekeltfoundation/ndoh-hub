@@ -268,7 +268,9 @@ class FacilityCodeCheckViewTests(AuthenticatedAPITestCase):
         )
         response = self.normalclient.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(json.loads(response.content)["Facility"], "test facility code")
+        self.assertEqual(
+            json.loads(response.content)["result"]["Facility"], "test facility code"
+        )
 
     @responses.activate
     @override_settings(JEMBI_BASE_URL="http://jembi/ws/rest/v1/")
@@ -296,6 +298,34 @@ class FacilityCodeCheckViewTests(AuthenticatedAPITestCase):
         )
         response = self.normalclient.get(url)
         self.assertEqual(response.status_code, 400)
+
+    @responses.activate
+    @override_settings(JEMBI_BASE_URL="http://jembi/ws/rest/v1/")
+    def test_facility_code_check_no_code_returned(self):
+
+        """
+            Test on Facility Code Check when Jembi return empty array for
+            wrong code given
+            GET - returns 404 response
+        """
+
+        clinic_code = 111111
+
+        self.make_source_normaluser()
+        result = {"title": "", "headers": [], "rows": [], "width": 0, "height": 0}
+        responses.add(
+            responses.GET,
+            "http://jembi/ws/rest/v1/facilityCheck?{}".format(
+                urlencode({"criteria": "value:{}".format(clinic_code)})
+            ),
+            json=result,
+            status=200,
+        )
+        url = "{}?{}".format(
+            reverse("facilitycode-check"), urlencode({"clinic_code": clinic_code})
+        )
+        response = self.normalclient.get(url)
+        self.assertEqual(response.status_code, 404)
 
 
 class PositionTrackerViewsetTests(AuthenticatedAPITestCase):
