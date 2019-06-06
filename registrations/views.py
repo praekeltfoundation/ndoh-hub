@@ -1126,10 +1126,10 @@ class FacilityCodeCheckView(APIView):
             result.raise_for_status()
             jembi_result = result.json()
             if len(jembi_result.get("rows")) > 0:
-                facility = jembi_result.get("rows")[0][2]
-                resp = {"result": {"Facility": facility}}
+                facility = jembi_result.get("rows")[0][3]
+                resp = {"Facility": facility}
             else:
-                resp = {"result": {"Facility": "invalid"}}
+                resp = {"Facility": "invalid"}
 
         except (requests.exceptions.HTTPError,) as e:
             if e.response.status_code == 400:
