@@ -358,3 +358,126 @@ class WhatsAppContactCheckSerializer(serializers.Serializer):
 
 class SubscriptionsCheckSerializer(serializers.Serializer):
     msisdn = PhoneNumberField(country_code="ZA")
+
+
+class RapidProClinicRegistrationSerializer(serializers.Serializer):
+    mom_msisdn = MSISDNField(
+        country="ZA", help_text="The phone number of the mother", label="Mother MSISDN"
+    )
+    device_msisdn = MSISDNField(
+        country="ZA",
+        help_text="The phone number of the device that registered the mother",
+        label="Registration Device MSISDN",
+    )
+    mom_id_type = serializers.ChoiceField(
+        utils.ID_TYPES,
+        label="Mother ID Type",
+        help_text="The type of identification that the mother registered with",
+    )
+    mom_sa_id_no = serializers.CharField(
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+        label="Mother SA ID Number",
+        help_text="The SA ID number that the mother used to register. Required if "
+        "mom_id_type is sa_id",
+        validators=[validators.sa_id_no],
+    )
+    mom_passport_no = serializers.CharField(
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+        label="Mother passport number",
+        help_text="The passport number that the mother used to register. Required if "
+        "mom_id_type is passport",
+        validators=[validators.passport_no],
+    )
+    mom_passport_origin = serializers.ChoiceField(
+        utils.PASSPORT_ORIGINS,
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+        label="Mother passport origin",
+        help_text="The country of origin for the mother's passport. Required if "
+        "mom_id_type is passport.",
+        source="passport_origin",
+    )
+    mom_dob = serializers.DateField(
+        required=False,
+        allow_null=True,
+        help_text="When the mother was born. Required if ID type is none",
+        label="Mother date of birth",
+    )
+    mom_lang = serializers.ChoiceField(
+        utils.LANGUAGES,
+        help_text="The language that the mother would like to receive communication in",
+        label="Mother language",
+    )
+    registration_type = serializers.ChoiceField(
+        ["prebirth", "postbirth"],
+        help_text="Whether this is a prebirth or postbirt registration",
+        label="Registration type",
+    )
+    mom_edd = serializers.DateField(
+        required=False,
+        allow_null=True,
+        help_text="The expected delivery date of the mother's baby. Must be in the "
+        "future, but less than 43 weeks away. Required if registration_type is "
+        "prebirth",
+        label="Mother EDD",
+        validators=[validators.edd],
+    )
+    baby_dob = serializers.DateField(
+        required=False,
+        allow_null=True,
+        help_text="The baby's date of birth. Must be in the past, but less than 2 "
+        "years. Required if registration_type is postbirth",
+        label="Mother EDD",
+        validators=[validators.baby_dob],
+    )
+    clinic_code = serializers.CharField(
+        help_text="The code of the clinic where the mother was registered",
+        label="Clinic Code",
+    )
+    channel = serializers.ChoiceField(
+        ["WhatsApp", "SMS"],
+        help_text="Whether this registration is for SMS or for WhatsApp",
+        label="Messaging Channel",
+    )
+    created = serializers.DateTimeField(
+        help_text="The timestamp when the registration was created", label="Created at"
+    )
+
+    def validate(self, data: dict) -> dict:
+        if data["mom_id_type"] == "sa_id":
+            if not data.get("mom_sa_id_no"):
+                raise serializers.ValidationError(
+                    "mom_sa_id_no field must be supplied if mom_id_type is sa_id"
+                )
+        elif data["mom_id_type"] == "passport":
+            if not data.get("mom_passport_no"):
+                raise serializers.ValidationError(
+                    "mom_passport_no field must be supplied if mom_id_type is passport"
+                )
+            if not data.get("mom_passport_origin"):
+                raise serializers.ValidationError(
+                    "mom_passport_origin field must be supplied if mom_id_type is "
+                    "passport"
+                )
+        elif data["mom_id_type"] == "none":
+            if not data.get("mom_dob"):
+                raise serializers.ValidationError(
+                    "mom_dob field must be supplied if mom_id_type is none"
+                )
+
+        if data["registration_type"] == "prebirth":
+            if not data.get("mom_edd"):
+                raise serializers.ValidationError(
+                    "mom_edd field must be supplied if registration_type is prebirth"
+                )
+        elif data["registration_type"] == "postbirth":
+            if not data.get("baby_dob"):
+                raise serializers.ValidationError(
+                    "baby_dob field must be supplied if registration_type is postbirth"
+                )
+        return data
