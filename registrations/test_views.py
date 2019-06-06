@@ -250,8 +250,13 @@ class FacilityCodeCheckViewTests(AuthenticatedAPITestCase):
 
         result = {
             "title": "Facility Code Check",
-            "headers": [],
-            "rows": [[clinic_code, "abcdefg", "test facility code"]],
+            "headers": [
+                {"name": "code", "column": "code", "type": ""},
+                {"name": "value", "column": "value", "type": ""},
+                {"name": "uid", "column": "uid", "type": ""},
+                {"name": "name", "column": "name", "type": ""},
+            ],
+            "rows": [[clinic_code, clinic_code, "abcdefg", "test facility code"]],
             "width": 1,
             "height": 1,
         }
@@ -268,9 +273,7 @@ class FacilityCodeCheckViewTests(AuthenticatedAPITestCase):
         )
         response = self.normalclient.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            json.loads(response.content)["result"]["Facility"], "test facility code"
-        )
+        self.assertEqual(json.loads(response.content)["Facility"], "test facility code")
 
     @responses.activate
     @override_settings(JEMBI_BASE_URL="http://jembi/ws/rest/v1/")
@@ -326,7 +329,7 @@ class FacilityCodeCheckViewTests(AuthenticatedAPITestCase):
         )
         response = self.normalclient.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(json.loads(response.content)["result"]["Facility"], "invalid")
+        self.assertEqual(json.loads(response.content)["Facility"], "invalid")
 
 
 class PositionTrackerViewsetTests(AuthenticatedAPITestCase):
