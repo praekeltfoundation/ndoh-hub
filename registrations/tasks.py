@@ -1367,12 +1367,79 @@ def update_identity_from_rapidpro_clinic_registration(context):
     elif context["mom_id_type"] == "passport":
         identity["details"]["passport_no"] = context["mom_passport_no"]
         identity["details"]["passport_origin"] = context["mom_passport_origin"]
-    elif context["mom_id_type"] == "none":
+    else:  # mom_id_type == none
         identity["details"]["mom_dob"] = context["mom_dob"]
 
     if context["registration_type"] == "prebirth":
         identity["details"]["last_edd"] = context["mom_edd"]
-    elif context["registration_type"] == "postbirth":
+    else:  # registration_type == postbirth
         identity["details"]["last_baby_dob"] = context["baby_dob"]
 
     utils.is_client.update_identity(identity["id"], {"details": identity["details"]})
+
+
+@app.task(
+    autoretry_for=(SoftTimeLimitExceeded,),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def _create_rapidpro_clinic_registration(context):
+    """
+    Creates the registration from the registration details
+    """
+    user = User.objects.get(id=context["user_id"])
+    source = Source.objects.get(user=user)
+
+    reg_type = {
+        ("prebirth", "WhatsApp"): "whatsapp_prebirth",
+        ("prebirth", "SMS"): "momconnect_prebirth",
+        ("postbirth", "WhatsApp"): "whatsapp_postbirth",
+        ("postbirth", "SMS"): "momconnect_postbirth",
+    }.get((context["registration_type"], context["channel"]))
+
+    data = {
+        "operator_id": context["device_msisdn_identity"]["id"],
+        "msisdn_registrant": context["mom_msisdn"],
+        "msisdn_device": context["device_msisdn"],
+        "id_type": context["mom_id_type"],
+        "language": context["mom_lang"],
+        "faccode": context["clinic_code"],
+        "consent": True,
+    }
+
+    if data["id_type"] == "sa_id":
+        data["sa_id_no"] = context["mom_sa_id_no"]
+        data["mom_dob"] = datetime.strptime(
+            context["mom_sa_id_no"][:6], "%y%m%d"
+        ).strftime("%Y-%m-%d")
+    elif data["id_type"] == "passport":
+        data["passport_no"] = context["mom_passport_no"]
+        data["passport_origin"] = context["mom_passport_origin"]
+    else:  # id_type = None
+        data["mom_dob"] = context["mom_dob"]
+
+    if context["registration_type"] == "prebirth":
+        data["edd"] = context["mom_edd"]
+    else:  # registration_type = postbirth
+        data["baby_dob"] = context["baby_dob"]
+
+    Registration.objects.create(
+        reg_type=reg_type,
+        registrant_id=context["mom_msisdn_identity"]["id"],
+        source=source,
+        created_by=user,
+        updated_by=user,
+        data=data,
+    )
+
+
+create_rapidpro_clinic_registration = (
+    get_or_create_identity_from_msisdn.s("mom_msisdn")
+    | update_identity_from_rapidpro_clinic_registration.s()
+    | get_or_create_identity_from_msisdn.s("device_msisdn")
+    | _create_rapidpro_clinic_registration.s()
+)

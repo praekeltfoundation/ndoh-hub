@@ -18,6 +18,7 @@ from registrations.models import (
 from registrations.serializers import RegistrationSerializer
 from registrations.signals import psh_validate_subscribe
 from registrations.tasks import (
+    _create_rapidpro_clinic_registration,
     get_or_create_identity_from_msisdn,
     get_whatsapp_contact,
     update_identity_from_rapidpro_clinic_registration,
@@ -1348,5 +1349,173 @@ class UpdateIdentityFromRapidProClinicRegistrationTaskTests(TestCase):
                     "last_mc_reg_on": "clinic",
                     "mom_dob": "1986-06-04",
                 }
+            },
+        )
+
+
+class CreateRapidProClinicRegistrationTaskTests(AuthenticatedAPITestCase):
+    def test_sa_id(self):
+        """
+        SA ID registrations should store the ID number and date of birth on the
+        registration
+        """
+        source = self.make_source_normaluser()
+        _create_rapidpro_clinic_registration(
+            {
+                "user_id": self.normaluser.id,
+                "mom_msisdn": "+27820001001",
+                "mom_msisdn_identity": {"id": "test-id"},
+                "device_msisdn": "+27820001002",
+                "device_msisdn_identity": {"id": "device-test-id"},
+                "mom_lang": "eng_ZA",
+                "mom_id_type": "sa_id",
+                "mom_sa_id_no": "8606045069081",
+                "registration_type": "prebirth",
+                "channel": "SMS",
+                "mom_edd": "2019-12-12",
+                "clinic_code": "123456",
+            }
+        )
+        [reg] = Registration.objects.all()
+        self.assertEqual(reg.reg_type, "momconnect_prebirth")
+        self.assertEqual(reg.registrant_id, "test-id")
+        self.assertEqual(reg.source, source)
+        self.assertEqual(
+            reg.data,
+            {
+                "consent": True,
+                "edd": "2019-12-12",
+                "faccode": "123456",
+                "id_type": "sa_id",
+                "language": "eng_ZA",
+                "sa_id_no": "8606045069081",
+                "mom_dob": "1986-06-04",
+                "msisdn_registrant": "+27820001001",
+                "msisdn_device": "+27820001002",
+                "operator_id": "device-test-id",
+            },
+        )
+
+    def test_passport(self):
+        """
+        Passport registrations should store the passport number and source on the
+        registration
+        """
+        source = self.make_source_normaluser()
+        _create_rapidpro_clinic_registration(
+            {
+                "user_id": self.normaluser.id,
+                "mom_msisdn": "+27820001001",
+                "mom_msisdn_identity": {"id": "test-id"},
+                "device_msisdn": "+27820001002",
+                "device_msisdn_identity": {"id": "device-test-id"},
+                "mom_lang": "eng_ZA",
+                "mom_id_type": "passport",
+                "mom_passport_no": "123456789",
+                "mom_passport_origin": "na",
+                "registration_type": "prebirth",
+                "channel": "WhatsApp",
+                "mom_edd": "2019-12-12",
+                "clinic_code": "123456",
+            }
+        )
+        [reg] = Registration.objects.all()
+        self.assertEqual(reg.reg_type, "whatsapp_prebirth")
+        self.assertEqual(reg.registrant_id, "test-id")
+        self.assertEqual(reg.source, source)
+        self.assertEqual(
+            reg.data,
+            {
+                "consent": True,
+                "edd": "2019-12-12",
+                "faccode": "123456",
+                "id_type": "passport",
+                "passport_no": "123456789",
+                "passport_origin": "na",
+                "language": "eng_ZA",
+                "msisdn_registrant": "+27820001001",
+                "msisdn_device": "+27820001002",
+                "operator_id": "device-test-id",
+            },
+        )
+
+    def test_dob(self):
+        """
+        Date of birth registrations should store the date of birth on the registration
+        """
+        source = self.make_source_normaluser()
+        _create_rapidpro_clinic_registration(
+            {
+                "user_id": self.normaluser.id,
+                "mom_msisdn": "+27820001001",
+                "mom_msisdn_identity": {"id": "test-id"},
+                "device_msisdn": "+27820001002",
+                "device_msisdn_identity": {"id": "device-test-id"},
+                "mom_lang": "eng_ZA",
+                "mom_id_type": "none",
+                "mom_dob": "1986-06-04",
+                "registration_type": "postbirth",
+                "channel": "SMS",
+                "baby_dob": "2019-01-01",
+                "clinic_code": "123456",
+            }
+        )
+        [reg] = Registration.objects.all()
+        self.assertEqual(reg.reg_type, "momconnect_postbirth")
+        self.assertEqual(reg.registrant_id, "test-id")
+        self.assertEqual(reg.source, source)
+        self.assertEqual(
+            reg.data,
+            {
+                "consent": True,
+                "baby_dob": "2019-01-01",
+                "faccode": "123456",
+                "id_type": "none",
+                "mom_dob": "1986-06-04",
+                "language": "eng_ZA",
+                "msisdn_registrant": "+27820001001",
+                "msisdn_device": "+27820001002",
+                "operator_id": "device-test-id",
+            },
+        )
+
+    def test_whatsapp_postbirth(self):
+        """
+        A channel of WhatsApp and registration type of postbirth should create a
+        whatsapp_postbirth type registration
+        """
+        source = self.make_source_normaluser()
+        _create_rapidpro_clinic_registration(
+            {
+                "user_id": self.normaluser.id,
+                "mom_msisdn": "+27820001001",
+                "mom_msisdn_identity": {"id": "test-id"},
+                "device_msisdn": "+27820001002",
+                "device_msisdn_identity": {"id": "device-test-id"},
+                "mom_lang": "eng_ZA",
+                "mom_id_type": "none",
+                "mom_dob": "1986-06-04",
+                "registration_type": "postbirth",
+                "channel": "WhatsApp",
+                "baby_dob": "2019-01-01",
+                "clinic_code": "123456",
+            }
+        )
+        [reg] = Registration.objects.all()
+        self.assertEqual(reg.reg_type, "whatsapp_postbirth")
+        self.assertEqual(reg.registrant_id, "test-id")
+        self.assertEqual(reg.source, source)
+        self.assertEqual(
+            reg.data,
+            {
+                "consent": True,
+                "baby_dob": "2019-01-01",
+                "faccode": "123456",
+                "id_type": "none",
+                "mom_dob": "1986-06-04",
+                "language": "eng_ZA",
+                "msisdn_registrant": "+27820001001",
+                "msisdn_device": "+27820001002",
+                "operator_id": "device-test-id",
             },
         )
