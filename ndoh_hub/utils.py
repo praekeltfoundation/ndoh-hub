@@ -92,6 +92,13 @@ def is_valid_edd(date):
     return False
 
 
+def is_valid_baby_dob_date(dob: datetime.date) -> bool:
+    """
+    Checks given baby date of birth is in the past but not more than 2 years old
+    """
+    return dob < get_today() and dob > get_today() - datetime.timedelta(days=365 * 2)
+
+
 def is_valid_lang(lang):
     return lang in LANGUAGES
 

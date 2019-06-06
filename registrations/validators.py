@@ -8,6 +8,11 @@ def edd(value):
         raise ValidationError("Must be in the future, but less than 43 weeks away")
 
 
+def baby_dob(value):
+    if not utils.is_valid_baby_dob_date(value):
+        raise ValidationError("Must be in the past, but less than 2 years old")
+
+
 def consent(value):
     if value is False:
         raise ValidationError("Mother must consent for registration")

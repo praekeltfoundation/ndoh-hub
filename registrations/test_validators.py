@@ -51,3 +51,23 @@ class ValidatorsTests(TestCase):
         self.assertRaisesMessage(
             ValidationError, "Invalid passport number", validators.passport_no, ""
         )
+
+    @mock.patch("ndoh_hub.utils.get_today", override_get_today)
+    def test_invalid_baby_dob(self):
+        """
+        If the baby's DoB is in the future, or greater than 2 years from today's date,
+        a validation error should be raised
+        """
+        self.assertRaisesMessage(
+            ValidationError,
+            "Must be in the past, but less than 2 years old",
+            validators.baby_dob,
+            datetime.date(2016, 1, 2),
+        )
+
+        self.assertRaisesMessage(
+            ValidationError,
+            "Must be in the past, but less than 2 years old",
+            validators.baby_dob,
+            datetime.date(2014, 1, 1),
+        )
