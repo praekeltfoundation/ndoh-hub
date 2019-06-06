@@ -1544,3 +1544,55 @@ class SubscriptionCheckViewTests(APITestCase):
             json.loads(response.content),
             {"subscription_status": "none", "opted_out": False},
         )
+
+
+class RapidProClinicRegistrationViewTests(AuthenticatedAPITestCase):
+    def test_authentication_required(self):
+        """
+        There must be an authenticated user to make the request
+        """
+        response = self.client.post(reverse("rapidpro-clinic-registration"))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_permission_required(self):
+        """
+        The authenticated user must have the correct permissions to make the request
+        """
+        response = self.normalclient.post(reverse("rapidpro-clinic-registration"))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_data_validation(self):
+        """
+        The supplied data must be validated, and any errors returned
+        """
+        response = self.adminclient.post(reverse("rapidpro-clinic-registration"))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @mock.patch("registrations.views.create_rapidpro_clinic_registration")
+    def test_successful_request(self, task):
+        """
+        If the data validation succeeds, then the create_rapidpro_clinic_registration
+        task should be called with the request data, as well as the user that made
+        the request.
+        """
+        data = {
+            "mom_msisdn": "+27820001001",
+            "device_msisdn": "+27820001002",
+            "mom_id_type": "sa_id",
+            "mom_sa_id_no": "8606045069081",
+            "mom_lang": "eng_ZA",
+            "registration_type": "prebirth",
+            "mom_edd": "2016-06-06",
+            "clinic_code": "123456",
+            "channel": "WhatsApp",
+            "created": "2016-01-01 00:00:00",
+        }
+        url = "{}?{}".format(reverse("rapidpro-clinic-registration"), urlencode(data))
+        response = self.adminclient.post(url)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        data["user_id"] = self.adminuser.id
+        data["mom_edd"] = datetime.datetime.strptime(data["mom_edd"], "%Y-%m-%d").date()
+        data["created"] = datetime.datetime.strptime(
+            data["created"], "%Y-%m-%d %H:%M:%S"
+        ).replace(tzinfo=timezone.utc)
+        task.delay.assert_called_once_with(data)

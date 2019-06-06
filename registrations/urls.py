@@ -49,5 +49,10 @@ urlpatterns = [
         views.SubscriptionCheckView.as_view(),
         name="subscription-check",
     ),
+    path(
+        "api/v1/rapidpro/clinic_registration",
+        views.RapidProClinicRegistrationView.as_view(),
+        name="rapidpro-clinic-registration",
+    ),
     url(r"^api/v1/", include(router.urls)),
 ]
