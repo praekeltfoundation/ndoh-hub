@@ -10,8 +10,11 @@ from celery import chain
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.task import Task
 from celery.utils.log import get_task_logger
+from demands import HTTPServiceError
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.utils import translation
+import phonenumbers
 from requests.exceptions import ConnectionError, HTTPError, RequestException
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.service_rating import ServiceRatingApiClient
@@ -20,7 +23,7 @@ from wabclient.exceptions import AddressException
 from ndoh_hub import utils
 from ndoh_hub.celery import app
 
-from .models import Registration, WhatsAppContact
+from .models import Registration, Source, WhatsAppContact
 
 try:
     from urlparse import urljoin
@@ -1298,3 +1301,41 @@ def get_whatsapp_contact(msisdn):
     WhatsAppContact.objects.update_or_create(
         msisdn=msisdn, defaults={"whatsapp_id": whatsapp_id}
     )
+
+
+@app.task(
+    autoretry_for=(RequestException, HTTPServiceError, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def get_or_create_identity_from_msisdn(context, field):
+    """
+    Fetches the identity from the identity store using the MSISDN in the context from
+    `field` adds it to the context as `{field}_identity`. Creates the identity if it
+    doesn't exist.
+
+    Args:
+        context (dict): The context to find the msisdn and add the ID in
+        field (str): The field in the context that contains the MSISDN
+    """
+    msisdn = phonenumbers.parse(context[field], "ZA")
+    msisdn = phonenumbers.format_number(msisdn, phonenumbers.PhoneNumberFormat.E164)
+    try:
+        identity = next(
+            utils.is_client.get_identity_by_address("msisdn", msisdn)["results"]
+        )
+    except StopIteration:
+        identity = utils.is_client.create_identity(
+            {
+                "details": {
+                    "default_addr_type": "msisdn",
+                    "addresses": {"msisdn": {msisdn: {"default": True}}},
+                }
+            }
+        )
+    context["{}_identity".format(field)] = identity
+    return context

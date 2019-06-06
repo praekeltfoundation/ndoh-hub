@@ -1,6 +1,7 @@
 import json
 from unittest import mock
 from uuid import uuid4
+from urllib.parse import urlencode
 
 import responses
 from django.contrib.auth.models import User
@@ -16,7 +17,11 @@ from registrations.models import (
 )
 from registrations.serializers import RegistrationSerializer
 from registrations.signals import psh_validate_subscribe
-from registrations.tasks import get_whatsapp_contact, validate_subscribe
+from registrations.tasks import (
+    get_whatsapp_contact,
+    validate_subscribe,
+    get_or_create_identity_from_msisdn,
+)
 from registrations.tasks import validate_subscribe_jembi_app_registration as task
 
 from .tests import AuthenticatedAPITestCase
@@ -1192,3 +1197,63 @@ class GetWhatsAppContactTests(TestCase):
         [contact] = WhatsAppContact.objects.all()
         self.assertEqual(contact.msisdn, "+27820001001")
         self.assertEqual(contact.whatsapp_id, "27820001001")
+
+
+class GetOrCreateIdentityFromMsisdnTaskTests(TestCase):
+    @responses.activate
+    def test_identity_exists(self):
+        """
+        If the identity exists, then we should add it to the context
+        """
+        identity = {
+            "id": "test-identity-id",
+            "details": {"addresses": {"msisdn": {"+27820001001": {}}}},
+        }
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/search/?{}".format(
+                urlencode({"details__addresses__msisdn": "+27820001001"})
+            ),
+            json={"results": [identity]},
+        )
+        result = get_or_create_identity_from_msisdn(
+            {"identity-msisdn": "0820001001"}, "identity-msisdn"
+        )
+        self.assertEqual(
+            result,
+            {"identity-msisdn": "0820001001", "identity-msisdn_identity": identity},
+        )
+
+    @responses.activate
+    def test_identity_does_not_exist(self):
+        """
+        If the identity does not exist, then we should create a new identity, and add
+        it to the context
+        """
+        identity = {
+            "id": "test-identity-id",
+            "details": {
+                "default_addr_type": "msisdn",
+                "addresses": {"msisdn": {"+27820001001": {"default": True}}},
+            },
+        }
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/search/?{}".format(
+                urlencode({"details__addresses__msisdn": "+27820001001"})
+            ),
+            json={"results": []},
+        )
+        responses.add(responses.POST, "http://is/api/v1/identities/", json=identity)
+
+        result = get_or_create_identity_from_msisdn(
+            {"identity-msisdn": "0820001001"}, "identity-msisdn"
+        )
+        self.assertEqual(
+            result,
+            {"identity-msisdn": "0820001001", "identity-msisdn_identity": identity},
+        )
+        self.assertEqual(
+            json.loads(responses.calls[-1].request.body),
+            {"details": identity["details"]},
+        )
