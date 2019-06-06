@@ -64,9 +64,9 @@ from .serializers import (
     WhatsAppContactCheckSerializer,
 )
 from .tasks import (
+    create_rapidpro_clinic_registration,
     get_whatsapp_contact,
     validate_subscribe_jembi_app_registration,
-    create_rapidpro_clinic_registration,
 )
 
 try:
