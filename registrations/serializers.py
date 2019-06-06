@@ -400,7 +400,6 @@ class RapidProClinicRegistrationSerializer(serializers.Serializer):
         label="Mother passport origin",
         help_text="The country of origin for the mother's passport. Required if "
         "mom_id_type is passport.",
-        source="passport_origin",
     )
     mom_dob = serializers.DateField(
         required=False,
@@ -464,7 +463,7 @@ class RapidProClinicRegistrationSerializer(serializers.Serializer):
                     "mom_passport_origin field must be supplied if mom_id_type is "
                     "passport"
                 )
-        elif data["mom_id_type"] == "none":
+        else:  # mom_id_type == none
             if not data.get("mom_dob"):
                 raise serializers.ValidationError(
                     "mom_dob field must be supplied if mom_id_type is none"
@@ -475,7 +474,7 @@ class RapidProClinicRegistrationSerializer(serializers.Serializer):
                 raise serializers.ValidationError(
                     "mom_edd field must be supplied if registration_type is prebirth"
                 )
-        elif data["registration_type"] == "postbirth":
+        else:  # registration_type == postbirth
             if not data.get("baby_dob"):
                 raise serializers.ValidationError(
                     "baby_dob field must be supplied if registration_type is postbirth"

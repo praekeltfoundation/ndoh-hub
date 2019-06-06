@@ -301,6 +301,11 @@ class RapidProClinicRegistrationSerializerTests(TestCase):
         self.assertFalse(serializer.is_valid())
         self.assertIn("mom_passport_origin", str(serializer.errors))
 
+        data["mom_passport_origin"] = "na"
+        serializer = RapidProClinicRegistrationSerializer(data=data)
+        serializer.is_valid()
+        self.assertTrue(serializer.is_valid())
+
     def test_no_id_required(self):
         """
         If the id type is none, then the date of birth must be populated
@@ -311,6 +316,10 @@ class RapidProClinicRegistrationSerializerTests(TestCase):
         serializer = RapidProClinicRegistrationSerializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("mom_dob", str(serializer.errors))
+
+        data["mom_dob"] = "1986-06-04"
+        serializer = RapidProClinicRegistrationSerializer(data=data)
+        self.assertTrue(serializer.is_valid())
 
     def test_prebirth_required(self):
         """
@@ -333,3 +342,8 @@ class RapidProClinicRegistrationSerializerTests(TestCase):
         serializer = RapidProClinicRegistrationSerializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("baby_dob", str(serializer.errors))
+
+        data["baby_dob"] = "2015-01-01"
+        serializer = RapidProClinicRegistrationSerializer(data=data)
+        serializer.is_valid()
+        self.assertTrue(serializer.is_valid())
