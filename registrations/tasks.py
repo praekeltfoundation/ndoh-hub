@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime
 from functools import partial
 
+import phonenumbers
 import requests
 from celery import chain
 from celery.exceptions import SoftTimeLimitExceeded
@@ -14,7 +15,6 @@ from demands import HTTPServiceError
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.utils import translation
-import phonenumbers
 from requests.exceptions import ConnectionError, HTTPError, RequestException
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.service_rating import ServiceRatingApiClient
@@ -1339,3 +1339,40 @@ def get_or_create_identity_from_msisdn(context, field):
         )
     context["{}_identity".format(field)] = identity
     return context
+
+
+@app.task(
+    autoretry_for=(RequestException, HTTPServiceError, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def update_identity_from_rapidpro_clinic_registration(context):
+    """
+    Updates the identity's details from the registration details
+    """
+    identity = context["mom_msisdn_identity"]
+    identity["details"]["lang_code"] = context["mom_lang"]
+    identity["details"]["consent"] = True
+    identity["details"]["last_mc_reg_on"] = "clinic"
+
+    if context["mom_id_type"] == "sa_id":
+        identity["details"]["sa_id_no"] = context["mom_sa_id_no"]
+        identity["details"]["mom_dob"] = datetime.strptime(
+            context["mom_sa_id_no"][:6], "%y%m%d"
+        ).strftime("%Y-%m-%d")
+    elif context["mom_id_type"] == "passport":
+        identity["details"]["passport_no"] = context["mom_passport_no"]
+        identity["details"]["passport_origin"] = context["mom_passport_origin"]
+    elif context["mom_id_type"] == "none":
+        identity["details"]["mom_dob"] = context["mom_dob"]
+
+    if context["registration_type"] == "prebirth":
+        identity["details"]["last_edd"] = context["mom_edd"]
+    elif context["registration_type"] == "postbirth":
+        identity["details"]["last_baby_dob"] = context["baby_dob"]
+
+    utils.is_client.update_identity(identity["id"], {"details": identity["details"]})

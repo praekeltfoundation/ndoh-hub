@@ -1,7 +1,7 @@
 import json
 from unittest import mock
-from uuid import uuid4
 from urllib.parse import urlencode
+from uuid import uuid4
 
 import responses
 from django.contrib.auth.models import User
@@ -18,9 +18,10 @@ from registrations.models import (
 from registrations.serializers import RegistrationSerializer
 from registrations.signals import psh_validate_subscribe
 from registrations.tasks import (
-    get_whatsapp_contact,
-    validate_subscribe,
     get_or_create_identity_from_msisdn,
+    get_whatsapp_contact,
+    update_identity_from_rapidpro_clinic_registration,
+    validate_subscribe,
 )
 from registrations.tasks import validate_subscribe_jembi_app_registration as task
 
@@ -1256,4 +1257,96 @@ class GetOrCreateIdentityFromMsisdnTaskTests(TestCase):
         self.assertEqual(
             json.loads(responses.calls[-1].request.body),
             {"details": identity["details"]},
+        )
+
+
+class UpdateIdentityFromRapidProClinicRegistrationTaskTests(TestCase):
+    @responses.activate
+    def test_sa_id(self):
+        """
+        SA ID registrations should update the SA ID and DoB fields
+        """
+        responses.add(responses.PATCH, "http://is/api/v1/identities/test-id/", json={})
+        update_identity_from_rapidpro_clinic_registration(
+            {
+                "mom_msisdn_identity": {"id": "test-id", "details": {}},
+                "mom_lang": "eng_ZA",
+                "mom_id_type": "sa_id",
+                "mom_sa_id_no": "8606045069081",
+                "registration_type": "prebirth",
+                "mom_edd": "2019-12-12",
+            }
+        )
+        self.assertEqual(
+            json.loads(responses.calls[-1].request.body),
+            {
+                "details": {
+                    "consent": True,
+                    "lang_code": "eng_ZA",
+                    "last_edd": "2019-12-12",
+                    "last_mc_reg_on": "clinic",
+                    "mom_dob": "1986-06-04",
+                    "sa_id_no": "8606045069081",
+                }
+            },
+        )
+
+    @responses.activate
+    def test_passport(self):
+        """
+        Passport registrations should update the passport number and origin fields
+        """
+        responses.add(responses.PATCH, "http://is/api/v1/identities/test-id/", json={})
+        update_identity_from_rapidpro_clinic_registration(
+            {
+                "mom_msisdn_identity": {"id": "test-id", "details": {}},
+                "mom_lang": "eng_ZA",
+                "mom_id_type": "passport",
+                "mom_passport_no": "123456789",
+                "mom_passport_origin": "na",
+                "registration_type": "postbirth",
+                "baby_dob": "2019-01-01",
+            }
+        )
+        self.assertEqual(
+            json.loads(responses.calls[-1].request.body),
+            {
+                "details": {
+                    "consent": True,
+                    "lang_code": "eng_ZA",
+                    "last_baby_dob": "2019-01-01",
+                    "last_mc_reg_on": "clinic",
+                    "passport_no": "123456789",
+                    "passport_origin": "na",
+                }
+            },
+        )
+
+    @responses.activate
+    def test_dob(self):
+        """
+        Date of birth registrations should update the date of birth
+        """
+        responses.add(responses.PATCH, "http://is/api/v1/identities/test-id/", json={})
+        update_identity_from_rapidpro_clinic_registration(
+            {
+                "mom_msisdn_identity": {"id": "test-id", "details": {}},
+                "mom_lang": "eng_ZA",
+                "mom_id_type": "none",
+                "mom_dob": "1986-06-04",
+                "registration_type": "postbirth",
+                "baby_dob": "2019-01-01",
+            }
+        )
+        self.assertEqual(
+            json.loads(responses.calls[-1].request.body),
+            {
+                "details": {
+                    "consent": True,
+                    "lang_code": "eng_ZA",
+                    "last_baby_dob": "2019-01-01",
+                    "last_mc_reg_on": "clinic",
+                    "mom_dob": "1986-06-04",
+                }
+            },
         )
