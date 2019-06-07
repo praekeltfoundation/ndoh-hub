@@ -19,6 +19,7 @@ from registrations.serializers import RegistrationSerializer
 from registrations.signals import psh_validate_subscribe
 from registrations.tasks import (
     _create_rapidpro_clinic_registration,
+    create_rapidpro_clinic_registration,
     get_or_create_identity_from_msisdn,
     get_whatsapp_contact,
     update_identity_from_rapidpro_clinic_registration,
@@ -1517,5 +1518,64 @@ class CreateRapidProClinicRegistrationTaskTests(AuthenticatedAPITestCase):
                 "msisdn_registrant": "+27820001001",
                 "msisdn_device": "+27820001002",
                 "operator_id": "device-test-id",
+            },
+        )
+
+    @responses.activate
+    def test_end_to_end(self):
+        """
+        Ensure that the chaining of tasks works
+        """
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/search/?{}".format(
+                urlencode({"details__adresses_msisdn": "+27820001001"})
+            ),
+            json={"results": [{"id": "test-id-1", "details": {}}]},
+        )
+        responses.add(
+            responses.PATCH,
+            "http://is/api/v1/identities/test-id-1/",
+            json={"id": "test-id-1", "details": {}},
+        )
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/search/?{}".format(
+                urlencode({"details__adresses_msisdn": "+27820001002"})
+            ),
+            json={"results": [{"id": "test-id-2", "details": {}}]},
+        )
+        source = self.make_source_normaluser()
+        create_rapidpro_clinic_registration(
+            {
+                "user_id": self.normaluser.id,
+                "mom_msisdn": "+27820001001",
+                "device_msisdn": "+27820001002",
+                "mom_lang": "eng_ZA",
+                "mom_id_type": "sa_id",
+                "mom_sa_id_no": "8606045069081",
+                "registration_type": "prebirth",
+                "channel": "SMS",
+                "mom_edd": "2019-12-12",
+                "clinic_code": "123456",
+            }
+        )
+        [reg] = Registration.objects.all()
+        self.assertEqual(reg.reg_type, "momconnect_prebirth")
+        self.assertEqual(reg.registrant_id, "test-id-1")
+        self.assertEqual(reg.source, source)
+        self.assertEqual(
+            reg.data,
+            {
+                "consent": True,
+                "edd": "2019-12-12",
+                "faccode": "123456",
+                "id_type": "sa_id",
+                "language": "eng_ZA",
+                "sa_id_no": "8606045069081",
+                "mom_dob": "1986-06-04",
+                "msisdn_registrant": "+27820001001",
+                "msisdn_device": "+27820001002",
+                "operator_id": "test-id-2",
             },
         )
