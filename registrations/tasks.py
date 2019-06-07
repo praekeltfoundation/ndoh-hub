@@ -1375,7 +1375,10 @@ def update_identity_from_rapidpro_clinic_registration(context):
     else:  # registration_type == postbirth
         identity["details"]["last_baby_dob"] = context["baby_dob"]
 
-    utils.is_client.update_identity(identity["id"], {"details": identity["details"]})
+    context["mom_msisdn_identity"] = utils.is_client.update_identity(
+        identity["id"], {"details": identity["details"]}
+    )
+    return context
 
 
 @app.task(
