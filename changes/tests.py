@@ -1816,7 +1816,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 2)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 2)
-        self.assertEqual(len(responses.calls), 13)
+        self.assertEqual(len(responses.calls), 15)
 
         # Check Jembi POST
         self.assertEqual(
@@ -1883,7 +1883,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 1)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 1)
-        self.assertEqual(len(responses.calls), 8)
+        self.assertEqual(len(responses.calls), 9)
 
         # Check Jembi POST
         self.assertEqual(
@@ -1954,7 +1954,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 1)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 1)
-        self.assertEqual(len(responses.calls), 8)
+        self.assertEqual(len(responses.calls), 9)
 
         # Check Jembi POST
         self.assertEqual(
@@ -2026,7 +2026,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 1)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 1)
-        self.assertEqual(len(responses.calls), 8)
+        self.assertEqual(len(responses.calls), 9)
 
         # Check Jembi POST
         self.assertEqual(

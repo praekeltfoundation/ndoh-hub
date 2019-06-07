@@ -179,6 +179,8 @@ def get_messageset_short_name(reg_type, authority, weeks):
 
     if reg_type == "whatsapp_prebirth":
         reg_type = "whatsapp_momconnect_prebirth"
+    if reg_type == "whatsapp_postbirth":
+        reg_type = "whatsapp_momconnect_postbirth"
 
     if "pmtct_prebirth" in reg_type:
         if 30 <= weeks <= 34:
@@ -204,6 +206,15 @@ def get_messageset_short_name(reg_type, authority, weeks):
         else:
             batch_number = 6
 
+    elif "momconnect_postbirth" in reg_type and authority == "hw_full":
+        if weeks <= 14:
+            batch_number = 1
+        elif weeks <= 52:
+            batch_number = 2
+        elif weeks >= 53:
+            if reg_type == "whatsapp_momconnect_postbirth":
+                batch_number = 3
+
     # If the RTHB messaging is enabled, all nurseconnect subscriptions should
     # start on the RTHB messageset
     elif settings.NURSECONNECT_RTHB and "nurseconnect" in reg_type:
@@ -218,7 +229,7 @@ def get_messageset_schedule_sequence(short_name, weeks):
     # get messageset
     messageset = next(sbm_client.get_messagesets({"short_name": short_name})["results"])
 
-    if "prebirth" in short_name:
+    if "prebirth" in short_name or "postbirth" in short_name:
         # get schedule
         schedule = sbm_client.get_schedule(messageset["default_schedule"])
         # get schedule days of week: comma-seperated str e.g. '1,3' for Mon&Wed
@@ -269,6 +280,14 @@ def get_messageset_schedule_sequence(short_name, weeks):
             next_sequence_number = ((weeks - 4) // 4) + 1
 
     # other momconnect_prebirth sets start at 1
+
+    # postbirth
+    elif "momconnect_postbirth.hw_full.1" in short_name:
+        next_sequence_number = (weeks * msgs_per_week) + 1
+    elif "momconnect_postbirth.hw_full.2" in short_name:
+        next_sequence_number = (weeks - 15) * msgs_per_week + 1
+    elif short_name == "whatsapp_momconnect_postbirth.hw_full.3":
+        next_sequence_number = (weeks - 53) * msgs_per_week + 1
 
     # loss subscriptions always start at 1
 

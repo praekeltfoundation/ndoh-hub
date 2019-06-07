@@ -1135,7 +1135,7 @@ class ServiceInfoSubscriptionRequestTestCase(AuthenticatedAPITestCase):
 
         [subreq] = SubscriptionRequest.objects.all()
         self.assertEqual(subreq.identity, registration.registrant_id)
-        self.assertEqual(subreq.messageset, 95)
+        self.assertEqual(subreq.messageset, 96)
         self.assertEqual(subreq.next_sequence_number, 5)
         self.assertEqual(subreq.lang, "zul_ZA")
         self.assertEqual(subreq.schedule, schedule_id)
