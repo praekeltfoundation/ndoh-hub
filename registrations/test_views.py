@@ -1594,8 +1594,5 @@ class RapidProClinicRegistrationViewTests(AuthenticatedAPITestCase):
         response = self.adminclient.post(url)
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         data["user_id"] = self.adminuser.id
-        data["mom_edd"] = datetime.datetime.strptime(data["mom_edd"], "%Y-%m-%d").date()
-        data["created"] = datetime.datetime.strptime(
-            data["created"], "%Y-%m-%d %H:%M:%S"
-        ).replace(tzinfo=timezone.utc)
+        data["created"] = "2016-01-01T00:00:00+00:00"
         task.delay.assert_called_once_with(data)

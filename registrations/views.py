@@ -1251,6 +1251,12 @@ class RapidProClinicRegistrationView(generics.CreateAPIView):
         data = serializer.validated_data
         data["user_id"] = request.user.id
 
+        # Serialize the dates
+        for field in ("mom_dob", "mom_edd", "baby_dob"):
+            if data.get(field):
+                data[field] = data[field].strftime("%Y-%m-%d")
+        data["created"] = data["created"].isoformat()
+
         create_rapidpro_clinic_registration.delay(data)
 
         return Response(data, status=status.HTTP_202_ACCEPTED)
