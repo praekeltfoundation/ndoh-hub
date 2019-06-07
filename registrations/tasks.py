@@ -5,12 +5,15 @@ import uuid
 from datetime import datetime
 from functools import partial
 
+import phonenumbers
 import requests
 from celery import chain
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.task import Task
 from celery.utils.log import get_task_logger
+from demands import HTTPServiceError
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.utils import translation
 from requests.exceptions import ConnectionError, HTTPError, RequestException
 from seed_services_client.identity_store import IdentityStoreApiClient
@@ -20,7 +23,7 @@ from wabclient.exceptions import AddressException
 from ndoh_hub import utils
 from ndoh_hub.celery import app
 
-from .models import Registration, WhatsAppContact
+from .models import Registration, Source, WhatsAppContact
 
 try:
     from urlparse import urljoin
@@ -1298,3 +1301,145 @@ def get_whatsapp_contact(msisdn):
     WhatsAppContact.objects.update_or_create(
         msisdn=msisdn, defaults={"whatsapp_id": whatsapp_id}
     )
+
+
+@app.task(
+    autoretry_for=(RequestException, HTTPServiceError, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def get_or_create_identity_from_msisdn(context, field):
+    """
+    Fetches the identity from the identity store using the MSISDN in the context from
+    `field` adds it to the context as `{field}_identity`. Creates the identity if it
+    doesn't exist.
+
+    Args:
+        context (dict): The context to find the msisdn and add the ID in
+        field (str): The field in the context that contains the MSISDN
+    """
+    msisdn = phonenumbers.parse(context[field], "ZA")
+    msisdn = phonenumbers.format_number(msisdn, phonenumbers.PhoneNumberFormat.E164)
+    try:
+        identity = next(
+            utils.is_client.get_identity_by_address("msisdn", msisdn)["results"]
+        )
+    except StopIteration:
+        identity = utils.is_client.create_identity(
+            {
+                "details": {
+                    "default_addr_type": "msisdn",
+                    "addresses": {"msisdn": {msisdn: {"default": True}}},
+                }
+            }
+        )
+    context["{}_identity".format(field)] = identity
+    return context
+
+
+@app.task(
+    autoretry_for=(RequestException, HTTPServiceError, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def update_identity_from_rapidpro_clinic_registration(context):
+    """
+    Updates the identity's details from the registration details
+    """
+    identity = context["mom_msisdn_identity"]
+    identity["details"]["lang_code"] = context["mom_lang"]
+    identity["details"]["consent"] = True
+    identity["details"]["last_mc_reg_on"] = "clinic"
+
+    if context["mom_id_type"] == "sa_id":
+        identity["details"]["sa_id_no"] = context["mom_sa_id_no"]
+        identity["details"]["mom_dob"] = datetime.strptime(
+            context["mom_sa_id_no"][:6], "%y%m%d"
+        ).strftime("%Y-%m-%d")
+    elif context["mom_id_type"] == "passport":
+        identity["details"]["passport_no"] = context["mom_passport_no"]
+        identity["details"]["passport_origin"] = context["mom_passport_origin"]
+    else:  # mom_id_type == none
+        identity["details"]["mom_dob"] = context["mom_dob"]
+
+    if context["registration_type"] == "prebirth":
+        identity["details"]["last_edd"] = context["mom_edd"]
+    else:  # registration_type == postbirth
+        identity["details"]["last_baby_dob"] = context["baby_dob"]
+
+    utils.is_client.update_identity(identity["id"], {"details": identity["details"]})
+
+
+@app.task(
+    autoretry_for=(SoftTimeLimitExceeded,),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def _create_rapidpro_clinic_registration(context):
+    """
+    Creates the registration from the registration details
+    """
+    user = User.objects.get(id=context["user_id"])
+    source = Source.objects.get(user=user)
+
+    reg_type = {
+        ("prebirth", "WhatsApp"): "whatsapp_prebirth",
+        ("prebirth", "SMS"): "momconnect_prebirth",
+        ("postbirth", "WhatsApp"): "whatsapp_postbirth",
+        ("postbirth", "SMS"): "momconnect_postbirth",
+    }.get((context["registration_type"], context["channel"]))
+
+    data = {
+        "operator_id": context["device_msisdn_identity"]["id"],
+        "msisdn_registrant": context["mom_msisdn"],
+        "msisdn_device": context["device_msisdn"],
+        "id_type": context["mom_id_type"],
+        "language": context["mom_lang"],
+        "faccode": context["clinic_code"],
+        "consent": True,
+    }
+
+    if data["id_type"] == "sa_id":
+        data["sa_id_no"] = context["mom_sa_id_no"]
+        data["mom_dob"] = datetime.strptime(
+            context["mom_sa_id_no"][:6], "%y%m%d"
+        ).strftime("%Y-%m-%d")
+    elif data["id_type"] == "passport":
+        data["passport_no"] = context["mom_passport_no"]
+        data["passport_origin"] = context["mom_passport_origin"]
+    else:  # id_type = None
+        data["mom_dob"] = context["mom_dob"]
+
+    if context["registration_type"] == "prebirth":
+        data["edd"] = context["mom_edd"]
+    else:  # registration_type = postbirth
+        data["baby_dob"] = context["baby_dob"]
+
+    Registration.objects.create(
+        reg_type=reg_type,
+        registrant_id=context["mom_msisdn_identity"]["id"],
+        source=source,
+        created_by=user,
+        updated_by=user,
+        data=data,
+    )
+
+
+create_rapidpro_clinic_registration = (
+    get_or_create_identity_from_msisdn.s("mom_msisdn")
+    | update_identity_from_rapidpro_clinic_registration.s()
+    | get_or_create_identity_from_msisdn.s("device_msisdn")
+    | _create_rapidpro_clinic_registration.s()
+)

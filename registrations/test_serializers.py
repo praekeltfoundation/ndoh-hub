@@ -7,7 +7,11 @@ from django.utils import timezone
 from rest_framework.serializers import ValidationError
 
 from registrations.models import Registration, Source
-from registrations.serializers import JembiAppRegistrationSerializer, MSISDNField
+from registrations.serializers import (
+    JembiAppRegistrationSerializer,
+    MSISDNField,
+    RapidProClinicRegistrationSerializer,
+)
 
 
 def override_get_today():
@@ -227,3 +231,119 @@ class JembiAppRegistrationSerializerTests(TestCase):
         self.assertEqual(
             serializer.errors, {"external_id": ["This field must be unique."]}
         )
+
+
+@mock.patch("ndoh_hub.utils.get_today", override_get_today)
+class RapidProClinicRegistrationSerializerTests(TestCase):
+    VALID_REGISTRATION = {
+        "mom_msisdn": "0820000001",
+        "device_msisdn": "0820000002",
+        "mom_id_type": "sa_id",
+        "mom_sa_id_no": "8606045069081",
+        "mom_lang": "eng_ZA",
+        "registration_type": "prebirth",
+        "mom_edd": "2016-06-06",
+        "clinic_code": "123456",
+        "channel": "WhatsApp",
+        "created": "2016-01-01 00:00:00",
+    }
+
+    def test_valid_registration(self):
+        """
+        If the registration is valid, then the serializer should be valid
+        """
+        serializer = RapidProClinicRegistrationSerializer(data=self.VALID_REGISTRATION)
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(
+            dict(serializer.validated_data),
+            {
+                "mom_msisdn": "+27820000001",
+                "device_msisdn": "+27820000002",
+                "mom_id_type": "sa_id",
+                "mom_sa_id_no": "8606045069081",
+                "mom_lang": "eng_ZA",
+                "registration_type": "prebirth",
+                "mom_edd": datetime.date(2016, 6, 6),
+                "clinic_code": "123456",
+                "channel": "WhatsApp",
+                "created": datetime.datetime(2016, 1, 1, 0, 0, 0, 0, timezone.utc),
+            },
+        )
+
+    def test_sa_id_required(self):
+        """
+        If the id type is sa_id, then the mom_sa_id_no field must be populated.
+        """
+        data = self.VALID_REGISTRATION.copy()
+        data["mom_id_type"] = "sa_id"
+        data["mom_sa_id_no"] = None
+        serializer = RapidProClinicRegistrationSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("mom_sa_id_no", str(serializer.errors))
+
+    def test_passport_required(self):
+        """
+        If the id type is passport, then the passport ID and number fields must be
+        populated
+        """
+        data = self.VALID_REGISTRATION.copy()
+
+        data["mom_id_type"] = "passport"
+        data["mom_passport_no"] = None
+        data["mom_passport_origin"] = "na"
+        serializer = RapidProClinicRegistrationSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("mom_passport_no", str(serializer.errors))
+
+        data["mom_passport_no"] = "123456"
+        data["mom_passport_origin"] = None
+        serializer = RapidProClinicRegistrationSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("mom_passport_origin", str(serializer.errors))
+
+        data["mom_passport_origin"] = "na"
+        serializer = RapidProClinicRegistrationSerializer(data=data)
+        serializer.is_valid()
+        self.assertTrue(serializer.is_valid())
+
+    def test_no_id_required(self):
+        """
+        If the id type is none, then the date of birth must be populated
+        """
+        data = self.VALID_REGISTRATION.copy()
+        data["mom_id_type"] = "none"
+        data["mom_dob"] = None
+        serializer = RapidProClinicRegistrationSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("mom_dob", str(serializer.errors))
+
+        data["mom_dob"] = "1986-06-04"
+        serializer = RapidProClinicRegistrationSerializer(data=data)
+        self.assertTrue(serializer.is_valid())
+
+    def test_prebirth_required(self):
+        """
+        If the registration type is prebirth, then the EDD must be supplied
+        """
+        data = self.VALID_REGISTRATION.copy()
+        data["registration_type"] = "prebirth"
+        data["mom_edd"] = None
+        serializer = RapidProClinicRegistrationSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("mom_edd", str(serializer.errors))
+
+    def test_postbirth_required(self):
+        """
+        If the registration type is postbirth, then the baby dob must be supplied
+        """
+        data = self.VALID_REGISTRATION.copy()
+        data["registration_type"] = "postbirth"
+        data["baby_dob"] = None
+        serializer = RapidProClinicRegistrationSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("baby_dob", str(serializer.errors))
+
+        data["baby_dob"] = "2015-01-01"
+        serializer = RapidProClinicRegistrationSerializer(data=data)
+        serializer.is_valid()
+        self.assertTrue(serializer.is_valid())

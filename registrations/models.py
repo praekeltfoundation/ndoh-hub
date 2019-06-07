@@ -54,6 +54,7 @@ class Registration(models.Model):
         ("momconnect_prebirth", "MomConnect pregnancy registration"),
         ("momconnect_postbirth", "MomConnect baby registration"),
         ("whatsapp_prebirth", "WhatsApp MomConnect pregnancy registration"),
+        ("whatsapp_postbirth", "WhatsApp MomConnect baby registration"),
         ("nurseconnect", "Nurseconnect registration"),
         ("whatsapp_nurseconnect", "WhatsApp Nurseconnect registration"),
         ("pmtct_prebirth", "PMTCT pregnancy registration"),

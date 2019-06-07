@@ -55,6 +55,7 @@ from .serializers import (
     JembiAppRegistrationSerializer,
     JembiHelpdeskOutgoingSerializer,
     PositionTrackerSerializer,
+    RapidProClinicRegistrationSerializer,
     RegistrationSerializer,
     SourceSerializer,
     SubscriptionsCheckSerializer,
@@ -62,7 +63,11 @@ from .serializers import (
     UserSerializer,
     WhatsAppContactCheckSerializer,
 )
-from .tasks import get_whatsapp_contact, validate_subscribe_jembi_app_registration
+from .tasks import (
+    create_rapidpro_clinic_registration,
+    get_whatsapp_contact,
+    validate_subscribe_jembi_app_registration,
+)
 
 try:
     from urlparse import urljoin
@@ -1233,3 +1238,19 @@ class SubscriptionCheckView(APIView):
         return Response(
             {"subscription_status": subscription_status, "opted_out": opted_out}
         )
+
+
+class RapidProClinicRegistrationView(generics.CreateAPIView):
+    queryset = Registration.objects.none()
+    permission_classes = (DjangoModelPermissions,)
+    serializer_class = RapidProClinicRegistrationSerializer
+
+    def post(self, request: Request) -> Response:
+        serializer = self.get_serializer_class()(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        data["user_id"] = request.user.id
+
+        create_rapidpro_clinic_registration.delay(data)
+
+        return Response(data, status=status.HTTP_202_ACCEPTED)
