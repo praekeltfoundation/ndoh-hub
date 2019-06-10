@@ -336,15 +336,23 @@ class ValidateSubscribe(Task):
         Creates a new subscription request for the service info message set.
         This should only be created for momconnect whatsapp registrations.
         """
-        if (
-            registration.reg_type != "whatsapp_prebirth"
-            or registration.source.authority in ["hw_partial", "patient"]
-        ):
+        if registration.reg_type not in (
+            "whatsapp_prebirth",
+            "whatsapp_postbirth",
+        ) or registration.source.authority in ["hw_partial", "patient"]:
             return
 
         self.log.info("Fetching messageset")
 
-        weeks = utils.get_pregnancy_week(utils.get_today(), registration.data["edd"])
+        if registration.reg_type == "whatsapp_prebirth":
+            weeks = utils.get_pregnancy_week(
+                utils.get_today(), registration.data["edd"]
+            )
+        else:
+            weeks = (
+                utils.get_baby_age(utils.get_today(), registration.data["baby_dob"])
+                + 40
+            )
         msgset_short_name = utils.get_messageset_short_name(
             "whatsapp_service_info", registration.source.authority, weeks
         )

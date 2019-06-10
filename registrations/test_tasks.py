@@ -27,7 +27,7 @@ from registrations.tasks import (
 )
 from registrations.tasks import validate_subscribe_jembi_app_registration as task
 
-from .tests import AuthenticatedAPITestCase
+from .tests import AuthenticatedAPITestCase, override_get_today
 
 
 class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
@@ -1715,3 +1715,24 @@ class CreatePOPISubscriptionRequestPostbirthTests(AuthenticatedAPITestCase):
         [subreq] = SubscriptionRequest.objects.all()
         self.assertEqual(subreq.messageset, 71)
         self.assertEqual(subreq.lang, "eng_ZA")
+
+
+class CreateServiceInfoSubscriptionrequestPostbirthTests(AuthenticatedAPITestCase):
+    @responses.activate
+    def test_creates_service_info_subscriptionrequest(self):
+        """
+        Should create a subscription request for whatsapp postbirth registrations
+        """
+        utils_tests.mock_get_messageset_by_shortname("whatsapp_service_info.hw_full.1")
+        registration = Registration.objects.create(
+            reg_type="whatsapp_postbirth",
+            source=self.make_source_adminuser(),
+            registrant_id=str(uuid4()),
+            data={"language": "eng_ZA", "baby_dob": "2015-12-01"},
+        )
+        with mock.patch("ndoh_hub.utils.get_today", override_get_today):
+            validate_subscribe.create_service_info_subscriptionrequest(registration)
+        [subreq] = SubscriptionRequest.objects.all()
+        self.assertEqual(subreq.messageset, 96)
+        self.assertEqual(subreq.lang, "eng_ZA")
+        self.assertEqual(subreq.next_sequence_number, 11)
