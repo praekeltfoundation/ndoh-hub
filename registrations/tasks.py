@@ -259,8 +259,22 @@ class ValidateSubscribe(Task):
                 validation_errors += self.check_edd(data_fields, registration)
                 validation_errors += self.check_faccode(data_fields, registration)
 
-        elif registration.reg_type == "momconnect_postbirth":
-            validation_errors.append("Momconnect postbirth not yet supported")
+        elif registration.reg_type in ("momconnect_postbirth", "whatsapp_postbirth"):
+            if registration.source.authority == "hw_full":
+                validation_errors += self.check_operator_id(data_fields, registration)
+                validation_errors += self.check_msisdn_registrant(
+                    data_fields, registration
+                )
+                validation_errors += self.check_msisdn_device(data_fields, registration)
+                validation_errors += self.check_lang(data_fields, registration)
+                validation_errors += self.check_consent(data_fields, registration)
+                validation_errors += self.check_id(data_fields, registration)
+                validation_errors += self.check_baby_dob(data_fields, registration)
+                validation_errors += self.check_faccode(data_fields, registration)
+            else:
+                validation_errors += [
+                    "Momconnect postbirth not yet supported for public or CHW"
+                ]
 
         elif registration.reg_type == "loss_general":
             validation_errors.append("Loss general not yet supported")
