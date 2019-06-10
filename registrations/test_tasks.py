@@ -1675,3 +1675,43 @@ class ValidateSubscribePostbirthTests(AuthenticatedAPITestCase):
         )
         result = validate_subscribe.validate(registration)
         self.assertTrue(result)
+
+
+class CreatePOPISubscriptionRequestPostbirthTests(AuthenticatedAPITestCase):
+    @responses.activate
+    def test_creates_popi_subscriptionrequest_sms(self):
+        """
+        Should create a subscription request for POPI messages on SMS postbirth
+        registrations
+        """
+        utils_tests.mock_get_messageset_by_shortname("popi.hw_full.1")
+        registration = Registration.objects.create(
+            reg_type="momconnect_postbirth",
+            source=self.make_source_adminuser(),
+            registrant_id=str(uuid4()),
+            data={"language": "eng_ZA"},
+        )
+        result = validate_subscribe.create_popi_subscriptionrequest(registration)
+        self.assertEqual(result, "POPI Subscription Request created")
+        [subreq] = SubscriptionRequest.objects.all()
+        self.assertEqual(subreq.messageset, 71)
+        self.assertEqual(subreq.lang, "eng_ZA")
+
+    @responses.activate
+    def test_creates_popi_subscriptionrequest_whatsapp(self):
+        """
+        Should create a subscription request for POPI messages on WhatsApp postbirth
+        registrations
+        """
+        utils_tests.mock_get_messageset_by_shortname("popi.hw_full.1")
+        registration = Registration.objects.create(
+            reg_type="whatsapp_postbirth",
+            source=self.make_source_adminuser(),
+            registrant_id=str(uuid4()),
+            data={"language": "eng_ZA"},
+        )
+        result = validate_subscribe.create_popi_subscriptionrequest(registration)
+        self.assertEqual(result, "POPI Subscription Request created")
+        [subreq] = SubscriptionRequest.objects.all()
+        self.assertEqual(subreq.messageset, 71)
+        self.assertEqual(subreq.lang, "eng_ZA")

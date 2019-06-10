@@ -303,10 +303,12 @@ class ValidateSubscribe(Task):
         message set tells the user how to access the POPI required services.
         This should only be sent for Clinic or CHW registrations.
         """
-        if (
-            "prebirth" not in registration.reg_type
-            or registration.source.authority not in ["hw_partial", "hw_full"]
-        ):
+        if registration.reg_type not in (
+            "momconnect_prebirth",
+            "momconnect_postbirth",
+            "whatsapp_prebirth",
+            "whatsapp_postbirth",
+        ) or registration.source.authority not in ["hw_partial", "hw_full"]:
             return "POPI Subscription request not created"
 
         self.log.info("Fetching messageset")
