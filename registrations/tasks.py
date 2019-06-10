@@ -398,6 +398,12 @@ class ValidateSubscribe(Task):
         elif "pmtct_postbirth" in registration.reg_type:
             weeks = utils.get_baby_age(utils.get_today(), registration.data["baby_dob"])
 
+        elif (
+            registration.reg_type in ("momconnect_postbirth", "whatsapp_postbirth")
+            and registration.source.authority == "hw_full"
+        ):
+            weeks = utils.get_baby_age(utils.get_today(), registration.data["baby_dob"])
+
         # . determine messageset shortname
         self.log.info("Determining messageset shortname")
         short_name = utils.get_messageset_short_name(

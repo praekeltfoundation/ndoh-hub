@@ -1736,3 +1736,49 @@ class CreateServiceInfoSubscriptionrequestPostbirthTests(AuthenticatedAPITestCas
         self.assertEqual(subreq.messageset, 96)
         self.assertEqual(subreq.lang, "eng_ZA")
         self.assertEqual(subreq.next_sequence_number, 11)
+
+
+class CreateSubscriptionrequestsPostbirthTests(AuthenticatedAPITestCase):
+    @responses.activate
+    def test_creates_postbirth_subscriptionrequest_sms(self):
+        """
+        Should create the correct subscription request for the postbirth messageset
+        """
+        schedule = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_postbirth.hw_full.1"
+        )
+        utils_tests.mock_get_schedule(schedule)
+        registration = Registration.objects.create(
+            reg_type="momconnect_postbirth",
+            source=self.make_source_adminuser(),
+            registrant_id=str(uuid4()),
+            data={"language": "eng_ZA", "baby_dob": "2015-12-01"},
+        )
+        with mock.patch("ndoh_hub.utils.get_today", override_get_today):
+            validate_subscribe.create_subscriptionrequests(registration)
+        [subreq] = SubscriptionRequest.objects.all()
+        self.assertEqual(subreq.messageset, 31)
+        self.assertEqual(subreq.lang, "eng_ZA")
+        self.assertEqual(subreq.next_sequence_number, 9)
+
+    @responses.activate
+    def test_creates_postbirth_subscriptionrequest_whatsapp(self):
+        """
+        Should create the correct subscription request for the postbirth messageset
+        """
+        schedule = utils_tests.mock_get_messageset_by_shortname(
+            "whatsapp_momconnect_postbirth.hw_full.1"
+        )
+        utils_tests.mock_get_schedule(schedule)
+        registration = Registration.objects.create(
+            reg_type="whatsapp_postbirth",
+            source=self.make_source_adminuser(),
+            registrant_id=str(uuid4()),
+            data={"language": "eng_ZA", "baby_dob": "2015-12-01"},
+        )
+        with mock.patch("ndoh_hub.utils.get_today", override_get_today):
+            validate_subscribe.create_subscriptionrequests(registration)
+        [subreq] = SubscriptionRequest.objects.all()
+        self.assertEqual(subreq.messageset, 94)
+        self.assertEqual(subreq.lang, "eng_ZA")
+        self.assertEqual(subreq.next_sequence_number, 9)
