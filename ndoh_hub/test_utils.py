@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import responses
 
-from ndoh_hub.utils import get_messageset_short_name, get_messageset_schedule_sequence
+from ndoh_hub.utils import get_messageset_schedule_sequence, get_messageset_short_name
 from ndoh_hub.utils_tests import mock_get_messageset_by_shortname, mock_get_schedule
 
 
