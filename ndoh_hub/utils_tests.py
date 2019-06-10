@@ -145,9 +145,11 @@ def mock_get_messageset_by_shortname(short_name):
         "whatsapp_pmtct_postbirth.patient.1": 91,
         "whatsapp_pmtct_prebirth.patient.1": 92,
         "whatsapp_momconnect_prebirth.hw_full.1": 93,
-        "whatsapp_momconnect_postbirth.hw_full.1": 93,
-        "whatsapp_momconnect_prebirth.hw_full.2": 94,
-        "whatsapp_service_info.hw_full.1": 95,
+        "whatsapp_momconnect_postbirth.hw_full.1": 94,
+        "whatsapp_momconnect_prebirth.hw_full.2": 95,
+        "whatsapp_service_info.hw_full.1": 96,
+        "whatsapp_momconnect_postbirth.hw_full.2": 97,
+        "whatsapp_momconnect_postbirth.hw_full.3": 98,
     }[short_name]
 
     default_schedule = {
@@ -178,10 +180,12 @@ def mock_get_messageset_by_shortname(short_name):
         "whatsapp_loss_miscarriage.patient.1": 181,
         "whatsapp_pmtct_postbirth.patient.1": 191,
         "whatsapp_pmtct_prebirth.patient.1": 192,
-        "whatsapp_momconnect_prebirth.hw_full.1": 192,
-        "whatsapp_momconnect_postbirth.hw_full.1": 192,
-        "whatsapp_momconnect_prebirth.hw_full.2": 122,
-        "whatsapp_service_info.hw_full.1": 123,
+        "whatsapp_momconnect_prebirth.hw_full.1": 193,
+        "whatsapp_momconnect_postbirth.hw_full.1": 194,
+        "whatsapp_momconnect_prebirth.hw_full.2": 195,
+        "whatsapp_service_info.hw_full.1": 196,
+        "whatsapp_momconnect_postbirth.hw_full.2": 197,
+        "whatsapp_momconnect_postbirth.hw_full.3": 198,
     }[short_name]
 
     responses.add(
@@ -316,6 +320,12 @@ def mock_get_schedule(schedule_id):
         181: "1,4",
         191: "1,4",
         192: "1",
+        193: "1,4",
+        194: "1,4",
+        195: "1,3,5",
+        196: "*",
+        197: "1",
+        198: "1,3,5",
     }[schedule_id]
 
     responses.add(

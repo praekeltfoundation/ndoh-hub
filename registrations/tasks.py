@@ -259,8 +259,22 @@ class ValidateSubscribe(Task):
                 validation_errors += self.check_edd(data_fields, registration)
                 validation_errors += self.check_faccode(data_fields, registration)
 
-        elif registration.reg_type == "momconnect_postbirth":
-            validation_errors.append("Momconnect postbirth not yet supported")
+        elif registration.reg_type in ("momconnect_postbirth", "whatsapp_postbirth"):
+            if registration.source.authority == "hw_full":
+                validation_errors += self.check_operator_id(data_fields, registration)
+                validation_errors += self.check_msisdn_registrant(
+                    data_fields, registration
+                )
+                validation_errors += self.check_msisdn_device(data_fields, registration)
+                validation_errors += self.check_lang(data_fields, registration)
+                validation_errors += self.check_consent(data_fields, registration)
+                validation_errors += self.check_id(data_fields, registration)
+                validation_errors += self.check_baby_dob(data_fields, registration)
+                validation_errors += self.check_faccode(data_fields, registration)
+            else:
+                validation_errors += [
+                    "Momconnect postbirth not yet supported for public or CHW"
+                ]
 
         elif registration.reg_type == "loss_general":
             validation_errors.append("Loss general not yet supported")
@@ -289,10 +303,12 @@ class ValidateSubscribe(Task):
         message set tells the user how to access the POPI required services.
         This should only be sent for Clinic or CHW registrations.
         """
-        if (
-            "prebirth" not in registration.reg_type
-            or registration.source.authority not in ["hw_partial", "hw_full"]
-        ):
+        if registration.reg_type not in (
+            "momconnect_prebirth",
+            "momconnect_postbirth",
+            "whatsapp_prebirth",
+            "whatsapp_postbirth",
+        ) or registration.source.authority not in ["hw_partial", "hw_full"]:
             return "POPI Subscription request not created"
 
         self.log.info("Fetching messageset")
@@ -320,15 +336,23 @@ class ValidateSubscribe(Task):
         Creates a new subscription request for the service info message set.
         This should only be created for momconnect whatsapp registrations.
         """
-        if (
-            registration.reg_type != "whatsapp_prebirth"
-            or registration.source.authority in ["hw_partial", "patient"]
-        ):
+        if registration.reg_type not in (
+            "whatsapp_prebirth",
+            "whatsapp_postbirth",
+        ) or registration.source.authority in ["hw_partial", "patient"]:
             return
 
         self.log.info("Fetching messageset")
 
-        weeks = utils.get_pregnancy_week(utils.get_today(), registration.data["edd"])
+        if registration.reg_type == "whatsapp_prebirth":
+            weeks = utils.get_pregnancy_week(
+                utils.get_today(), registration.data["edd"]
+            )
+        else:
+            weeks = (
+                utils.get_baby_age(utils.get_today(), registration.data["baby_dob"])
+                + 40
+            )
         msgset_short_name = utils.get_messageset_short_name(
             "whatsapp_service_info", registration.source.authority, weeks
         )
@@ -372,6 +396,12 @@ class ValidateSubscribe(Task):
             )
 
         elif "pmtct_postbirth" in registration.reg_type:
+            weeks = utils.get_baby_age(utils.get_today(), registration.data["baby_dob"])
+
+        elif (
+            registration.reg_type in ("momconnect_postbirth", "whatsapp_postbirth")
+            and registration.source.authority == "hw_full"
+        ):
             weeks = utils.get_baby_age(utils.get_today(), registration.data["baby_dob"])
 
         # . determine messageset shortname

@@ -27,7 +27,7 @@ from registrations.tasks import (
 )
 from registrations.tasks import validate_subscribe_jembi_app_registration as task
 
-from .tests import AuthenticatedAPITestCase
+from .tests import AuthenticatedAPITestCase, override_get_today
 
 
 class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
@@ -1135,7 +1135,7 @@ class ServiceInfoSubscriptionRequestTestCase(AuthenticatedAPITestCase):
 
         [subreq] = SubscriptionRequest.objects.all()
         self.assertEqual(subreq.identity, registration.registrant_id)
-        self.assertEqual(subreq.messageset, 95)
+        self.assertEqual(subreq.messageset, 96)
         self.assertEqual(subreq.next_sequence_number, 5)
         self.assertEqual(subreq.lang, "zul_ZA")
         self.assertEqual(subreq.schedule, schedule_id)
@@ -1579,3 +1579,206 @@ class CreateRapidProClinicRegistrationTaskTests(AuthenticatedAPITestCase):
                 "operator_id": "test-id-2",
             },
         )
+
+
+class ValidateSubscribePostbirthTests(AuthenticatedAPITestCase):
+    def test_validation_missing_fields_failure(self):
+        """
+        Should give details on the fields that are missing
+        """
+        registration = Registration.objects.create(
+            reg_type="momconnect_postbirth",
+            source=self.make_source_adminuser(),
+            registrant_id=str(uuid4()),
+            data={},
+        )
+        result = validate_subscribe.validate(registration)
+        self.assertFalse(result)
+        errors = registration.data["invalid_fields"]
+        self.assertIn("Operator ID missing", errors)
+        self.assertIn("MSISDN of Registrant missing", errors)
+        self.assertIn("MSISDN of device missing", errors)
+        self.assertIn("Language is missing from data", errors)
+        self.assertIn("Consent is missing", errors)
+        self.assertIn("ID type missing", errors)
+        self.assertIn("Baby Date of Birth missing", errors)
+        self.assertIn("Facility (clinic) code missing", errors)
+
+    def test_validation_incorrect_fields(self):
+        """
+        Should give details on fields that are incorrect
+        """
+        registration = Registration.objects.create(
+            reg_type="whatsapp_postbirth",
+            source=self.make_source_adminuser(),
+            registrant_id=str(uuid4()),
+            data={
+                "operator_id": "1",
+                "msisdn_registrant": "2",
+                "msisdn_device": "3",
+                "language": "4",
+                "consent": False,
+                "id_type": "5",
+                "baby_dob": "6",
+                "faccode": "",
+            },
+        )
+        result = validate_subscribe.validate(registration)
+        self.assertFalse(result)
+        errors = registration.data["invalid_fields"]
+        self.assertIn("Operator ID invalid", errors)
+        self.assertIn("MSISDN of Registrant invalid", errors)
+        self.assertIn("MSISDN of device invalid", errors)
+        self.assertIn("Language not a valid option", errors)
+        self.assertIn("Cannot continue without consent", errors)
+        self.assertIn("ID type should be one of ['sa_id', 'passport', 'none']", errors)
+        self.assertIn("Baby Date of Birth invalid", errors)
+        self.assertIn("Facility code invalid", errors)
+
+    def test_public_registration_validation_failure(self):
+        """
+        Public registration is not yet supported for postbirth
+        """
+        registration = Registration.objects.create(
+            reg_type="momconnect_postbirth",
+            source=self.make_source_normaluser(),
+            registrant_id=str(uuid4()),
+            data={},
+        )
+        result = validate_subscribe.validate(registration)
+        self.assertFalse(result)
+        errors = registration.data["invalid_fields"]
+        self.assertIn(
+            "Momconnect postbirth not yet supported for public or CHW", errors
+        )
+
+    def test_validation_success(self):
+        """
+        If the data is correct, then the validation should succeed
+        """
+        registration = Registration.objects.create(
+            reg_type="momconnect_postbirth",
+            source=self.make_source_adminuser(),
+            registrant_id=str(uuid4()),
+            data={
+                "operator_id": str(uuid4()),
+                "msisdn_registrant": "+27820001001",
+                "msisdn_device": "+27820001002",
+                "language": "eng_ZA",
+                "consent": True,
+                "id_type": "sa_id",
+                "sa_id_no": "8108015001051",
+                "mom_dob": "1981-08-01",
+                "baby_dob": "2015-01-01",
+                "faccode": "123456",
+            },
+        )
+        result = validate_subscribe.validate(registration)
+        self.assertTrue(result)
+
+
+class CreatePOPISubscriptionRequestPostbirthTests(AuthenticatedAPITestCase):
+    @responses.activate
+    def test_creates_popi_subscriptionrequest_sms(self):
+        """
+        Should create a subscription request for POPI messages on SMS postbirth
+        registrations
+        """
+        utils_tests.mock_get_messageset_by_shortname("popi.hw_full.1")
+        registration = Registration.objects.create(
+            reg_type="momconnect_postbirth",
+            source=self.make_source_adminuser(),
+            registrant_id=str(uuid4()),
+            data={"language": "eng_ZA"},
+        )
+        result = validate_subscribe.create_popi_subscriptionrequest(registration)
+        self.assertEqual(result, "POPI Subscription Request created")
+        [subreq] = SubscriptionRequest.objects.all()
+        self.assertEqual(subreq.messageset, 71)
+        self.assertEqual(subreq.lang, "eng_ZA")
+
+    @responses.activate
+    def test_creates_popi_subscriptionrequest_whatsapp(self):
+        """
+        Should create a subscription request for POPI messages on WhatsApp postbirth
+        registrations
+        """
+        utils_tests.mock_get_messageset_by_shortname("popi.hw_full.1")
+        registration = Registration.objects.create(
+            reg_type="whatsapp_postbirth",
+            source=self.make_source_adminuser(),
+            registrant_id=str(uuid4()),
+            data={"language": "eng_ZA"},
+        )
+        result = validate_subscribe.create_popi_subscriptionrequest(registration)
+        self.assertEqual(result, "POPI Subscription Request created")
+        [subreq] = SubscriptionRequest.objects.all()
+        self.assertEqual(subreq.messageset, 71)
+        self.assertEqual(subreq.lang, "eng_ZA")
+
+
+class CreateServiceInfoSubscriptionrequestPostbirthTests(AuthenticatedAPITestCase):
+    @responses.activate
+    def test_creates_service_info_subscriptionrequest(self):
+        """
+        Should create a subscription request for whatsapp postbirth registrations
+        """
+        utils_tests.mock_get_messageset_by_shortname("whatsapp_service_info.hw_full.1")
+        registration = Registration.objects.create(
+            reg_type="whatsapp_postbirth",
+            source=self.make_source_adminuser(),
+            registrant_id=str(uuid4()),
+            data={"language": "eng_ZA", "baby_dob": "2015-12-01"},
+        )
+        with mock.patch("ndoh_hub.utils.get_today", override_get_today):
+            validate_subscribe.create_service_info_subscriptionrequest(registration)
+        [subreq] = SubscriptionRequest.objects.all()
+        self.assertEqual(subreq.messageset, 96)
+        self.assertEqual(subreq.lang, "eng_ZA")
+        self.assertEqual(subreq.next_sequence_number, 11)
+
+
+class CreateSubscriptionrequestsPostbirthTests(AuthenticatedAPITestCase):
+    @responses.activate
+    def test_creates_postbirth_subscriptionrequest_sms(self):
+        """
+        Should create the correct subscription request for the postbirth messageset
+        """
+        schedule = utils_tests.mock_get_messageset_by_shortname(
+            "momconnect_postbirth.hw_full.1"
+        )
+        utils_tests.mock_get_schedule(schedule)
+        registration = Registration.objects.create(
+            reg_type="momconnect_postbirth",
+            source=self.make_source_adminuser(),
+            registrant_id=str(uuid4()),
+            data={"language": "eng_ZA", "baby_dob": "2015-12-01"},
+        )
+        with mock.patch("ndoh_hub.utils.get_today", override_get_today):
+            validate_subscribe.create_subscriptionrequests(registration)
+        [subreq] = SubscriptionRequest.objects.all()
+        self.assertEqual(subreq.messageset, 31)
+        self.assertEqual(subreq.lang, "eng_ZA")
+        self.assertEqual(subreq.next_sequence_number, 9)
+
+    @responses.activate
+    def test_creates_postbirth_subscriptionrequest_whatsapp(self):
+        """
+        Should create the correct subscription request for the postbirth messageset
+        """
+        schedule = utils_tests.mock_get_messageset_by_shortname(
+            "whatsapp_momconnect_postbirth.hw_full.1"
+        )
+        utils_tests.mock_get_schedule(schedule)
+        registration = Registration.objects.create(
+            reg_type="whatsapp_postbirth",
+            source=self.make_source_adminuser(),
+            registrant_id=str(uuid4()),
+            data={"language": "eng_ZA", "baby_dob": "2015-12-01"},
+        )
+        with mock.patch("ndoh_hub.utils.get_today", override_get_today):
+            validate_subscribe.create_subscriptionrequests(registration)
+        [subreq] = SubscriptionRequest.objects.all()
+        self.assertEqual(subreq.messageset, 94)
+        self.assertEqual(subreq.lang, "eng_ZA")
+        self.assertEqual(subreq.next_sequence_number, 9)

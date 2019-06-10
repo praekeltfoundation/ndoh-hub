@@ -124,11 +124,11 @@ class ServiceInfoSubscriptionsTests(TestCase):
         )
 
         [subreq] = SubscriptionRequest.objects.all()
-        self.assertEqual(subreq.messageset, 95)
+        self.assertEqual(subreq.messageset, 96)
         self.assertEqual(subreq.identity, "identity-uuid2")
         self.assertEqual(subreq.next_sequence_number, 1)
         self.assertEqual(subreq.lang, "sso_ZA")
-        self.assertEqual(subreq.schedule, 123)
+        self.assertEqual(subreq.schedule, 196)
 
     @responses.activate
     def test_service_info_sequence(self):

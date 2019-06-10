@@ -2595,10 +2595,10 @@ class TestSubscriptionRequestCreation(AuthenticatedAPITestCase):
 
         sr = SubscriptionRequest.objects.last()
         self.assertEqual(sr.identity, "mother01-63e2-4acc-9b94-26663b9bc267")
-        self.assertEqual(sr.messageset, 94)
+        self.assertEqual(sr.messageset, 95)
         self.assertEqual(sr.next_sequence_number, 4)  # ((32 - 30) * 3) - 2
         self.assertEqual(sr.lang, "eng_ZA")
-        self.assertEqual(sr.schedule, 122)
+        self.assertEqual(sr.schedule, 195)
 
     @responses.activate
     def test_src_momconnect_prebirth_public(self):
