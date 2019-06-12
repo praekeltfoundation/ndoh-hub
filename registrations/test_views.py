@@ -1596,3 +1596,45 @@ class RapidProClinicRegistrationViewTests(AuthenticatedAPITestCase):
         data["user_id"] = self.adminuser.id
         data["created"] = "2016-01-01T00:00:00+00:00"
         task.delay.assert_called_once_with(data)
+
+
+class RapidProPublicRegistrationViewTests(AuthenticatedAPITestCase):
+    def test_authentication_required(self):
+        """
+        There must be an authenticated user to make the request
+        """
+        response = self.client.post(reverse("rapidpro-public-registration"))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_permission_required(self):
+        """
+        The authenticated user must have the correct permissions to make the request
+        """
+        response = self.normalclient.post(reverse("rapidpro-public-registration"))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_data_validation(self):
+        """
+        The supplied data must be validated, and any errors returned
+        """
+        response = self.adminclient.post(reverse("rapidpro-public-registration"))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @mock.patch("registrations.views.create_rapidpro_public_registration")
+    def test_successful_request(self, task):
+        """
+        If the data validation succeeds, then the create_rapidpro_clinic_registration
+        task should be called with the request data, as well as the user that made
+        the request.
+        """
+        data = {
+            "mom_msisdn": "+27820001001",
+            "mom_lang": "eng_ZA",
+            "created": "2016-01-01 00:00:00",
+        }
+        url = "{}?{}".format(reverse("rapidpro-public-registration"), urlencode(data))
+        response = self.adminclient.post(url)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        data["user_id"] = self.adminuser.id
+        data["created"] = "2016-01-01T00:00:00+00:00"
+        task.delay.assert_called_once_with(data)

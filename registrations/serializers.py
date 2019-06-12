@@ -480,3 +480,17 @@ class RapidProClinicRegistrationSerializer(serializers.Serializer):
                     "baby_dob field must be supplied if registration_type is postbirth"
                 )
         return data
+
+
+class RapidProPublicRegistrationSerializer(serializers.Serializer):
+    mom_msisdn = MSISDNField(
+        country="ZA", help_text="The phone number of the mother", label="Mother MSISDN"
+    )
+    mom_lang = serializers.ChoiceField(
+        utils.LANGUAGES,
+        help_text="The language that the mother would like to receive communication in",
+        label="Mother language",
+    )
+    created = serializers.DateTimeField(
+        help_text="The timestamp when the registration was created", label="Created at"
+    )
