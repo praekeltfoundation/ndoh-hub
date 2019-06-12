@@ -19,10 +19,13 @@ from registrations.serializers import RegistrationSerializer
 from registrations.signals import psh_validate_subscribe
 from registrations.tasks import (
     _create_rapidpro_clinic_registration,
+    _create_rapidpro_public_registration,
     create_rapidpro_clinic_registration,
+    create_rapidpro_public_registration,
     get_or_create_identity_from_msisdn,
     get_whatsapp_contact,
     update_identity_from_rapidpro_clinic_registration,
+    update_identity_from_rapidpro_public_registration,
     validate_subscribe,
 )
 from registrations.tasks import validate_subscribe_jembi_app_registration as task
@@ -1354,6 +1357,31 @@ class UpdateIdentityFromRapidProClinicRegistrationTaskTests(TestCase):
         )
 
 
+class UpdateIdentityFromRapidProPublicRegistrationTaskTests(TestCase):
+    @responses.activate
+    def test_update_fields(self):
+        """
+        Should update the identity detail fields
+        """
+        responses.add(responses.PATCH, "http://is/api/v1/identities/test-id/", json={})
+        update_identity_from_rapidpro_public_registration(
+            {
+                "mom_msisdn_identity": {"id": "test-id", "details": {}},
+                "mom_lang": "eng_ZA",
+            }
+        )
+        self.assertEqual(
+            json.loads(responses.calls[-1].request.body),
+            {
+                "details": {
+                    "consent": True,
+                    "lang_code": "eng_ZA",
+                    "last_mc_reg_on": "public",
+                }
+            },
+        )
+
+
 class CreateRapidProClinicRegistrationTaskTests(AuthenticatedAPITestCase):
     def test_sa_id(self):
         """
@@ -1577,6 +1605,78 @@ class CreateRapidProClinicRegistrationTaskTests(AuthenticatedAPITestCase):
                 "msisdn_registrant": "+27820001001",
                 "msisdn_device": "+27820001002",
                 "operator_id": "test-id-2",
+            },
+        )
+
+
+class CreateRapidProPublicRegistrationTaskTests(AuthenticatedAPITestCase):
+    def test_create_registration(self):
+        """
+        Should create a registration with the appropriate details
+        """
+        source = self.make_source_normaluser()
+        _create_rapidpro_public_registration(
+            {
+                "user_id": self.normaluser.id,
+                "mom_msisdn": "+27820001001",
+                "mom_msisdn_identity": {"id": "test-id"},
+                "mom_lang": "eng_ZA",
+            }
+        )
+        [reg] = Registration.objects.all()
+        self.assertEqual(reg.reg_type, "whatsapp_prebirth")
+        self.assertEqual(reg.registrant_id, "test-id")
+        self.assertEqual(reg.source, source)
+        self.assertEqual(
+            reg.data,
+            {
+                "consent": True,
+                "language": "eng_ZA",
+                "msisdn_registrant": "+27820001001",
+                "msisdn_device": "+27820001001",
+                "operator_id": "test-id",
+                "registered_on_whatsapp": True,
+            },
+        )
+
+    @responses.activate
+    def test_end_to_end(self):
+        """
+        Ensure that the chaining of tasks works
+        """
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/search/?{}".format(
+                urlencode({"details__adresses_msisdn": "+27820001001"})
+            ),
+            json={"results": [{"id": "test-id-1", "details": {}}]},
+        )
+        responses.add(
+            responses.PATCH,
+            "http://is/api/v1/identities/test-id-1/",
+            json={"id": "test-id-1", "details": {}},
+        )
+        source = self.make_source_normaluser()
+        create_rapidpro_public_registration(
+            {
+                "user_id": self.normaluser.id,
+                "mom_msisdn": "+27820001001",
+                "mom_lang": "eng_ZA",
+            }
+        )
+        [reg] = Registration.objects.all()
+        self.assertEqual(reg.reg_type, "whatsapp_prebirth")
+        self.assertEqual(reg.registrant_id, "test-id-1")
+        self.assertEqual(reg.source, source)
+        self.assertEqual(
+            reg.data,
+            {
+                "consent": True,
+                "language": "eng_ZA",
+                "msisdn_registrant": "+27820001001",
+                "msisdn_device": "+27820001001",
+                "operator_id": "test-id-1",
+                "registered_on_whatsapp": True,
             },
         )
 
