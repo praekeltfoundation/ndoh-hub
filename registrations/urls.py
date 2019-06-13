@@ -54,5 +54,10 @@ urlpatterns = [
         views.RapidProClinicRegistrationView.as_view(),
         name="rapidpro-clinic-registration",
     ),
+    path(
+        "api/v1/rapidpro/public_registration",
+        views.RapidProPublicRegistrationView.as_view(),
+        name="rapidpro-public-registration",
+    ),
     url(r"^api/v1/", include(router.urls)),
 ]

@@ -1476,3 +1476,66 @@ create_rapidpro_clinic_registration = (
     | get_or_create_identity_from_msisdn.s("device_msisdn")
     | _create_rapidpro_clinic_registration.s()
 )
+
+
+@app.task(
+    autoretry_for=(RequestException, HTTPServiceError, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def update_identity_from_rapidpro_public_registration(context):
+    """
+    Updates the identity's details from the registration details
+    """
+    identity = context["mom_msisdn_identity"]
+    identity["details"]["lang_code"] = context["mom_lang"]
+    identity["details"]["consent"] = True
+    identity["details"]["last_mc_reg_on"] = "public"
+
+    context["mom_msisdn_identity"] = utils.is_client.update_identity(
+        identity["id"], {"details": identity["details"]}
+    )
+    return context
+
+
+@app.task(
+    autoretry_for=(SoftTimeLimitExceeded,),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def _create_rapidpro_public_registration(context):
+    user = User.objects.get(id=context["user_id"])
+    source = Source.objects.get(user=user)
+
+    data = {
+        "operator_id": context["mom_msisdn_identity"]["id"],
+        "msisdn_registrant": context["mom_msisdn"],
+        "msisdn_device": context["mom_msisdn"],
+        "language": context["mom_lang"],
+        "consent": True,
+        "registered_on_whatsapp": True,
+    }
+
+    Registration.objects.create(
+        reg_type="whatsapp_prebirth",
+        registrant_id=context["mom_msisdn_identity"]["id"],
+        source=source,
+        created_by=user,
+        updated_by=user,
+        data=data,
+    )
+
+
+create_rapidpro_public_registration = (
+    get_or_create_identity_from_msisdn.s("mom_msisdn")
+    | update_identity_from_rapidpro_public_registration.s()
+    | _create_rapidpro_public_registration.s()
+)

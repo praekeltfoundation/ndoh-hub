@@ -56,6 +56,7 @@ from .serializers import (
     JembiHelpdeskOutgoingSerializer,
     PositionTrackerSerializer,
     RapidProClinicRegistrationSerializer,
+    RapidProPublicRegistrationSerializer,
     RegistrationSerializer,
     SourceSerializer,
     SubscriptionsCheckSerializer,
@@ -65,6 +66,7 @@ from .serializers import (
 )
 from .tasks import (
     create_rapidpro_clinic_registration,
+    create_rapidpro_public_registration,
     get_whatsapp_contact,
     validate_subscribe_jembi_app_registration,
 )
@@ -1258,5 +1260,24 @@ class RapidProClinicRegistrationView(generics.CreateAPIView):
         data["created"] = data["created"].isoformat()
 
         create_rapidpro_clinic_registration.delay(data)
+
+        return Response(data, status=status.HTTP_202_ACCEPTED)
+
+
+class RapidProPublicRegistrationView(generics.CreateAPIView):
+    queryset = Registration.objects.none()
+    permission_classes = (DjangoModelPermissions,)
+    serializer_class = RapidProPublicRegistrationSerializer
+
+    def post(self, request: Request) -> Response:
+        serializer = self.get_serializer_class()(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        data["user_id"] = request.user.id
+
+        # Serialize the dates
+        data["created"] = data["created"].isoformat()
+
+        create_rapidpro_public_registration.delay(data)
 
         return Response(data, status=status.HTTP_202_ACCEPTED)
