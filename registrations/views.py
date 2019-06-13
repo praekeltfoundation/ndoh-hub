@@ -1216,6 +1216,8 @@ class SubscriptionCheckView(APIView):
                 or "momconnect_prebirth.patient" in subscription
             ):
                 return "public"
+            if "momconnect_postbirth.hw_full" in subscription:
+                return "postbirth"
         return "none"
 
     def derive_optout_status(self, identity, msisdn):

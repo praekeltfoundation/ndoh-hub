@@ -1456,6 +1456,12 @@ class SubscriptionCheckViewTests(APITestCase):
             ),
             "public",
         )
+        self.assertEqual(
+            SubscriptionCheckView().derive_subscription_status(
+                ["whatsapp_momconnect_postbirth.hw_full.2"]
+            ),
+            "postbirth",
+        )
         self.assertEqual(SubscriptionCheckView().derive_subscription_status([]), "none")
 
     def test_derive_optout_status(self):
