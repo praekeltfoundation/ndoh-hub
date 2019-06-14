@@ -21,10 +21,18 @@ from rest_framework.test import APITestCase
 from changes.models import Change
 from changes.signals import psh_validate_implement
 from registrations.models import PositionTracker, Registration, Source, WhatsAppContact
-from registrations.serializers import RegistrationSerializer
+from registrations.serializers import (
+    DoBRapidProClinicRegistrationSerializer,
+    PassportRapidProClinicRegistrationSerializer,
+    PostBirthRapidProClinicRegistrationSerializer,
+    PrebirthRapidProClinicRegistrationSerializer,
+    RegistrationSerializer,
+    SaIdNoRapidProClinicRegistrationSerializer,
+)
 from registrations.tests import AuthenticatedAPITestCase
 from registrations.views import (
     EngageContextView,
+    RapidProClinicRegistrationView,
     ServiceUnavailable,
     SubscriptionCheckView,
 )
@@ -1672,6 +1680,38 @@ class RapidProClinicRegistrationViewTests(AuthenticatedAPITestCase):
         """
         response = self.adminclient.post(reverse("rapidpro-clinic-registration"))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_get_regtype_serializer(self):
+        """
+        Should return the correct serializer instance for the registration type
+        """
+        view = RapidProClinicRegistrationView()
+        self.assertEqual(
+            view.get_regtype_serializer_class("prebirth"),
+            PrebirthRapidProClinicRegistrationSerializer,
+        )
+        self.assertEqual(
+            view.get_regtype_serializer_class("postbirth"),
+            PostBirthRapidProClinicRegistrationSerializer,
+        )
+
+    def test_get_idtype_serializer(self):
+        """
+        Should return the correct serializer instance for the identification type
+        """
+        view = RapidProClinicRegistrationView()
+        self.assertEqual(
+            view.get_idtype_serializer_class("sa_id"),
+            SaIdNoRapidProClinicRegistrationSerializer,
+        )
+        self.assertEqual(
+            view.get_idtype_serializer_class("passport"),
+            PassportRapidProClinicRegistrationSerializer,
+        )
+        self.assertEqual(
+            view.get_idtype_serializer_class("none"),
+            DoBRapidProClinicRegistrationSerializer,
+        )
 
     @mock.patch("registrations.views.create_rapidpro_clinic_registration")
     def test_successful_request(self, task):

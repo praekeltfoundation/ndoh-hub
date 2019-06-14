@@ -35,6 +35,7 @@ from rest_framework.permissions import (
 )
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.serializers import Serializer
 from rest_framework.utils.encoders import JSONEncoder
 from rest_framework.views import APIView
 from rest_hooks.models import Hook
@@ -47,17 +48,22 @@ from ndoh_hub.utils import get_available_metrics, is_client, sbm_client
 
 from .models import PositionTracker, Registration, Source, WhatsAppContact
 from .serializers import (
+    BaseRapidProClinicRegistrationSerializer,
     CreateUserSerializer,
+    DoBRapidProClinicRegistrationSerializer,
     EngageActionSerializer,
     EngageContextSerializer,
     GroupSerializer,
     HookSerializer,
     JembiAppRegistrationSerializer,
     JembiHelpdeskOutgoingSerializer,
+    PassportRapidProClinicRegistrationSerializer,
     PositionTrackerSerializer,
-    RapidProClinicRegistrationSerializer,
+    PostBirthRapidProClinicRegistrationSerializer,
+    PrebirthRapidProClinicRegistrationSerializer,
     RapidProPublicRegistrationSerializer,
     RegistrationSerializer,
+    SaIdNoRapidProClinicRegistrationSerializer,
     SourceSerializer,
     SubscriptionsCheckSerializer,
     ThirdPartyRegistrationSerializer,
@@ -1328,13 +1334,38 @@ class SubscriptionCheckView(APIView):
 class RapidProClinicRegistrationView(generics.CreateAPIView):
     queryset = Registration.objects.none()
     permission_classes = (DjangoModelPermissions,)
-    serializer_class = RapidProClinicRegistrationSerializer
+    serializer_class = BaseRapidProClinicRegistrationSerializer
+
+    def get_regtype_serializer_class(self, reg_type: str) -> Serializer:
+        return {
+            "prebirth": PrebirthRapidProClinicRegistrationSerializer,
+            "postbirth": PostBirthRapidProClinicRegistrationSerializer,
+        }[reg_type]
+
+    def get_idtype_serializer_class(self, id_type: str) -> Serializer:
+        return {
+            "sa_id": SaIdNoRapidProClinicRegistrationSerializer,
+            "passport": PassportRapidProClinicRegistrationSerializer,
+            "none": DoBRapidProClinicRegistrationSerializer,
+        }[id_type]
 
     def post(self, request: Request) -> Response:
         serializer = self.get_serializer_class()(data=request.query_params)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         data["user_id"] = request.user.id
+
+        regtype_serializer = self.get_regtype_serializer_class(
+            data["registration_type"]
+        )(data=request.query_params)
+        regtype_serializer.is_valid(raise_exception=True)
+        data.update(regtype_serializer.validated_data)
+
+        idtype_serializer = self.get_idtype_serializer_class(data["mom_id_type"])(
+            data=request.query_params
+        )
+        idtype_serializer.is_valid(raise_exception=True)
+        data.update(idtype_serializer.validated_data)
 
         # Serialize the dates
         for field in ("mom_dob", "mom_edd", "baby_dob"):

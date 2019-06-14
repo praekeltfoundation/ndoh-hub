@@ -360,7 +360,7 @@ class SubscriptionsCheckSerializer(serializers.Serializer):
     msisdn = PhoneNumberField(country_code="ZA")
 
 
-class RapidProClinicRegistrationSerializer(serializers.Serializer):
+class BaseRapidProClinicRegistrationSerializer(serializers.Serializer):
     mom_msisdn = MSISDNField(
         country="ZA", help_text="The phone number of the mother", label="Mother MSISDN"
     )
@@ -374,6 +374,31 @@ class RapidProClinicRegistrationSerializer(serializers.Serializer):
         label="Mother ID Type",
         help_text="The type of identification that the mother registered with",
     )
+    mom_lang = serializers.ChoiceField(
+        utils.LANGUAGES,
+        help_text="The language that the mother would like to receive communication in",
+        label="Mother language",
+    )
+    registration_type = serializers.ChoiceField(
+        ["prebirth", "postbirth"],
+        help_text="Whether this is a prebirth or postbirt registration",
+        label="Registration type",
+    )
+    clinic_code = serializers.CharField(
+        help_text="The code of the clinic where the mother was registered",
+        label="Clinic Code",
+    )
+    channel = serializers.ChoiceField(
+        ["WhatsApp", "SMS"],
+        help_text="Whether this registration is for SMS or for WhatsApp",
+        label="Messaging Channel",
+    )
+    created = serializers.DateTimeField(
+        help_text="The timestamp when the registration was created", label="Created at"
+    )
+
+
+class SaIdNoRapidProClinicRegistrationSerializer(serializers.Serializer):
     mom_sa_id_no = serializers.CharField(
         required=False,
         allow_null=True,
@@ -383,6 +408,9 @@ class RapidProClinicRegistrationSerializer(serializers.Serializer):
         "mom_id_type is sa_id",
         validators=[validators.sa_id_no],
     )
+
+
+class PassportRapidProClinicRegistrationSerializer(serializers.Serializer):
     mom_passport_no = serializers.CharField(
         required=False,
         allow_null=True,
@@ -401,22 +429,18 @@ class RapidProClinicRegistrationSerializer(serializers.Serializer):
         help_text="The country of origin for the mother's passport. Required if "
         "mom_id_type is passport.",
     )
+
+
+class DoBRapidProClinicRegistrationSerializer(serializers.Serializer):
     mom_dob = serializers.DateField(
         required=False,
         allow_null=True,
         help_text="When the mother was born. Required if ID type is none",
         label="Mother date of birth",
     )
-    mom_lang = serializers.ChoiceField(
-        utils.LANGUAGES,
-        help_text="The language that the mother would like to receive communication in",
-        label="Mother language",
-    )
-    registration_type = serializers.ChoiceField(
-        ["prebirth", "postbirth"],
-        help_text="Whether this is a prebirth or postbirt registration",
-        label="Registration type",
-    )
+
+
+class PrebirthRapidProClinicRegistrationSerializer(serializers.Serializer):
     mom_edd = serializers.DateField(
         required=False,
         allow_null=True,
@@ -426,6 +450,9 @@ class RapidProClinicRegistrationSerializer(serializers.Serializer):
         label="Mother EDD",
         validators=[validators.edd],
     )
+
+
+class PostBirthRapidProClinicRegistrationSerializer(serializers.Serializer):
     baby_dob = serializers.DateField(
         required=False,
         allow_null=True,
@@ -434,52 +461,6 @@ class RapidProClinicRegistrationSerializer(serializers.Serializer):
         label="Mother EDD",
         validators=[validators.baby_dob],
     )
-    clinic_code = serializers.CharField(
-        help_text="The code of the clinic where the mother was registered",
-        label="Clinic Code",
-    )
-    channel = serializers.ChoiceField(
-        ["WhatsApp", "SMS"],
-        help_text="Whether this registration is for SMS or for WhatsApp",
-        label="Messaging Channel",
-    )
-    created = serializers.DateTimeField(
-        help_text="The timestamp when the registration was created", label="Created at"
-    )
-
-    def validate(self, data: dict) -> dict:
-        if data["mom_id_type"] == "sa_id":
-            if not data.get("mom_sa_id_no"):
-                raise serializers.ValidationError(
-                    "mom_sa_id_no field must be supplied if mom_id_type is sa_id"
-                )
-        elif data["mom_id_type"] == "passport":
-            if not data.get("mom_passport_no"):
-                raise serializers.ValidationError(
-                    "mom_passport_no field must be supplied if mom_id_type is passport"
-                )
-            if not data.get("mom_passport_origin"):
-                raise serializers.ValidationError(
-                    "mom_passport_origin field must be supplied if mom_id_type is "
-                    "passport"
-                )
-        else:  # mom_id_type == none
-            if not data.get("mom_dob"):
-                raise serializers.ValidationError(
-                    "mom_dob field must be supplied if mom_id_type is none"
-                )
-
-        if data["registration_type"] == "prebirth":
-            if not data.get("mom_edd"):
-                raise serializers.ValidationError(
-                    "mom_edd field must be supplied if registration_type is prebirth"
-                )
-        else:  # registration_type == postbirth
-            if not data.get("baby_dob"):
-                raise serializers.ValidationError(
-                    "baby_dob field must be supplied if registration_type is postbirth"
-                )
-        return data
 
 
 class RapidProPublicRegistrationSerializer(serializers.Serializer):
