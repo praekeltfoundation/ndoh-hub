@@ -54,7 +54,9 @@ class Change(models.Model):
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    registrant_id = models.CharField(max_length=36, null=False, blank=False)
+    registrant_id = models.CharField(
+        max_length=36, null=False, blank=False, db_index=True
+    )
     action = models.CharField(
         max_length=255, null=False, blank=False, choices=ACTION_CHOICES
     )
