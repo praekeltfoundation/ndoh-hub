@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import responses
 from django.contrib.auth.models import Permission, User
+from django.db.models.signals import post_save
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import dateparse, timezone
@@ -18,6 +19,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.test import APITestCase
 
 from changes.models import Change
+from changes.signals import psh_validate_implement
 from registrations.models import PositionTracker, Registration, Source, WhatsAppContact
 from registrations.serializers import RegistrationSerializer
 from registrations.tests import AuthenticatedAPITestCase
@@ -1528,7 +1530,11 @@ class SubscriptionCheckViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
             json.loads(response.content),
-            {"subscription_status": "clinic", "opted_out": False},
+            {
+                "subscription_status": "clinic",
+                "opted_out": False,
+                "subscription_description": "",
+            },
         )
 
     @mock.patch("registrations.views.SubscriptionCheckView.get_identity")
@@ -1552,6 +1558,96 @@ class SubscriptionCheckViewTests(APITestCase):
         self.assertEqual(
             json.loads(response.content),
             {"subscription_status": "none", "opted_out": False},
+        )
+
+
+class GetSubscriptionDescriptionTests(AuthenticatedAPITestCase):
+    def setUp(self):
+        post_save.disconnect(receiver=psh_validate_implement, sender=Change)
+        return super().setUp()
+
+    def tearDown(self):
+        post_save.connect(psh_validate_implement, sender=Change)
+        return super().tearDown()
+
+    def test_get_subscription_description(self):
+        """
+        Should combine registrations and changes to get a description of active
+        subscriptions
+        """
+        now = datetime.datetime.utcnow()
+        identity_id = str(uuid4())
+        source = self.make_source_adminuser()
+
+        ignored_reg = Registration.objects.create(
+            registrant_id=identity_id,
+            reg_type="momconnect_prebirth",
+            validated=True,
+            source=source,
+        )
+        ignored_reg.created_at = now - datetime.timedelta(days=10)
+        ignored_reg.save()
+
+        optout = Change.objects.create(
+            registrant_id=identity_id,
+            action="momconnect_nonloss_optout",
+            validated=True,
+            source=source,
+        )
+        optout.created_at = now - datetime.timedelta(days=9)
+        optout.save()
+
+        baby_change = Change.objects.create(
+            registrant_id=identity_id,
+            action="baby_switch",
+            validated=True,
+            source=source,
+        )
+        baby_change.created_at = now - datetime.timedelta(days=8)
+        baby_change.save()
+
+        postbirth_reg = Registration.objects.create(
+            registrant_id=identity_id,
+            reg_type="momconnect_postbirth",
+            data={"baby_dob": "{:%Y-%m-%d}".format(now - datetime.timedelta(weeks=4))},
+            source=source,
+            validated=True,
+        )
+        postbirth_reg.created_at = now - datetime.timedelta(days=7)
+        postbirth_reg.save()
+
+        passed_reg = Registration.objects.create(
+            registrant_id=identity_id,
+            reg_type="momconnect_prebirth",
+            data={"edd": "{:%Y-%m-%d}".format(now - datetime.timedelta(weeks=5))},
+            source=source,
+            validated=True,
+        )
+        passed_reg.created_at = now - datetime.timedelta(days=6)
+        passed_reg.save()
+
+        prebirth_reg = Registration.objects.create(
+            registrant_id=identity_id,
+            reg_type="momconnect_prebirth",
+            data={"edd": "{:%Y-%m-%d}".format(now + datetime.timedelta(weeks=3))},
+            source=source,
+            validated=True,
+        )
+        prebirth_reg.created_at = now - datetime.timedelta(days=5)
+        prebirth_reg.save()
+
+        view = SubscriptionCheckView()
+        self.assertEqual(
+            view.get_subscription_description(identity_id),
+            ", ".join(
+                "baby born on {:%Y-%m-%d}".format(d)
+                for d in (
+                    now - datetime.timedelta(weeks=4),  # postbirth reg
+                    now - datetime.timedelta(weeks=3),  # passed reg + 2 weeks
+                    baby_change.created_at,
+                    now + datetime.timedelta(weeks=3),  # prebirth reg
+                )
+            ),
         )
 
 

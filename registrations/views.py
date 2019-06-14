@@ -1207,6 +1207,82 @@ class SubscriptionCheckView(APIView):
         except (RequestException, HTTPServiceError):
             raise ServiceUnavailable()
 
+    def get_subscription_description(self, identity_id: str) -> str:
+        """
+        Gets a human readable string of the details of the current subscriptions
+        """
+        try:
+            last_optout = Change.objects.filter(
+                registrant_id=identity_id,
+                action__in=(
+                    "baby_switch",
+                    "pmtct_loss_switch",
+                    "pmtct_loss_optout",
+                    "pmtct_nonloss_optout",
+                    "momconnect_loss_switch",
+                    "momconnect_loss_optout",
+                    "momconnect_nonloss_optout",
+                ),
+                validated=True,
+            ).latest("created_at")
+            last_optout = last_optout.created_at
+        except Change.DoesNotExist:
+            last_optout = datetime.datetime.min
+        try:
+            last_baby_switch = Change.objects.filter(
+                registrant_id=identity_id, action="baby_switch", validated=True
+            ).latest("created_at")
+            last_baby_switch = last_baby_switch.created_at
+        except Change.DoesNotExist:
+            last_baby_switch = datetime.datetime.min
+
+        registrations = Registration.objects.filter(
+            registrant_id=identity_id,
+            reg_type__in=(
+                "momconnect_prebirth",
+                "momconnect_postbirth",
+                "whatsapp_prebirth",
+                "whatsapp_postbirth",
+            ),
+            created_at__gte=max((last_optout, last_baby_switch)),
+            validated=True,
+        )
+        changes = Change.objects.filter(
+            registrant_id=identity_id,
+            action="baby_switch",
+            created_at__gte=last_optout,
+            validated=True,
+        )
+        subscriptions = []
+        for registration in registrations:
+            try:
+                edd = datetime.datetime.strptime(
+                    registration.data["edd"], "%Y-%m-%d"
+                ).replace(tzinfo=timezone.utc)
+                if edd < timezone.now():
+                    # Messaging continues for 2 weeks after edd before being switched
+                    edd += datetime.timedelta(weeks=2)
+                subscriptions.append(edd)
+            except KeyError:
+                pass
+            try:
+                baby_dob = datetime.datetime.strptime(
+                    registration.data["baby_dob"], "%Y-%m-%d"
+                ).replace(tzinfo=timezone.utc)
+                subscriptions.append(baby_dob)
+            except KeyError:
+                pass
+        for change in changes:
+            subscriptions.append(change.created_at)
+        subscriptions.sort()
+        # Filter out expired subscriptions
+        subs = filter(
+            lambda s: s > timezone.now() - datetime.timedelta(weeks=37 + 104),
+            subscriptions,
+        )
+        texts = map(lambda s: "baby born on {:%Y-%m-%d}".format(s), subs)
+        return ", ".join(texts)
+
     def derive_subscription_status(self, subscriptions):
         for subscription in subscriptions:
             if "momconnect_prebirth.hw_full" in subscription:
@@ -1239,8 +1315,13 @@ class SubscriptionCheckView(APIView):
         subscriptions = self.get_subscriptions(identity["id"])
         subscription_status = self.derive_subscription_status(subscriptions)
         opted_out = self.derive_optout_status(identity, msisdn)
+        subscription_description = self.get_subscription_description(identity["id"])
         return Response(
-            {"subscription_status": subscription_status, "opted_out": opted_out}
+            {
+                "subscription_status": subscription_status,
+                "opted_out": opted_out,
+                "subscription_description": subscription_description,
+            }
         )
 
 
