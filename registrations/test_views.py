@@ -1727,7 +1727,7 @@ class RapidProClinicRegistrationViewTests(AuthenticatedAPITestCase):
             "mom_sa_id_no": "8606045069081",
             "mom_lang": "eng_ZA",
             "registration_type": "prebirth",
-            "mom_edd": "2016-06-06",
+            "mom_edd": "06-06-2016",
             "clinic_code": "123456",
             "channel": "WhatsApp",
             "created": "2016-01-01 00:00:00",
@@ -1737,6 +1737,7 @@ class RapidProClinicRegistrationViewTests(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         data["user_id"] = self.adminuser.id
         data["created"] = "2016-01-01T00:00:00+00:00"
+        data["mom_edd"] = "2016-06-06"
         task.delay.assert_called_once_with(data)
 
 
