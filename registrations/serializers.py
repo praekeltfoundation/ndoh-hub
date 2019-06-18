@@ -437,6 +437,7 @@ class DoBRapidProClinicRegistrationSerializer(serializers.Serializer):
         allow_null=True,
         help_text="When the mother was born. Required if ID type is none",
         label="Mother date of birth",
+        input_formats=["%d-%m-%Y", "iso-8601"],
     )
 
 
@@ -449,6 +450,7 @@ class PrebirthRapidProClinicRegistrationSerializer(serializers.Serializer):
         "prebirth",
         label="Mother EDD",
         validators=[validators.edd],
+        input_formats=["%d-%m-%Y", "iso-8601"],
     )
 
 
@@ -460,6 +462,7 @@ class PostBirthRapidProClinicRegistrationSerializer(serializers.Serializer):
         "years. Required if registration_type is postbirth",
         label="Mother EDD",
         validators=[validators.baby_dob],
+        input_formats=["%d-%m-%Y", "iso-8601"],
     )
 
 
