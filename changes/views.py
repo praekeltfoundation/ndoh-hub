@@ -243,7 +243,7 @@ def event_requires_action(errors):
             return True
         if "envelope mismatch" in error["title"]:
             return True
- 
+
     return False
 
 

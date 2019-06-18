@@ -124,14 +124,7 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
         self.client.force_authenticate(user=user)
         url = reverse("whatsapp_event")
 
-        errors = [
-            {
-                "code": 500,
-                "title": (
-                    "some unexpected error message"
-                ),
-            }
-        ]
+        errors = [{"code": 500, "title": ("some unexpected error message")}]
 
         response = self.client.post(
             url,
