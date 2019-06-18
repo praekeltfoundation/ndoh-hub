@@ -237,6 +237,16 @@ class ReceiveWhatsAppBase(generics.GenericAPIView):
             raise AuthenticationFailed("Invalid hook signature")
 
 
+def event_requires_action(errors):
+    for error in errors:
+        if "structure unavailable" in error["title"]:
+            return True
+        if "envelope mismatch" in error["title"]:
+            return True
+ 
+    return False
+
+
 class ReceiveWhatsAppEvent(ReceiveWhatsAppBase):
     serializer_class = ReceiveWhatsAppEventSerializer
 
@@ -266,9 +276,11 @@ class ReceiveWhatsAppEvent(ReceiveWhatsAppBase):
                     )
                 else:
                     if settings.ENABLE_UNSENT_EVENT_ACTION:
-                        tasks.process_whatsapp_unsent_event.delay(
-                            item["id"], request.user.pk, item["errors"]
-                        )
+                        # check if this is one of the errors that requires an action
+                        if event_requires_action(item["errors"]):
+                            tasks.process_whatsapp_unsent_event.delay(
+                                item["id"], request.user.pk, item["errors"]
+                            )
         else:
             message_id = request.META.get("HTTP_X_WHATSAPP_ID")
             if not message_id:

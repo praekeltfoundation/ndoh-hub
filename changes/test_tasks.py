@@ -255,8 +255,11 @@ class ProcessWhatsAppUnsentEventTaskTests(WhatsAppBaseTestCase):
 
         self.assertEqual(Change.objects.count(), 0)
 
+    # TODO: this task should never be generated so it might be better to
+    # drop the test
+    @mock.patch("changes.tasks.utils.ms_client.create_outbound")
     @responses.activate
-    def test_non_hsm_failure(self):
+    def test_non_hsm_failure(self, mock_create_outbound):
         """
         The task should not create a switch if it is not a hsm failure
         """
@@ -264,6 +267,7 @@ class ProcessWhatsAppUnsentEventTaskTests(WhatsAppBaseTestCase):
         source = Source.objects.create(user=user)
 
         self.create_outbound_lookup(1)
+        self.create_identity_lookup()
 
         self.assertEqual(Change.objects.count(), 0)
 
@@ -273,7 +277,26 @@ class ProcessWhatsAppUnsentEventTaskTests(WhatsAppBaseTestCase):
             [{"code": 200, "title": "random error: temporary random error"}],
         )
 
-        self.assertEqual(Change.objects.count(), 0)
+        [change] = Change.objects.all()
+        self.assertEqual(change.registrant_id, "test-identity-uuid")
+        self.assertEqual(change.action, "switch_channel")
+        self.assertEqual(
+            change.data, {"channel": "sms", "reason": "whatsapp_unsent_event"}
+        )
+        self.assertEqual(change.created_by, user)
+
+        mock_create_outbound.assert_called_once_with(
+            {
+                "to_identity": "test-identity-uuid",
+                "content": (
+                    "Sorry, we can't send WhatsApp msgs to this phone. "
+                    "We'll send your MomConnect msgs on SMS. To stop dial *134*550*1#, "
+                    "for more dial *134*550*7#."
+                ),
+                "channel": "JUNE_TEXT",
+                "metadata": {},
+            }
+        )
 
 
 class ProcessWhatsAppSystemEventTaskTests(WhatsAppBaseTestCase):

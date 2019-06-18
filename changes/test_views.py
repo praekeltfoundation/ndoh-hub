@@ -77,7 +77,7 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
     def test_serializer_succeeded(self, task, mock_validate_signature):
         """
         If the serializer passes, then the task should be called with the
-        correct parameters
+        correct parameters, provided that the error message passes the filter
         """
         user = User.objects.create_user("test")
         user.user_permissions.add(Permission.objects.get(codename="add_change"))
@@ -113,6 +113,43 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
         task.delay.assert_called_once_with(
             "41c377a47b064eba9abee5a1ea827b3d", user.pk, errors
         )
+
+    def test_filter_failed(self, task, mock_validate_signature):
+        """
+        If the serializer passes but the message does not pass the current filter,
+        then the task should be called with the
+        """
+        user = User.objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_change"))
+        self.client.force_authenticate(user=user)
+        url = reverse("whatsapp_event")
+
+        errors = [
+            {
+                "code": 500,
+                "title": (
+                    "some unexpected error message"
+                ),
+            }
+        ]
+
+        response = self.client.post(
+            url,
+            {
+                "statuses": [
+                    {
+                        "errors": errors,
+                        "id": "41c377a47b064eba9abee5a1ea827b3d",
+                        "recipient_id": "27831112222",
+                        "status": "failed",
+                        "timestamp": "1538388353",
+                    }
+                ]
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        task.delay.assert_not_called()
 
     @override_settings(ENABLE_UNSENT_EVENT_ACTION=False)
     def test_unsent_event_setting(self, task, mock_validate_signature):

@@ -1493,15 +1493,8 @@ class ProcessWhatsAppUnsentEvent(Task):
             """
             return
 
-        hsm_error = False
-        for error in errors:
-            if "structure unavailable" in error["title"]:
-                hsm_error = True
-            if "envelope mismatch" in error["title"]:
-                hsm_error = True
-
-        if hsm_error:
-            self.handle_hsm_error(user_id, source_id, identity_uuid)
+        # this will perform the switch channel action
+        self.handle_hsm_error(user_id, source_id, identity_uuid)
 
 
 process_whatsapp_unsent_event = ProcessWhatsAppUnsentEvent()
