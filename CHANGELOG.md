@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.6.7 (2019-06-20)
+1. Add missing translations
+   ([#216](https://github.com/praekeltfoundation/ndoh-hub/pull/216))
+   ([#217](https://github.com/praekeltfoundation/ndoh-hub/pull/217))
+1. Active subscriptions API
+   ([#218](https://github.com/praekeltfoundation/ndoh-hub/pull/218))
+   ([#219](https://github.com/praekeltfoundation/ndoh-hub/pull/219))
+   ([#227](https://github.com/praekeltfoundation/ndoh-hub/pull/227))
+   ([#231](https://github.com/praekeltfoundation/ndoh-hub/pull/231))
+1. Update security dependancies
+   ([#220](https://github.com/praekeltfoundation/ndoh-hub/pull/220))
+1. API for facility code check
+   ([#221](https://github.com/praekeltfoundation/ndoh-hub/pull/221))
+   ([#222](https://github.com/praekeltfoundation/ndoh-hub/pull/222))
+1. APIs for creating registrations from RapidPro
+   ([#223](https://github.com/praekeltfoundation/ndoh-hub/pull/223))
+   ([#224](https://github.com/praekeltfoundation/ndoh-hub/pull/224))
+   ([#226](https://github.com/praekeltfoundation/ndoh-hub/pull/226))
+   ([#228](https://github.com/praekeltfoundation/ndoh-hub/pull/228))
+   ([#229](https://github.com/praekeltfoundation/ndoh-hub/pull/229))
+1. Postbirth registrations for MomConnect
+   ([#225](https://github.com/praekeltfoundation/ndoh-hub/pull/225))
+
 ## 0.6.6 (2019-05-14)
 1. Add missing translations
    ([#213](https://github.com/praekeltfoundation/ndoh-hub/pull/213))
