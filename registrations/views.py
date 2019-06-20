@@ -1233,14 +1233,14 @@ class SubscriptionCheckView(APIView):
             ).latest("created_at")
             last_optout = last_optout.created_at
         except Change.DoesNotExist:
-            last_optout = datetime.datetime.min
+            last_optout = timezone.utc.localize(datetime.datetime.min)
         try:
             last_baby_switch = Change.objects.filter(
                 registrant_id=identity_id, action="baby_switch", validated=True
             ).latest("created_at")
             last_baby_switch = last_baby_switch.created_at
         except Change.DoesNotExist:
-            last_baby_switch = datetime.datetime.min
+            last_baby_switch = timezone.utc.localize(datetime.datetime.min)
 
         registrations = Registration.objects.filter(
             registrant_id=identity_id,

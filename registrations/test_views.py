@@ -1578,6 +1578,43 @@ class GetSubscriptionDescriptionTests(AuthenticatedAPITestCase):
         post_save.connect(psh_validate_implement, sender=Change)
         return super().tearDown()
 
+    def test_get_subscription_description_no_changes(self):
+        """
+        If there are no baby switches, then we should use datetime.min as the limiting
+        timestamp
+        """
+        now = datetime.datetime.utcnow()
+        identity_id = str(uuid4())
+        source = self.make_source_adminuser()
+
+        optout = Change.objects.create(
+            registrant_id=identity_id,
+            action="momconnect_nonloss_optout",
+            validated=True,
+            source=source,
+        )
+        optout.created_at = now - datetime.timedelta(days=9)
+        optout.save()
+
+        prebirth_reg = Registration.objects.create(
+            registrant_id=identity_id,
+            reg_type="momconnect_prebirth",
+            data={"edd": "{:%Y-%m-%d}".format(now + datetime.timedelta(weeks=3))},
+            source=source,
+            validated=True,
+        )
+        prebirth_reg.created_at = now - datetime.timedelta(days=5)
+        prebirth_reg.save()
+
+        view = SubscriptionCheckView()
+        self.assertEqual(
+            view.get_subscription_description(identity_id),
+            ", ".join(
+                "baby born on {:%Y-%m-%d}".format(d)
+                for d in (now + datetime.timedelta(weeks=3),)  # prebirth reg
+            ),
+        )
+
     def test_get_subscription_description(self):
         """
         Should combine registrations and changes to get a description of active
