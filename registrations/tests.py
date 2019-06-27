@@ -3377,7 +3377,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         )
         # Check correct type sent. 'patient' sources are sent to Jembi as type: 1
         self.assertIn("type", json.loads(jembi_call.request.body))
-        self.assertEqual(json.loads(jembi_call.request.body)['type'], 1)
+        self.assertEqual(json.loads(jembi_call.request.body)["type"], 1)
 
         post_save.disconnect(psh_validate_subscribe, sender=Registration)
 
