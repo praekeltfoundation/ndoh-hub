@@ -1008,6 +1008,8 @@ class BasePushRegistrationToJembi(object):
                 "CHW USSD APP": "chw",
                 "NURSE USSD APP": "nurse",
                 "PMTCT USSD APP": "pmtct",
+                "PUBLIC WHATSAPP APP": "personal",
+                "CLINIC WHATSAPP APP": "clinic",
             }.get(source_name)
 
     def run(self, registration_id, **kwargs):
