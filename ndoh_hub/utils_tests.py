@@ -150,6 +150,7 @@ def mock_get_messageset_by_shortname(short_name):
         "whatsapp_service_info.hw_full.1": 96,
         "whatsapp_momconnect_postbirth.hw_full.2": 97,
         "whatsapp_momconnect_postbirth.hw_full.3": 98,
+        "whatsapp_momconnect_prebirth.patient.1": 99,
     }[short_name]
 
     default_schedule = {
@@ -186,6 +187,7 @@ def mock_get_messageset_by_shortname(short_name):
         "whatsapp_service_info.hw_full.1": 196,
         "whatsapp_momconnect_postbirth.hw_full.2": 197,
         "whatsapp_momconnect_postbirth.hw_full.3": 198,
+        "whatsapp_momconnect_prebirth.patient.1": 199,
     }[short_name]
 
     responses.add(
@@ -326,6 +328,7 @@ def mock_get_schedule(schedule_id):
         196: "*",
         197: "1",
         198: "1,3,5",
+        199: "1,3,5",
     }[schedule_id]
 
     responses.add(
