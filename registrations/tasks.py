@@ -1010,6 +1010,24 @@ class BasePushRegistrationToJembi(object):
                 "PMTCT USSD APP": "pmtct",
             }.get(source_name)
 
+    @app.task(
+        autoretry_for=(RequestException, SoftTimeLimitExceeded),
+        retry_backoff=True,
+        max_retries=15,
+        acks_late=True,
+        soft_time_limit=10,
+        time_limit=15,
+    )
+    def request_to_jembi_api(self, payload):
+        r = requests.post(
+            self.URL,
+            headers={"Content-Type": "application/json"},
+            data=json.dumps(payload),
+            auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+            verify=False,
+        )
+        r.raise_for_status()
+
     def run(self, registration_id, **kwargs):
         from .models import Registration
 
@@ -1023,6 +1041,7 @@ class BasePushRegistrationToJembi(object):
             return
 
         json_doc = self.build_jembi_json(registration)
+        self.request_to_jembi_api(json_doc).delay()
         try:
             result = requests.post(
                 self.URL,
@@ -1104,6 +1123,8 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
         if not registration.data.get("msisdn_registrant"):
             id_msisdn = utils.get_identity_msisdn(registration.registrant_id)
 
+        print(registration.data.id)
+
         json_template = {
             "mha": registration.data.get("mha", 1),
             "swt": self.get_software_type(registration),
@@ -1133,6 +1154,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
                 if registration.data.get("mom_dob")
                 else None
             ),
+            "eid": registration.id,
         }
 
         # Self registrations on all lines should use cmsisdn as dmsisdn too
@@ -1259,6 +1281,7 @@ class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
             "persal": self.get_persal(identity),
             "sanc": self.get_sanc(identity),
             "encdate": self.get_timestamp(registration),
+            "eid": registration.id,
         }
 
         return json_template

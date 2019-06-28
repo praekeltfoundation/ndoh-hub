@@ -4,6 +4,7 @@ from datetime import datetime
 from itertools import chain as ichain
 from itertools import dropwhile, takewhile
 from uuid import UUID
+import uuid
 
 import phonenumbers
 import pytz
@@ -976,9 +977,12 @@ class ValidateImplement(Task):
     def run(self, change_id, **kwargs):
         """ Implements the appropriate action
         """
+        print(change_id)
         self.log = self.get_logger(**kwargs)
         self.log.info("Looking up the change")
         change = Change.objects.get(id=change_id)
+        print("heeeey")
+        print(change)
         change_validates = self.validate(change)
 
         if change_validates:
@@ -1170,6 +1174,24 @@ class BasePushOptoutToJembi(object):
                 return address
         return address
 
+    '''def request_to_jembi_api(self, payload):
+        r = requests.post(
+            self.URL,
+            headers={"Content-Type": "application/json"},
+            data=json.dumps(payload),
+            auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+            verify=False,
+        )
+        r.raise_for_status()'''
+
+    @app.task(
+        autoretry_for=(RequestException, SoftTimeLimitExceeded),
+        retry_backoff=True,
+        max_retries=15,
+        acks_late=True,
+        soft_time_limit=10,
+        time_limit=15,
+    )
     def run(self, change_id, **kwargs):
         from .models import Change
 
@@ -1221,6 +1243,7 @@ class PushMomconnectOptoutToJembi(BasePushOptoutToJembi, Task):
             "dmsisdn": address,
             "type": 4,
             "optoutreason": self.get_optout_reason(change.data["reason"]),
+            "eid": change.id,
         }
 
 
@@ -1246,6 +1269,7 @@ class PushPMTCTOptoutToJembi(PushMomconnectOptoutToJembi, Task):
             "dmsisdn": address,
             "type": 10,
             "optoutreason": self.get_optout_reason(change.data["reason"]),
+            "eid": change.id,
         }
 
 
@@ -1271,6 +1295,7 @@ class PushMomconnectBabyLossToJembi(BasePushOptoutToJembi, Task):
             "cmsisdn": address,
             "dmsisdn": address,
             "type": 5,
+            "eid": change.id,
         }
 
 
@@ -1296,6 +1321,7 @@ class PushMomconnectBabySwitchToJembi(BasePushOptoutToJembi, Task):
             "cmsisdn": address,
             "dmsisdn": address,
             "type": 11,
+            "eid": change.id,
         }
 
 
@@ -1369,6 +1395,7 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
                 else None
             ),
             "optoutreason": self.get_optout_reason(change.data["reason"]),
+            "eid": change.id,
         }
 
 
@@ -1433,6 +1460,7 @@ class PushChannelSwitchToJembi(BasePushOptoutToJembi, Task):
             "type": 12,
             "channel_current": change.data["old_channel"],
             "channel_new": change.data["channel"],
+            "eid": change.id,
         }
 
 

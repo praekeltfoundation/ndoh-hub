@@ -1828,6 +1828,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 "mha": 1,
                 "swt": 1,
                 "type": 11,
+                "eid": change.id,
             },
         )
 
@@ -1842,6 +1843,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "action": "baby_switch",
             "data": {},
@@ -1878,6 +1880,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         result = validate_implement.apply_async(args=[change.id])
 
         # Check
+        print("results")
+        print(result.get())
         change.refresh_from_db()
         self.assertEqual(result.get(), True)
         self.assertEqual(change.validated, True)
@@ -1895,6 +1899,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 "mha": 1,
                 "swt": 1,
                 "type": 11,
+                "eid": change.id,
             },
         )
 
@@ -1913,6 +1918,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "action": "baby_switch",
             "data": {},
