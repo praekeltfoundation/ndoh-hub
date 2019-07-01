@@ -1422,6 +1422,7 @@ class CreateRapidProClinicRegistrationTaskTests(AuthenticatedAPITestCase):
                 "msisdn_registrant": "+27820001001",
                 "msisdn_device": "+27820001002",
                 "operator_id": "device-test-id",
+                "mha": 6,
             },
         )
 
@@ -1465,6 +1466,7 @@ class CreateRapidProClinicRegistrationTaskTests(AuthenticatedAPITestCase):
                 "msisdn_registrant": "+27820001001",
                 "msisdn_device": "+27820001002",
                 "operator_id": "device-test-id",
+                "mha": 6,
             },
         )
 
@@ -1505,6 +1507,7 @@ class CreateRapidProClinicRegistrationTaskTests(AuthenticatedAPITestCase):
                 "msisdn_registrant": "+27820001001",
                 "msisdn_device": "+27820001002",
                 "operator_id": "device-test-id",
+                "mha": 6,
             },
         )
 
@@ -1546,6 +1549,7 @@ class CreateRapidProClinicRegistrationTaskTests(AuthenticatedAPITestCase):
                 "msisdn_registrant": "+27820001001",
                 "msisdn_device": "+27820001002",
                 "operator_id": "device-test-id",
+                "mha": 6,
             },
         )
 
@@ -1605,6 +1609,7 @@ class CreateRapidProClinicRegistrationTaskTests(AuthenticatedAPITestCase):
                 "msisdn_registrant": "+27820001001",
                 "msisdn_device": "+27820001002",
                 "operator_id": "test-id-2",
+                "mha": 6,
             },
         )
 
@@ -1636,6 +1641,7 @@ class CreateRapidProPublicRegistrationTaskTests(AuthenticatedAPITestCase):
                 "msisdn_device": "+27820001001",
                 "operator_id": "test-id",
                 "registered_on_whatsapp": True,
+                "mha": 6,
             },
         )
 
@@ -1677,6 +1683,7 @@ class CreateRapidProPublicRegistrationTaskTests(AuthenticatedAPITestCase):
                 "msisdn_device": "+27820001001",
                 "operator_id": "test-id-1",
                 "registered_on_whatsapp": True,
+                "mha": 6,
             },
         )
 
