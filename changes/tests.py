@@ -1761,6 +1761,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "action": "baby_switch",
             "data": {},
@@ -1824,6 +1825,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {
                 "cmsisdn": "+27821112222",
                 "dmsisdn": "+27821112222",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "encdate": change.created_at.strftime("%Y%m%d%H%M%S"),
                 "mha": 1,
                 "swt": 1,
@@ -1843,6 +1845,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # make change object
         change_data = {
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "action": "baby_switch",
             "data": {},
             "source": self.make_source_normaluser(),
@@ -1875,6 +1878,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         utils_tests.mock_patch_identity("mother01-63e2-4acc-9b94-26663b9bc267")
 
         # Execute
+        validate_implement(change.id)
         result = validate_implement.apply_async(args=[change.id])
 
         # Check
@@ -1882,8 +1886,8 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(result.get(), True)
         self.assertEqual(change.validated, True)
         self.assertEqual(Registration.objects.all().count(), 1)
-        self.assertEqual(SubscriptionRequest.objects.all().count(), 1)
-        self.assertEqual(len(responses.calls), 9)
+        self.assertEqual(SubscriptionRequest.objects.all().count(), 2)
+        self.assertEqual(len(responses.calls), 18)
 
         # Check Jembi POST
         self.assertEqual(
@@ -1891,6 +1895,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {
                 "cmsisdn": "+27821112222",
                 "dmsisdn": "+27821112222",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "encdate": change.created_at.strftime("%Y%m%d%H%M%S"),
                 "mha": 1,
                 "swt": 1,
@@ -1913,6 +1918,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "action": "baby_switch",
             "data": {},
@@ -1962,6 +1968,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {
                 "cmsisdn": "+27821112222",
                 "dmsisdn": "+27821112222",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "encdate": change.created_at.strftime("%Y%m%d%H%M%S"),
                 "mha": 1,
                 "swt": 1,
@@ -1985,6 +1992,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "action": "baby_switch",
             "data": {},
@@ -2034,6 +2042,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {
                 "cmsisdn": "+27821112222",
                 "dmsisdn": "+27821112222",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "encdate": change.created_at.strftime("%Y%m%d%H%M%S"),
                 "mha": 1,
                 "swt": 1,
@@ -2051,6 +2060,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "action": "pmtct_loss_switch",
             "data": {"reason": "miscarriage"},
@@ -2104,6 +2114,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {
                 "cmsisdn": "+27821112222",
                 "dmsisdn": "+27821112222",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "encdate": change.created_at.strftime("%Y%m%d%H%M%S"),
                 "mha": 1,
                 "swt": 1,
@@ -2125,6 +2136,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "action": "pmtct_loss_switch",
             "data": {"reason": "miscarriage"},
@@ -2175,6 +2187,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {
                 "cmsisdn": "+27821112222",
                 "dmsisdn": "+27821112222",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "encdate": change.created_at.strftime("%Y%m%d%H%M%S"),
                 "mha": 1,
                 "swt": 1,
@@ -2191,6 +2204,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "action": "pmtct_loss_optout",
             "data": {"reason": "stillbirth"},
@@ -2239,6 +2253,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {
                 "cmsisdn": "+27821112222",
                 "dmsisdn": "+27821112222",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "encdate": change.created_at.strftime("%Y%m%d%H%M%S"),
                 "mha": 1,
                 "swt": 1,
@@ -2256,6 +2271,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "action": "pmtct_loss_optout",
             "data": {"reason": "stillbirth"},
@@ -2293,6 +2309,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {
                 "cmsisdn": "+27821112222",
                 "dmsisdn": "+27821112222",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "encdate": change.created_at.strftime("%Y%m%d%H%M%S"),
                 "mha": 1,
                 "swt": 1,
@@ -2310,6 +2327,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "action": "pmtct_nonloss_optout",
             "data": {"reason": "other"},
@@ -2355,6 +2373,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {
                 "cmsisdn": "+27821112222",
                 "dmsisdn": "+27821112222",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "encdate": change.created_at.strftime("%Y%m%d%H%M%S"),
                 "mha": 1,
                 "swt": 1,
@@ -2429,6 +2448,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
             "action": "nurse_optout",
             "data": {"reason": "job_change"},
@@ -2468,6 +2488,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 "type": 8,
                 "cmsisdn": "+27821112222",
                 "dmsisdn": "+27821112222",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "rmsisdn": None,
                 "faccode": "123456",
                 "id": "27821112222^^^ZAF^TEL",
@@ -2485,6 +2506,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
             "action": "nurse_optout",
             "data": {"reason": "job_change"},
@@ -2530,6 +2552,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 "type": 8,
                 "cmsisdn": "+27821112222",
                 "dmsisdn": "+27821112222",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "rmsisdn": None,
                 "faccode": "123456",
                 "id": "27821112222^^^ZAF^TEL",
@@ -2547,6 +2570,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "registrant_id": "nurse001-63e2-4acc-9b94-26663b9bc267",
             "action": "nurse_optout",
             "data": {"reason": "job_change"},
@@ -2581,6 +2605,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 "type": 8,
                 "cmsisdn": "+27821112222",
                 "dmsisdn": "+27821112222",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "rmsisdn": None,
                 "faccode": "123456",
                 "id": "27821112222^^^ZAF^TEL",
@@ -2599,6 +2624,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "action": "momconnect_loss_switch",
             "data": {"reason": "miscarriage"},
@@ -2659,6 +2685,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 "swt": 1,
                 "cmsisdn": "+27111111111",
                 "dmsisdn": "+27111111111",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "type": 5,
             },
         )
@@ -2704,6 +2731,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "action": "momconnect_loss_switch",
             "data": {"reason": "stillbirth"},
@@ -2744,6 +2772,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 "swt": 1,
                 "cmsisdn": "+27111111111",
                 "dmsisdn": "+27111111111",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "type": 5,
             },
         )
@@ -2762,6 +2791,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "action": "baby_switch",
             "data": {},
@@ -2802,6 +2832,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 "swt": 1,
                 "cmsisdn": "+27111111111",
                 "dmsisdn": "+27111111111",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "type": 11,
             },
         )
@@ -2820,6 +2851,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "action": "momconnect_loss_optout",
             "data": {"reason": "stillbirth"},
@@ -2868,6 +2900,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 "swt": 1,
                 "cmsisdn": "+27111111111",
                 "dmsisdn": "+27111111111",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "type": 4,
                 "optoutreason": 2,
             },
@@ -2883,6 +2916,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "action": "momconnect_loss_optout",
             "data": {"reason": "stillbirth"},
@@ -2923,6 +2957,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 "swt": 1,
                 "cmsisdn": "+27111111111",
                 "dmsisdn": "+27111111111",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "type": 4,
                 "optoutreason": 2,
             },
@@ -2942,6 +2977,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
         # make change object
         change_data = {
+            "id": "106be577-5963-491b-ac5d-7f4f0f4da309",
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "action": "momconnect_nonloss_optout",
             "data": {"reason": "other"},
@@ -2990,6 +3026,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 "swt": 1,
                 "cmsisdn": "+27111111111",
                 "dmsisdn": "+27111111111",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "type": 4,
                 "optoutreason": 5,
             },
@@ -3657,6 +3694,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         )
 
         change = Change.objects.create(
+            id="106be577-5963-491b-ac5d-7f4f0f4da309",
             registrant_id=registrant_id,
             action="switch_channel",
             data={"channel": "sms"},
@@ -3676,6 +3714,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 "swt": 1,
                 "cmsisdn": "+27821112222",
                 "dmsisdn": "+27821112222",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "type": 12,
                 "channel_current": "whatsapp",
                 "channel_new": change.data["channel"],
@@ -3713,6 +3752,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         )
 
         change = Change.objects.create(
+            id="106be577-5963-491b-ac5d-7f4f0f4da309",
             registrant_id=registrant_id,
             action="switch_channel",
             data={"channel": "sms"},
@@ -3738,6 +3778,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 "swt": 1,
                 "cmsisdn": "+27821112222",
                 "dmsisdn": "+27821112222",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "type": 12,
                 "channel_current": "whatsapp",
                 "channel_new": change.data["channel"],
@@ -3775,6 +3816,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         )
 
         change = Change.objects.create(
+            id="106be577-5963-491b-ac5d-7f4f0f4da309",
             registrant_id=registrant_id,
             action="switch_channel",
             data={"channel": "sms"},
@@ -3805,6 +3847,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 "swt": 1,
                 "cmsisdn": "+27821112222",
                 "dmsisdn": "+27821112222",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "type": 12,
                 "channel_current": "whatsapp",
                 "channel_new": change.data["channel"],
@@ -4054,6 +4097,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         reg.save()
 
         change = Change.objects.create(
+            id="106be577-5963-491b-ac5d-7f4f0f4da309",
             registrant_id=registrant_id,
             action="switch_channel",
             data={"channel": "whatsapp"},
@@ -4090,6 +4134,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 "swt": 1,
                 "cmsisdn": "+27821112222",
                 "dmsisdn": "+27821112222",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "type": 12,
                 "channel_current": "sms",
                 "channel_new": change.data["channel"],
@@ -4136,6 +4181,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.make_registration_momconnect_prebirth()
 
         change = Change.objects.create(
+            id="106be577-5963-491b-ac5d-7f4f0f4da309",
             registrant_id=registrant_id,
             action="switch_channel",
             data={"channel": "whatsapp"},
@@ -4166,6 +4212,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
                 "swt": 1,
                 "cmsisdn": "+27821112222",
                 "dmsisdn": "+27821112222",
+                "eid": "106be577-5963-491b-ac5d-7f4f0f4da309",
                 "type": 12,
                 "channel_current": "sms",
                 "channel_new": change.data["channel"],
