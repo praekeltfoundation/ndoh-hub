@@ -1444,6 +1444,7 @@ def _create_rapidpro_clinic_registration(context):
         "language": context["mom_lang"],
         "faccode": context["clinic_code"],
         "consent": True,
+        "mha": 6,
     }
 
     if data["id_type"] == "sa_id":
@@ -1524,6 +1525,7 @@ def _create_rapidpro_public_registration(context):
         "language": context["mom_lang"],
         "consent": True,
         "registered_on_whatsapp": True,
+        "mha": 6,
     }
 
     Registration.objects.create(
