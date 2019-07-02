@@ -892,6 +892,10 @@ class ValidateImplement(Task):
             return ["'channel' must be one of {}".format(sorted(channel_types))]
         return []
 
+    def get_change_id(self, change):
+        change_id = change.id
+        return change_id
+
     # Validate
     def validate(self, change):
         """ Validates that all the required info is provided for a
@@ -1221,6 +1225,7 @@ class PushMomconnectOptoutToJembi(BasePushOptoutToJembi, Task):
             "dmsisdn": address,
             "type": 4,
             "optoutreason": self.get_optout_reason(change.data["reason"]),
+            "eid": str(change.id),
         }
 
 
@@ -1246,6 +1251,7 @@ class PushPMTCTOptoutToJembi(PushMomconnectOptoutToJembi, Task):
             "dmsisdn": address,
             "type": 10,
             "optoutreason": self.get_optout_reason(change.data["reason"]),
+            "eid": str(change.id),
         }
 
 
@@ -1271,6 +1277,7 @@ class PushMomconnectBabyLossToJembi(BasePushOptoutToJembi, Task):
             "cmsisdn": address,
             "dmsisdn": address,
             "type": 5,
+            "eid": str(change.id),
         }
 
 
@@ -1296,6 +1303,7 @@ class PushMomconnectBabySwitchToJembi(BasePushOptoutToJembi, Task):
             "cmsisdn": address,
             "dmsisdn": address,
             "type": 11,
+            "eid": str(change.id),
         }
 
 
@@ -1369,6 +1377,7 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
                 else None
             ),
             "optoutreason": self.get_optout_reason(change.data["reason"]),
+            "eid": str(change.id),
         }
 
 
@@ -1433,6 +1442,7 @@ class PushChannelSwitchToJembi(BasePushOptoutToJembi, Task):
             "type": 12,
             "channel_current": change.data["old_channel"],
             "channel_new": change.data["channel"],
+            "eid": str(change.id),
         }
 
 
