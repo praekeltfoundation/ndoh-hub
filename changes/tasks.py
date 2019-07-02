@@ -1219,6 +1219,7 @@ class PushMomconnectOptoutToJembi(BasePushOptoutToJembi, Task):
             "swt": 1,
             "cmsisdn": address,
             "dmsisdn": address,
+            "sid": change.registrant_id,
             "type": 4,
             "optoutreason": self.get_optout_reason(change.data["reason"]),
         }
@@ -1244,6 +1245,7 @@ class PushPMTCTOptoutToJembi(PushMomconnectOptoutToJembi, Task):
             "swt": 1,
             "cmsisdn": address,
             "dmsisdn": address,
+            "sid": change.registrant_id,
             "type": 10,
             "optoutreason": self.get_optout_reason(change.data["reason"]),
         }
@@ -1270,6 +1272,7 @@ class PushMomconnectBabyLossToJembi(BasePushOptoutToJembi, Task):
             "swt": 1,
             "cmsisdn": address,
             "dmsisdn": address,
+            "sid": change.registrant_id,
             "type": 5,
         }
 
@@ -1295,6 +1298,7 @@ class PushMomconnectBabySwitchToJembi(BasePushOptoutToJembi, Task):
             "swt": 1,
             "cmsisdn": address,
             "dmsisdn": address,
+            "sid": change.registrant_id,
             "type": 11,
         }
 
@@ -1348,6 +1352,7 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
             "type": 8,
             "cmsisdn": registration.data["msisdn_registrant"],
             "dmsisdn": registration.data["msisdn_device"],
+            "sid": change.registrant_id,
             "rmsisdn": None,
             "faccode": registration.data["faccode"],
             "id": self.get_nurse_id(
@@ -1430,6 +1435,7 @@ class PushChannelSwitchToJembi(BasePushOptoutToJembi, Task):
             "swt": 1,
             "cmsisdn": address,
             "dmsisdn": address,
+            "sid": change.registrant_id,
             "type": 12,
             "channel_current": change.data["old_channel"],
             "channel_new": change.data["channel"],
