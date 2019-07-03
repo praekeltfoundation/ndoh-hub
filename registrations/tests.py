@@ -2810,7 +2810,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         # . check number of calls made:
         #   messageset, schedule, identity, patch identity, jembi registration
         #   identity, reverse identity, reverse identity, patch identity
-        self.assertEqual(len(responses.calls), 9)
+        self.assertEqual(len(responses.calls), 5)
 
         # check jembi registration
         jembi_call = responses.calls[4]  # jembi should be the fifth one
@@ -2928,7 +2928,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         Registration.objects.create(**registration_data)
 
         # check jembi registration
-        jembi_call = responses.calls[13]  # jembi should be the fourteenth one
+        jembi_call = responses.calls[9]  # jembi should be the tenth one
         self.assertEqual(json.loads(jembi_call.request.body)["faccode"], "123456")
 
         # Teardown
@@ -2981,7 +2981,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         # . check number of calls made:
         #   messageset, schedule, identity, patch identity, jembi registration
         #   get identity, patch identity
-        self.assertEqual(len(responses.calls), 8)
+        self.assertEqual(len(responses.calls), 6)
 
         # check jembi registration
         jembi_call = responses.calls[5]  # jembi should be the sixth one
@@ -3077,7 +3077,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         #   message set, schedule, popi message set, jembi registration,
         #   id_store mother, id_store mother_reverse,
         #   id_store registrant_rever, id_store patch
-        self.assertEqual(len(responses.calls), 8)
+        self.assertEqual(len(responses.calls), 4)
 
         # . check registration validated
         registration.refresh_from_db()

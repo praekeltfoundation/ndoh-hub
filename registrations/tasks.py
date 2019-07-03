@@ -1012,23 +1012,6 @@ class BasePushRegistrationToJembi(object):
                 "CLINIC WHATSAPP APP": "clinic",
             }.get(source_name)
 
-    @app.task(
-        autoretry_for=(RequestException, SoftTimeLimitExceeded),
-        retry_backoff=True,
-        max_retries=15,
-        acks_late=True,
-        soft_time_limit=10,
-        time_limit=15,
-    )
-    def request_to_jembi_api(url, json_doc):
-        requests.post(
-            url=url,
-            headers={"Content-Type": "application/json"},
-            data=json.dumps(json_doc),
-            auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
-            verify=False,
-        )
-
     def run(self, registration_id, **kwargs):
         from .models import Registration
 
@@ -1042,7 +1025,7 @@ class BasePushRegistrationToJembi(object):
             return
 
         json_doc = self.build_jembi_json(registration)
-        self.request_to_jembi_api(self.URL, json_doc)
+        request_to_jembi_api(self.URL, json_doc)
 
 
 class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
@@ -1539,3 +1522,21 @@ create_rapidpro_public_registration = (
     | update_identity_from_rapidpro_public_registration.s()
     | _create_rapidpro_public_registration.s()
 )
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def request_to_jembi_api(url, json_doc):
+    requests.post(
+        url=url,
+        headers={"Content-Type": "application/json"},
+        data=json.dumps(json_doc),
+        auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+        verify=False,
+    )
