@@ -29,7 +29,6 @@ from .tasks import (
     get_risk_status,
     push_nurse_registration_to_jembi,
     remove_personally_identifiable_fields,
-    request_to_jembi_api,
     validate_subscribe,
 )
 
