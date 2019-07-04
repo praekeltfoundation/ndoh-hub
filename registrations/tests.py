@@ -29,8 +29,8 @@ from .tasks import (
     get_risk_status,
     push_nurse_registration_to_jembi,
     remove_personally_identifiable_fields,
+    request_to_jembi_api,
     validate_subscribe,
-    request_to_jembi_api
 )
 
 try:
@@ -2834,9 +2834,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "risk_status": "high",
             },
         )
-        self.assertEqual(
-            jembi_call.request.url, url
-        )
+        self.assertEqual(jembi_call.request.url, url)
         self.assertEqual(jembi_call.request.method, "POST")
 
         # . check registration validated
@@ -3007,9 +3005,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "risk_status": "high",
             },
         )
-        self.assertEqual(
-            jembi_call.request.url, url
-        )
+        self.assertEqual(jembi_call.request.url, url)
         self.assertEqual(jembi_call.request.method, "POST")
 
         # . check registration validated

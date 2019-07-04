@@ -7,11 +7,7 @@ import responses
 # Mocks used in testing
 def mock_request_to_jembi_api(url):
     responses.add(
-        responses.POST,
-        url,
-        json={},
-        status=200,
-        content_type="application/json",
+        responses.POST, url, json={}, status=200, content_type="application/json"
     )
 
 

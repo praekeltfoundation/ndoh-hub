@@ -2263,9 +2263,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(len(responses.calls), 7)
 
         # Check jembi push
-        self.assertEqual(
-            responses.calls[-1].request.url, url
-        )
+        self.assertEqual(responses.calls[-1].request.url, url)
         self.assertEqual(
             json.loads(responses.calls[-1].request.body),
             {
@@ -2322,9 +2320,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         )
 
         # Check jembi push
-        self.assertEqual(
-            responses.calls[-1].request.url, url
-        )
+        self.assertEqual(responses.calls[-1].request.url, url)
         self.assertEqual(
             json.loads(responses.calls[-1].request.body),
             {
@@ -2389,9 +2385,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(len(responses.calls), 8)
 
         # Check jembi push
-        self.assertEqual(
-            responses.calls[-1].request.url, url
-        )
+        self.assertEqual(responses.calls[-1].request.url, url)
         self.assertEqual(
             json.loads(responses.calls[-1].request.body),
             {
@@ -3825,9 +3819,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.count(), 0)
 
         # Check Jembi POST
-        self.assertEqual(
-            responses.calls[-1].request.url, url
-        )
+        self.assertEqual(responses.calls[-1].request.url, url)
         self.assertEqual(
             json.loads(responses.calls[-1].request.body),
             {
@@ -4187,9 +4179,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(sub_service_info.schedule, 1)
 
         # Check Jembi POST
-        self.assertEqual(
-            responses.calls[-1].request.url, url
-        )
+        self.assertEqual(responses.calls[-1].request.url, url)
         self.assertEqual(
             json.loads(responses.calls[-1].request.body),
             {
@@ -4268,9 +4258,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(sub_req.schedule, 2)
 
         # Check Jembi POST
-        self.assertEqual(
-            responses.calls[-1].request.url, url
-        )
+        self.assertEqual(responses.calls[-1].request.url, url)
         self.assertEqual(
             json.loads(responses.calls[-1].request.body),
             {
