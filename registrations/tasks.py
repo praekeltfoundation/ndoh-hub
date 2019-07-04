@@ -1533,10 +1533,11 @@ create_rapidpro_public_registration = (
     time_limit=15,
 )
 def request_to_jembi_api(url, json_doc):
-    requests.post(
+    r = requests.post(
         url=url,
         headers={"Content-Type": "application/json"},
         data=json.dumps(json_doc),
         auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
         verify=False,
     )
+    r.raise_for_status()

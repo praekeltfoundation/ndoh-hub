@@ -30,6 +30,7 @@ from .tasks import (
     push_nurse_registration_to_jembi,
     remove_personally_identifiable_fields,
     validate_subscribe,
+    request_to_jembi_api
 )
 
 try:
@@ -2767,6 +2768,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         """ Test a full registration process with good data """
         # Setup
         registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
+        url = "http://jembi/ws/rest/v1/pmtctSubscription"
         utils_tests.mock_get_identity_by_id("mother01-63e2-4acc-9b94-26663b9bc267")
         utils_tests.mock_patch_identity("mother01-63e2-4acc-9b94-26663b9bc267")
         utils_tests.mock_get_identity_by_msisdn("+27821113333")
@@ -2802,6 +2804,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         utils_tests.mock_get_schedule(schedule_id)
         utils_tests.mock_get_identity_by_id(registrant_uuid)
         utils_tests.mock_patch_identity(registrant_uuid)
+        utils_tests.mock_request_to_jembi_api(url)
 
         # Execute
         registration = Registration.objects.create(**registration_data)
@@ -2810,7 +2813,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         # . check number of calls made:
         #   messageset, schedule, identity, patch identity, jembi registration
         #   identity, reverse identity, reverse identity, patch identity
-        self.assertEqual(len(responses.calls), 5)
+        self.assertEqual(len(responses.calls), 9)
 
         # check jembi registration
         jembi_call = responses.calls[4]  # jembi should be the fifth one
@@ -2832,7 +2835,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             },
         )
         self.assertEqual(
-            jembi_call.request.url, "http://jembi/ws/rest/v1/pmtctSubscription"
+            jembi_call.request.url, url
         )
         self.assertEqual(jembi_call.request.method, "POST")
 
@@ -2939,6 +2942,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         """ Test a full registration process with good data """
         # Setup
         registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
+        url = "http://jembi/ws/rest/v1/pmtctSubscription"
         # . reactivate post-save hook
         post_save.connect(psh_validate_subscribe, sender=Registration)
 
@@ -2973,6 +2977,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             },
         )
         utils_tests.mock_patch_identity(registrant_uuid)
+        utils_tests.mock_request_to_jembi_api(url)
 
         # Execute
         registration = Registration.objects.create(**registration_data)
@@ -2981,7 +2986,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         # . check number of calls made:
         #   messageset, schedule, identity, patch identity, jembi registration
         #   get identity, patch identity
-        self.assertEqual(len(responses.calls), 6)
+        self.assertEqual(len(responses.calls), 8)
 
         # check jembi registration
         jembi_call = responses.calls[5]  # jembi should be the sixth one
@@ -3003,7 +3008,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             },
         )
         self.assertEqual(
-            jembi_call.request.url, "http://jembi/ws/rest/v1/pmtctSubscription"
+            jembi_call.request.url, url
         )
         self.assertEqual(jembi_call.request.method, "POST")
 
@@ -3074,9 +3079,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 
         # Check
         # . check number of calls made:
-        #   message set, schedule, popi message set, jembi registration,
-        #   id_store mother, id_store mother_reverse,
-        #   id_store registrant_rever, id_store patch
+        #   message set, schedule, popi message set, jembi registration
         self.assertEqual(len(responses.calls), 4)
 
         # . check registration validated
