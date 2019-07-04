@@ -892,10 +892,6 @@ class ValidateImplement(Task):
             return ["'channel' must be one of {}".format(sorted(channel_types))]
         return []
 
-    def get_change_id(self, change):
-        change_id = change.id
-        return change_id
-
     # Validate
     def validate(self, change):
         """ Validates that all the required info is provided for a
