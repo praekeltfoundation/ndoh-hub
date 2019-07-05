@@ -75,6 +75,7 @@ from .tasks import (
     create_rapidpro_public_registration,
     get_whatsapp_contact,
     validate_subscribe_jembi_app_registration,
+    request_to_jembi_api
 )
 
 try:
@@ -314,6 +315,7 @@ class JembiHelpdeskOutgoingView(APIView):
             or self.UNCLASSIFIED_MESSAGES_DEFAULT_LABEL,
             "type": 7,  # 7 helpdesk
             "op": str(validated_data.get("helpdesk_operator_id")),
+            "eid": str(registration.id),
         }
         return json_template
 
@@ -332,7 +334,15 @@ class JembiHelpdeskOutgoingView(APIView):
         serializer.is_valid(raise_exception=True)
 
         post_data = self.build_jembi_helpdesk_json(serializer.validated_data)
-        try:
+        source = Source.objects.get(user=self.request.user.id)
+        endpoint = "helpdesk"
+        if source.name == "NURSE Helpdesk App":
+            endpoint = "nc/helpdesk"
+            post_data["type"] = 12  # NC Helpdesk
+        jembi_url = urljoin(settings.JEMBI_BASE_URL, endpoint)
+        request_to_jembi_api(jembi_url, post_data)
+        
+        '''try:
 
             source = Source.objects.get(user=self.request.user.id)
 
@@ -362,9 +372,9 @@ class JembiHelpdeskOutgoingView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             else:
-                raise e
+                raise e'''
 
-        return Response(status=status.HTTP_200_OK)
+        return Response(status)
 
 
 class HealthcheckView(APIView):

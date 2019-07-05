@@ -3791,7 +3791,9 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
     @responses.activate
     def test_send_outgoing_message_to_jembi(self):
+        jembi_url = "http://jembi/ws/rest/v1/nc/helpdesk"
         self.make_registration_for_jembi_helpdesk()
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         utils_tests.mock_jembi_json_api_call(
             url="http://jembi/ws/rest/v1/helpdesk",
@@ -4040,6 +4042,8 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
     @responses.activate
     def test_send_outgoing_message_to_jembi_bad_data(self):
         self.make_registration_for_jembi_helpdesk()
+        # jembi_url = "http://jembi/ws/rest/v1/helpdesk"
+        # utils_tests.mock_request_to_jembi_api(jembi_url)
 
         responses.add(
             responses.POST,
