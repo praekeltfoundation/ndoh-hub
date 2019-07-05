@@ -2987,7 +2987,8 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 
         # Check
         # . check number of calls made:
-        #   messageset, schedule, identity, patch identity, jembi registration
+        #   messageset, schedule, identity, patch identity
+        #   popi message set, jembi registration,
         #   get identity, patch identity
         self.assertEqual(len(responses.calls), 8)
 
