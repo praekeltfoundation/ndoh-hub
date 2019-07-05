@@ -1755,7 +1755,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(Registration.objects.all().count(), 0)
         # Setup
         # make registrations
-        url = "http://jembi/ws/rest/v1/subscription"
+        jembi_url = "http://jembi/ws/rest/v1/subscription"
         self.make_registration_momconnect_prebirth()
         self.make_registration_pmtct_prebirth()
         self.assertEqual(Registration.objects.all().count(), 2)
@@ -1809,7 +1809,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # . this is a general patch - `responses` doesn't check the data
         utils_tests.mock_patch_identity("mother01-63e2-4acc-9b94-26663b9bc267")
 
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
@@ -1838,7 +1838,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
 
     @responses.activate
     def test_baby_switch_momconnect_only_sub(self):
-        url = "http://jembi/ws/rest/v1/subscription"
+        jembi_url = "http://jembi/ws/rest/v1/subscription"
         # Pretest
         self.assertEqual(Registration.objects.all().count(), 0)
         # Setup
@@ -1881,7 +1881,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # . this is a general patch - `responses` doesn't check the data
         utils_tests.mock_patch_identity("mother01-63e2-4acc-9b94-26663b9bc267")
 
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
@@ -1914,7 +1914,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         If the mother is subscribed to pmtct whatsapp, then when switching to
         baby messages, they should receive those through whatsapp as well.
         """
-        url = "http://jembi/ws/rest/v1/subscription"
+        jembi_url = "http://jembi/ws/rest/v1/subscription"
         # Pretest
         self.assertEqual(Registration.objects.all().count(), 0)
         # Setup
@@ -1956,7 +1956,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # . mock update mock_patch_identity
         # . this is a general patch - `responses` doesn't check the data
         utils_tests.mock_patch_identity("mother01-63e2-4acc-9b94-26663b9bc267")
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
@@ -1990,7 +1990,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         switching to baby messages, they should receive those through
         whatsapp as well.
         """
-        url = "http://jembi/ws/rest/v1/subscription"
+        jembi_url = "http://jembi/ws/rest/v1/subscription"
         # Pretest
         self.assertEqual(Registration.objects.all().count(), 0)
         # Setup
@@ -2032,7 +2032,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # . mock update mock_patch_identity
         # . this is a general patch - `responses` doesn't check the data
         utils_tests.mock_patch_identity("mother01-63e2-4acc-9b94-26663b9bc267")
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
@@ -2063,7 +2063,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
     def test_pmtct_loss_switch(self):
         # Setup
         # make registrations
-        url = "http://jembi/ws/rest/v1/subscription"
+        jembi_url = "http://jembi/ws/rest/v1/subscription"
         self.make_registration_momconnect_prebirth()
         self.make_registration_pmtct_prebirth()
         self.assertEqual(Registration.objects.all().count(), 2)
@@ -2107,7 +2107,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {"addresses": {"msisdn": {"+27821112222": {}}}},
         )
 
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
@@ -2142,7 +2142,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         """
         # Setup
         # make registrations
-        url = "http://jembi/ws/rest/v1/subscription"
+        jembi_url = "http://jembi/ws/rest/v1/subscription"
         self.make_registration_momconnect_prebirth()
         self.make_registration_pmtct_prebirth()
         self.assertEqual(Registration.objects.all().count(), 2)
@@ -2180,7 +2180,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {"addresses": {"msisdn": {"+27821112222": {}}}},
         )
 
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
@@ -2214,7 +2214,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
     def test_pmtct_loss_optout(self):
         # Setup
         # make registration
-        url = "http://jembi/ws/rest/v1/pmtctOptout"
+        jembi_url = "http://jembi/ws/rest/v1/pmtctOptout"
         self.make_registration_pmtct_prebirth()
         self.assertEqual(Registration.objects.all().count(), 1)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
@@ -2249,7 +2249,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {"addresses": {"msisdn": {"+27821112222": {}}}},
         )
 
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
@@ -2263,7 +2263,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(len(responses.calls), 7)
 
         # Check jembi push
-        self.assertEqual(responses.calls[-1].request.url, url)
+        self.assertEqual(responses.calls[-1].request.url, jembi_url)
         self.assertEqual(
             json.loads(responses.calls[-1].request.body),
             {
@@ -2282,7 +2282,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
     def test_pmtct_loss_optout_management_command(self):
         # Setup
         # make registration
-        url = "http://jembi/ws/rest/v1/pmtctOptout"
+        jembi_url = "http://jembi/ws/rest/v1/pmtctOptout"
         self.make_registration_pmtct_prebirth()
         self.assertEqual(Registration.objects.all().count(), 1)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
@@ -2303,7 +2303,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {"addresses": {"msisdn": {"+27821112222": {}}}},
         )
 
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         def format_timestamp(ts):
             return ts.strftime("%Y-%m-%d %H:%M:%S")
@@ -2320,7 +2320,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         )
 
         # Check jembi push
-        self.assertEqual(responses.calls[-1].request.url, url)
+        self.assertEqual(responses.calls[-1].request.url, jembi_url)
         self.assertEqual(
             json.loads(responses.calls[-1].request.body),
             {
@@ -2339,7 +2339,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
     def test_pmtct_nonloss_optout(self):
         # Setup
         # make registration
-        url = "http://jembi/ws/rest/v1/pmtctOptout"
+        jembi_url = "http://jembi/ws/rest/v1/pmtctOptout"
         self.make_registration_pmtct_prebirth()
         self.assertEqual(Registration.objects.all().count(), 1)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
@@ -2371,7 +2371,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {"addresses": {"msisdn": {"+27821112222": {}}}},
         )
 
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
@@ -2385,7 +2385,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(len(responses.calls), 8)
 
         # Check jembi push
-        self.assertEqual(responses.calls[-1].request.url, url)
+        self.assertEqual(responses.calls[-1].request.url, jembi_url)
         self.assertEqual(
             json.loads(responses.calls[-1].request.body),
             {
@@ -2461,7 +2461,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
     def test_nurse_optout(self):
         # Setup
         # make registration
-        url = "http://jembi/ws/rest/v1/nc/optout"
+        jembi_url = "http://jembi/ws/rest/v1/nc/optout"
         self.make_registration_nurseconnect()
         self.assertEqual(Registration.objects.all().count(), 1)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
@@ -2485,7 +2485,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions(["subscriptionid-nurseconnect-00000000"])
         mock_get_messageset(61, "nurseconnect.hw_full.1")
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
@@ -2521,7 +2521,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
     def test_nurse_optout_reg_data_removed(self):
         # Setup
         # make registration
-        url = "http://jembi/ws/rest/v1/nc/optout"
+        jembi_url = "http://jembi/ws/rest/v1/nc/optout"
         self.make_registration_nurseconnect(True)
         self.assertEqual(Registration.objects.all().count(), 1)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
@@ -2551,7 +2551,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # . mock deactivate active subscriptions
         mock_deactivate_subscriptions(["subscriptionid-nurseconnect-00000000"])
         mock_get_messageset(61, "nurseconnect.hw_full.1")
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
@@ -2587,7 +2587,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
     def test_nurse_optout_through_management_command(self):
         # Setup
         # make registration
-        url = "http://jembi/ws/rest/v1/nc/optout"
+        jembi_url = "http://jembi/ws/rest/v1/nc/optout"
         self.make_registration_nurseconnect()
         self.assertEqual(Registration.objects.all().count(), 1)
         self.assertEqual(SubscriptionRequest.objects.all().count(), 0)
@@ -2604,7 +2604,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
 
         utils_tests.mock_get_identity_by_id("nurse001-63e2-4acc-9b94-26663b9bc267")
 
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         def format_timestamp(ts):
             return ts.strftime("%Y-%m-%d %H:%M:%S")
@@ -2643,7 +2643,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
     def test_momconnect_loss_switch_has_active(self):
         # Setup
         # make registrations
-        url = "http://jembi/ws/rest/v1/subscription"
+        jembi_url = "http://jembi/ws/rest/v1/subscription"
         self.make_registration_momconnect_prebirth()
         self.make_registration_pmtct_prebirth()
         self.assertEqual(Registration.objects.all().count(), 2)
@@ -2687,7 +2687,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {"addresses": {"msisdn": {"+27111111111": {}}}},
         )
 
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
@@ -2722,7 +2722,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
     def test_momconnect_loss_switch_no_active(self):
         # Setup
         # . make registrations
-        url = "http://jembi/ws/rest/v1/subscription"
+        jembi_url = "http://jembi/ws/rest/v1/subscription"
         self.make_registration_momconnect_prebirth()
         self.make_registration_pmtct_prebirth()
         self.assertEqual(Registration.objects.all().count(), 2)
@@ -2739,7 +2739,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         # . mock get subscription request
         mock_get_active_subscriptions_none(change_data["registrant_id"])
 
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
@@ -2756,7 +2756,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
     def test_momconnect_babyloss_via_management_task(self):
         # Setup
         # make registration
-        url = "http://jembi/ws/rest/v1/subscription"
+        jembi_url = "http://jembi/ws/rest/v1/subscription"
         self.make_registration_momconnect_prebirth()
         self.make_registration_pmtct_prebirth()
         self.assertEqual(Registration.objects.all().count(), 2)
@@ -2778,7 +2778,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {"addresses": {"msisdn": {"+27111111111": {}}}},
         )
 
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         def format_timestamp(ts):
             return ts.strftime("%Y-%m-%d %H:%M:%S")
@@ -2819,7 +2819,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
     def test_momconnect_babyswitch_via_management_task(self):
         # Setup
         # make registration
-        url = "http://jembi/ws/rest/v1/subscription"
+        jembi_url = "http://jembi/ws/rest/v1/subscription"
         self.make_registration_momconnect_prebirth()
         self.make_registration_pmtct_prebirth()
         self.assertEqual(Registration.objects.all().count(), 2)
@@ -2841,7 +2841,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {"addresses": {"msisdn": {"+27111111111": {}}}},
         )
 
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         def format_timestamp(ts):
             return ts.strftime("%Y-%m-%d %H:%M:%S")
@@ -2882,7 +2882,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
     def test_momconnect_loss_optout(self):
         # Setup
         # make registration
-        url = "http://jembi/ws/rest/v1/optout"
+        jembi_url = "http://jembi/ws/rest/v1/optout"
         self.make_registration_momconnect_prebirth()
         self.make_registration_pmtct_prebirth()
         self.assertEqual(Registration.objects.all().count(), 2)
@@ -2917,7 +2917,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             "mother01-63e2-4acc-9b94-26663b9bc267",
             {"addresses": {"msisdn": {"+27111111111": {}}}},
         )
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
@@ -2949,7 +2949,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
     def test_momconnect_loss_optout_via_management_task(self):
         # Setup
         # make registration
-        url = "http://jembi/ws/rest/v1/optout"
+        jembi_url = "http://jembi/ws/rest/v1/optout"
         self.make_registration_momconnect_prebirth()
         self.make_registration_pmtct_prebirth()
         self.assertEqual(Registration.objects.all().count(), 2)
@@ -2971,7 +2971,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {"addresses": {"msisdn": {"+27111111111": {}}}},
         )
 
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         def format_timestamp(ts):
             return ts.strftime("%Y-%m-%d %H:%M:%S")
@@ -3013,7 +3013,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
     def test_momconnect_nonloss_optout(self):
         # Setup
         # make registration
-        url = "http://jembi/ws/rest/v1/optout"
+        jembi_url = "http://jembi/ws/rest/v1/optout"
         self.make_registration_momconnect_prebirth()
         self.make_registration_pmtct_prebirth()
         self.assertEqual(Registration.objects.all().count(), 2)
@@ -3049,7 +3049,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {"addresses": {"msisdn": {"+27111111111": {}}}},
         )
 
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         # Execute
         result = validate_implement.apply_async(args=[change.id])
@@ -3727,7 +3727,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         Switching the channel should skip all inactive subscriptions.
         """
         registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
-        url = "http://jembi/ws/rest/v1/messageChange"
+        jembi_url = "http://jembi/ws/rest/v1/messageChange"
         mock_get_messagesets(["skip.this.messageset"])
         mock_get_subscriptions(
             "?identity={}&active=True".format(registrant_id),
@@ -3740,7 +3740,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {"addresses": {"msisdn": {"+27821112222": {}}}},
         )
 
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         change = Change.objects.create(
             id="106be577-5963-491b-ac5d-7f4f0f4da309",
@@ -3776,7 +3776,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         Switching the channel to SMS should skip service info subscriptions.
         """
         registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
-        url = "http://jembi/ws/rest/v1/messageChange"
+        jembi_url = "http://jembi/ws/rest/v1/messageChange"
         mock_get_messagesets(["whatsapp_service_info.hw_full.1", "momconnect_prebirth"])
         mock_get_subscriptions(
             "?identity={}&active=True".format(registrant_id),
@@ -3801,7 +3801,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {"addresses": {"msisdn": {"+27821112222": {}}}},
         )
 
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         change = Change.objects.create(
             id="106be577-5963-491b-ac5d-7f4f0f4da309",
@@ -3819,7 +3819,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(SubscriptionRequest.objects.count(), 0)
 
         # Check Jembi POST
-        self.assertEqual(responses.calls[-1].request.url, url)
+        self.assertEqual(responses.calls[-1].request.url, jembi_url)
         self.assertEqual(
             json.loads(responses.calls[-1].request.body),
             {
@@ -3841,7 +3841,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         Switching to SMS should change all other subscriptions to SMS
         """
         registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
-        url = "http://jembi/ws/rest/v1/messageChange"
+        jembi_url = "http://jembi/ws/rest/v1/messageChange"
         mock_get_messagesets(["whatsapp_momconnect_prebirth", "momconnect_prebirth"])
         mock_get_subscriptions(
             "?identity={}&active=True".format(registrant_id),
@@ -3866,7 +3866,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {"addresses": {"msisdn": {"+27821112222": {}}}},
         )
 
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         change = Change.objects.create(
             id="106be577-5963-491b-ac5d-7f4f0f4da309",
@@ -3889,9 +3889,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(sub_req.schedule, 2)
 
         # Check Jembi POST
-        self.assertEqual(
-            responses.calls[-1].request.url, "http://jembi/ws/rest/v1/messageChange"
-        )
+        self.assertEqual(responses.calls[-1].request.url, jembi_url)
         self.assertEqual(
             json.loads(responses.calls[-1].request.body),
             {
@@ -4115,7 +4113,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         and create a service_info subscription
         """
         registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
-        url = "http://jembi/ws/rest/v1/messageChange"
+        jembi_url = "http://jembi/ws/rest/v1/messageChange"
         mock_get_messagesets(
             [
                 "whatsapp_momconnect_prebirth",
@@ -4146,7 +4144,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {"addresses": {"msisdn": {"+27821112222": {}}}},
         )
 
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         reg = self.make_registration_momconnect_prebirth()
         reg.source = self.make_source_adminuser()
@@ -4179,7 +4177,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(sub_service_info.schedule, 1)
 
         # Check Jembi POST
-        self.assertEqual(responses.calls[-1].request.url, url)
+        self.assertEqual(responses.calls[-1].request.url, jembi_url)
         self.assertEqual(
             json.loads(responses.calls[-1].request.body),
             {
@@ -4202,7 +4200,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         and not create a service_info subscription if it's a public subscription
         """
         registrant_id = "mother01-63e2-4acc-9b94-26663b9bc267"
-        url = "http://jembi/ws/rest/v1/messageChange"
+        jembi_url = "http://jembi/ws/rest/v1/messageChange"
         mock_get_messagesets(
             [
                 "whatsapp_momconnect_prebirth",
@@ -4233,7 +4231,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
             {"addresses": {"msisdn": {"+27821112222": {}}}},
         )
 
-        utils_tests.mock_request_to_jembi_api(url)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         self.make_registration_momconnect_prebirth()
 
@@ -4258,7 +4256,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
         self.assertEqual(sub_req.schedule, 2)
 
         # Check Jembi POST
-        self.assertEqual(responses.calls[-1].request.url, url)
+        self.assertEqual(responses.calls[-1].request.url, jembi_url)
         self.assertEqual(
             json.loads(responses.calls[-1].request.body),
             {
