@@ -2767,6 +2767,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         """ Test a full registration process with good data """
         # Setup
         registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
+        jembi_url = "http://jembi/ws/rest/v1/pmtctSubscription"
         utils_tests.mock_get_identity_by_id("mother01-63e2-4acc-9b94-26663b9bc267")
         utils_tests.mock_patch_identity("mother01-63e2-4acc-9b94-26663b9bc267")
         utils_tests.mock_get_identity_by_msisdn("+27821113333")
@@ -2802,6 +2803,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         utils_tests.mock_get_schedule(schedule_id)
         utils_tests.mock_get_identity_by_id(registrant_uuid)
         utils_tests.mock_patch_identity(registrant_uuid)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         # Execute
         registration = Registration.objects.create(**registration_data)
@@ -2821,6 +2823,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "dob": "19990127",
                 "cmsisdn": "+27821113333",
                 "dmsisdn": "+27821113333",
+                "eid": str(registration.id),
                 "faccode": "123456",
                 "id": "8108015001051^^^ZAF^NI",
                 "encdate": registration.created_at.strftime("%Y%m%d%H%M%S"),
@@ -2830,9 +2833,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "risk_status": "high",
             },
         )
-        self.assertEqual(
-            jembi_call.request.url, "http://jembi/ws/rest/v1/pmtctSubscription"
-        )
+        self.assertEqual(jembi_call.request.url, jembi_url)
         self.assertEqual(jembi_call.request.method, "POST")
 
         # . check registration validated
@@ -2854,6 +2855,8 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
     def test_registration_process_pmtct_no_facility(self):
         """ Test a full registration process with good data """
         # Setup
+        jembi_pmtct_url = "http://jembi/ws/rest/v1/pmtctSubscription"
+        jembi_url = "http://jembi/ws/rest/v1/subscription"
         registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
         utils_tests.mock_get_identity_by_id("mother01-63e2-4acc-9b94-26663b9bc267")
         utils_tests.mock_patch_identity("mother01-63e2-4acc-9b94-26663b9bc267")
@@ -2890,6 +2893,8 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         )
         utils_tests.mock_get_schedule(schedule_id)
 
+        utils_tests.mock_request_to_jembi_api(jembi_url)
+
         Registration.objects.create(**registration_data)
 
         source = self.make_source_normaluser()
@@ -2923,6 +2928,8 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         )
         utils_tests.mock_patch_identity(registrant_uuid)
 
+        utils_tests.mock_request_to_jembi_api(jembi_pmtct_url)
+
         # Execute
         Registration.objects.create(**registration_data)
 
@@ -2938,6 +2945,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         """ Test a full registration process with good data """
         # Setup
         registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
+        jembi_url = "http://jembi/ws/rest/v1/pmtctSubscription"
         # . reactivate post-save hook
         post_save.connect(psh_validate_subscribe, sender=Registration)
 
@@ -2972,13 +2980,15 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             },
         )
         utils_tests.mock_patch_identity(registrant_uuid)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         # Execute
         registration = Registration.objects.create(**registration_data)
 
         # Check
         # . check number of calls made:
-        #   messageset, schedule, identity, patch identity, jembi registration
+        #   messageset, schedule, identity, patch identity
+        #   popi message set, jembi registration,
         #   get identity, patch identity
         self.assertEqual(len(responses.calls), 8)
 
@@ -2991,6 +3001,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "dob": "19990127",
                 "cmsisdn": "+8108015001051",
                 "dmsisdn": "+8108015001051",
+                "eid": str(registration.id),
                 "faccode": "123456",
                 "id": "8108015001051^^^ZAF^TEL",
                 "encdate": registration.created_at.strftime("%Y%m%d%H%M%S"),
@@ -3000,9 +3011,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "risk_status": "high",
             },
         )
-        self.assertEqual(
-            jembi_call.request.url, "http://jembi/ws/rest/v1/pmtctSubscription"
-        )
+        self.assertEqual(jembi_call.request.url, jembi_url)
         self.assertEqual(jembi_call.request.method, "POST")
 
         # . check registration validated
@@ -3025,6 +3034,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         """ Test a full registration process with good data """
         # Setup
         # registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
+        jembi_url = "http://jembi/ws/rest/v1/subscription"
         utils_tests.mock_get_identity_by_id("mother01-63e2-4acc-9b94-26663b9bc267")
         utils_tests.mock_patch_identity("mother01-63e2-4acc-9b94-26663b9bc267")
         utils_tests.mock_get_identity_by_msisdn("+27821113333")
@@ -3067,14 +3077,14 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         # disabled service rating for now
         # utils_tests.mock_create_servicerating_invite(registrant_uuid)
 
+        utils_tests.mock_request_to_jembi_api(jembi_url)
+
         # Execute
         registration = Registration.objects.create(**registration_data)
 
         # Check
         # . check number of calls made:
-        #   message set, schedule, popi message set, jembi registration,
-        #   id_store mother, id_store mother_reverse,
-        #   id_store registrant_rever, id_store patch
+        #   message set, schedule, popi message set, jembi registration
         self.assertEqual(len(responses.calls), 8)
 
         # . check registration validated

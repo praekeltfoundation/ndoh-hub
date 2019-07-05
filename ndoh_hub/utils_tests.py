@@ -5,6 +5,12 @@ import responses
 
 
 # Mocks used in testing
+def mock_request_to_jembi_api(url):
+    responses.add(
+        responses.POST, url, json={}, status=200, content_type="application/json"
+    )
+
+
 def mock_get_identity_by_id(identity_id, details={}):
 
     default_details = {"foo": "bar", "lang_code": "afr_ZA"}

@@ -1175,30 +1175,8 @@ class BasePushOptoutToJembi(object):
 
         change = Change.objects.get(pk=change_id)
         json_doc = self.build_jembi_json(change)
-        try:
-            result = requests.post(
-                self.URL,
-                headers={"Content-Type": "application/json"},
-                data=json.dumps(json_doc),
-                auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
-                verify=False,
-            )
-            result.raise_for_status()
-
-            push_optout_to_identity_store(str(change_id))
-
-            return result.text
-        except (HTTPError,) as e:
-            # retry message sending if in 500 range (3 default retries)
-            if 500 < e.response.status_code < 599:
-                raise self.retry(exc=e)
-            else:
-                self.log.error("Error when posting to Jembi. Payload: %r" % (json_doc))
-                raise e
-        except (Exception,) as e:
-            self.log.error(
-                "Problem posting Optout %s JSON to Jembi" % (change_id), exc_info=True
-            )
+        request_to_jembi_api(self.URL, json_doc)
+        push_optout_to_identity_store(str(change_id))
 
 
 class PushMomconnectOptoutToJembi(BasePushOptoutToJembi, Task):
@@ -1221,6 +1199,7 @@ class PushMomconnectOptoutToJembi(BasePushOptoutToJembi, Task):
             "dmsisdn": address,
             "type": 4,
             "optoutreason": self.get_optout_reason(change.data["reason"]),
+            "eid": str(change.id),
         }
 
 
@@ -1246,6 +1225,7 @@ class PushPMTCTOptoutToJembi(PushMomconnectOptoutToJembi, Task):
             "dmsisdn": address,
             "type": 10,
             "optoutreason": self.get_optout_reason(change.data["reason"]),
+            "eid": str(change.id),
         }
 
 
@@ -1271,6 +1251,7 @@ class PushMomconnectBabyLossToJembi(BasePushOptoutToJembi, Task):
             "cmsisdn": address,
             "dmsisdn": address,
             "type": 5,
+            "eid": str(change.id),
         }
 
 
@@ -1296,6 +1277,7 @@ class PushMomconnectBabySwitchToJembi(BasePushOptoutToJembi, Task):
             "cmsisdn": address,
             "dmsisdn": address,
             "type": 11,
+            "eid": str(change.id),
         }
 
 
@@ -1369,6 +1351,7 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
                 else None
             ),
             "optoutreason": self.get_optout_reason(change.data["reason"]),
+            "eid": str(change.id),
         }
 
 
@@ -1433,6 +1416,7 @@ class PushChannelSwitchToJembi(BasePushOptoutToJembi, Task):
             "type": 12,
             "channel_current": change.data["old_channel"],
             "channel_new": change.data["channel"],
+            "eid": str(change.id),
         }
 
 
@@ -1958,3 +1942,22 @@ process_engage_helpdesk_outbound = (
     | get_identity_from_msisdn.s("inbound_address")
     | send_helpdesk_response_to_dhis2.s()
 )
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def request_to_jembi_api(url, json_doc):
+    r = requests.post(
+        url=url,
+        headers={"Content-Type": "application/json"},
+        data=json.dumps(json_doc),
+        auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+        verify=False,
+    )
+    r.raise_for_status()

@@ -1025,28 +1025,7 @@ class BasePushRegistrationToJembi(object):
             return
 
         json_doc = self.build_jembi_json(registration)
-        try:
-            result = requests.post(
-                self.URL,
-                headers={"Content-Type": "application/json"},
-                data=json.dumps(json_doc),
-                auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
-                verify=False,
-            )
-            result.raise_for_status()
-            return result.text
-        except (HTTPError,) as e:
-            # retry message sending if in 500 range (3 default retries)
-            if 500 < e.response.status_code < 599:
-                raise self.retry(exc=e)
-            else:
-                self.log.error("Error when posting to Jembi. Payload: %r" % (json_doc))
-                raise e
-        except (Exception,) as e:
-            self.log.error(
-                "Problem posting Registration %s JSON to Jembi" % (registration_id),
-                exc_info=True,
-            )
+        request_to_jembi_api(self.URL, json_doc)
 
 
 class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
@@ -1135,6 +1114,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
                 if registration.data.get("mom_dob")
                 else None
             ),
+            "eid": str(registration.id),
         }
 
         # Self registrations on all lines should use cmsisdn as dmsisdn too
@@ -1261,6 +1241,7 @@ class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
             "persal": self.get_persal(identity),
             "sanc": self.get_sanc(identity),
             "encdate": self.get_timestamp(registration),
+            "eid": str(registration.id),
         }
 
         return json_template
@@ -1543,3 +1524,22 @@ create_rapidpro_public_registration = (
     | update_identity_from_rapidpro_public_registration.s()
     | _create_rapidpro_public_registration.s()
 )
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def request_to_jembi_api(url, json_doc):
+    r = requests.post(
+        url=url,
+        headers={"Content-Type": "application/json"},
+        data=json.dumps(json_doc),
+        auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+        verify=False,
+    )
+    r.raise_for_status()
