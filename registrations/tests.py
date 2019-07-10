@@ -13,6 +13,7 @@ from django.core.management import call_command
 from django.db.models.signals import post_save
 from django.test import TestCase, override_settings
 from django.utils import timezone
+from requests.exceptions import HTTPError
 from requests_testadapter import TestAdapter, TestSession
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -3947,10 +3948,13 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_invalid_user_id(self):
-        self.make_source_normaluser()
+        jembi_url = "http://jembi/ws/rest/v1/helpdesk"
+        source = self.make_source_normaluser()
+        self.make_registration_for_jembi_helpdesk(source)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         utils_tests.mock_jembi_json_api_call(
-            url="http://jembi/ws/rest/v1/helpdesk",
+            url=jembi_url,
             ok_response="jembi-is-ok",
             err_response="jembi-is-unhappy",
             fields={},
@@ -4064,13 +4068,12 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "label": "Complaint",
         }
 
-        with mock.patch("registrations.views.logger.warning") as mock_logger:
+        with self.assertRaises(HTTPError):
             response = self.normalclient.post(
                 "/api/v1/jembi/helpdesk/outgoing/", user_request
             )
             self.assertEqual(response.status_code, 400)
             self.assertTrue("This was a bad request." in str(response.content))
-        mock_logger.assert_called()
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_with_blank_values(self):

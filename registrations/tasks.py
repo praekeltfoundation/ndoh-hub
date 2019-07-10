@@ -1543,3 +1543,4 @@ def request_to_jembi_api(url, json_doc):
         verify=False,
     )
     r.raise_for_status()
+    return r.raise_for_status()
