@@ -729,6 +729,10 @@ class AuthenticatedAPITestCase(APITestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
+        patcher = mock.patch("registrations.tasks.send_welcome_message")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def tearDown(self):
         self._restore_post_save_hooks()
 
