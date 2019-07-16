@@ -487,6 +487,9 @@ class ValidateSubscribe(Task):
         """
         if registration.reg_type not in ("momconnect_prebirth", "whatsapp_prebirth"):
             return
+        if registration.source.authority != "hw_full":
+            # Only clinic registrations should get this message
+            return
         try:
             msisdn = registration.data["msisdn_registrant"]
             language = registration.data["language"]
