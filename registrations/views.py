@@ -340,7 +340,7 @@ class JembiHelpdeskOutgoingView(APIView):
             endpoint = "nc/helpdesk"
             post_data["type"] = 12  # NC Helpdesk
         jembi_url = urljoin(settings.JEMBI_BASE_URL, endpoint)
-        request_to_jembi_api(jembi_url, post_data)
+        request_to_jembi_api.delay(jembi_url, post_data)
 
         return Response(status=status.HTTP_200_OK)
 
