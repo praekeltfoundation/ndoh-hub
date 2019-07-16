@@ -1860,6 +1860,7 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
     inbound_text = " | ".join(list(inbound_text)[::-1])
     labels = map(lambda m: m["_vnd"]["v1"]["labels"], inbounds)
     labels = map(lambda l: l["value"], ichain.from_iterable(labels))
+    message_id = message_id
 
     return {
         "inbound_text": inbound_text or "No Question",
@@ -1869,6 +1870,7 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
         "reply_text": reply_text or "No Answer",
         "reply_timestamp": reply_timestamp.timestamp(),
         "reply_operator": reply_operator,
+        "message_id": message_id,
     }
 
 
@@ -1895,6 +1897,7 @@ def get_identity_from_msisdn(context, field):
         utils.is_client.get_identity_by_address("msisdn", msisdn)["results"]
     )
     context["identity_id"] = identity["id"]
+    print(context)
     return context
 
 
@@ -1911,6 +1914,7 @@ def send_helpdesk_response_to_dhis2(context):
         .order_by("-created_at")
         .first()
     )
+    print(context)
 
     result = requests.post(
         urljoin(settings.JEMBI_BASE_URL, "helpdesk"),
@@ -1931,6 +1935,7 @@ def send_helpdesk_response_to_dhis2(context):
             "class": ",".join(context["inbound_labels"]) or "Unclassified",
             "type": 7,  # Helpdesk
             "op": str(context["reply_operator"]),
+            "eid": context["message_id"],
         },
     )
     result.raise_for_status()
