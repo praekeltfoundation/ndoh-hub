@@ -3960,9 +3960,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
     def test_send_outgoing_message_to_jembi_invalid_user_id(self):
         message_id = "BCGGJ3FVFUV"
         jembi_url = "http://jembi/ws/rest/v1/helpdesk"
-        source = self.make_source_normaluser()
-        self.make_registration_for_jembi_helpdesk(source)
-        utils_tests.mock_request_to_jembi_api(jembi_url)
+        self.make_source_normaluser()
 
         utils_tests.mock_jembi_json_api_call(
             url=jembi_url,
@@ -4025,70 +4023,6 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
                 "/api/v1/jembi/helpdesk/outgoing/", user_request
             )
             self.assertEqual(response.status_code, 503)
-
-    @responses.activate
-    def test_send_outgoing_message_to_jembi_error_response(self):
-        message_id = "BCGGJ3FVFUV"
-        self.make_registration_for_jembi_helpdesk()
-
-        responses.add(
-            responses.POST,
-            "http://jembi/ws/rest/v1/helpdesk",
-            status=500,
-            content_type="application/json",
-            body="This was a bad request.",
-        )
-
-        user_request = {
-            "to": "+27123456789",
-            "content": "this is a sample reponse",
-            "reply_to": "this is a sample user message",
-            "inbound_created_on": self.inbound_created_on_date,
-            "outbound_created_on": self.outbound_created_on_date,
-            "user_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "helpdesk_operator_id": 1234,
-            "label": "Complaint",
-            "message_id": message_id,
-        }
-        # Execute
-        with self.assertRaises(requests.exceptions.HTTPError):
-            response = self.normalclient.post(
-                "/api/v1/jembi/helpdesk/outgoing/", user_request
-            )
-            self.assertEqual(response.status_code, 500)
-            self.assertTrue("This was a bad request." in str(response.content))
-
-    @responses.activate
-    def test_send_outgoing_message_to_jembi_bad_data(self):
-        message_id = "BCGGJ3FVFUV"
-        self.make_registration_for_jembi_helpdesk()
-
-        responses.add(
-            responses.POST,
-            "http://jembi/ws/rest/v1/helpdesk",
-            status=400,
-            content_type="application/json",
-            body="This was a bad request.",
-        )
-
-        user_request = {
-            "to": "+27123456789",
-            "content": "this is a sample reponse",
-            "reply_to": "this is a sample user message",
-            "inbound_created_on": self.inbound_created_on_date,
-            "outbound_created_on": self.outbound_created_on_date,
-            "user_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "helpdesk_operator_id": 1234,
-            "label": "Complaint",
-            "message_id": message_id,
-        }
-
-        with self.assertRaises(HTTPError):
-            response = self.normalclient.post(
-                "/api/v1/jembi/helpdesk/outgoing/", user_request
-            )
-            self.assertEqual(response.status_code, 400)
-            self.assertTrue("This was a bad request." in str(response.content))
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_with_blank_values(self):
