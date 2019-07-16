@@ -24,6 +24,7 @@ from registrations.tasks import (
     create_rapidpro_public_registration,
     get_or_create_identity_from_msisdn,
     get_whatsapp_contact,
+    opt_in_identity,
     update_identity_from_rapidpro_clinic_registration,
     update_identity_from_rapidpro_public_registration,
     validate_subscribe,
@@ -1889,3 +1890,55 @@ class CreateSubscriptionrequestsPostbirthTests(AuthenticatedAPITestCase):
         self.assertEqual(subreq.messageset, 94)
         self.assertEqual(subreq.lang, "eng_ZA")
         self.assertEqual(subreq.next_sequence_number, 9)
+
+
+class OptInIdentityTestCase(TestCase):
+    @responses.activate
+    def test_not_opted_out(self):
+        """
+        If the address on the identity isn't opted out, then we should do nothing
+        """
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/identity-uuid/",
+            json={
+                "details": {
+                    "addresses": {"msisdn": {"+27820001001": {"optedout": False}}}
+                }
+            },
+        )
+        opt_in_identity("identity-uuid", "+27820001001", 1)
+
+    @responses.activate
+    def test_opted_out(self):
+        """
+        If the address on the identity is opted out, then we should create an opt in
+        """
+        user = User.objects.create_user("test")
+        source = Source.objects.create(user=user, name="Test name")
+
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/identity-uuid/",
+            json={
+                "details": {
+                    "addresses": {"msisdn": {"+27820001001": {"optedout": True}}}
+                }
+            },
+        )
+
+        responses.add(responses.POST, "http://is/api/v1/optin/")
+
+        opt_in_identity("identity-uuid", "+27820001001", source.id)
+
+        request = responses.calls[-1].request
+        self.assertEqual(
+            json.loads(request.body),
+            {
+                "address": "+27820001001",
+                "address_type": "msisdn",
+                "identity": "identity-uuid",
+                "request_source": "Test name",
+                "requestor_source_id": source.id,
+            },
+        )

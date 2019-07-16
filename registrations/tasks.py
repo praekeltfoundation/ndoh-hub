@@ -468,6 +468,19 @@ class ValidateSubscribe(Task):
         self.log.info("Identity updated with risk level")
         return risk
 
+    def opt_in_identity(self, registration):
+        """
+        Opts in the identity if they've previously opted out
+        """
+        try:
+            msisdn = registration.data["msisdn_registrant"]
+        except KeyError:
+            return
+
+        opt_in_identity.delay(
+            registration.registrant_id, msisdn, registration.source_id
+        )
+
     # Run
     def run(self, registration_id, **kwargs):
         """ Sets the registration's validated field to True if
@@ -488,6 +501,7 @@ class ValidateSubscribe(Task):
             self.create_subscriptionrequests(registration)
             self.create_popi_subscriptionrequest(registration)
             self.create_service_info_subscriptionrequest(registration)
+            self.opt_in_identity(registration)
 
             # NOTE: disable service rating for now
             # if registration.reg_type == "momconnect_prebirth" and\
@@ -1543,3 +1557,37 @@ def request_to_jembi_api(url, json_doc):
         verify=False,
     )
     r.raise_for_status()
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def opt_in_identity(identity_id, address, source_id):
+    """
+    Opts in an identity if previously opted out
+    """
+    identity = is_client.get_identity(identity_id)
+    address_details = (
+        identity.get("details", {})
+        .get("addresses", {})
+        .get("msisdn", {})
+        .get(address, {})
+    )
+
+    if not address_details.get("optedout"):
+        return
+
+    source = Source.objects.get(id=source_id)
+    optin = {
+        "identity": identity_id,
+        "address_type": "msisdn",
+        "address": address,
+        "request_source": source.name,
+        "requestor_source_id": source.id,
+    }
+    return is_client.create_optin(optin)
