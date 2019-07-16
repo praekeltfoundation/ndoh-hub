@@ -1897,7 +1897,6 @@ def get_identity_from_msisdn(context, field):
         utils.is_client.get_identity_by_address("msisdn", msisdn)["results"]
     )
     context["identity_id"] = identity["id"]
-    print(context)
     return context
 
 
@@ -1914,7 +1913,6 @@ def send_helpdesk_response_to_dhis2(context):
         .order_by("-created_at")
         .first()
     )
-    print(context)
 
     result = requests.post(
         urljoin(settings.JEMBI_BASE_URL, "helpdesk"),

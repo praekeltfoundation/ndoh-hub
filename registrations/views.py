@@ -299,8 +299,6 @@ class JembiHelpdeskOutgoingView(APIView):
         )
         swt = get_software_type(validated_data.get("inbound_channel_id", ""))
 
-        print(validated_data)
-
         json_template = {
             "encdate": jembi_format_date(validated_data.get("inbound_created_on")),
             "repdate": jembi_format_date(validated_data.get("outbound_created_on")),
@@ -317,6 +315,7 @@ class JembiHelpdeskOutgoingView(APIView):
             or self.UNCLASSIFIED_MESSAGES_DEFAULT_LABEL,
             "type": 7,  # 7 helpdesk
             "op": str(validated_data.get("helpdesk_operator_id")),
+            "eid": validated_data.get("message_id"),
         }
         return json_template
 
