@@ -25,6 +25,7 @@ from registrations.tasks import (
     get_or_create_identity_from_msisdn,
     get_whatsapp_contact,
     opt_in_identity,
+    send_welcome_message,
     update_identity_from_rapidpro_clinic_registration,
     update_identity_from_rapidpro_public_registration,
     validate_subscribe,
@@ -509,7 +510,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         channel
         """
         responses.add(responses.POST, "http://ms/api/v1/outbound/")
-        task.send_welcome_message("eng_ZA", "WHATSAPP", "+27820001000", "identity-uuid")
+        send_welcome_message("eng_ZA", "WHATSAPP", "+27820001000", "identity-uuid")
         request = responses.calls[-1].request
         self.assertEqual(
             json.loads(request.body),
@@ -532,9 +533,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         Should send the SMS text using the correct channel and language
         """
         responses.add(responses.POST, "http://ms/api/v1/outbound/")
-        task.send_welcome_message(
-            "nso_ZA", "JUNE_TEXT", "+27820001000", "identity-uuid"
-        )
+        send_welcome_message("nso_ZA", "JUNE_TEXT", "+27820001000", "identity-uuid")
         request = responses.calls[-1].request
         self.assertEqual(
             json.loads(request.body),
@@ -919,10 +918,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
             },
         )
 
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration."
-        "send_welcome_message"
-    )
+    @mock.patch("registrations.tasks.send_welcome_message")
     @mock.patch(
         "registrations.tasks.validate_subscribe_jembi_app_registration."
         "create_subscriptionrequests"
@@ -1005,10 +1001,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         )
         self.assertEqual(Registration.objects.count(), 1)
 
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration."
-        "send_welcome_message"
-    )
+    @mock.patch("registrations.tasks.send_welcome_message")
     @mock.patch(
         "registrations.tasks.validate_subscribe_jembi_app_registration."
         "create_pmtct_registration"
