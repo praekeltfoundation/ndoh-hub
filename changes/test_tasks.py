@@ -870,7 +870,7 @@ class SendHelpdeskResponseToDHIS2Tests(DisconnectRegistrationSignalsMixin, TestC
                     "class": "label1,label2",
                     "type": 7,
                     "op": "104296490747485586223672247128147036730",
-                    'eid': message_id,
+                    "eid": message_id,
                 },
             )
             return (200, {}, json.dumps({}))

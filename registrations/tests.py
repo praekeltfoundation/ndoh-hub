@@ -4164,7 +4164,6 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "label": "Complaint",
             "inbound_channel_id": "6a5c691e-140c-48b0-9f39-a53d4951d7fa",
             "message_id": message_id,
-
         }
         # Execute
         response = self.normalclient.post(
