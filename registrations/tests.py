@@ -4,7 +4,6 @@ import uuid
 from datetime import timedelta
 from unittest import mock
 
-import requests
 import responses
 from django.contrib.auth.models import Group, User
 from django.core import management
@@ -13,7 +12,6 @@ from django.core.management import call_command
 from django.db.models.signals import post_save
 from django.test import TestCase, override_settings
 from django.utils import timezone
-from requests.exceptions import HTTPError
 from requests_testadapter import TestAdapter, TestSession
 from rest_framework import status
 from rest_framework.authtoken.models import Token
