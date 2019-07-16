@@ -3822,6 +3822,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
         response = self.normalclient.post(
             "/api/v1/jembi/helpdesk/outgoing/", user_request
         )
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(responses.calls), 2)
         request_json = json.loads(responses.calls[1].request.body)

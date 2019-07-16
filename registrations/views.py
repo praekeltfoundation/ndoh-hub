@@ -299,6 +299,8 @@ class JembiHelpdeskOutgoingView(APIView):
         )
         swt = get_software_type(validated_data.get("inbound_channel_id", ""))
 
+        print(validated_data)
+
         json_template = {
             "encdate": jembi_format_date(validated_data.get("inbound_created_on")),
             "repdate": jembi_format_date(validated_data.get("outbound_created_on")),
@@ -315,7 +317,6 @@ class JembiHelpdeskOutgoingView(APIView):
             or self.UNCLASSIFIED_MESSAGES_DEFAULT_LABEL,
             "type": 7,  # 7 helpdesk
             "op": str(validated_data.get("helpdesk_operator_id")),
-            "eid": str(registration.id) if registration else None,
         }
         return json_template
 
@@ -340,9 +341,9 @@ class JembiHelpdeskOutgoingView(APIView):
             endpoint = "nc/helpdesk"
             post_data["type"] = 12  # NC Helpdesk
         jembi_url = urljoin(settings.JEMBI_BASE_URL, endpoint)
-        raise_status = request_to_jembi_api(jembi_url, post_data)
+        request_to_jembi_api(jembi_url, post_data)
 
-        return Response(raise_status)
+        return Response(status=status.HTTP_200_OK)
 
 
 class HealthcheckView(APIView):
