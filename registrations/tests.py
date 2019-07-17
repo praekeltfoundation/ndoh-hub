@@ -3967,6 +3967,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
     @responses.activate
     def test_send_outgoing_message_to_jembi_invalid_user_id(self):
         message_id = "BCGGJ3FVFUV"
+        user_id = "unknown-uuid"
         jembi_url = "http://jembi/ws/rest/v1/helpdesk"
         self.make_source_normaluser()
 
@@ -3983,7 +3984,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "reply_to": "this is a sample user message",
             "inbound_created_on": self.inbound_created_on_date,
             "outbound_created_on": self.outbound_created_on_date,
-            "user_id": "unknown-uuid",
+            "user_id": user_id,
             "helpdesk_operator_id": 1234,
             "label": "Complaint",
             "message_id": message_id,
@@ -3999,6 +4000,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
         self.assertEqual(request_json["dmsisdn"], "+27123456789")
         self.assertEqual(request_json["cmsisdn"], "+27123456789")
         self.assertEqual(request_json["eid"], message_id)
+        self.assertEqual(request_json["sid"], user_id)
         self.assertEqual(request_json["encdate"], "20160101000000")
         self.assertEqual(request_json["repdate"], "20160102000000")
         self.assertEqual(request_json["mha"], 1)

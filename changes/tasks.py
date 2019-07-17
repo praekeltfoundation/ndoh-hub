@@ -1939,6 +1939,7 @@ def send_helpdesk_response_to_dhis2(context):
             "type": 7,  # Helpdesk
             "op": str(context["reply_operator"]),
             "eid": context["message_id"],
+            "sid": registration.registrant_id,
         },
     )
     result.raise_for_status()

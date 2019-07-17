@@ -871,6 +871,7 @@ class SendHelpdeskResponseToDHIS2Tests(DisconnectRegistrationSignalsMixin, TestC
                     "type": 7,
                     "op": "104296490747485586223672247128147036730",
                     "eid": message_id,
+                    "sid": "identity-uuid",
                 },
             )
             return (200, {}, json.dumps({}))
@@ -1003,6 +1004,7 @@ class ProcessEngageHelpdeskOutboundTests(DisconnectRegistrationSignalsMixin, Tes
                     "cmsisdn": "+27820001001",
                     "dmsisdn": "+27820001001",
                     "eid": message_id,
+                    "sid": "identity-uuid",
                     "faccode": "123456",
                     "data": {
                         "question": "Mother question",
