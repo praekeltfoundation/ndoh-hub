@@ -316,6 +316,7 @@ class JembiHelpdeskOutgoingView(APIView):
             "type": 7,  # 7 helpdesk
             "op": str(validated_data.get("helpdesk_operator_id")),
             "eid": validated_data.get("message_id"),
+            "sid": validated_data.get("user_id"),
         }
         return json_template
 
