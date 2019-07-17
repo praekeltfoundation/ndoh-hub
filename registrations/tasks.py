@@ -468,6 +468,41 @@ class ValidateSubscribe(Task):
         self.log.info("Identity updated with risk level")
         return risk
 
+    def opt_in_identity(self, registration):
+        """
+        Opts in the identity if they've previously opted out
+        """
+        try:
+            msisdn = registration.data["msisdn_registrant"]
+        except KeyError:
+            return
+
+        opt_in_identity.delay(
+            registration.registrant_id, msisdn, registration.source_id
+        )
+
+    def send_welcome_message(self, registration):
+        """
+        If this is a prebirth momconnect registration, send the welcome message
+        """
+        if registration.reg_type not in ("momconnect_prebirth", "whatsapp_prebirth"):
+            return
+        if registration.source.authority != "hw_full":
+            # Only clinic registrations should get this message
+            return
+        try:
+            msisdn = registration.data["msisdn_registrant"]
+            language = registration.data["language"]
+        except KeyError:
+            return
+
+        send_welcome_message.delay(
+            language=language,
+            channel="WHATSAPP" if "whatsapp" in registration.reg_type else "JUNE_TEXT",
+            msisdn=msisdn,
+            identity_id=registration.registrant_id,
+        )
+
     # Run
     def run(self, registration_id, **kwargs):
         """ Sets the registration's validated field to True if
@@ -488,6 +523,8 @@ class ValidateSubscribe(Task):
             self.create_subscriptionrequests(registration)
             self.create_popi_subscriptionrequest(registration)
             self.create_service_info_subscriptionrequest(registration)
+            self.opt_in_identity(registration)
+            self.send_welcome_message(registration)
 
             # NOTE: disable service rating for now
             # if registration.reg_type == "momconnect_prebirth" and\
@@ -794,49 +831,6 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         r.raise_for_status()
         return len(r.json().get("rows", [])) != 0
 
-    def send_welcome_message(
-        self, language: str, channel: str, msisdn: str, identity_id: str
-    ) -> None:
-        """
-        Sends the welcome message to the user in the user's language using the
-        message sender
-        """
-        # Transform to django language code
-        language = language.lower().replace("_", "-")
-        with translation.override(language):
-            translation_context = {
-                "popi_ussd": settings.POPI_USSD_CODE,
-                "optout_ussd": settings.OPTOUT_USSD_CODE,
-            }
-            if channel == "WHATSAPP":
-                text = (
-                    translation.ugettext(
-                        "Welcome! MomConnect will send helpful WhatsApp msgs. To stop "
-                        "dial %(optout_ussd)s (Free). To get msgs via SMS instead, "
-                        'reply "SMS" (std rates apply).'
-                    )
-                    % translation_context
-                )
-            else:
-                text = (
-                    translation.ugettext(
-                        "Congratulations on your pregnancy! MomConnect will send you "
-                        "helpful SMS msgs. To stop dial %(optout_ussd)s, for more dial "
-                        "%(popi_ussd)s (Free)."
-                    )
-                    % translation_context
-                )
-
-        utils.ms_client.create_outbound(
-            {
-                "to_addr": msisdn,
-                "to_identity": identity_id,
-                "content": text,
-                "channel": "JUNE_TEXT",
-                "metadata": {},
-            }
-        )
-
     def run(self, registration_id, **kwargs):
         registration = Registration.objects.get(id=registration_id)
         msisdn_registrant = registration.data["msisdn_registrant"]
@@ -899,7 +893,7 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         self.create_service_info_subscriptionrequest(registration)
 
         # Send welcome message
-        self.send_welcome_message(
+        send_welcome_message(
             language=registration.data["language"],
             channel="WHATSAPP" if "whatsapp" in registration.reg_type else "JUNE_TEXT",
             msisdn=msisdn_registrant,
@@ -1543,3 +1537,87 @@ def request_to_jembi_api(url, json_doc):
         verify=False,
     )
     return r.raise_for_status()
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def opt_in_identity(identity_id, address, source_id):
+    """
+    Opts in an identity if previously opted out
+    """
+    identity = is_client.get_identity(identity_id)
+    address_details = (
+        identity.get("details", {})
+        .get("addresses", {})
+        .get("msisdn", {})
+        .get(address, {})
+    )
+
+    if not address_details.get("optedout"):
+        return
+
+    source = Source.objects.get(id=source_id)
+    optin = {
+        "identity": identity_id,
+        "address_type": "msisdn",
+        "address": address,
+        "request_source": source.name,
+        "requestor_source_id": source.id,
+    }
+    return is_client.create_optin(optin)
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def send_welcome_message(language, channel, msisdn, identity_id):
+    """
+    Sends the welcome message to the user in the user's language using the
+    message sender
+    """
+    # Transform to django language code
+    language = language.lower().replace("_", "-")
+    with translation.override(language):
+        translation_context = {
+            "popi_ussd": settings.POPI_USSD_CODE,
+            "optout_ussd": settings.OPTOUT_USSD_CODE,
+        }
+        if channel == "WHATSAPP":
+            text = (
+                translation.ugettext(
+                    "Welcome! MomConnect will send helpful WhatsApp msgs. To stop "
+                    "dial %(optout_ussd)s (Free). To get msgs via SMS instead, "
+                    'reply "SMS" (std rates apply).'
+                )
+                % translation_context
+            )
+        else:
+            text = (
+                translation.ugettext(
+                    "Congratulations on your pregnancy! MomConnect will send you "
+                    "helpful SMS msgs. To stop dial %(optout_ussd)s, for more dial "
+                    "%(popi_ussd)s (Free)."
+                )
+                % translation_context
+            )
+
+    utils.ms_client.create_outbound(
+        {
+            "to_addr": msisdn,
+            "to_identity": identity_id,
+            "content": text,
+            "channel": "JUNE_TEXT",
+            "metadata": {},
+        }
+    )

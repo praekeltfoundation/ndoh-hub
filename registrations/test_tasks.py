@@ -24,6 +24,8 @@ from registrations.tasks import (
     create_rapidpro_public_registration,
     get_or_create_identity_from_msisdn,
     get_whatsapp_contact,
+    opt_in_identity,
+    send_welcome_message,
     update_identity_from_rapidpro_clinic_registration,
     update_identity_from_rapidpro_public_registration,
     validate_subscribe,
@@ -508,7 +510,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         channel
         """
         responses.add(responses.POST, "http://ms/api/v1/outbound/")
-        task.send_welcome_message("eng_ZA", "WHATSAPP", "+27820001000", "identity-uuid")
+        send_welcome_message("eng_ZA", "WHATSAPP", "+27820001000", "identity-uuid")
         request = responses.calls[-1].request
         self.assertEqual(
             json.loads(request.body),
@@ -531,9 +533,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         Should send the SMS text using the correct channel and language
         """
         responses.add(responses.POST, "http://ms/api/v1/outbound/")
-        task.send_welcome_message(
-            "nso_ZA", "JUNE_TEXT", "+27820001000", "identity-uuid"
-        )
+        send_welcome_message("nso_ZA", "JUNE_TEXT", "+27820001000", "identity-uuid")
         request = responses.calls[-1].request
         self.assertEqual(
             json.loads(request.body),
@@ -918,10 +918,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
             },
         )
 
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration."
-        "send_welcome_message"
-    )
+    @mock.patch("registrations.tasks.send_welcome_message")
     @mock.patch(
         "registrations.tasks.validate_subscribe_jembi_app_registration."
         "create_subscriptionrequests"
@@ -1004,10 +1001,7 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         )
         self.assertEqual(Registration.objects.count(), 1)
 
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration."
-        "send_welcome_message"
-    )
+    @mock.patch("registrations.tasks.send_welcome_message")
     @mock.patch(
         "registrations.tasks.validate_subscribe_jembi_app_registration."
         "create_pmtct_registration"
@@ -1889,3 +1883,55 @@ class CreateSubscriptionrequestsPostbirthTests(AuthenticatedAPITestCase):
         self.assertEqual(subreq.messageset, 94)
         self.assertEqual(subreq.lang, "eng_ZA")
         self.assertEqual(subreq.next_sequence_number, 9)
+
+
+class OptInIdentityTestCase(TestCase):
+    @responses.activate
+    def test_not_opted_out(self):
+        """
+        If the address on the identity isn't opted out, then we should do nothing
+        """
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/identity-uuid/",
+            json={
+                "details": {
+                    "addresses": {"msisdn": {"+27820001001": {"optedout": False}}}
+                }
+            },
+        )
+        opt_in_identity("identity-uuid", "+27820001001", 1)
+
+    @responses.activate
+    def test_opted_out(self):
+        """
+        If the address on the identity is opted out, then we should create an opt in
+        """
+        user = User.objects.create_user("test")
+        source = Source.objects.create(user=user, name="Test name")
+
+        responses.add(
+            responses.GET,
+            "http://is/api/v1/identities/identity-uuid/",
+            json={
+                "details": {
+                    "addresses": {"msisdn": {"+27820001001": {"optedout": True}}}
+                }
+            },
+        )
+
+        responses.add(responses.POST, "http://is/api/v1/optin/")
+
+        opt_in_identity("identity-uuid", "+27820001001", source.id)
+
+        request = responses.calls[-1].request
+        self.assertEqual(
+            json.loads(request.body),
+            {
+                "address": "+27820001001",
+                "address_type": "msisdn",
+                "identity": "identity-uuid",
+                "request_source": "Test name",
+                "requestor_source_id": source.id,
+            },
+        )
