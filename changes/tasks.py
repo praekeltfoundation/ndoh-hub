@@ -1869,6 +1869,7 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
         "reply_text": reply_text or "No Answer",
         "reply_timestamp": reply_timestamp.timestamp(),
         "reply_operator": reply_operator,
+        "message_id": message_id,
     }
 
 
@@ -1931,6 +1932,7 @@ def send_helpdesk_response_to_dhis2(context):
             "class": ",".join(context["inbound_labels"]) or "Unclassified",
             "type": 7,  # Helpdesk
             "op": str(context["reply_operator"]),
+            "eid": context["message_id"],
         },
     )
     result.raise_for_status()
