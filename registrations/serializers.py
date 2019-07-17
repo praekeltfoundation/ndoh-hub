@@ -313,6 +313,7 @@ class JembiHelpdeskOutgoingSerializer(serializers.Serializer):
     inbound_created_on = serializers.DateTimeField()
     outbound_created_on = serializers.DateTimeField()
     inbound_channel_id = serializers.CharField(required=False, allow_blank=True)
+    message_id = serializers.CharField()
 
 
 class PositionTrackerSerializer(serializers.ModelSerializer):

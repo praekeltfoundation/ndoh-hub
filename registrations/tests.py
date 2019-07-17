@@ -4,7 +4,6 @@ import uuid
 from datetime import timedelta
 from unittest import mock
 
-import requests
 import responses
 from django.contrib.auth.models import Group, User
 from django.core import management
@@ -724,6 +723,14 @@ class AuthenticatedAPITestCase(APITestCase):
         self.partialclient.credentials(
             HTTP_AUTHORIZATION="Token %s" % self.partialtoken
         )
+
+        patcher = mock.patch("registrations.tasks.opt_in_identity")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+        patcher = mock.patch("registrations.tasks.send_welcome_message")
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def tearDown(self):
         self._restore_post_save_hooks()
@@ -2767,6 +2774,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         """ Test a full registration process with good data """
         # Setup
         registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
+        jembi_url = "http://jembi/ws/rest/v1/pmtctSubscription"
         utils_tests.mock_get_identity_by_id("mother01-63e2-4acc-9b94-26663b9bc267")
         utils_tests.mock_patch_identity("mother01-63e2-4acc-9b94-26663b9bc267")
         utils_tests.mock_get_identity_by_msisdn("+27821113333")
@@ -2802,6 +2810,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         utils_tests.mock_get_schedule(schedule_id)
         utils_tests.mock_get_identity_by_id(registrant_uuid)
         utils_tests.mock_patch_identity(registrant_uuid)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         # Execute
         registration = Registration.objects.create(**registration_data)
@@ -2822,6 +2831,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "cmsisdn": "+27821113333",
                 "dmsisdn": "+27821113333",
                 "sid": registrant_uuid,
+                "eid": str(registration.id),
                 "faccode": "123456",
                 "id": "8108015001051^^^ZAF^NI",
                 "encdate": registration.created_at.strftime("%Y%m%d%H%M%S"),
@@ -2831,9 +2841,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "risk_status": "high",
             },
         )
-        self.assertEqual(
-            jembi_call.request.url, "http://jembi/ws/rest/v1/pmtctSubscription"
-        )
+        self.assertEqual(jembi_call.request.url, jembi_url)
         self.assertEqual(jembi_call.request.method, "POST")
 
         # . check registration validated
@@ -2855,6 +2863,8 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
     def test_registration_process_pmtct_no_facility(self):
         """ Test a full registration process with good data """
         # Setup
+        jembi_pmtct_url = "http://jembi/ws/rest/v1/pmtctSubscription"
+        jembi_url = "http://jembi/ws/rest/v1/subscription"
         registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
         utils_tests.mock_get_identity_by_id("mother01-63e2-4acc-9b94-26663b9bc267")
         utils_tests.mock_patch_identity("mother01-63e2-4acc-9b94-26663b9bc267")
@@ -2891,6 +2901,8 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         )
         utils_tests.mock_get_schedule(schedule_id)
 
+        utils_tests.mock_request_to_jembi_api(jembi_url)
+
         Registration.objects.create(**registration_data)
 
         source = self.make_source_normaluser()
@@ -2924,6 +2936,8 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         )
         utils_tests.mock_patch_identity(registrant_uuid)
 
+        utils_tests.mock_request_to_jembi_api(jembi_pmtct_url)
+
         # Execute
         Registration.objects.create(**registration_data)
 
@@ -2939,6 +2953,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         """ Test a full registration process with good data """
         # Setup
         registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
+        jembi_url = "http://jembi/ws/rest/v1/pmtctSubscription"
         # . reactivate post-save hook
         post_save.connect(psh_validate_subscribe, sender=Registration)
 
@@ -2973,13 +2988,15 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
             },
         )
         utils_tests.mock_patch_identity(registrant_uuid)
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         # Execute
         registration = Registration.objects.create(**registration_data)
 
         # Check
         # . check number of calls made:
-        #   messageset, schedule, identity, patch identity, jembi registration
+        #   messageset, schedule, identity, patch identity
+        #   popi message set, jembi registration,
         #   get identity, patch identity
         self.assertEqual(len(responses.calls), 8)
 
@@ -2993,6 +3010,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "cmsisdn": "+8108015001051",
                 "dmsisdn": "+8108015001051",
                 "sid": registrant_uuid,
+                "eid": str(registration.id),
                 "faccode": "123456",
                 "id": "8108015001051^^^ZAF^TEL",
                 "encdate": registration.created_at.strftime("%Y%m%d%H%M%S"),
@@ -3002,9 +3020,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
                 "risk_status": "high",
             },
         )
-        self.assertEqual(
-            jembi_call.request.url, "http://jembi/ws/rest/v1/pmtctSubscription"
-        )
+        self.assertEqual(jembi_call.request.url, jembi_url)
         self.assertEqual(jembi_call.request.method, "POST")
 
         # . check registration validated
@@ -3027,6 +3043,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         """ Test a full registration process with good data """
         # Setup
         # registrant_uuid = "mother01-63e2-4acc-9b94-26663b9bc267"
+        jembi_url = "http://jembi/ws/rest/v1/subscription"
         utils_tests.mock_get_identity_by_id("mother01-63e2-4acc-9b94-26663b9bc267")
         utils_tests.mock_patch_identity("mother01-63e2-4acc-9b94-26663b9bc267")
         utils_tests.mock_get_identity_by_msisdn("+27821113333")
@@ -3069,14 +3086,14 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
         # disabled service rating for now
         # utils_tests.mock_create_servicerating_invite(registrant_uuid)
 
+        utils_tests.mock_request_to_jembi_api(jembi_url)
+
         # Execute
         registration = Registration.objects.create(**registration_data)
 
         # Check
         # . check number of calls made:
-        #   message set, schedule, popi message set, jembi registration,
-        #   id_store mother, id_store mother_reverse,
-        #   id_store registrant_rever, id_store patch
+        #   message set, schedule, popi message set, jembi registration
         self.assertEqual(len(responses.calls), 8)
 
         # . check registration validated
@@ -3783,7 +3800,10 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
     @responses.activate
     def test_send_outgoing_message_to_jembi(self):
+        message_id = "BCGGJ3FVFUV"
+        jembi_url = "http://jembi/ws/rest/v1/nc/helpdesk"
         self.make_registration_for_jembi_helpdesk()
+        utils_tests.mock_request_to_jembi_api(jembi_url)
 
         utils_tests.mock_jembi_json_api_call(
             url="http://jembi/ws/rest/v1/helpdesk",
@@ -3806,17 +3826,20 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "helpdesk_operator_id": 1234,
             "label": "Complaint",
             "inbound_channel_id": "6a5c691e-140c-48b0-9f39-a53d4951d7fa",
+            "message_id": message_id,
         }
         # Execute
         response = self.normalclient.post(
             "/api/v1/jembi/helpdesk/outgoing/", user_request
         )
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(responses.calls), 2)
         request_json = json.loads(responses.calls[1].request.body)
 
         self.assertEqual(request_json["dmsisdn"], "+27123456789")
         self.assertEqual(request_json["cmsisdn"], "+27123456789")
+        self.assertEqual(request_json["eid"], message_id)
         self.assertEqual(request_json["encdate"], "20160101000000")
         self.assertEqual(request_json["repdate"], "20160102000000")
         self.assertEqual(request_json["mha"], 1)
@@ -3835,6 +3858,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_nurseconnect(self):
+        message_id = "BCGGJ3FVFUV"
         source = self.make_source_normaluser("NURSE Helpdesk App")
         self.make_registration_for_jembi_helpdesk(source)
 
@@ -3859,6 +3883,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "helpdesk_operator_id": 1234,
             "label": "Complaint",
             "inbound_channel_id": "6a5c691e-140c-48b0-9f39-a53d4951d7fa",
+            "message_id": message_id,
         }
         # Execute
         response = self.normalclient.post(
@@ -3870,6 +3895,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
         self.assertEqual(request_json["dmsisdn"], "+27123456789")
         self.assertEqual(request_json["cmsisdn"], "+27123456789")
+        self.assertEqual(request_json["eid"], message_id)
         self.assertEqual(request_json["encdate"], "20160101000000")
         self.assertEqual(request_json["repdate"], "20160102000000")
         self.assertEqual(request_json["mha"], 1)
@@ -3888,6 +3914,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_with_null_operator_id(self):
+        message_id = "BCGGJ3FVFUV"
         reg = self.make_registration_for_jembi_helpdesk()
         reg.data["operator_id"] = None
         reg.save()
@@ -3908,6 +3935,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "user_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "helpdesk_operator_id": 1234,
             "label": "Complaint",
+            "message_id": message_id,
         }
         # Execute
         response = self.normalclient.post(
@@ -3919,6 +3947,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
         self.assertEqual(request_json["dmsisdn"], "+27123456789")
         self.assertEqual(request_json["cmsisdn"], "+27123456789")
+        self.assertEqual(request_json["eid"], message_id)
         self.assertEqual(request_json["encdate"], "20160101000000")
         self.assertEqual(request_json["repdate"], "20160102000000")
         self.assertEqual(request_json["mha"], 1)
@@ -3937,10 +3966,12 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_invalid_user_id(self):
+        message_id = "BCGGJ3FVFUV"
+        jembi_url = "http://jembi/ws/rest/v1/helpdesk"
         self.make_source_normaluser()
 
         utils_tests.mock_jembi_json_api_call(
-            url="http://jembi/ws/rest/v1/helpdesk",
+            url=jembi_url,
             ok_response="jembi-is-ok",
             err_response="jembi-is-unhappy",
             fields={},
@@ -3955,6 +3986,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "user_id": "unknown-uuid",
             "helpdesk_operator_id": 1234,
             "label": "Complaint",
+            "message_id": message_id,
         }
         # Execute
         response = self.normalclient.post(
@@ -3966,6 +3998,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
         self.assertEqual(request_json["dmsisdn"], "+27123456789")
         self.assertEqual(request_json["cmsisdn"], "+27123456789")
+        self.assertEqual(request_json["eid"], message_id)
         self.assertEqual(request_json["encdate"], "20160101000000")
         self.assertEqual(request_json["repdate"], "20160102000000")
         self.assertEqual(request_json["mha"], 1)
@@ -4000,68 +4033,8 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             self.assertEqual(response.status_code, 503)
 
     @responses.activate
-    def test_send_outgoing_message_to_jembi_error_response(self):
-        self.make_registration_for_jembi_helpdesk()
-
-        responses.add(
-            responses.POST,
-            "http://jembi/ws/rest/v1/helpdesk",
-            status=500,
-            content_type="application/json",
-            body="This was a bad request.",
-        )
-
-        user_request = {
-            "to": "+27123456789",
-            "content": "this is a sample reponse",
-            "reply_to": "this is a sample user message",
-            "inbound_created_on": self.inbound_created_on_date,
-            "outbound_created_on": self.outbound_created_on_date,
-            "user_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "helpdesk_operator_id": 1234,
-            "label": "Complaint",
-        }
-        # Execute
-        with self.assertRaises(requests.exceptions.HTTPError):
-            response = self.normalclient.post(
-                "/api/v1/jembi/helpdesk/outgoing/", user_request
-            )
-            self.assertEqual(response.status_code, 500)
-            self.assertTrue("This was a bad request." in str(response.content))
-
-    @responses.activate
-    def test_send_outgoing_message_to_jembi_bad_data(self):
-        self.make_registration_for_jembi_helpdesk()
-
-        responses.add(
-            responses.POST,
-            "http://jembi/ws/rest/v1/helpdesk",
-            status=400,
-            content_type="application/json",
-            body="This was a bad request.",
-        )
-
-        user_request = {
-            "to": "+27123456789",
-            "content": "this is a sample reponse",
-            "reply_to": "this is a sample user message",
-            "inbound_created_on": self.inbound_created_on_date,
-            "outbound_created_on": self.outbound_created_on_date,
-            "user_id": "mother01-63e2-4acc-9b94-26663b9bc267",
-            "helpdesk_operator_id": 1234,
-            "label": "Complaint",
-        }
-
-        with mock.patch("registrations.views.logger.warning") as mock_logger:
-            response = self.normalclient.post(
-                "/api/v1/jembi/helpdesk/outgoing/", user_request
-            )
-            self.assertEqual(response.status_code, 400)
-            self.assertTrue("This was a bad request." in str(response.content))
-        mock_logger.assert_called()
-
-    @responses.activate
     def test_send_outgoing_message_to_jembi_with_blank_values(self):
+        message_id = "BCGGJ3FVFUV"
         self.make_registration_for_jembi_helpdesk()
 
         utils_tests.mock_jembi_json_api_call(
@@ -4080,6 +4053,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "user_id": "mother01-63e2-4acc-9b94-26663b9bc267",
             "helpdesk_operator_id": 1234,
             "label": "",
+            "message_id": message_id,
         }
         # Execute
         response = self.normalclient.post(
@@ -4091,6 +4065,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
         self.assertEqual(request_json["dmsisdn"], "+27123456789")
         self.assertEqual(request_json["cmsisdn"], "+27123456789")
+        self.assertEqual(request_json["eid"], message_id)
         self.assertEqual(request_json["encdate"], "20160101000000")
         self.assertEqual(request_json["repdate"], "20160102000000")
         self.assertEqual(request_json["mha"], 1)
@@ -4106,6 +4081,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_via_whatsapp(self):
+        message_id = "BCGGJ3FVFUV"
         self.make_registration_for_jembi_helpdesk()
 
         utils_tests.mock_jembi_json_api_call(
@@ -4129,6 +4105,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "helpdesk_operator_id": 1234,
             "label": "Complaint",
             "inbound_channel_id": "6a5c691e-140c-48b0-9f39-a53d4951d7fa",
+            "message_id": message_id,
         }
         # Execute
         response = self.normalclient.post(
@@ -4140,6 +4117,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
         self.assertEqual(request_json["dmsisdn"], "+27123456789")
         self.assertEqual(request_json["cmsisdn"], "+27123456789")
+        self.assertEqual(request_json["eid"], message_id)
         self.assertEqual(request_json["encdate"], "20160101000000")
         self.assertEqual(request_json["repdate"], "20160102000000")
         self.assertEqual(request_json["mha"], 1)
@@ -4161,6 +4139,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_using_cache_for_sw_type(self):
+        message_id = "BCGGJ3FVFUV"
         self.make_registration_for_jembi_helpdesk()
 
         utils_tests.mock_jembi_json_api_call(
@@ -4183,6 +4162,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
             "helpdesk_operator_id": 1234,
             "label": "Complaint",
             "inbound_channel_id": "6a5c691e-140c-48b0-9f39-a53d4951d7fa",
+            "message_id": message_id,
         }
         # Execute
         response = self.normalclient.post(
@@ -4194,6 +4174,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
         self.assertEqual(request_json["dmsisdn"], "+27123456789")
         self.assertEqual(request_json["cmsisdn"], "+27123456789")
+        self.assertEqual(request_json["eid"], message_id)
         self.assertEqual(request_json["encdate"], "20160101000000")
         self.assertEqual(request_json["repdate"], "20160102000000")
         self.assertEqual(request_json["mha"], 1)

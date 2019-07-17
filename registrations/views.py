@@ -74,6 +74,7 @@ from .tasks import (
     create_rapidpro_clinic_registration,
     create_rapidpro_public_registration,
     get_whatsapp_contact,
+    request_to_jembi_api,
     validate_subscribe_jembi_app_registration,
 )
 
@@ -314,6 +315,7 @@ class JembiHelpdeskOutgoingView(APIView):
             or self.UNCLASSIFIED_MESSAGES_DEFAULT_LABEL,
             "type": 7,  # 7 helpdesk
             "op": str(validated_data.get("helpdesk_operator_id")),
+            "eid": validated_data.get("message_id"),
         }
         return json_template
 
@@ -332,37 +334,13 @@ class JembiHelpdeskOutgoingView(APIView):
         serializer.is_valid(raise_exception=True)
 
         post_data = self.build_jembi_helpdesk_json(serializer.validated_data)
-        try:
-
-            source = Source.objects.get(user=self.request.user.id)
-
-            endpoint = "helpdesk"
-            if source.name == "NURSE Helpdesk App":
-                endpoint = "nc/helpdesk"
-                post_data["type"] = 12  # NC Helpdesk
-
-            result = requests.post(
-                urljoin(settings.JEMBI_BASE_URL, endpoint),
-                headers={"Content-Type": "application/json"},
-                data=json.dumps(post_data),
-                auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
-                verify=False,
-            )
-            result.raise_for_status()
-        except (requests.exceptions.HTTPError,) as e:
-            if e.response.status_code == 400:
-                logger.warning(
-                    "400 Error when posting to Jembi.\n"
-                    "Response: %s\nPayload:%s"
-                    % (e.response.text, json.dumps(post_data))
-                )
-                return Response(
-                    "Error when posting to Jembi. Body: %s Payload: %r"
-                    % (e.response.content, post_data),
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            else:
-                raise e
+        source = Source.objects.get(user=self.request.user.id)
+        endpoint = "helpdesk"
+        if source.name == "NURSE Helpdesk App":
+            endpoint = "nc/helpdesk"
+            post_data["type"] = 12  # NC Helpdesk
+        jembi_url = urljoin(settings.JEMBI_BASE_URL, endpoint)
+        request_to_jembi_api.delay(jembi_url, post_data)
 
         return Response(status=status.HTTP_200_OK)
 
@@ -420,7 +398,6 @@ class JembiFacilityCheckHealthcheckView(APIView):
 
         except (requests.exceptions.HTTPError,) as e:
             if e.response.status_code == 400:
-                print(e.response.text)
                 logger.warning(
                     "400 Error when posting to Jembi.\n"
                     "Response: Payload:%s" % (e.response.content)
