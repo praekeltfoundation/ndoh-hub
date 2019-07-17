@@ -1108,6 +1108,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
                 if registration.data.get("mom_dob")
                 else None
             ),
+            "sid": str(registration.registrant_id),
             "eid": str(registration.id),
         }
 
@@ -1235,6 +1236,7 @@ class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
             "persal": self.get_persal(identity),
             "sanc": self.get_sanc(identity),
             "encdate": self.get_timestamp(registration),
+            "sid": str(registration.registrant_id),
             "eid": str(registration.id),
         }
 
