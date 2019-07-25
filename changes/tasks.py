@@ -1875,7 +1875,7 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
         "reply_text": reply_text or "No Answer",
         "reply_timestamp": reply_timestamp.timestamp(),
         "reply_operator": reply_operator,
-        "message_id": message_id,
+        "message_id": str(UUID(int=message_id)),
     }
 
 
