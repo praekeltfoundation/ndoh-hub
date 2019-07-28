@@ -1800,8 +1800,9 @@ def get_timestamp_from_turn_message(message: dict) -> datetime:
     max_retries=15,
     acks_late=True,
     time_limit=10,
+    bind=True,
 )
-def get_engage_inbound_and_reply(wa_contact_id, message_id):
+def get_engage_inbound_and_reply(self, wa_contact_id, message_id):
     """
     Fetches the messages for `wa_contact_id`, and returns details about the outbound
     specified by `message_id`, as well as details about the possible inbound/s that
@@ -1875,7 +1876,7 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
         "reply_text": reply_text or "No Answer",
         "reply_timestamp": reply_timestamp.timestamp(),
         "reply_operator": reply_operator,
-        "message_id": str(UUID(int=message_id)),
+        "message_id": self.request.id,
     }
 
 

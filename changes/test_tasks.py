@@ -2,7 +2,6 @@ import json
 from datetime import datetime, timedelta
 from unittest import mock
 from urllib.parse import urlencode
-from uuid import UUID
 
 import responses
 from django.contrib.auth.models import User
@@ -522,7 +521,7 @@ class ProcessWhatsAppContactLookupFailTaskTests(WhatsAppBaseTestCase):
 class GetEngageInboundAndReplyTests(TestCase):
     @responses.activate
     def test_get_engage_inbound_and_reply(self):
-        message_id = 10
+        message_id = "cdffd588-dc29-469d-b2ac-3a0c2d5d8609"
         responses.add(
             responses.GET,
             "http://engage/v1/contacts/27820001001/messages",
@@ -664,7 +663,7 @@ class GetEngageInboundAndReplyTests(TestCase):
                 "inbound_address": "27820001001",
                 "inbound_text": "User question as text | User question as caption",
                 "inbound_timestamp": 1540803293.123456,
-                "message_id": str(UUID(int=message_id)),
+                "message_id": resp.id,
                 "inbound_labels": ["image", "text"],
                 "reply_text": "Operator response",
                 "reply_timestamp": 1540803363,
@@ -938,7 +937,9 @@ class ProcessEngageHelpdeskOutboundTests(DisconnectRegistrationSignalsMixin, Tes
         the individual task tests are meant to do that. This just covers that the data
         passed from one task to another works.
         """
-        message_id = 10
+
+        message_id = "cdffd588-dc29-469d-b2ac-3a0c2d5d8609"
+
         responses.add(
             responses.GET,
             "http://engage/v1/contacts/27820001001/messages",
@@ -1004,7 +1005,7 @@ class ProcessEngageHelpdeskOutboundTests(DisconnectRegistrationSignalsMixin, Tes
                     "swt": 4,
                     "cmsisdn": "+27820001001",
                     "dmsisdn": "+27820001001",
-                    "eid": str(UUID(int=message_id)),
+                    "eid": message_id,
                     "sid": "identity-uuid",
                     "faccode": "123456",
                     "data": {
@@ -1031,7 +1032,9 @@ class ProcessEngageHelpdeskOutboundTests(DisconnectRegistrationSignalsMixin, Tes
             registrant_id="identity-uuid", data={"faccode": "123456"}, source=source
         )
 
-        process_engage_helpdesk_outbound.delay("27820001001", message_id).get()
+        process_engage_helpdesk_outbound.apply_async(
+            args=["27820001001", message_id], task_id=message_id
+        ).get()
 
 
 class RefreshEngageContextTests(TestCase):
