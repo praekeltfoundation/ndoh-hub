@@ -1875,7 +1875,6 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
         "reply_text": reply_text or "No Answer",
         "reply_timestamp": reply_timestamp.timestamp(),
         "reply_operator": reply_operator,
-        "message_id": message_id,
     }
 
 
@@ -1905,8 +1904,16 @@ def get_identity_from_msisdn(context, field):
     return context
 
 
-@app.task
-def send_helpdesk_response_to_dhis2(context):
+@app.task(
+    autoretry_for=(HTTPError, ConnectionError, Timeout),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=15,
+    acks_late=True,
+    time_limit=10,
+    bind=True,
+)
+def send_helpdesk_response_to_dhis2(self, context):
     encdate = datetime.utcfromtimestamp(int(context["inbound_timestamp"]))
     repdate = datetime.utcfromtimestamp(int(context["reply_timestamp"]))
 
@@ -1938,7 +1945,7 @@ def send_helpdesk_response_to_dhis2(context):
             "class": ",".join(context["inbound_labels"]) or "Unclassified",
             "type": 7,  # Helpdesk
             "op": str(context["reply_operator"]),
-            "eid": context["message_id"],
+            "eid": self.request.id,
             "sid": registration.registrant_id,
         },
     )

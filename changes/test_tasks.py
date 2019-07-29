@@ -656,14 +656,13 @@ class GetEngageInboundAndReplyTests(TestCase):
                 ]
             },
         )
-        resp = get_engage_inbound_and_reply.delay("27820001001", "BCGGJ3FVFUV")
+        resp = get_engage_inbound_and_reply.delay("27820001001", message_id)
         self.assertEqual(
             resp.get(),
             {
                 "inbound_address": "27820001001",
                 "inbound_text": "User question as text | User question as caption",
                 "inbound_timestamp": 1540803293.123456,
-                "message_id": message_id,
                 "inbound_labels": ["image", "text"],
                 "reply_text": "Operator response",
                 "reply_timestamp": 1540803363,
@@ -889,18 +888,20 @@ class SendHelpdeskResponseToDHIS2Tests(DisconnectRegistrationSignalsMixin, TestC
             registrant_id="identity-uuid", data={"faccode": "123456"}, source=source
         )
 
-        res = send_helpdesk_response_to_dhis2.delay(
-            {
-                "inbound_text": "Mother question",
-                "inbound_timestamp": "1540803293",
-                "inbound_address": "27820001001",
-                "reply_text": "Operator answer",
-                "reply_timestamp": "1540803363",
-                "reply_operator": 104296490747485586223672247128147036730,
-                "identity_id": "identity-uuid",
-                "inbound_labels": ["label1", "label2"],
-                "message_id": message_id,
-            }
+        res = send_helpdesk_response_to_dhis2.apply_async(
+            args=[
+                {
+                    "inbound_text": "Mother question",
+                    "inbound_timestamp": "1540803293",
+                    "inbound_address": "27820001001",
+                    "reply_text": "Operator answer",
+                    "reply_timestamp": "1540803363",
+                    "reply_operator": 104296490747485586223672247128147036730,
+                    "identity_id": "identity-uuid",
+                    "inbound_labels": ["label1", "label2"],
+                }
+            ],
+            task_id=message_id,
         ).get()
 
         self.assertEqual(json.loads(res), {})
@@ -937,7 +938,9 @@ class ProcessEngageHelpdeskOutboundTests(DisconnectRegistrationSignalsMixin, Tes
         the individual task tests are meant to do that. This just covers that the data
         passed from one task to another works.
         """
-        message_id = "BCGGJ3FVFUV"
+
+        message_id = "cdffd588-dc29-469d-b2ac-3a0c2d5d8609"
+
         responses.add(
             responses.GET,
             "http://engage/v1/contacts/27820001001/messages",
@@ -1030,7 +1033,9 @@ class ProcessEngageHelpdeskOutboundTests(DisconnectRegistrationSignalsMixin, Tes
             registrant_id="identity-uuid", data={"faccode": "123456"}, source=source
         )
 
-        process_engage_helpdesk_outbound.delay("27820001001", message_id).get()
+        process_engage_helpdesk_outbound.apply_async(
+            args=["27820001001", message_id], task_id=message_id
+        ).get()
 
 
 class RefreshEngageContextTests(TestCase):
