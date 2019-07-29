@@ -521,7 +521,7 @@ class ProcessWhatsAppContactLookupFailTaskTests(WhatsAppBaseTestCase):
 class GetEngageInboundAndReplyTests(TestCase):
     @responses.activate
     def test_get_engage_inbound_and_reply(self):
-        message_id = "cdffd588-dc29-469d-b2ac-3a0c2d5d8609"
+        message_id = "BCGGJ3FVFUV"
         responses.add(
             responses.GET,
             "http://engage/v1/contacts/27820001001/messages",
@@ -663,7 +663,6 @@ class GetEngageInboundAndReplyTests(TestCase):
                 "inbound_address": "27820001001",
                 "inbound_text": "User question as text | User question as caption",
                 "inbound_timestamp": 1540803293.123456,
-                "message_id": resp.id,
                 "inbound_labels": ["image", "text"],
                 "reply_text": "Operator response",
                 "reply_timestamp": 1540803363,
@@ -849,7 +848,7 @@ class SendHelpdeskResponseToDHIS2Tests(DisconnectRegistrationSignalsMixin, TestC
         """
         Should send the data to OpenHIM in the correct format to be placed in DHIS2
         """
-        message_id = "cdffd588-dc29-469d-b2ac-3a0c2d5d8609"
+        message_id = "BCGGJ3FVFUV"
 
         def assert_openhim_request(request):
             payload = json.loads(request.body)
@@ -889,18 +888,20 @@ class SendHelpdeskResponseToDHIS2Tests(DisconnectRegistrationSignalsMixin, TestC
             registrant_id="identity-uuid", data={"faccode": "123456"}, source=source
         )
 
-        res = send_helpdesk_response_to_dhis2.delay(
-            {
-                "inbound_text": "Mother question",
-                "inbound_timestamp": "1540803293",
-                "inbound_address": "27820001001",
-                "reply_text": "Operator answer",
-                "reply_timestamp": "1540803363",
-                "reply_operator": 104296490747485586223672247128147036730,
-                "identity_id": "identity-uuid",
-                "inbound_labels": ["label1", "label2"],
-                "message_id": message_id,
-            }
+        res = send_helpdesk_response_to_dhis2.apply_async(
+            args=[
+                {
+                    "inbound_text": "Mother question",
+                    "inbound_timestamp": "1540803293",
+                    "inbound_address": "27820001001",
+                    "reply_text": "Operator answer",
+                    "reply_timestamp": "1540803363",
+                    "reply_operator": 104296490747485586223672247128147036730,
+                    "identity_id": "identity-uuid",
+                    "inbound_labels": ["label1", "label2"],
+                }
+            ],
+            task_id=message_id,
         ).get()
 
         self.assertEqual(json.loads(res), {})
