@@ -3,6 +3,7 @@ import datetime
 import uuid
 from datetime import timedelta
 from unittest import mock
+from uuid import UUID
 
 import responses
 from django.contrib.auth.models import Group, User
@@ -3800,7 +3801,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
     @responses.activate
     def test_send_outgoing_message_to_jembi(self):
-        message_id = "BCGGJ3FVFUV"
+        message_id = 10
         jembi_url = "http://jembi/ws/rest/v1/nc/helpdesk"
         self.make_registration_for_jembi_helpdesk()
         utils_tests.mock_request_to_jembi_api(jembi_url)
@@ -3839,7 +3840,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
         self.assertEqual(request_json["dmsisdn"], "+27123456789")
         self.assertEqual(request_json["cmsisdn"], "+27123456789")
-        self.assertEqual(request_json["eid"], message_id)
+        self.assertEqual(request_json["eid"], str(UUID(int=message_id)))
         self.assertEqual(request_json["encdate"], "20160101000000")
         self.assertEqual(request_json["repdate"], "20160102000000")
         self.assertEqual(request_json["mha"], 1)
@@ -3858,7 +3859,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_nurseconnect(self):
-        message_id = "BCGGJ3FVFUV"
+        message_id = 10
         source = self.make_source_normaluser("NURSE Helpdesk App")
         self.make_registration_for_jembi_helpdesk(source)
 
@@ -3895,7 +3896,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
         self.assertEqual(request_json["dmsisdn"], "+27123456789")
         self.assertEqual(request_json["cmsisdn"], "+27123456789")
-        self.assertEqual(request_json["eid"], message_id)
+        self.assertEqual(request_json["eid"], str(UUID(int=message_id)))
         self.assertEqual(request_json["encdate"], "20160101000000")
         self.assertEqual(request_json["repdate"], "20160102000000")
         self.assertEqual(request_json["mha"], 1)
@@ -3914,7 +3915,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_with_null_operator_id(self):
-        message_id = "BCGGJ3FVFUV"
+        message_id = 10
         reg = self.make_registration_for_jembi_helpdesk()
         reg.data["operator_id"] = None
         reg.save()
@@ -3947,7 +3948,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
         self.assertEqual(request_json["dmsisdn"], "+27123456789")
         self.assertEqual(request_json["cmsisdn"], "+27123456789")
-        self.assertEqual(request_json["eid"], message_id)
+        self.assertEqual(request_json["eid"], str(UUID(int=message_id)))
         self.assertEqual(request_json["encdate"], "20160101000000")
         self.assertEqual(request_json["repdate"], "20160102000000")
         self.assertEqual(request_json["mha"], 1)
@@ -3966,7 +3967,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_invalid_user_id(self):
-        message_id = "BCGGJ3FVFUV"
+        message_id = 10
         user_id = "unknown-uuid"
         jembi_url = "http://jembi/ws/rest/v1/helpdesk"
         self.make_source_normaluser()
@@ -3999,7 +4000,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
         self.assertEqual(request_json["dmsisdn"], "+27123456789")
         self.assertEqual(request_json["cmsisdn"], "+27123456789")
-        self.assertEqual(request_json["eid"], message_id)
+        self.assertEqual(request_json["eid"], str(UUID(int=message_id)))
         self.assertEqual(request_json["sid"], user_id)
         self.assertEqual(request_json["encdate"], "20160101000000")
         self.assertEqual(request_json["repdate"], "20160102000000")
@@ -4036,7 +4037,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_with_blank_values(self):
-        message_id = "BCGGJ3FVFUV"
+        message_id = 10
         self.make_registration_for_jembi_helpdesk()
 
         utils_tests.mock_jembi_json_api_call(
@@ -4067,7 +4068,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
         self.assertEqual(request_json["dmsisdn"], "+27123456789")
         self.assertEqual(request_json["cmsisdn"], "+27123456789")
-        self.assertEqual(request_json["eid"], message_id)
+        self.assertEqual(request_json["eid"], str(UUID(int=message_id)))
         self.assertEqual(request_json["encdate"], "20160101000000")
         self.assertEqual(request_json["repdate"], "20160102000000")
         self.assertEqual(request_json["mha"], 1)
@@ -4083,7 +4084,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_via_whatsapp(self):
-        message_id = "BCGGJ3FVFUV"
+        message_id = 10
         self.make_registration_for_jembi_helpdesk()
 
         utils_tests.mock_jembi_json_api_call(
@@ -4119,7 +4120,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
         self.assertEqual(request_json["dmsisdn"], "+27123456789")
         self.assertEqual(request_json["cmsisdn"], "+27123456789")
-        self.assertEqual(request_json["eid"], message_id)
+        self.assertEqual(request_json["eid"], str(UUID(int=message_id)))
         self.assertEqual(request_json["encdate"], "20160101000000")
         self.assertEqual(request_json["repdate"], "20160102000000")
         self.assertEqual(request_json["mha"], 1)
@@ -4141,7 +4142,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_using_cache_for_sw_type(self):
-        message_id = "BCGGJ3FVFUV"
+        message_id = 10
         self.make_registration_for_jembi_helpdesk()
 
         utils_tests.mock_jembi_json_api_call(
@@ -4176,7 +4177,7 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
 
         self.assertEqual(request_json["dmsisdn"], "+27123456789")
         self.assertEqual(request_json["cmsisdn"], "+27123456789")
-        self.assertEqual(request_json["eid"], message_id)
+        self.assertEqual(request_json["eid"], str(UUID(int=message_id)))
         self.assertEqual(request_json["encdate"], "20160101000000")
         self.assertEqual(request_json["repdate"], "20160102000000")
         self.assertEqual(request_json["mha"], 1)

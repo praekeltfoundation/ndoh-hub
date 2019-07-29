@@ -6,6 +6,7 @@ import logging
 from functools import partial
 from hashlib import sha256
 from typing import Tuple
+from uuid import UUID
 
 import django_filters
 import django_filters.rest_framework as filters
@@ -315,7 +316,7 @@ class JembiHelpdeskOutgoingView(APIView):
             or self.UNCLASSIFIED_MESSAGES_DEFAULT_LABEL,
             "type": 7,  # 7 helpdesk
             "op": str(validated_data.get("helpdesk_operator_id")),
-            "eid": validated_data.get("message_id"),
+            "eid": str(UUID(int=validated_data.get("message_id"))),
             "sid": validated_data.get("user_id"),
         }
         return json_template
