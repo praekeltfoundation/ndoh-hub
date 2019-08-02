@@ -201,7 +201,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.CursorPagination",
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework.authentication.BasicAuthentication",
-        "rest_framework.authentication.TokenAuthentication",
+        "ndoh_hub.auth.CachedTokenAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
@@ -280,3 +280,8 @@ ENGAGE_HMAC_SECRET = os.environ.get("ENGAGE_HMAC_SECRET", "REPLACEME")
 ENGAGE_CONTEXT_HMAC_SECRET = os.environ.get("ENGAGE_CONTEXT_HMAC_SECRET", "REPLACEME")
 
 ENABLE_UNSENT_EVENT_ACTION = env("ENABLE_UNSENT_EVENT_ACTION")
+
+CACHES = {
+    "default": env.cache(default="locmemcache://"),
+    "locmem": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
+}
