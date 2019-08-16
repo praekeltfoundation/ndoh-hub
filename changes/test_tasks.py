@@ -841,6 +841,22 @@ class TestGetTextOrCaptionFromTurnMessage(TestCase):
             "<unknown>",
         )
 
+    def test_null_type(self):
+        """
+        The null message type should return <unknown>
+        """
+        self.assertEqual(
+            get_text_or_caption_from_turn_message(
+                {
+                    "from": "16315551234",
+                    "id": "ABGGFRBzFymPAgo6N9KKs7HsN6eB",
+                    "timestamp": None,
+                    "type": None,
+                }
+            ),
+            "<unknown>",
+        )
+
 
 class SendHelpdeskResponseToDHIS2Tests(DisconnectRegistrationSignalsMixin, TestCase):
     @responses.activate

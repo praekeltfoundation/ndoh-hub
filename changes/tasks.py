@@ -1778,6 +1778,11 @@ def get_text_or_caption_from_turn_message(message: dict) -> str:
         return "<unknown>"
     except AssertionError:
         pass
+    try:
+        assert message["type"] is None
+        return "<unknown>"
+    except AssertionError:
+        pass
 
     raise ValueError("Unknown message type")
 
