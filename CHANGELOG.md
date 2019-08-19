@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.7.0 (2019-08-19)
+1. Send registrations via WhatsApp to Jembi
+   ([#232](https://github.com/praekeltfoundation/ndoh-hub/pull/232))
+   ([#234](https://github.com/praekeltfoundation/ndoh-hub/pull/234))
+1. Send event and system IDs to Jembi
+   ([#235](https://github.com/praekeltfoundation/ndoh-hub/pull/235))
+   ([#236](https://github.com/praekeltfoundation/ndoh-hub/pull/236))
+   ([#237](https://github.com/praekeltfoundation/ndoh-hub/pull/237))
+   ([#240](https://github.com/praekeltfoundation/ndoh-hub/pull/240))
+   ([#242](https://github.com/praekeltfoundation/ndoh-hub/pull/242))
+1. Bug fix: opt in after registration
+   ([#238](https://github.com/praekeltfoundation/ndoh-hub/pull/238))
+1. Send welcome message after successful prebirth registration
+   ([#239](https://github.com/praekeltfoundation/ndoh-hub/pull/239))
+
+
 ## 0.6.7 (2019-06-20)
 1. Add missing translations
    ([#216](https://github.com/praekeltfoundation/ndoh-hub/pull/216))
