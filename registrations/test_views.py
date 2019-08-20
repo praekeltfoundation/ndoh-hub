@@ -10,6 +10,7 @@ from uuid import uuid4
 import responses
 from django.contrib.auth.models import Permission, User
 from django.db.models.signals import post_save
+from django.test import TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import dateparse, timezone
@@ -1818,3 +1819,33 @@ class RapidProPublicRegistrationViewTests(AuthenticatedAPITestCase):
         data["user_id"] = self.adminuser.id
         data["created"] = "2016-01-01T00:00:00+00:00"
         task.delay.assert_called_once_with(data)
+
+
+class CachedTokenAuthenticationTests(TestCase):
+    url = reverse("registration-list")
+
+    def test_auth_required(self):
+        """
+        Ensure that the view we're testing actually requires token auth
+        """
+        r = self.client.get(self.url)
+        self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_caching_working(self):
+        """
+        Ensure that the second time we make a request, there's no database hit
+        """
+        user = User.objects.create_user("test")
+        token = Token.objects.create(user=user)
+
+        with self.assertNumQueries(2):
+            r = self.client.get(
+                self.url, HTTP_AUTHORIZATION="Token {}".format(token.key)
+            )
+            self.assertEqual(r.status_code, status.HTTP_200_OK)
+
+        with self.assertNumQueries(1):
+            r = self.client.get(
+                self.url, HTTP_AUTHORIZATION="Token {}".format(token.key)
+            )
+            self.assertEqual(r.status_code, status.HTTP_200_OK)
