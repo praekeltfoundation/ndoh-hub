@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.1 (2019-09-03)
+1. Upgrade django to 2.2.4
+   ([#241](https://github.com/praekeltfoundation/ndoh-hub/pull/241))
+1. Cache auth token lookup
+   ([#243](https://github.com/praekeltfoundation/ndoh-hub/pull/243))
+1. Handle null message type when processing whatsapp messages
+   ([#245](https://github.com/praekeltfoundation/ndoh-hub/pull/245))
+1. Add script for getting archived messages
+   ([#246](https://github.com/praekeltfoundation/ndoh-hub/pull/246))
+
 ## 0.7.0 (2019-08-19)
 1. Send registrations via WhatsApp to Jembi
    ([#232](https://github.com/praekeltfoundation/ndoh-hub/pull/232))
