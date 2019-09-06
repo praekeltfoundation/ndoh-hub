@@ -59,6 +59,7 @@ INSTALLED_APPS = (
     # us
     "registrations",
     "changes",
+    "eventstore",
 )
 
 MIDDLEWARE = (
