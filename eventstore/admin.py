@@ -3,7 +3,7 @@ from django.core.paginator import Paginator
 from django.db import OperationalError, connection, transaction
 from django.utils.functional import cached_property
 
-from eventstore.models import OptOut
+from eventstore.models import BabySwitch, OptOut
 
 
 class ApproximatePaginator(Paginator):
@@ -31,10 +31,7 @@ class ApproximatePaginator(Paginator):
             return int(cursor.fetchone()[0])
 
 
-@admin.register(OptOut)
-class OptOutAdmin(admin.ModelAdmin):
-    readonly_fields = ("id", "created_by", "timestamp")
-    list_display = ("contact_id", "optout_type", "reason", "source", "timestamp")
+class BaseEventAdmin(admin.ModelAdmin):
     sortable_by = ()
     paginator = ApproximatePaginator
     show_full_result_count = False
@@ -42,3 +39,15 @@ class OptOutAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         obj.created_by = request.user
         super().save_model(request, obj, form, change)
+
+
+@admin.register(OptOut)
+class OptOutAdmin(BaseEventAdmin):
+    readonly_fields = ("id", "created_by", "timestamp")
+    list_display = ("contact_id", "optout_type", "reason", "source", "timestamp")
+
+
+@admin.register(BabySwitch)
+class BabySwitchAdmin(BaseEventAdmin):
+    readonly_fields = ("id", "created_by", "timestamp")
+    list_display = ("contact_id", "source", "timestamp")

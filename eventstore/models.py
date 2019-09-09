@@ -46,3 +46,17 @@ class OptOut(models.Model):
         return "{} opt out: {} <{}>".format(
             self.get_optout_type_display(), self.get_reason_display(), self.contact_id
         )
+
+
+class BabySwitch(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    contact_id = models.UUIDField()
+    source = models.CharField(max_length=255)
+    timestamp = models.DateTimeField(default=timezone.now)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
+    )
+    data = JSONField(default=dict, blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = "Baby switches"
