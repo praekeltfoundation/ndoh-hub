@@ -8,7 +8,7 @@ from rest_framework import routers
 from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.documentation import include_docs_urls
 
-from eventstore.views import BabySwitchViewSet, OptOutViewSet
+from eventstore.views import BabySwitchViewSet, ChannelSwitchViewSet, OptOutViewSet
 from ndoh_hub.decorators import internal_only
 from registrations import views
 
@@ -17,6 +17,7 @@ admin.site.site_header = os.environ.get("HUB_TITLE", "NDOH Hub Admin")
 v2router = routers.DefaultRouter()
 v2router.register("optouts", OptOutViewSet)
 v2router.register("babyswitches", BabySwitchViewSet)
+v2router.register("channelswitches", ChannelSwitchViewSet)
 
 urlpatterns = [
     path("admin/", admin.site.urls),

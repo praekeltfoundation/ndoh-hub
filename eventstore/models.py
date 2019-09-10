@@ -60,3 +60,19 @@ class BabySwitch(models.Model):
 
     class Meta:
         verbose_name_plural = "Baby switches"
+
+
+class ChannelSwitch(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    contact_id = models.UUIDField()
+    source = models.CharField(max_length=255)
+    from_channel = models.CharField(max_length=255)
+    to_channel = models.CharField(max_length=255)
+    timestamp = models.DateTimeField(default=timezone.now)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
+    )
+    data = JSONField(default=dict, blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = "Channel switches"
