@@ -4,7 +4,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from eventstore.models import BabySwitch, ChannelSwitch, OptOut
+from eventstore.models import BabySwitch, ChannelSwitch, OptOut, PublicRegistration
 
 
 class BaseEventTestCase(object):
@@ -133,4 +133,50 @@ class ChannelSwitchViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(channelswitch.source, "SMS")
         self.assertEqual(channelswitch.from_channel, "SMS")
         self.assertEqual(channelswitch.to_channel, "WhatsApp")
+        self.assertEqual(channelswitch.created_by, user)
+
+
+class PublicRegistrationViewSetTests(APITestCase, BaseEventTestCase):
+    url = reverse("publicregistration-list")
+
+    def test_data_validation(self):
+        """
+        The supplied data must be validated, and any errors returned
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_publicregistration")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_successful_request(self):
+        """
+        Should create a new ChannelSwitch object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_publicregistration")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "contact_id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+                "device_contact_id": "d80d51cb-8a95-4588-ac74-250d739edef8",
+                "source": "WhatsApp",
+                "language": "zul",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [channelswitch] = PublicRegistration.objects.all()
+        self.assertEqual(
+            str(channelswitch.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
+        )
+        self.assertEqual(
+            str(channelswitch.device_contact_id), "d80d51cb-8a95-4588-ac74-250d739edef8"
+        )
+        self.assertEqual(channelswitch.source, "WhatsApp")
+        self.assertEqual(channelswitch.language, "zul")
         self.assertEqual(channelswitch.created_by, user)

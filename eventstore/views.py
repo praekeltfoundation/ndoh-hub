@@ -2,11 +2,12 @@ from rest_framework.mixins import CreateModelMixin
 from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.viewsets import GenericViewSet
 
-from eventstore.models import BabySwitch, ChannelSwitch, OptOut
+from eventstore.models import BabySwitch, ChannelSwitch, OptOut, PublicRegistration
 from eventstore.serializers import (
     BabySwitchSerializer,
     ChannelSwitchSerializer,
     OptOutSerializer,
+    PublicRegistrationSerializer,
 )
 
 
@@ -25,4 +26,10 @@ class BabySwitchViewSet(GenericViewSet, CreateModelMixin):
 class ChannelSwitchViewSet(GenericViewSet, CreateModelMixin):
     queryset = ChannelSwitch.objects.all()
     serializer_class = ChannelSwitchSerializer
+    permission_classes = (DjangoModelPermissions,)
+
+
+class PublicRegistrationViewSet(GenericViewSet, CreateModelMixin):
+    queryset = PublicRegistration.objects.all()
+    serializer_class = PublicRegistrationSerializer
     permission_classes = (DjangoModelPermissions,)
