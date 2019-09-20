@@ -1,9 +1,12 @@
 import uuid
 
 from django.conf import settings
+from django.conf.locale import LANG_INFO
 from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.utils import timezone
+
+LANGUAGE_TYPES = ((v["code"].rstrip("-za"), v["name"]) for v in LANG_INFO.values())
 
 
 class OptOut(models.Model):
@@ -76,3 +79,16 @@ class ChannelSwitch(models.Model):
 
     class Meta:
         verbose_name_plural = "Channel switches"
+
+
+class PublicRegistration(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    contact_id = models.UUIDField()
+    device_contact_id = models.UUIDField()
+    source = models.CharField(max_length=255)
+    language = models.CharField(max_length=3, choices=LANGUAGE_TYPES)
+    timestamp = models.DateTimeField(default=timezone.now)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
+    )
+    data = JSONField(default=dict, blank=True, null=True)
