@@ -1,6 +1,12 @@
 from rest_framework import serializers
 
-from eventstore.models import BabySwitch, ChannelSwitch, OptOut, PublicRegistration
+from eventstore.models import (
+    BabySwitch,
+    ChannelSwitch,
+    OptOut,
+    PrebirthRegistration,
+    PublicRegistration,
+)
 
 
 class BaseEventSerializer(serializers.ModelSerializer):
@@ -33,5 +39,12 @@ class ChannelSwitchSerializer(BaseEventSerializer):
 class PublicRegistrationSerializer(BaseEventSerializer):
     class Meta:
         model = PublicRegistration
+        fields = "__all__"
+        read_only_fields = ("id", "created_by")
+
+
+class PrebirthRegistrationSerializer(BaseEventSerializer):
+    class Meta:
+        model = PrebirthRegistration
         fields = "__all__"
         read_only_fields = ("id", "created_by")
