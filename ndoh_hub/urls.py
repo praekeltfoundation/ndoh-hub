@@ -12,6 +12,7 @@ from eventstore.views import (
     BabySwitchViewSet,
     ChannelSwitchViewSet,
     OptOutViewSet,
+    PostbirthRegistrationViewSet,
     PrebirthRegistrationViewSet,
     PublicRegistrationViewSet,
 )
@@ -26,6 +27,7 @@ v2router.register("babyswitches", BabySwitchViewSet)
 v2router.register("channelswitches", ChannelSwitchViewSet)
 v2router.register("publicregistrations", PublicRegistrationViewSet)
 v2router.register("prebirthregistrations", PrebirthRegistrationViewSet)
+v2router.register("postbirthregistrations", PostbirthRegistrationViewSet)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
