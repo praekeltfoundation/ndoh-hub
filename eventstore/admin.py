@@ -7,6 +7,7 @@ from eventstore.models import (
     BabySwitch,
     ChannelSwitch,
     OptOut,
+    PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
 )
@@ -75,3 +76,9 @@ class PublicRegistrationAdmin(BaseEventAdmin):
 class PrebirthRegistrationAdmin(BaseEventAdmin):
     readonly_fields = ("id", "created_by", "timestamp")
     list_display = ("contact_id", "source", "edd", "facility_code", "timestamp")
+
+
+@admin.register(PostbirthRegistration)
+class PostbirthRegistrationAdmin(BaseEventAdmin):
+    readonly_fields = ("id", "created_by", "timestamp")
+    list_display = ("contact_id", "source", "baby_dob", "facility_code", "timestamp")

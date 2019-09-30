@@ -6,6 +6,7 @@ from eventstore.models import (
     BabySwitch,
     ChannelSwitch,
     OptOut,
+    PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
 )
@@ -13,6 +14,7 @@ from eventstore.serializers import (
     BabySwitchSerializer,
     ChannelSwitchSerializer,
     OptOutSerializer,
+    PostbirthRegistrationSerializer,
     PrebirthRegistrationSerializer,
     PublicRegistrationSerializer,
 )
@@ -45,4 +47,10 @@ class PublicRegistrationViewSet(GenericViewSet, CreateModelMixin):
 class PrebirthRegistrationViewSet(GenericViewSet, CreateModelMixin):
     queryset = PrebirthRegistration.objects.all()
     serializer_class = PrebirthRegistrationSerializer
+    permission_classes = (DjangoModelPermissions,)
+
+
+class PostbirthRegistrationViewSet(GenericViewSet, CreateModelMixin):
+    queryset = PostbirthRegistration.objects.all()
+    serializer_class = PostbirthRegistrationSerializer
     permission_classes = (DjangoModelPermissions,)
