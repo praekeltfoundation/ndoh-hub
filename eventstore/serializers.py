@@ -12,7 +12,7 @@ from eventstore.models import (
 
 class BaseEventSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
-        validated_data["created_by"] = self.context["request"].user
+        validated_data["created_by"] = self.context["request"].user.username
         return super().create(validated_data)
 
 
