@@ -32,7 +32,7 @@ matrix:
         - REGISTRY_USER=praekeltorgdeploy
         # REGISTRY_PASS
         - secure: "T5wWcq1DwbudN/agSQAEqJayoRkhyjP6hr6R8rUE/igdgYLY6D7qoLz1pAsM+O/kSBFHbPY6IdEKuiG+eQ/QxSfAYqoIvfSnVfEpaMcanB0mintqrlQJTO+OIHnagUNm1t/jqkfsQoLoPI4vPMm8n3rC/sIBlbf2l2AL9aZ2AY76SxAGcN26TIpa4D7lq6ouCx+eZvbt188nVTsCyk/kjOlIoToO1wmpTVx6WYBKSAwbA975bVYNotMBCkqD3dI7MH8KLvWQJPhwwkA0L5cGyg6EvEUrNZsev2RRjqcbv5xW4bgFrX4IoZL79wihi88vQumTp9R8toM6+ZpzqSwV1XpznbGxp//Um1CVy4nbuEXSrAhUoDfa8sRCU4dlTLYJiqHA6o4sPDrDpKy1irp9tmNoUZF0Zt++bWKDvTvbKH0mZnMFEEj9oJLqYR0dp+oXEpOn05sl1LOQUDXcfUJODT9aDIk+IQFyrBgnS/xNa6WNWiHq8bzHWhZ4o5WWjnVPye2WM4WuRJfZkjIGdGVZsv4NGcoFW0MzVRARytsj1fC8LoTpUWw+xvOvYh6jy0/EBzK2OFpFHTvwRMRucjwO1todVOkqaeJA4ifO0Bpt9vR1Hfu1hGvUFF1N1U7KALXNQ8NUpUcfGugOmYp3kDDMFErC595un9//CSskrUjiXPI="
-      before_script:
+      install:
         - docker pull "$IMAGE_NAME" || true
         - pip install -r seaworthy/requirements.txt
       script:
@@ -57,7 +57,7 @@ matrix:
         - REGISTRY_USER=praekeltorgdeploy
         # REGISTRY_PASS
         - secure: "T5wWcq1DwbudN/agSQAEqJayoRkhyjP6hr6R8rUE/igdgYLY6D7qoLz1pAsM+O/kSBFHbPY6IdEKuiG+eQ/QxSfAYqoIvfSnVfEpaMcanB0mintqrlQJTO+OIHnagUNm1t/jqkfsQoLoPI4vPMm8n3rC/sIBlbf2l2AL9aZ2AY76SxAGcN26TIpa4D7lq6ouCx+eZvbt188nVTsCyk/kjOlIoToO1wmpTVx6WYBKSAwbA975bVYNotMBCkqD3dI7MH8KLvWQJPhwwkA0L5cGyg6EvEUrNZsev2RRjqcbv5xW4bgFrX4IoZL79wihi88vQumTp9R8toM6+ZpzqSwV1XpznbGxp//Um1CVy4nbuEXSrAhUoDfa8sRCU4dlTLYJiqHA6o4sPDrDpKy1irp9tmNoUZF0Zt++bWKDvTvbKH0mZnMFEEj9oJLqYR0dp+oXEpOn05sl1LOQUDXcfUJODT9aDIk+IQFyrBgnS/xNa6WNWiHq8bzHWhZ4o5WWjnVPye2WM4WuRJfZkjIGdGVZsv4NGcoFW0MzVRARytsj1fC8LoTpUWw+xvOvYh6jy0/EBzK2OFpFHTvwRMRucjwO1todVOkqaeJA4ifO0Bpt9vR1Hfu1hGvUFF1N1U7KALXNQ8NUpUcfGugOmYp3kDDMFErC595un9//CSskrUjiXPI="
-      before_script:
+      install:
         - docker pull "$IMAGE_NAME" || true
         - pip install -r seaworthy/requirements.txt
       script:

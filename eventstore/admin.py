@@ -44,7 +44,7 @@ class BaseEventAdmin(admin.ModelAdmin):
     show_full_result_count = False
 
     def save_model(self, request, obj, form, change):
-        obj.created_by = request.user
+        obj.created_by = request.user.username
         super().save_model(request, obj, form, change)
 
 

@@ -1,6 +1,5 @@
 import uuid
 
-from django.conf import settings
 from django.conf.locale import LANG_INFO
 from django.contrib.postgres.fields import JSONField
 from django.db import models
@@ -40,9 +39,7 @@ class OptOut(models.Model):
     reason = models.CharField(max_length=11, choices=REASON_TYPES)
     source = models.CharField(max_length=255)
     timestamp = models.DateTimeField(default=timezone.now)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
-    )
+    created_by = models.CharField(max_length=255, blank=True, default="")
     data = JSONField(default=dict, blank=True, null=True)
 
     def __str__(self):
@@ -56,9 +53,7 @@ class BabySwitch(models.Model):
     contact_id = models.UUIDField()
     source = models.CharField(max_length=255)
     timestamp = models.DateTimeField(default=timezone.now)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
-    )
+    created_by = models.CharField(max_length=255, blank=True, default="")
     data = JSONField(default=dict, blank=True, null=True)
 
     class Meta:
@@ -72,9 +67,7 @@ class ChannelSwitch(models.Model):
     from_channel = models.CharField(max_length=255)
     to_channel = models.CharField(max_length=255)
     timestamp = models.DateTimeField(default=timezone.now)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
-    )
+    created_by = models.CharField(max_length=255, blank=True, default="")
     data = JSONField(default=dict, blank=True, null=True)
 
     class Meta:
@@ -88,9 +81,7 @@ class PublicRegistration(models.Model):
     source = models.CharField(max_length=255)
     language = models.CharField(max_length=3, choices=LANGUAGE_TYPES)
     timestamp = models.DateTimeField(default=timezone.now)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
-    )
+    created_by = models.CharField(max_length=255, blank=True, default="")
     data = JSONField(default=dict, blank=True, null=True)
 
 
@@ -118,9 +109,7 @@ class PrebirthRegistration(models.Model):
     facility_code = models.CharField(max_length=6)
     source = models.CharField(max_length=255)
     timestamp = models.DateTimeField(default=timezone.now)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
-    )
+    created_by = models.CharField(max_length=255, blank=True, default="")
     data = JSONField(default=dict, blank=True, null=True)
 
 
@@ -138,7 +127,5 @@ class PostbirthRegistration(models.Model):
     facility_code = models.CharField(max_length=6)
     source = models.CharField(max_length=255)
     timestamp = models.DateTimeField(default=timezone.now)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
-    )
+    created_by = models.CharField(max_length=255, blank=True, default="")
     data = JSONField(default=dict, blank=True, null=True)

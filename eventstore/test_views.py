@@ -70,7 +70,7 @@ class OptOutViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(optout.optout_type, OptOut.STOP_TYPE)
         self.assertEqual(optout.reason, OptOut.UNKNOWN_REASON)
         self.assertEqual(optout.source, "SMS")
-        self.assertEqual(optout.created_by, user)
+        self.assertEqual(optout.created_by, user.username)
 
 
 class BabySwitchViewSetTests(APITestCase, BaseEventTestCase):
@@ -103,7 +103,7 @@ class BabySwitchViewSetTests(APITestCase, BaseEventTestCase):
             str(babyswitch.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
         )
         self.assertEqual(babyswitch.source, "SMS")
-        self.assertEqual(babyswitch.created_by, user)
+        self.assertEqual(babyswitch.created_by, user.username)
 
 
 class ChannelSwitchViewSetTests(APITestCase, BaseEventTestCase):
@@ -143,7 +143,7 @@ class ChannelSwitchViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(channelswitch.source, "SMS")
         self.assertEqual(channelswitch.from_channel, "SMS")
         self.assertEqual(channelswitch.to_channel, "WhatsApp")
-        self.assertEqual(channelswitch.created_by, user)
+        self.assertEqual(channelswitch.created_by, user.username)
 
 
 class PublicRegistrationViewSetTests(APITestCase, BaseEventTestCase):
@@ -189,7 +189,7 @@ class PublicRegistrationViewSetTests(APITestCase, BaseEventTestCase):
         )
         self.assertEqual(channelswitch.source, "WhatsApp")
         self.assertEqual(channelswitch.language, "zul")
-        self.assertEqual(channelswitch.created_by, user)
+        self.assertEqual(channelswitch.created_by, user.username)
 
 
 class PrebirthRegistrationViewSetTests(APITestCase, BaseEventTestCase):
@@ -251,7 +251,7 @@ class PrebirthRegistrationViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(registration.edd, datetime.date(2020, 10, 11))
         self.assertEqual(registration.facility_code, "123456")
         self.assertEqual(registration.source, "WhatsApp")
-        self.assertEqual(registration.created_by, user)
+        self.assertEqual(registration.created_by, user.username)
 
 
 class PostbirthRegistrationViewSetTests(APITestCase, BaseEventTestCase):
@@ -313,4 +313,4 @@ class PostbirthRegistrationViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(registration.baby_dob, datetime.date(2018, 10, 11))
         self.assertEqual(registration.facility_code, "123456")
         self.assertEqual(registration.source, "WhatsApp")
-        self.assertEqual(registration.created_by, user)
+        self.assertEqual(registration.created_by, user.username)
