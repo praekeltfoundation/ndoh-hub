@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.7.2 (2019-10-18)
+1. Create event store with support for opt outs, baby switches, channel switches,
+   public, pre- and postbirth clinic registrations.
+   ([#247](https://github.com/praekeltfoundation/ndoh-hub/pull/247))
+   ([#248](https://github.com/praekeltfoundation/ndoh-hub/pull/248))
+   ([#249](https://github.com/praekeltfoundation/ndoh-hub/pull/249))
+   ([#250](https://github.com/praekeltfoundation/ndoh-hub/pull/250))
+   ([#251](https://github.com/praekeltfoundation/ndoh-hub/pull/251))
+   ([#252](https://github.com/praekeltfoundation/ndoh-hub/pull/252))
+   ([#253](https://github.com/praekeltfoundation/ndoh-hub/pull/253))
+1. Changes to handle changes in Turn Context API
+   ([#254](https://github.com/praekeltfoundation/ndoh-hub/pull/254))
+
 ## 0.7.1 (2019-09-03)
 1. Upgrade django to 2.2.4
    ([#241](https://github.com/praekeltfoundation/ndoh-hub/pull/241))
