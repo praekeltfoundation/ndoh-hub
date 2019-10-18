@@ -763,23 +763,12 @@ class EngageContextView(EngageBaseView, generics.CreateAPIView):
         """
         Gets the MSISDN of the user, if present in the request, otherwise returns None
         """
-        msisdns = list(
-            filter(
-                lambda x: x, (message["from"] for message in data.get("messages", []))
-            )
-        )
-        if msisdns:
-            return phonenumbers.format_number(
-                msisdns[-1], phonenumbers.PhoneNumberFormat.E164
-            )
+        return data["chat"]["owner"]
 
     def get_identity(self, msisdn):
         """
         Gets the identity for the msisdn, if exists, otherwise returns None
         """
-        if not msisdn:
-            return None
-
         try:
             identity = self.identity_store.get_identity_by_address("msisdn", msisdn)
             return next(identity["results"])
@@ -820,10 +809,14 @@ class EngageContextView(EngageBaseView, generics.CreateAPIView):
         except (KeyError, TypeError):
             return []
 
-        subscriptions = self.stage_based_messaging.get_subscriptions(
-            {"identity": identity_id, "active": True}
-        )
-        return [sub["messageset_label"] for sub in subscriptions["results"]]
+        try:
+            subscriptions = self.stage_based_messaging.get_subscriptions(
+                {"identity": identity_id, "active": True}
+            )
+            return [sub["messageset_label"] for sub in subscriptions["results"]]
+        except RequestException:
+            # Catch HTTP errors and fail in a clean way
+            return []
 
     def extract_registration_info(self, identity, registrations):
         """
