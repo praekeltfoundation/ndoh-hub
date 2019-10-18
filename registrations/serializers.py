@@ -323,17 +323,10 @@ class PositionTrackerSerializer(serializers.ModelSerializer):
 
 
 class EngageContextSerializer(serializers.Serializer):
-    class Message(serializers.Serializer):
-        from_ = PhoneNumberField(country_code="ZA")
+    class Chat(serializers.Serializer):
+        owner = PhoneNumberField(country_code="ZA")
 
-        def get_fields(self):
-            # from is a reserved keyword, so we have to do a little dance
-            result = super().get_fields()
-            from_ = result.pop("from_")
-            result["from"] = from_
-            return result
-
-    messages = serializers.ListField(child=Message(), required=False)
+    chat = Chat()
 
 
 class EngageActionSerializer(serializers.Serializer):
