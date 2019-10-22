@@ -1,5 +1,6 @@
-import phonenumbers
 from datetime import datetime
+
+import phonenumbers
 from django.contrib.auth.models import Group, User
 from django.utils import timezone
 from rest_framework import serializers
@@ -101,7 +102,7 @@ class ThirdPartyRegistrationSerializer(serializers.Serializer):
     )
     mom_msisdn = MSISDNField(country="ZA")
     mom_id_type = serializers.ChoiceField(
-        utils.ID_TYPES, required=True, allow_null=True, allow_blank=True
+        utils.ID_TYPES, required=False, allow_null=True, allow_blank=True
     )
     mom_passport_origin = serializers.ChoiceField(
         utils.PASSPORT_ORIGINS, required=False, allow_null=True, allow_blank=True
@@ -126,8 +127,8 @@ class ThirdPartyRegistrationSerializer(serializers.Serializer):
         allow_blank=True,
     )
     consent = serializers.BooleanField(validators=(validators.consent,))
-    mha = serializers.IntegerField(required=False, default=1, allow_null=True)
-    swt = serializers.IntegerField(required=False, default=1, allow_null=True)
+    mha = serializers.IntegerField(required=False, allow_null=True)
+    swt = serializers.IntegerField(required=False, allow_null=True)
     encdate = serializers.DateTimeField(
         required=False,
         input_formats=["%Y%m%d%H%M%S", "iso-8601"],
@@ -142,7 +143,12 @@ class ThirdPartyRegistrationSerializer(serializers.Serializer):
                 raise serializers.ValidationError(
                     f"{clinic_fields} fields must be supplied if authority is clinic"
                 )
-        if data["mom_id_type"] == "sa_id":
+        if data["authority"] == "chw":
+            if not data.get("mom_id_type"):
+                raise serializers.ValidationError(
+                    "mom_id_type field must be supplied if authority is chw"
+                )
+        if data.get("mom_id_type") == "sa_id":
             if not data.get("mom_id_no"):
                 raise serializers.ValidationError(
                     "mom_id_no field must be supplied if mom_id_type is sa_id"
@@ -152,7 +158,7 @@ class ThirdPartyRegistrationSerializer(serializers.Serializer):
                 "mom_dob",
                 datetime.strptime(data["mom_id_no"][:6], "%y%m%d").strftime("%Y-%m-%d"),
             )
-        elif data["mom_id_type"] == "passport":
+        elif data.get("mom_id_type") == "passport":
             if not data.get("mom_id_no"):
                 raise serializers.ValidationError(
                     "mom_id_no field must be supplied if mom_id_type is passport"
@@ -163,7 +169,7 @@ class ThirdPartyRegistrationSerializer(serializers.Serializer):
                     "passport"
                 )
             validators.passport_no(data["mom_id_no"])
-        elif data["mom_id_type"] == "none":
+        elif data.get("mom_id_type") == "none":
             if not data.get("mom_dob"):
                 raise serializers.ValidationError(
                     "mom_dob must be supplied if mom_id_type is none"

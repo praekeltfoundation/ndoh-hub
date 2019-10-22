@@ -18,6 +18,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.renderers import JSONRenderer
 from rest_framework.test import APITestCase
+from temba_client.v2 import TembaClient
 
 from changes.models import Change
 from changes.signals import psh_validate_implement
@@ -1827,3 +1828,182 @@ class CachedTokenAuthenticationTests(TestCase):
                 self.url, HTTP_AUTHORIZATION="Token {}".format(token.key)
             )
             self.assertEqual(r.status_code, status.HTTP_200_OK)
+
+
+@override_settings(EXTERNAL_REGISTRATIONS_V2=True)
+@override_settings(RAPIDPRO_PUBLIC_REGISTRATION_FLOW="flow-uuid-public")
+@override_settings(RAPIDPRO_CHW_REGISTRATION_FLOW="flow-uuid-chw")
+@override_settings(RAPIDPRO_CLINIC_REGISTRATION_FLOW="flow-uuid-clinic")
+class ExternalRegistrationsV2Tests(APITestCase):
+    url = reverse("external-registration")
+
+    def setUp(self):
+        self.user = User.objects.create_user("testuser")
+        self.client.force_authenticate(self.user)
+        # We have to manually add the client, since the setting won't exist on import
+        from ndoh_hub import utils
+
+        utils.rapidpro = TembaClient(
+            "https://rapidpro.example.org", "testrapidprotoken"
+        )
+
+        self.flow_response = {
+            "uuid": "93a624ad-5440-415e-b49f-17bf42754acb",
+            "flow": {
+                "uuid": "f5901b62-ba76-4003-9c62-72fdacc1b7b7",
+                "name": "Registration",
+            },
+            "groups": [
+                {"uuid": "04a4752b-0f49-480e-ae60-3a3f2bea485c", "name": "The A-Team"}
+            ],
+            "contacts": [
+                {"uuid": "5079cb96-a1d8-4f47-8c87-d8c7bb6ddab9", "name": "Joe"},
+                {"uuid": "28291a83-157e-45ed-93ef-e0425a065d35", "name": "Frank"},
+            ],
+            "restart_participants": True,
+            "status": "pending",
+            "extra": {"day": "Monday"},
+            "created_on": "2015-08-26T10:04:09.737686+00:00",
+            "modified_on": "2015-09-26T10:04:09.737686+00:00",
+        }
+
+    def test_authentication_required(self):
+        """
+        Authentication should be required to access the endpoint
+        """
+        self.client.logout()
+        r = self.client.post(self.url, {})
+        self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    @responses.activate
+    def test_public_registration(self):
+        """
+        A public registration should trigger the public RapidPro flowj
+        """
+        responses.add(
+            responses.POST,
+            "https://rapidpro.example.org/api/v2/flow_starts.json",
+            json=self.flow_response,
+        )
+        r = self.client.post(
+            self.url,
+            {
+                "mom_msisdn": "+27820001001",
+                "mom_lang": "xh",
+                "consent": True,
+                "encdate": "20191022000000",
+            },
+        )
+        self.assertEqual(r.status_code, status.HTTP_202_ACCEPTED)
+        [call] = responses.calls
+        body = json.loads(call.request.body)
+        self.assertEqual(
+            body,
+            {
+                "urns": "tel:+27820001001",
+                "flow": "flow-uuid-public",
+                "extra": {
+                    "language": "xh",
+                    "registered_by": "+27820001001",
+                    "source": "testuser",
+                    "timestamp": "2019-10-22T00:00:00Z",
+                },
+            },
+        )
+
+    @responses.activate
+    def test_chw_registration(self):
+        """
+        A CHW registration should trigger the CHW RapidPro flow
+        """
+        responses.add(
+            responses.POST,
+            "https://rapidpro.example.org/api/v2/flow_starts.json",
+            json=self.flow_response,
+        )
+        r = self.client.post(
+            self.url,
+            {
+                "authority": "chw",
+                "mom_msisdn": "+27820001001",
+                "hcw_msisdn": "+27820001002",
+                "mom_lang": "xh",
+                "consent": True,
+                "mom_id_type": "sa_id",
+                "mom_id_no": "8802031234567",
+                "encdate": "20191022000000",
+            },
+        )
+        self.assertEqual(r.status_code, status.HTTP_202_ACCEPTED)
+        [call] = responses.calls
+        body = json.loads(call.request.body)
+        self.assertEqual(
+            body,
+            {
+                "urns": "tel:+27820001001",
+                "flow": "flow-uuid-chw",
+                "extra": {
+                    "language": "xh",
+                    "registered_by": "+27820001002",
+                    "source": "testuser",
+                    "timestamp": "2019-10-22T00:00:00Z",
+                    "dob": "1988-02-03",
+                    "sa_id_number": "8802031234567",
+                    "id_type": "sa_id",
+                },
+            },
+        )
+
+    @responses.activate
+    @mock.patch("ndoh_hub.utils.get_today")
+    def test_clinic_registration(self, today):
+        """
+        A clinic registration should trigger the clinic RapidPro flow
+        """
+        responses.add(
+            responses.POST,
+            "https://rapidpro.example.org/api/v2/flow_starts.json",
+            json=self.flow_response,
+        )
+        today.return_value = datetime.date(2016, 11, 1)
+        r = self.client.post(
+            self.url,
+            {
+                "authority": "clinic",
+                "mom_msisdn": "+27820001001",
+                "hcw_msisdn": "+27820001002",
+                "mom_lang": "xh",
+                "consent": True,
+                "mom_id_type": "passport",
+                "mom_passport_origin": "bw",
+                "mom_id_no": "A123456",
+                "mom_edd": "2016-11-05",
+                "clinic_code": "123456",
+                "encdate": "20191022000000",
+                "mha": 2,
+                "swt": 3,
+            },
+        )
+        self.assertEqual(r.status_code, status.HTTP_202_ACCEPTED)
+        [call] = responses.calls
+        body = json.loads(call.request.body)
+        self.assertEqual(
+            body,
+            {
+                "urns": "tel:+27820001001",
+                "flow": "flow-uuid-clinic",
+                "extra": {
+                    "language": "xh",
+                    "registered_by": "+27820001002",
+                    "source": "testuser",
+                    "mha": 2,
+                    "swt": 3,
+                    "timestamp": "2019-10-22T00:00:00Z",
+                    "clinic_code": "123456",
+                    "passport_number": "A123456",
+                    "passport_origin": "bw",
+                    "id_type": "passport",
+                    "edd": "2016-11-05",
+                },
+            },
+        )

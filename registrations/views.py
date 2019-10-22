@@ -76,6 +76,7 @@ from .tasks import (
     create_rapidpro_public_registration,
     get_whatsapp_contact,
     request_to_jembi_api,
+    submit_third_party_registration_to_rapidpro,
     validate_subscribe_jembi_app_registration,
 )
 
@@ -429,6 +430,17 @@ class ThirdPartyRegistration(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
+        if settings.EXTERNAL_REGISTRATIONS_V2:
+            serializer = ThirdPartyRegistrationSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            # We encode and decode from JSON to ensure dates are encoded properly
+            data = json.loads(JSONEncoder().encode(serializer.validated_data))
+            submit_third_party_registration_to_rapidpro(request.user.username, data)
+            return Response(status=status.HTTP_202_ACCEPTED)
+        else:
+            return self._post(request)
+
+    def _post(self, request):
         is_client = IdentityStoreApiClient(
             api_url=settings.IDENTITY_STORE_URL,
             auth_token=settings.IDENTITY_STORE_TOKEN,

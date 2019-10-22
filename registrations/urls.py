@@ -19,7 +19,11 @@ router.register(r"contacts", views.WhatsAppContactCheckViewSet)
 # Additionally, we include login URLs for the browseable API.
 urlpatterns = [
     url(r"^api/v1/registration/", views.RegistrationPost.as_view()),
-    url(r"^api/v1/extregistration/", views.ThirdPartyRegistration.as_view()),
+    url(
+        r"^api/v1/extregistration/",
+        views.ThirdPartyRegistration.as_view(),
+        name="external-registration",
+    ),
     url(r"^api/v1/jembiregistration/$", views.JembiAppRegistration.as_view()),
     url(
         r"^api/v1/jembiregistration/(?P<registration_id>[^/]+)/$",

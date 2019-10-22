@@ -1623,3 +1623,59 @@ def send_welcome_message(language, channel, msisdn, identity_id):
             "metadata": {},
         }
     )
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def submit_third_party_registration_to_rapidpro(username, data):
+    from ndoh_hub.utils import rapidpro
+
+    registration = {
+        "registered_by": data["hcw_msisdn"],
+        "language": data["mom_lang"],
+        "timestamp": data["encdate"],
+        "source": username,
+    }
+
+    if data.get("mha"):
+        registration["mha"] = data["mha"]
+    if data.get("swt"):
+        registration["swt"] = data["swt"]
+
+    if data["authority"] in ("chw", "clinic"):
+        id_type = registration["id_type"] = data["mom_id_type"]
+        if id_type == "sa_id":
+            registration["sa_id_number"] = data["mom_id_no"]
+            registration["dob"] = data["mom_dob"]
+        elif id_type == "passport":
+            registration["passport_origin"] = data["mom_passport_origin"]
+            registration["passport_number"] = data["mom_id_no"]
+        elif id_type == "none":
+            registration["dob"] = data["mom_dob"]
+
+    if data["authority"] == "patient":
+        rapidpro.create_flow_start(
+            settings.RAPIDPRO_PUBLIC_REGISTRATION_FLOW,
+            urns=f"tel:{data['mom_msisdn']}",
+            extra=registration,
+        )
+    elif data["authority"] == "chw":
+        rapidpro.create_flow_start(
+            settings.RAPIDPRO_CHW_REGISTRATION_FLOW,
+            urns=f"tel:{data['mom_msisdn']}",
+            extra=registration,
+        )
+    elif data["authority"] == "clinic":
+        registration["edd"] = data["mom_edd"]
+        registration["clinic_code"] = data["clinic_code"]
+        rapidpro.create_flow_start(
+            settings.RAPIDPRO_CLINIC_REGISTRATION_FLOW,
+            urns=f"tel:{data['mom_msisdn']}",
+            extra=registration,
+        )
