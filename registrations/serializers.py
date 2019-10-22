@@ -1,5 +1,7 @@
 import phonenumbers
+from datetime import datetime
 from django.contrib.auth.models import Group, User
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from rest_hooks.models import Hook
@@ -68,24 +70,7 @@ class HookSerializer(serializers.ModelSerializer):
         exclude = ()
 
 
-class ThirdPartyRegistrationSerializer(serializers.Serializer):
-    hcw_msisdn = serializers.CharField()
-    mom_msisdn = serializers.CharField()
-    mom_id_type = serializers.CharField()
-    mom_passport_origin = serializers.CharField(allow_null=True)
-    mom_lang = serializers.CharField()
-    mom_edd = serializers.CharField()
-    mom_id_no = serializers.CharField()
-    mom_dob = serializers.CharField()
-    clinic_code = serializers.CharField(allow_null=True)
-    authority = serializers.CharField()
-    consent = serializers.BooleanField()
-    mha = serializers.IntegerField(required=False)
-    swt = serializers.IntegerField(required=False)
-    encdate = serializers.CharField(required=False)
-
-
-class MSISDNField(serializers.Field):
+class MSISDNField(serializers.CharField):
     """
     A phone number, validated using the phonenumbers library
     """
@@ -108,6 +93,83 @@ class MSISDNField(serializers.Field):
         if not phonenumbers.is_valid_number(number):
             raise serializers.ValidationError("Not a valid phone number")
         return phonenumbers.format_number(number, phonenumbers.PhoneNumberFormat.E164)
+
+
+class ThirdPartyRegistrationSerializer(serializers.Serializer):
+    hcw_msisdn = MSISDNField(
+        country="ZA", required=False, allow_null=True, allow_blank=True
+    )
+    mom_msisdn = MSISDNField(country="ZA")
+    mom_id_type = serializers.ChoiceField(
+        utils.ID_TYPES, required=True, allow_null=True, allow_blank=True
+    )
+    mom_passport_origin = serializers.ChoiceField(
+        utils.PASSPORT_ORIGINS, required=False, allow_null=True, allow_blank=True
+    )
+    mom_lang = serializers.ChoiceField(utils.JEMBI_LANGUAGES)
+    mom_edd = serializers.DateField(
+        validators=(validators.edd,),
+        input_formats=("%Y-%m-%d", "iso-8601"),
+        required=False,
+        allow_null=True,
+    )
+    mom_id_no = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    mom_dob = serializers.DateField(required=False, allow_null=True)
+    clinic_code = serializers.CharField(
+        required=False, allow_null=True, allow_blank=True
+    )
+    authority = serializers.ChoiceField(
+        choices=("chw", "clinic", "patient"),
+        default="patient",
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+    )
+    consent = serializers.BooleanField(validators=(validators.consent,))
+    mha = serializers.IntegerField(required=False, default=1, allow_null=True)
+    swt = serializers.IntegerField(required=False, default=1, allow_null=True)
+    encdate = serializers.DateTimeField(
+        required=False,
+        input_formats=["%Y%m%d%H%M%S", "iso-8601"],
+        allow_null=True,
+        default=timezone.now,
+    )
+
+    def validate(self, data):
+        if data["authority"] == "clinic":
+            clinic_fields = ("mom_id_type", "mom_edd", "clinic_code")
+            if not all(data.get(f) for f in clinic_fields):
+                raise serializers.ValidationError(
+                    f"{clinic_fields} fields must be supplied if authority is clinic"
+                )
+        if data["mom_id_type"] == "sa_id":
+            if not data.get("mom_id_no"):
+                raise serializers.ValidationError(
+                    "mom_id_no field must be supplied if mom_id_type is sa_id"
+                )
+            validators.sa_id_no(data["mom_id_no"])
+            data["mom_dob"] = data.get(
+                "mom_dob",
+                datetime.strptime(data["mom_id_no"][:6], "%y%m%d").strftime("%Y-%m-%d"),
+            )
+        elif data["mom_id_type"] == "passport":
+            if not data.get("mom_id_no"):
+                raise serializers.ValidationError(
+                    "mom_id_no field must be supplied if mom_id_type is passport"
+                )
+            if not data.get("mom_passport_origin"):
+                raise serializers.ValidationError(
+                    "mom_passport_origin field must be supplied if mom_id_type is "
+                    "passport"
+                )
+            validators.passport_no(data["mom_id_no"])
+        elif data["mom_id_type"] == "none":
+            if not data.get("mom_dob"):
+                raise serializers.ValidationError(
+                    "mom_dob must be supplied if mom_id_type is none"
+                )
+        data["hcw_msisdn"] = data.get("hcw_msisdn", data["mom_msisdn"])
+        return data
 
 
 class JembiAppRegistrationSerializer(serializers.Serializer):

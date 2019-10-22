@@ -1271,8 +1271,10 @@ class TestRegistrationAPI(AuthenticatedAPITestCase):
     IDENTITY_STORE_TOKEN="identitystore_token",
 )
 class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
+    @mock.patch("ndoh_hub.utils.get_today")
     @responses.activate
-    def test_create_third_party_registration_existing_identity(self):
+    def test_create_third_party_registration_existing_identity(self, today):
+        today.return_value = datetime.date(2016, 11, 1)
         # Setup
         self.make_external_source_partial()
 
@@ -1398,8 +1400,10 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
         self.assertEqual(d.data["edd"], "2016-11-05")
         self.assertEqual(d.data["encdate"], "20160101000001")
 
+    @mock.patch("ndoh_hub.utils.get_today")
     @responses.activate
-    def test_create_third_party_registration_new_identity(self):
+    def test_create_third_party_registration_new_identity(self, today):
+        today.return_value = datetime.date(2016, 11, 1)
         # Setup
         self.make_external_source_partial()
 
@@ -1496,8 +1500,10 @@ class TestThirdPartyRegistrationAPI(AuthenticatedAPITestCase):
         self.assertEqual(d.registrant_id, "02144938-847d-4d2c-9daf-707cb864d077")
         self.assertEqual(d.data["edd"], "2016-11-05")
 
+    @mock.patch("ndoh_hub.utils.get_today")
     @responses.activate
-    def test_create_third_party_registration_no_swt_mha(self):
+    def test_create_third_party_registration_no_swt_mha(self, today):
+        today.return_value = datetime.date(2016, 11, 1)
         # Setup
         self.make_external_source_partial()
 

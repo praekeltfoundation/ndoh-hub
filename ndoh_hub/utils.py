@@ -16,6 +16,7 @@ from wabclient import Client as WABClient
 from ndoh_hub.constants import (  # noqa:F401
     ID_TYPES,
     LANGUAGES,
+    JEMBI_LANGUAGES,
     PASSPORT_ORIGINS,
     WHATSAPP_LANGUAGE_MAP,
 )

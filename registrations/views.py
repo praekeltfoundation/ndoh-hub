@@ -541,15 +541,25 @@ class ThirdPartyRegistration(APIView):
                 "msisdn_device": device,
                 "id_type": id_type,
                 "language": lang_code,
-                "mom_dob": serializer.validated_data["mom_dob"],
-                "edd": serializer.validated_data["mom_edd"],
+                "mom_dob": (
+                    serializer.validated_data["mom_dob"].strftime("%Y-%m-%d")
+                    if serializer.validated_data["mom_dob"]
+                    else None
+                ),
+                "edd": (
+                    serializer.validated_data["mom_edd"].strftime("%Y-%m-%d")
+                    if serializer.validated_data["mom_edd"]
+                    else None
+                ),
                 "faccode": serializer.validated_data["clinic_code"],
                 "consent": serializer.validated_data["consent"],
                 "mha": serializer.validated_data.get("mha", 1),
                 "swt": serializer.validated_data.get("swt", 1),
             }
-            if "encdate" in serializer.validated_data:
-                reg_data["encdate"] = serializer.validated_data["encdate"]
+            if serializer.validated_data.get("encdate"):
+                reg_data["encdate"] = serializer.validated_data["encdate"].strftime(
+                    "%Y%m%d%H%M%S"
+                )
             if id_type == "sa_id":
                 reg_data["sa_id_no"] = serializer.validated_data["mom_id_no"]
             elif id_type == "passport":
