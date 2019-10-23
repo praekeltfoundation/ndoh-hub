@@ -76,6 +76,7 @@ from .tasks import (
     create_rapidpro_public_registration,
     get_whatsapp_contact,
     request_to_jembi_api,
+    submit_third_party_registration_to_rapidpro,
     validate_subscribe_jembi_app_registration,
 )
 
@@ -429,6 +430,17 @@ class ThirdPartyRegistration(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
+        if settings.EXTERNAL_REGISTRATIONS_V2:
+            serializer = ThirdPartyRegistrationSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            # We encode and decode from JSON to ensure dates are encoded properly
+            data = json.loads(JSONEncoder().encode(serializer.validated_data))
+            submit_third_party_registration_to_rapidpro(request.user.username, data)
+            return Response(status=status.HTTP_202_ACCEPTED)
+        else:
+            return self._post(request)
+
+    def _post(self, request):
         is_client = IdentityStoreApiClient(
             api_url=settings.IDENTITY_STORE_URL,
             auth_token=settings.IDENTITY_STORE_TOKEN,
@@ -541,15 +553,25 @@ class ThirdPartyRegistration(APIView):
                 "msisdn_device": device,
                 "id_type": id_type,
                 "language": lang_code,
-                "mom_dob": serializer.validated_data["mom_dob"],
-                "edd": serializer.validated_data["mom_edd"],
+                "mom_dob": (
+                    serializer.validated_data["mom_dob"].strftime("%Y-%m-%d")
+                    if serializer.validated_data["mom_dob"]
+                    else None
+                ),
+                "edd": (
+                    serializer.validated_data["mom_edd"].strftime("%Y-%m-%d")
+                    if serializer.validated_data["mom_edd"]
+                    else None
+                ),
                 "faccode": serializer.validated_data["clinic_code"],
                 "consent": serializer.validated_data["consent"],
                 "mha": serializer.validated_data.get("mha", 1),
                 "swt": serializer.validated_data.get("swt", 1),
             }
-            if "encdate" in serializer.validated_data:
-                reg_data["encdate"] = serializer.validated_data["encdate"]
+            if serializer.validated_data.get("encdate"):
+                reg_data["encdate"] = serializer.validated_data["encdate"].strftime(
+                    "%Y%m%d%H%M%S"
+                )
             if id_type == "sa_id":
                 reg_data["sa_id_no"] = serializer.validated_data["mom_id_no"]
             elif id_type == "passport":

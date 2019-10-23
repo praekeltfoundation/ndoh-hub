@@ -26,6 +26,7 @@ LANGUAGES = [
     "ven_ZA",  # Tshivenda
     "nbl_ZA",  # isiNdebele
 ]
+JEMBI_LANGUAGES = ["zu", "xh", "af", "en", "nso", "tn", "st", "ts", "ss", "ve", "nr"]
 # Since WhatsApp doesn't support most of South Africa's official languages, we create
 # a mapping to languages that we don't use for missing languages
 WHATSAPP_LANGUAGE_MAP = {
