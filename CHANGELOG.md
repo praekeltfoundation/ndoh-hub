@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.3 (2019-10-24)
+1. Allow third party registrations to be sent to RapidPro
+   ([#254](https://github.com/praekeltfoundation/ndoh-hub/pull/255))
+1. Bug fix for Turn context API
+   ([#254](https://github.com/praekeltfoundation/ndoh-hub/pull/256))
+
 ## 0.7.2 (2019-10-18)
 1. Create event store with support for opt outs, baby switches, channel switches,
    public, pre- and postbirth clinic registrations.
