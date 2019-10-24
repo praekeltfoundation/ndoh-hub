@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.7.4 (2019-10-24)
+1. Cache querystring token auth
+
 ## 0.7.3 (2019-10-24)
 1. Allow third party registrations to be sent to RapidPro
    ([#254](https://github.com/praekeltfoundation/ndoh-hub/pull/255))
