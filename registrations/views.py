@@ -785,7 +785,9 @@ class EngageContextView(EngageBaseView, generics.CreateAPIView):
         """
         Gets the MSISDN of the user, if present in the request, otherwise returns None
         """
-        return data["chat"]["owner"]
+        return phonenumbers.format_number(
+            data["chat"]["owner"], phonenumbers.PhoneNumberFormat.E164
+        )
 
     def get_identity(self, msisdn):
         """

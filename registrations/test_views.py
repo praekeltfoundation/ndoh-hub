@@ -454,6 +454,7 @@ class EngageContextViewTests(APITestCase):
                 urlencode({"details__addresses__msisdn": msisdn})
             ),
             json={"results": results},
+            match_querystring=True,
             status=200,
         )
 
@@ -471,6 +472,7 @@ class EngageContextViewTests(APITestCase):
                 urlencode({"identity": identity_uuid, "active": True})
             ),
             json={"results": subscriptions},
+            match_querystring=True,
             status=200,
         )
 
