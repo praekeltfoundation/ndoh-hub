@@ -13,8 +13,6 @@ from temba_client.v2 import TembaClient
 from wabclient import Client as WABClient
 
 from ndoh_hub.auth import CachedTokenAuthentication
-
-# Import these here for backwards compatibility
 from ndoh_hub.constants import (  # noqa:F401
     ID_TYPES,
     JEMBI_LANGUAGES,
