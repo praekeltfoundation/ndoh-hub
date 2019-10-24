@@ -6,13 +6,13 @@ import json
 import pkg_resources
 import six
 from django.conf import settings
-from rest_framework.authentication import TokenAuthentication
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.message_sender import MessageSenderApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
 from temba_client.v2 import TembaClient
 from wabclient import Client as WABClient
 
+from ndoh_hub.auth import CachedTokenAuthentication
 # Import these here for backwards compatibility
 from ndoh_hub.constants import (  # noqa:F401
     ID_TYPES,
@@ -333,7 +333,7 @@ def json_decode(data):
     return json.loads(data)
 
 
-class TokenAuthQueryString(TokenAuthentication):
+class TokenAuthQueryString(CachedTokenAuthentication):
     """
     Look for the token in the querystring parameter "token"
     """
