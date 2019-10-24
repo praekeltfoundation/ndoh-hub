@@ -1902,7 +1902,7 @@ class ExternalRegistrationsV2Tests(APITestCase):
         self.assertEqual(
             body,
             {
-                "urns": "tel:+27820001001",
+                "urns": ["tel:+27820001001"],
                 "flow": "flow-uuid-public",
                 "extra": {
                     "language": "xh",
@@ -1942,7 +1942,7 @@ class ExternalRegistrationsV2Tests(APITestCase):
         self.assertEqual(
             body,
             {
-                "urns": "tel:+27820001001",
+                "urns": ["tel:+27820001001"],
                 "flow": "flow-uuid-chw",
                 "extra": {
                     "language": "xh",
@@ -1992,7 +1992,7 @@ class ExternalRegistrationsV2Tests(APITestCase):
         self.assertEqual(
             body,
             {
-                "urns": "tel:+27820001001",
+                "urns": ["tel:+27820001001"],
                 "flow": "flow-uuid-clinic",
                 "extra": {
                     "language": "xh",

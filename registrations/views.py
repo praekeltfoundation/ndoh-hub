@@ -435,7 +435,9 @@ class ThirdPartyRegistration(APIView):
             serializer.is_valid(raise_exception=True)
             # We encode and decode from JSON to ensure dates are encoded properly
             data = json.loads(JSONEncoder().encode(serializer.validated_data))
-            submit_third_party_registration_to_rapidpro(request.user.username, data)
+            submit_third_party_registration_to_rapidpro.delay(
+                request.user.username, data
+            )
             return Response(status=status.HTTP_202_ACCEPTED)
         else:
             return self._post(request)
