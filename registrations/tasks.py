@@ -1662,13 +1662,13 @@ def submit_third_party_registration_to_rapidpro(username, data):
     if data["authority"] == "patient":
         rapidpro.create_flow_start(
             settings.RAPIDPRO_PUBLIC_REGISTRATION_FLOW,
-            urns=f"tel:{data['mom_msisdn']}",
+            urns=[f"tel:{data['mom_msisdn']}"],
             extra=registration,
         )
     elif data["authority"] == "chw":
         rapidpro.create_flow_start(
             settings.RAPIDPRO_CHW_REGISTRATION_FLOW,
-            urns=f"tel:{data['mom_msisdn']}",
+            urns=[f"tel:{data['mom_msisdn']}"],
             extra=registration,
         )
     elif data["authority"] == "clinic":
@@ -1676,6 +1676,6 @@ def submit_third_party_registration_to_rapidpro(username, data):
         registration["clinic_code"] = data["clinic_code"]
         rapidpro.create_flow_start(
             settings.RAPIDPRO_CLINIC_REGISTRATION_FLOW,
-            urns=f"tel:{data['mom_msisdn']}",
+            urns=[f"tel:{data['mom_msisdn']}"],
             extra=registration,
         )
