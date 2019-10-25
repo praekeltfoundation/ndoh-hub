@@ -95,6 +95,22 @@ IDTYPES = (
 )
 
 
+class CHWRegistration(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    contact_id = models.UUIDField()
+    device_contact_id = models.UUIDField()
+    source = models.CharField(max_length=255)
+    id_type = models.CharField(max_length=8, choices=IDTYPES)
+    id_number = models.CharField(max_length=13, blank=True)
+    passport_country = models.CharField(max_length=2, blank=True)
+    passport_number = models.CharField(max_length=255, blank=True)
+    date_of_birth = models.DateField(blank=True, null=True)
+    language = models.CharField(max_length=3, choices=LANGUAGE_TYPES)
+    timestamp = models.DateTimeField(default=timezone.now)
+    created_by = models.CharField(max_length=255, blank=True, default="")
+    data = JSONField(default=dict, blank=True, null=True)
+
+
 class PrebirthRegistration(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     contact_id = models.UUIDField()
