@@ -242,3 +242,10 @@ class WhatsAppContact(models.Model):
     class Meta:
         permissions = (("can_prune_whatsappcontact", "Can prune WhatsApp contact"),)
         verbose_name = "WhatsApp Contact"
+
+
+class ClinicCode(models.Model):
+    code = models.CharField(max_length=255)
+    value = models.CharField(max_length=255)
+    uid = models.CharField(max_length=255, primary_key=True)
+    name = models.CharField(max_length=255)
