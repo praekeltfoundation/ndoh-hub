@@ -24,7 +24,11 @@ from django.urls import reverse
 from django.utils import timezone
 from requests.exceptions import RequestException
 from rest_framework import generics, mixins, status, viewsets
-from rest_framework.authentication import SessionAuthentication, TokenAuthentication
+from rest_framework.authentication import (
+    BasicAuthentication,
+    SessionAuthentication,
+    TokenAuthentication,
+)
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, AuthenticationFailed
@@ -47,7 +51,7 @@ from changes.models import Change
 from changes.serializers import ChangeSerializer
 from ndoh_hub.utils import get_available_metrics, is_client, sbm_client
 
-from .models import PositionTracker, Registration, Source, WhatsAppContact
+from .models import ClinicCode, PositionTracker, Registration, Source, WhatsAppContact
 from .serializers import (
     BaseRapidProClinicRegistrationSerializer,
     CreateUserSerializer,
@@ -1393,3 +1397,65 @@ class RapidProPublicRegistrationView(generics.CreateAPIView):
         create_rapidpro_public_registration.delay(data)
 
         return Response(data, status=status.HTTP_202_ACCEPTED)
+
+
+class FacilityCheckView(generics.RetrieveAPIView):
+    queryset = ClinicCode.objects.all()
+    permission_classes = (DjangoModelPermissions,)
+    authentication_classes = (BasicAuthentication,)
+
+    def get(self, request: Request) -> Response:
+        try:
+            field, value = request.query_params["criteria"].split(":")
+        except KeyError:
+            return Response(
+                {"error": "Must supply 'criteria' query parameter"},
+                status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError:
+            return Response(
+                {"error": "Criteria query parameter must be in 'field:value' format"},
+                status.HTTP_400_BAD_REQUEST,
+            )
+
+        results = ClinicCode.objects.filter(**{field: value}).values_list(
+            "code", "value", "uid", "name"
+        )
+        return Response(
+            {
+                "title": "FacilityCheck",
+                "headers": [
+                    {
+                        "hidden": False,
+                        "meta": False,
+                        "name": "code",
+                        "column": "code",
+                        "type": "java.lang.String",
+                    },
+                    {
+                        "hidden": False,
+                        "meta": False,
+                        "name": "value",
+                        "column": "value",
+                        "type": "java.lang.String",
+                    },
+                    {
+                        "hidden": False,
+                        "meta": False,
+                        "name": "uid",
+                        "column": "uid",
+                        "type": "java.lang.String",
+                    },
+                    {
+                        "hidden": False,
+                        "meta": False,
+                        "name": "name",
+                        "column": "name",
+                        "type": "java.lang.String",
+                    },
+                ],
+                "rows": results,
+                "width": 4,
+                "height": len(results),
+            }
+        )
