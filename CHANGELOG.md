@@ -1,13 +1,22 @@
 # Changelog
 
+## 0.7.5 (2019-10-30)
+1. Fix sending of third party registrations to RapidPro
+   ([#257](https://github.com/praekeltfoundation/ndoh-hub/pull/257))
+1. Add CHW registrations to the event store
+   ([#258](https://github.com/praekeltfoundation/ndoh-hub/pull/258))
+1. Add API that mirrors Jembi's clinic code API
+   ([#259](https://github.com/praekeltfoundation/ndoh-hub/pull/259))
+   ([#260](https://github.com/praekeltfoundation/ndoh-hub/pull/260))
+
 ## 0.7.4 (2019-10-24)
 1. Cache querystring token auth
 
 ## 0.7.3 (2019-10-24)
 1. Allow third party registrations to be sent to RapidPro
-   ([#254](https://github.com/praekeltfoundation/ndoh-hub/pull/255))
+   ([#255](https://github.com/praekeltfoundation/ndoh-hub/pull/255))
 1. Bug fix for Turn context API
-   ([#254](https://github.com/praekeltfoundation/ndoh-hub/pull/256))
+   ([#256](https://github.com/praekeltfoundation/ndoh-hub/pull/256))
 
 ## 0.7.2 (2019-10-18)
 1. Create event store with support for opt outs, baby switches, channel switches,
