@@ -254,6 +254,41 @@ class PrebirthRegistrationViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(registration.source, "WhatsApp")
         self.assertEqual(registration.created_by, user.username)
 
+    def test_prebirth_other_passport_origin(self):
+        """
+        Should create a new PrebirthRegistration object in the database with
+        passport_country = "other"
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_prebirthregistration")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "contact_id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+                "device_contact_id": "d80d51cb-8a95-4588-ac74-250d739edef8",
+                "id_type": "passport",
+                "id_number": "",
+                "passport_country": "other",
+                "passport_number": "FN123456",
+                "date_of_birth": None,
+                "language": "zul",
+                "edd": "2020-10-11",
+                "facility_code": "123456",
+                "source": "WhatsApp",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [registration] = PrebirthRegistration.objects.all()
+        self.assertEqual(
+            str(registration.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
+        )
+        self.assertEqual(registration.passport_country, "other")
+
 
 class PostbirthRegistrationViewSetTests(APITestCase, BaseEventTestCase):
     url = reverse("postbirthregistration-list")
@@ -316,6 +351,41 @@ class PostbirthRegistrationViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(registration.source, "WhatsApp")
         self.assertEqual(registration.created_by, user.username)
 
+    def test_postbirth_other_passport_origin(self):
+        """
+        Should create a new PostbirthRegistration object in the database with
+        passport_country = "other"
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_postbirthregistration")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "contact_id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+                "device_contact_id": "d80d51cb-8a95-4588-ac74-250d739edef8",
+                "id_type": "passport",
+                "id_number": "",
+                "passport_country": "other",
+                "passport_number": "FN123456",
+                "date_of_birth": None,
+                "language": "zul",
+                "baby_dob": "2018-10-11",
+                "facility_code": "123456",
+                "source": "WhatsApp",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [registration] = PostbirthRegistration.objects.all()
+        self.assertEqual(
+            str(registration.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
+        )
+        self.assertEqual(registration.passport_country, "other")
+
 
 class CHWRegistrationViewSetTests(APITestCase, BaseEventTestCase):
     url = reverse("chwregistration-list")
@@ -368,3 +438,34 @@ class CHWRegistrationViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(channelswitch.date_of_birth, datetime.date(1990, 2, 3))
         self.assertEqual(channelswitch.language, "nso")
         self.assertEqual(channelswitch.created_by, user.username)
+
+    def test_chw_other_passport_origin(self):
+        """
+        Should create a new CHWRegistration object in the database with
+        passport_country = "other"
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_chwregistration")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "contact_id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+                "device_contact_id": "d80d51cb-8a95-4588-ac74-250d739edef8",
+                "source": "WhatsApp",
+                "id_type": "passport",
+                "id_number": "",
+                "passport_country": "other",
+                "passport_number": "",
+                "date_of_birth": "1990-02-03",
+                "language": "nso",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [registration] = CHWRegistration.objects.all()
+        self.assertEqual(
+            str(registration.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
+        )
+        self.assertEqual(registration.passport_country, "other")
