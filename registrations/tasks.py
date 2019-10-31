@@ -1551,6 +1551,11 @@ def push_to_jembi_api(args):
 request_to_jembi_api = store_jembi_request.s() | push_to_jembi_api.s()
 
 
+@app.task
+def delete_jembi_pii(msisdn):
+    JembiSubmission.objects.filter(request_data__cmsisdn=msisdn).delete()
+
+
 @app.task(
     autoretry_for=(RequestException, SoftTimeLimitExceeded),
     retry_backoff=True,

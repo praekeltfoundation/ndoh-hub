@@ -1,4 +1,3 @@
-import json
 import re
 from datetime import datetime
 from itertools import chain as ichain
@@ -23,7 +22,11 @@ from six import iteritems
 from ndoh_hub import utils
 from ndoh_hub.celery import app
 from registrations.models import Registration, Source, SubscriptionRequest
-from registrations.tasks import add_personally_identifiable_fields, request_to_jembi_api
+from registrations.tasks import (
+    add_personally_identifiable_fields,
+    delete_jembi_pii,
+    request_to_jembi_api,
+)
 
 from .models import Change
 
@@ -1175,8 +1178,11 @@ class BasePushOptoutToJembi(object):
 
         change = Change.objects.get(pk=change_id)
         json_doc = self.build_jembi_json(change)
-        request_to_jembi_api.delay(self.URL, json_doc)
-        push_optout_to_identity_store(str(change_id))
+        push_optout_to_identity_store.delay(str(change_id))
+        t = request_to_jembi_api
+        if change.data.get("identity_store_optout", {}).get("optout_type") == "forget":
+            t = t | delete_jembi_pii.si(json_doc.get("cmsisdn"))
+        t.delay(self.URL, json_doc)
 
 
 class PushMomconnectOptoutToJembi(BasePushOptoutToJembi, Task):
