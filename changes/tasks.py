@@ -23,7 +23,7 @@ from six import iteritems
 from ndoh_hub import utils
 from ndoh_hub.celery import app
 from registrations.models import Registration, Source, SubscriptionRequest
-from registrations.tasks import add_personally_identifiable_fields
+from registrations.tasks import add_personally_identifiable_fields, request_to_jembi_api
 
 from .models import Change
 
@@ -1175,7 +1175,7 @@ class BasePushOptoutToJembi(object):
 
         change = Change.objects.get(pk=change_id)
         json_doc = self.build_jembi_json(change)
-        request_to_jembi_api(self.URL, json_doc)
+        request_to_jembi_api.delay(self.URL, json_doc)
         push_optout_to_identity_store(str(change_id))
 
 
@@ -1186,7 +1186,7 @@ class PushMomconnectOptoutToJembi(BasePushOptoutToJembi, Task):
 
     name = "ndoh_hub.changes.tasks.push_momconnect_optout_to_jembi"
     log = get_task_logger(__name__)
-    URL = urljoin(settings.JEMBI_BASE_URL, "optout")
+    URL = "optout"
 
     def build_jembi_json(self, change):
         identity = is_client.get_identity(change.registrant_id) or {}
@@ -1213,7 +1213,7 @@ class PushPMTCTOptoutToJembi(PushMomconnectOptoutToJembi, Task):
     """
 
     name = "ndoh_hub.changes.tasks.push_pmtct_optout_to_jembi"
-    URL = urljoin(settings.JEMBI_BASE_URL, "pmtctOptout")
+    URL = "pmtctOptout"
 
     def build_jembi_json(self, change):
         identity = is_client.get_identity(change.registrant_id) or {}
@@ -1241,7 +1241,7 @@ class PushMomconnectBabyLossToJembi(BasePushOptoutToJembi, Task):
 
     name = "ndoh_hub.changes.tasks.push_momconnect_babyloss_to_jembi"
     log = get_task_logger(__name__)
-    URL = urljoin(settings.JEMBI_BASE_URL, "subscription")
+    URL = "subscription"
 
     def build_jembi_json(self, change):
         identity = is_client.get_identity(change.registrant_id) or {}
@@ -1268,7 +1268,7 @@ class PushMomconnectBabySwitchToJembi(BasePushOptoutToJembi, Task):
 
     name = "ndoh_hub.changes.tasks.push_momconnect_babyswitch_to_jembi"
     log = get_task_logger(__name__)
-    URL = urljoin(settings.JEMBI_BASE_URL, "subscription")
+    URL = "subscription"
 
     def build_jembi_json(self, change):
         identity = is_client.get_identity(change.registrant_id) or {}
@@ -1295,7 +1295,7 @@ class PushNurseconnectOptoutToJembi(BasePushOptoutToJembi, Task):
 
     name = "ndoh_hub.changes.tasks.push_nurseconnect_optout_to_jembi"
     log = get_task_logger(__name__)
-    URL = urljoin(settings.JEMBI_BASE_URL, "nc/optout")
+    URL = "nc/optout"
 
     def get_nurse_id(self, id_type, id_no=None, passport_origin=None, mom_msisdn=None):
         if id_type == "sa_id":
@@ -1407,7 +1407,7 @@ class PushChannelSwitchToJembi(BasePushOptoutToJembi, Task):
 
     name = "ndoh_hub.changes.tasks.push_channel_switch_to_jembi"
     log = get_task_logger(__name__)
-    URL = urljoin(settings.JEMBI_BASE_URL, "messageChange")
+    URL = "messageChange"
 
     def build_jembi_json(self, change):
         identity = is_client.get_identity(change.registrant_id) or {}
@@ -1963,22 +1963,3 @@ process_engage_helpdesk_outbound = (
     | get_identity_from_msisdn.s("inbound_address")
     | send_helpdesk_response_to_dhis2.s()
 )
-
-
-@app.task(
-    autoretry_for=(RequestException, SoftTimeLimitExceeded),
-    retry_backoff=True,
-    max_retries=15,
-    acks_late=True,
-    soft_time_limit=10,
-    time_limit=15,
-)
-def request_to_jembi_api(url, json_doc):
-    r = requests.post(
-        url=url,
-        headers={"Content-Type": "application/json"},
-        data=json.dumps(json_doc),
-        auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
-        verify=False,
-    )
-    r.raise_for_status()

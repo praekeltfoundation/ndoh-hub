@@ -10,6 +10,7 @@ from django.test import TestCase
 
 from ndoh_hub import utils_tests
 from registrations.models import (
+    ClinicCode,
     Registration,
     Source,
     SubscriptionRequest,
@@ -432,75 +433,21 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         self.assertTrue(task.is_identity_subscribed({"id": "test-id"}, r"prebirth"))
         self.assertFalse(task.is_identity_subscribed({"id": "test-id"}, r"foo"))
 
-    @responses.activate
     def test_is_valid_clinic_code_true(self):
         """
         If there are results for the clinic code search, then True should be
         returned
         """
-        responses.add(
-            responses.GET,
-            "http://jembi/ws/rest/v1/facilityCheck?criteria=code%3A123456",
-            json={
-                "title": "FacilityCheck",
-                "headers": [
-                    {
-                        "name": "code",
-                        "column": "code",
-                        "type": "java.lang.String",
-                        "hidden": False,
-                        "meta": False,
-                    },
-                    {
-                        "name": "value",
-                        "column": "value",
-                        "type": "java.lang.String",
-                        "hidden": False,
-                        "meta": False,
-                    },
-                    {
-                        "name": "uid",
-                        "column": "uid",
-                        "type": "java.lang.String",
-                        "hidden": False,
-                        "meta": False,
-                    },
-                    {
-                        "name": "name",
-                        "column": "name",
-                        "type": "java.lang.String",
-                        "hidden": False,
-                        "meta": False,
-                    },
-                ],
-                "rows": [["123456", "123456", "yGVQRg2PXNh", "wc Test Clinic"]],
-                "width": 4,
-                "height": 1,
-            },
-            match_querystring=True,
+        ClinicCode.objects.create(
+            code="123456", value="123456", uid="yGVQRg2PXNh", name="wc Test Clinic"
         )
-
         self.assertTrue(task.is_valid_clinic_code("123456"))
 
-    @responses.activate
     def test_is_valid_clinic_code_false(self):
         """
         If there are no results for the clinic code search, then False should
         be returned
         """
-        responses.add(
-            responses.GET,
-            "http://jembi/ws/rest/v1/facilityCheck?criteria=code%3A123456",
-            json={
-                "title": "FacilityCheck",
-                "headers": [],
-                "rows": [],
-                "width": 0,
-                "height": 0,
-            },
-            match_querystring=True,
-        )
-
         self.assertFalse(task.is_valid_clinic_code("123456"))
 
     @responses.activate

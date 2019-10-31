@@ -23,7 +23,7 @@ from wabclient.exceptions import AddressException
 from ndoh_hub import utils
 from ndoh_hub.celery import app
 
-from .models import Registration, Source, WhatsAppContact
+from .models import ClinicCode, Registration, Source, WhatsAppContact
 
 try:
     from urlparse import urljoin
@@ -823,13 +823,7 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         """
         Checks to see if the specified clinic code is recognised or not
         """
-        r = requests.get(
-            urljoin(settings.JEMBI_BASE_URL, "facilityCheck"),
-            {"criteria": "code:{}".format(code)},
-            auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
-        )
-        r.raise_for_status()
-        return len(r.json().get("rows", [])) != 0
+        return ClinicCode.objects.filter(code=code).exists()
 
     def run(self, registration_id, **kwargs):
         registration = Registration.objects.get(id=registration_id)
@@ -1019,7 +1013,7 @@ class BasePushRegistrationToJembi(object):
             return
 
         json_doc = self.build_jembi_json(registration)
-        request_to_jembi_api(self.URL, json_doc)
+        request_to_jembi_api.delay(self.URL, json_doc)
 
 
 class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
@@ -1028,7 +1022,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
 
     name = "ndoh_hub.registrations.tasks.push_registration_to_jembi"
     log = get_task_logger(__name__)
-    URL = urljoin(settings.JEMBI_BASE_URL, "subscription")
+    URL = "subscription"
 
     def get_subscription_type(self, authority):
         authority_map = {
@@ -1134,7 +1128,7 @@ class PushPmtctRegistrationToJembi(PushRegistrationToJembi, Task):
     """
 
     name = "ndoh_hub.registrations.tasks.push_pmtct_registration_to_jembi"
-    URL = urljoin(settings.JEMBI_BASE_URL, "pmtctSubscription")
+    URL = "pmtctSubscription"
 
     def build_jembi_json(self, registration):
         json_template = super(PushPmtctRegistrationToJembi, self).build_jembi_json(
@@ -1178,7 +1172,7 @@ push_pmtct_registration_to_jembi = PushPmtctRegistrationToJembi()
 class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
     name = "ndoh_hub.registrations.tasks.push_nurse_registration_to_jembi"
     log = get_task_logger(__name__)
-    URL = urljoin(settings.JEMBI_BASE_URL, "nc/subscription")
+    URL = "nc/subscription"
 
     def get_persal(self, identity):
         details = identity["details"]
@@ -1522,6 +1516,12 @@ create_rapidpro_public_registration = (
 )
 
 
+@app.task
+def store_jembi_request(url, json_doc):
+    # TODO: save jembi request
+    return url, json_doc
+
+
 @app.task(
     autoretry_for=(RequestException, SoftTimeLimitExceeded),
     retry_backoff=True,
@@ -1530,15 +1530,19 @@ create_rapidpro_public_registration = (
     soft_time_limit=10,
     time_limit=15,
 )
-def request_to_jembi_api(url, json_doc):
+def push_to_jembi_api(args):
+    url, json_doc = args
     r = requests.post(
-        url=url,
+        url=urljoin(settings.JEMBI_BASE_URL, url),
         headers={"Content-Type": "application/json"},
         data=json.dumps(json_doc),
         auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
         verify=False,
     )
     return r.raise_for_status()
+
+
+request_to_jembi_api = store_jembi_request.s() | push_to_jembi_api.s()
 
 
 @app.task(

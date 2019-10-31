@@ -4024,23 +4024,6 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
         self.assertEqual(request_json["type"], 7)
         self.assertEqual(request_json["op"], "1234")
 
-    def test_send_outgoing_message_to_jembi_improperly_configured(self):
-        user_request = {
-            "to": "+27123456789",
-            "content": "this is a sample reponse",
-            "reply_to": "this is a sample user message",
-            "inbound_created_on": self.inbound_created_on_date,
-            "outbound_created_on": self.outbound_created_on_date,
-            "user_id": "unknown-uuid",
-            "label": "Complaint",
-        }
-        # Execute
-        with self.settings(JEMBI_BASE_URL=""):
-            response = self.normalclient.post(
-                "/api/v1/jembi/helpdesk/outgoing/", user_request
-            )
-            self.assertEqual(response.status_code, 503)
-
     @responses.activate
     def test_send_outgoing_message_to_jembi_with_blank_values(self):
         message_id = 10

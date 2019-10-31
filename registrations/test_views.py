@@ -254,8 +254,6 @@ class JembiAppRegistrationStatusViewTests(AuthenticatedAPITestCase):
 
 
 class FacilityCodeCheckViewTests(AuthenticatedAPITestCase):
-    @responses.activate
-    @override_settings(JEMBI_BASE_URL="http://jembi/ws/rest/v1/")
     def test_facility_code_check(self):
 
         """
@@ -263,28 +261,12 @@ class FacilityCodeCheckViewTests(AuthenticatedAPITestCase):
             GET - returns if facility code is correct, else return 200 response
         """
         self.make_source_normaluser()
-
-        clinic_code = 123456
-
-        result = {
-            "title": "Facility Code Check",
-            "headers": [
-                {"name": "code", "column": "code", "type": ""},
-                {"name": "value", "column": "value", "type": ""},
-                {"name": "uid", "column": "uid", "type": ""},
-                {"name": "name", "column": "name", "type": ""},
-            ],
-            "rows": [[clinic_code, clinic_code, "abcdefg", "test facility code"]],
-            "width": 1,
-            "height": 1,
-        }
-        responses.add(
-            responses.GET,
-            "http://jembi/ws/rest/v1/facilityCheck?{}".format(
-                urlencode({"criteria": "value:{}".format(clinic_code)})
-            ),
-            json=result,
-            status=200,
+        clinic_code = "123456"
+        ClinicCode.objects.create(
+            code=clinic_code,
+            value=clinic_code,
+            uid="abcdefg",
+            name="test facility code",
         )
         url = "{}?{}".format(
             reverse("facilitycode-check"), urlencode({"clinic_code": clinic_code})
@@ -293,35 +275,6 @@ class FacilityCodeCheckViewTests(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)["Facility"], "test facility code")
 
-    @responses.activate
-    @override_settings(JEMBI_BASE_URL="http://jembi/ws/rest/v1/")
-    def test_facility_code_check_fail(self):
-
-        """
-            Test on Facility Code Check
-            GET - returns 400 response if facility code is incorrect
-        """
-
-        clinic_code = 111111
-
-        self.make_source_normaluser()
-        result = {"request_error": "HTTP 400 Bad Request"}
-        responses.add(
-            responses.GET,
-            "http://jembi/ws/rest/v1/facilityCheck?{}".format(
-                urlencode({"criteria": "value:{}".format(clinic_code)})
-            ),
-            json=result,
-            status=400,
-        )
-        url = "{}?{}".format(
-            reverse("facilitycode-check"), urlencode({"clinic_code": clinic_code})
-        )
-        response = self.normalclient.get(url)
-        self.assertEqual(response.status_code, 400)
-
-    @responses.activate
-    @override_settings(JEMBI_BASE_URL="http://jembi/ws/rest/v1/")
     def test_facility_code_check_no_code_returned(self):
 
         """
@@ -331,17 +284,7 @@ class FacilityCodeCheckViewTests(AuthenticatedAPITestCase):
         """
 
         clinic_code = 111111
-
         self.make_source_normaluser()
-        result = {"title": "", "headers": [], "rows": [], "width": 0, "height": 0}
-        responses.add(
-            responses.GET,
-            "http://jembi/ws/rest/v1/facilityCheck?{}".format(
-                urlencode({"criteria": "value:{}".format(clinic_code)})
-            ),
-            json=result,
-            status=200,
-        )
         url = "{}?{}".format(
             reverse("facilitycode-check"), urlencode({"clinic_code": clinic_code})
         )
