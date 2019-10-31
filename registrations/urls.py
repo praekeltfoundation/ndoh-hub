@@ -71,5 +71,10 @@ urlpatterns = [
         views.NCFacilityCheckView.as_view(),
         name="nc-facility-check",
     ),
+    path(
+        "api/v1/nc/subscription",
+        views.NCSubscriptionView.as_view(),
+        name="nc-subscription",
+    ),
     url(r"^api/v1/", include(router.urls)),
 ]
