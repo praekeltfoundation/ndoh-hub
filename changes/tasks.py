@@ -1931,11 +1931,9 @@ def send_helpdesk_response_to_dhis2(self, context):
         .first()
     )
 
-    result = requests.post(
-        urljoin(settings.JEMBI_BASE_URL, "helpdesk"),
-        auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
-        verify=False,
-        json={
+    request_to_jembi_api.delay(
+        "helpdesk",
+        {
             "encdate": encdate.strftime("%Y%m%d%H%M%S"),
             "repdate": repdate.strftime("%Y%m%d%H%M%S"),
             "mha": 1,  # Praekelt
@@ -1954,8 +1952,6 @@ def send_helpdesk_response_to_dhis2(self, context):
             "sid": registration.registrant_id,
         },
     )
-    result.raise_for_status()
-    return result.content
 
 
 process_engage_helpdesk_outbound = (
