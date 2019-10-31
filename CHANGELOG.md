@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.6 (2019-10-31)
+1. Store jembi requests before forwarding
+   ([#261](https://github.com/praekeltfoundation/ndoh-hub/pull/261))
+1. Restrict event store passport country field to list of choices
+   ([#262](https://github.com/praekeltfoundation/ndoh-hub/pull/262))
+1. Add API for storing + relaying nurseconnect subscriptions to Jembi
+   ([#263](https://github.com/praekeltfoundation/ndoh-hub/pull/263))
+
 ## 0.7.5 (2019-10-30)
 1. Fix sending of third party registrations to RapidPro
    ([#257](https://github.com/praekeltfoundation/ndoh-hub/pull/257))
