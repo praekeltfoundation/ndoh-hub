@@ -21,7 +21,13 @@ from rest_hooks.models import model_saved
 
 from ndoh_hub import utils, utils_tests
 
-from .models import PositionTracker, Registration, Source, SubscriptionRequest
+from .models import (
+    JembiSubmission,
+    PositionTracker,
+    Registration,
+    Source,
+    SubscriptionRequest,
+)
 from .signals import psh_validate_subscribe
 from .tasks import (
     PushRegistrationToJembi,
@@ -4070,6 +4076,32 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
         self.assertEqual(request_json["class"], "Unclassified")
         self.assertEqual(request_json["type"], 7)
         self.assertEqual(request_json["op"], "1234")
+
+        [sub] = JembiSubmission.objects.all()
+        self.assertEqual(sub.path, "helpdesk")
+        self.maxDiff = None
+        self.assertEqual(
+            sub.request_data,
+            {
+                "dmsisdn": "+27123456789",
+                "cmsisdn": "+27123456789",
+                "eid": str(UUID(int=message_id)),
+                "sid": "mother01-63e2-4acc-9b94-26663b9bc267",
+                "encdate": "20160101000000",
+                "repdate": "20160102000000",
+                "mha": 1,
+                "swt": 2,
+                "faccode": "123456",
+                "data": {"question": "", "answer": "this is a sample response"},
+                "class": "Unclassified",
+                "type": 7,
+                "op": "1234",
+            },
+        )
+        self.assertEqual(sub.submitted, True)
+        self.assertEqual(sub.response_status_code, 201)
+        self.assertEqual(sub.response_headers, {"Content-Type": "text/plain"})
+        self.assertEqual(sub.response_body, '{"result": "jembi-is-ok"}')
 
     @responses.activate
     def test_send_outgoing_message_to_jembi_via_whatsapp(self):

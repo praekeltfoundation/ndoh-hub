@@ -23,7 +23,7 @@ from wabclient.exceptions import AddressException
 from ndoh_hub import utils
 from ndoh_hub.celery import app
 
-from .models import ClinicCode, Registration, Source, WhatsAppContact
+from .models import ClinicCode, JembiSubmission, Registration, Source, WhatsAppContact
 
 try:
     from urlparse import urljoin
@@ -1518,8 +1518,8 @@ create_rapidpro_public_registration = (
 
 @app.task
 def store_jembi_request(url, json_doc):
-    # TODO: save jembi request
-    return url, json_doc
+    sub = JembiSubmission.objects.create(path=url, request_data=json_doc)
+    return sub.id, url, json_doc
 
 
 @app.task(
@@ -1531,7 +1531,7 @@ def store_jembi_request(url, json_doc):
     time_limit=15,
 )
 def push_to_jembi_api(args):
-    url, json_doc = args
+    db_id, url, json_doc = args
     r = requests.post(
         url=urljoin(settings.JEMBI_BASE_URL, url),
         headers={"Content-Type": "application/json"},
@@ -1539,7 +1539,13 @@ def push_to_jembi_api(args):
         auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
         verify=False,
     )
-    return r.raise_for_status()
+    r.raise_for_status()
+    JembiSubmission.objects.filter(pk=db_id).update(
+        submitted=True,
+        response_status_code=r.status_code,
+        response_headers=dict(r.headers),
+        response_body=r.text,
+    )
 
 
 request_to_jembi_api = store_jembi_request.s() | push_to_jembi_api.s()
