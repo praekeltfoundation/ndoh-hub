@@ -3179,7 +3179,7 @@ class TestChangeActions(AuthenticatedAPITestCase):
 
         # Check Identity Store optout POST
         self.assertEqual(
-            json.loads(responses.calls[-1].request.body),
+            json.loads(responses.calls[-2].request.body),
             {
                 "address": "",
                 "address_type": "msisdn",

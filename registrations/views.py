@@ -327,16 +327,6 @@ class JembiHelpdeskOutgoingView(APIView):
         return json_template
 
     def post(self, request):
-        if not (
-            settings.JEMBI_BASE_URL
-            and settings.JEMBI_USERNAME
-            and settings.JEMBI_PASSWORD
-        ):
-            return Response(
-                "Jembi integration is not configured properly.",
-                status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
-
         serializer = JembiHelpdeskOutgoingSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -346,8 +336,7 @@ class JembiHelpdeskOutgoingView(APIView):
         if source.name == "NURSE Helpdesk App":
             endpoint = "nc/helpdesk"
             post_data["type"] = 12  # NC Helpdesk
-        jembi_url = urljoin(settings.JEMBI_BASE_URL, endpoint)
-        request_to_jembi_api.delay(jembi_url, post_data)
+        request_to_jembi_api.delay(endpoint, post_data)
 
         return Response(status=status.HTTP_200_OK)
 
@@ -1119,47 +1108,10 @@ class FacilityCodeCheckView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
-        if not (
-            settings.JEMBI_BASE_URL
-            and settings.JEMBI_USERNAME
-            and settings.JEMBI_PASSWORD
-        ):
-            return Response(
-                "Jembi integration is not configured properly.",
-                status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
-
-        try:
-            clinic_code = request.query_params.get("clinic_code")
-            result = requests.get(
-                urljoin(settings.JEMBI_BASE_URL, "facilityCheck"),
-                headers={"Content-Type": "application/json"},
-                auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
-                params={"criteria": "value:{}".format(clinic_code)},
-                verify=False,
-            )
-            result.raise_for_status()
-            jembi_result = result.json()
-            if len(jembi_result.get("rows")) > 0:
-                facility = jembi_result.get("rows")[0][3]
-                resp = {"Facility": facility}
-            else:
-                resp = {"Facility": "invalid"}
-
-        except (requests.exceptions.HTTPError,) as e:
-            if e.response.status_code == 400:
-                logger.warning(
-                    "400 Error when posting to Jembi.\n"
-                    "Response: %s\nPayload:" % (e.response.text)
-                )
-                return Response(
-                    "Error when posting to Jembi. Body: %s" % (e.response.content),
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            else:
-                raise e
-
-        return Response(resp, status=status.HTTP_200_OK)
+        clinic_code = request.query_params.get("clinic_code")
+        facility = ClinicCode.objects.filter(code=clinic_code).first()
+        facility = facility.name if facility else "invalid"
+        return Response({"Facility": facility}, status=status.HTTP_200_OK)
 
 
 class ServiceUnavailable(APIException):
