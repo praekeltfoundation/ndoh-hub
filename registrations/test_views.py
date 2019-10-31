@@ -24,6 +24,7 @@ from changes.models import Change
 from changes.signals import psh_validate_implement
 from registrations.models import (
     ClinicCode,
+    JembiSubmission,
     PositionTracker,
     Registration,
     Source,
@@ -2061,3 +2062,54 @@ class NCFacilityCheckViewTests(APITestCase):
                 "height": 1,
             },
         )
+
+
+class NCSubscriptionViewTests(APITestCase):
+    @responses.activate
+    @override_settings(JEMBI_BASE_URL="http://jembi/ws/rest/v1/")
+    def test_nc_subscription(self):
+        """
+        Should submit to jembi's API and store in the database
+        """
+        user = User.objects.create_user("test", "test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_jembisubmission")
+        )
+        self.client.force_authenticate(user)
+
+        responses.add(
+            responses.POST,
+            "http://jembi/ws/rest/v1/nc/subscription",
+            body="Accepted",
+            status=status.HTTP_202_ACCEPTED,
+        )
+        url = reverse("nc-subscription")
+        body = {
+            "mha": 1,
+            "swt": 7,
+            "type": 7,
+            "sid": "0221efa2-9f62-412e-b8ca-eeb3d98d3431",
+            "eid": "6c973994-e34b-48b2-974b-b31f3a6609b3",
+            "dmsisdn": "+27820001001",
+            "cmsisdn": "+27741942213",
+            "rmsisdn": None,
+            "faccode": "123456",
+            "id": "27741942213^^^ZAF^TEL",
+            "dob": None,
+            "persal": None,
+            "sanc": None,
+            "encdate": "20191030154302",
+        }
+        r = self.client.post(url, body, format="json")
+        self.assertEqual(r.status_code, status.HTTP_202_ACCEPTED)
+
+        [sub] = JembiSubmission.objects.all()
+        self.assertEqual(sub.submitted, True)
+        self.assertEqual(sub.path, "nc/subscription")
+        self.assertEqual(sub.request_data, body)
+        self.assertEqual(sub.response_status_code, status.HTTP_202_ACCEPTED)
+        self.assertEqual(sub.response_headers, {"Content-Type": "text/plain"})
+        self.assertEqual(sub.response_body, "Accepted")
+
+        [call] = responses.calls
+        self.assertEqual(json.loads(call.request.body), body)

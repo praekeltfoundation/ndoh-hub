@@ -51,7 +51,14 @@ from changes.models import Change
 from changes.serializers import ChangeSerializer
 from ndoh_hub.utils import get_available_metrics, is_client, sbm_client
 
-from .models import ClinicCode, PositionTracker, Registration, Source, WhatsAppContact
+from .models import (
+    ClinicCode,
+    JembiSubmission,
+    PositionTracker,
+    Registration,
+    Source,
+    WhatsAppContact,
+)
 from .serializers import (
     BaseRapidProClinicRegistrationSerializer,
     CreateUserSerializer,
@@ -1466,3 +1473,13 @@ class NCFacilityCheckView(generics.RetrieveAPIView):
                 "height": len(results),
             }
         )
+
+
+class NCSubscriptionView(generics.CreateAPIView):
+    queryset = JembiSubmission.objects.all()
+    permission_classes = (DjangoModelPermissions,)
+    authentication_classes = (BasicAuthentication,)
+
+    def post(self, request: Request) -> Response:
+        request_to_jembi_api.delay("nc/subscription", request.data)
+        return Response("Accepted", status=status.HTTP_202_ACCEPTED)
