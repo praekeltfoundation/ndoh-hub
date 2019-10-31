@@ -93,6 +93,15 @@ IDTYPES = (
     (PASSPORT_IDTYPE, "Passport"),
     (DOB_IDTYPE, "Date of birth"),
 )
+PASSPORT_COUNTRY_TYPES = (
+    ("zw", "Zimbabwe"),
+    ("mz", "Mozambique"),
+    ("mw", "Malawi"),
+    ("ng", "Nigeria"),
+    ("cd", "DRC"),
+    ("so", "Somalia"),
+    ("other", "Other"),
+)
 
 
 class CHWRegistration(models.Model):
@@ -102,7 +111,9 @@ class CHWRegistration(models.Model):
     source = models.CharField(max_length=255)
     id_type = models.CharField(max_length=8, choices=IDTYPES)
     id_number = models.CharField(max_length=13, blank=True)
-    passport_country = models.CharField(max_length=2, blank=True)
+    passport_country = models.CharField(
+        max_length=5, blank=True, choices=PASSPORT_COUNTRY_TYPES
+    )
     passport_number = models.CharField(max_length=255, blank=True)
     date_of_birth = models.DateField(blank=True, null=True)
     language = models.CharField(max_length=3, choices=LANGUAGE_TYPES)
@@ -117,7 +128,9 @@ class PrebirthRegistration(models.Model):
     device_contact_id = models.UUIDField()
     id_type = models.CharField(max_length=8, choices=IDTYPES)
     id_number = models.CharField(max_length=13, blank=True)
-    passport_country = models.CharField(max_length=2, blank=True)
+    passport_country = models.CharField(
+        max_length=5, blank=True, choices=PASSPORT_COUNTRY_TYPES
+    )
     passport_number = models.CharField(max_length=255, blank=True)
     date_of_birth = models.DateField(blank=True, null=True)
     language = models.CharField(max_length=3, choices=LANGUAGE_TYPES)
@@ -135,7 +148,9 @@ class PostbirthRegistration(models.Model):
     device_contact_id = models.UUIDField()
     id_type = models.CharField(max_length=8, choices=IDTYPES)
     id_number = models.CharField(max_length=13, blank=True)
-    passport_country = models.CharField(max_length=2, blank=True)
+    passport_country = models.CharField(
+        max_length=5, blank=True, choices=PASSPORT_COUNTRY_TYPES
+    )
     passport_number = models.CharField(max_length=255, blank=True)
     date_of_birth = models.DateField(blank=True, null=True)
     language = models.CharField(max_length=3, choices=LANGUAGE_TYPES)
