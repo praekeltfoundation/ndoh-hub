@@ -1,7 +1,4 @@
-from uuid import UUID
-
-from celery import chain
-from django.core.management import BaseCommand, CommandError
+from django.core.management import BaseCommand
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
