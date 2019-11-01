@@ -3870,6 +3870,36 @@ class TestJembiHelpdeskOutgoing(AuthenticatedAPITestCase):
         self.assertEqual(request_json["op"], "1234")
 
     @responses.activate
+    @override_settings(ENABLE_JEMBI_EVENTS=False)
+    def test_no_send_to_jembi(self):
+        message_id = 10
+        self.make_registration_for_jembi_helpdesk()
+
+        utils_tests.mock_junebug_channel_call(
+            "http://junebug/jb/channels/6a5c691e-140c-48b0-9f39-a53d4951d7fa", "sms"
+        )
+
+        user_request = {
+            "to": "+27123456789",
+            "content": "this is a sample response",
+            "reply_to": "this is a sample user message",
+            "inbound_created_on": self.inbound_created_on_date,
+            "outbound_created_on": self.outbound_created_on_date,
+            "user_id": "mother01-63e2-4acc-9b94-26663b9bc267",
+            "helpdesk_operator_id": 1234,
+            "label": "Complaint",
+            "inbound_channel_id": "6a5c691e-140c-48b0-9f39-a53d4951d7fa",
+            "message_id": message_id,
+        }
+        # Execute
+        response = self.normalclient.post(
+            "/api/v1/jembi/helpdesk/outgoing/", user_request
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(responses.calls), 1)
+
+    @responses.activate
     def test_send_outgoing_message_to_jembi_nurseconnect(self):
         message_id = 10
         source = self.make_source_normaluser("NURSE Helpdesk App")

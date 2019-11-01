@@ -1531,6 +1531,8 @@ def store_jembi_request(url, json_doc):
     time_limit=15,
 )
 def push_to_jembi_api(args):
+    if not settings.ENABLE_JEMBI_EVENTS:
+        return
     db_id, url, json_doc = args
     r = requests.post(
         url=urljoin(settings.JEMBI_BASE_URL, url),
@@ -1548,7 +1550,10 @@ def push_to_jembi_api(args):
     )
 
 
-request_to_jembi_api = store_jembi_request.s() | push_to_jembi_api.s()
+if settings.ENABLE_JEMBI_EVENTS:
+    request_to_jembi_api = store_jembi_request.s() | push_to_jembi_api.s()
+else:
+    request_to_jembi_api = store_jembi_request.s()
 
 
 @app.task
