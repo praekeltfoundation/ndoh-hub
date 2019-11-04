@@ -1,27 +1,27 @@
+import base64
 import datetime
 import hmac
-import base64
 from hashlib import sha256
-from pytz import UTC
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.urls import reverse
+from pytz import UTC
 from rest_framework import status
-from rest_framework.test import APITestCase
 from rest_framework.renderers import JSONRenderer
+from rest_framework.test import APITestCase
 
 from eventstore.models import (
     PASSPORT_IDTYPE,
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
+    Events,
+    Messages,
     OptOut,
     PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
-    Messages,
-    Events,
 )
 
 
@@ -509,11 +509,7 @@ class MessagesViewSetTests(APITestCase):
                 }
             ]
         }
-        response = self.client.post(
-            self.url,
-            data,
-            format="json",
-        )
+        response = self.client.post(self.url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 

@@ -12,11 +12,11 @@ from eventstore.views import (
     BabySwitchViewSet,
     ChannelSwitchViewSet,
     CHWRegistrationViewSet,
+    MessagesViewSet,
     OptOutViewSet,
     PostbirthRegistrationViewSet,
     PrebirthRegistrationViewSet,
     PublicRegistrationViewSet,
-    MessagesViewSet,
 )
 from ndoh_hub.decorators import internal_only
 from registrations import views

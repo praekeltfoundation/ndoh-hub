@@ -1,21 +1,22 @@
+from datetime import datetime
+
+from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.permissions import DjangoModelPermissions
-from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
-from rest_framework import status
-from datetime import datetime
+from rest_framework.viewsets import GenericViewSet
 
 from eventstore.models import (
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
+    Events,
+    Messages,
     OptOut,
     PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
-    Messages,
-    Events,
 )
 from eventstore.serializers import (
     BabySwitchSerializer,
@@ -26,7 +27,6 @@ from eventstore.serializers import (
     PrebirthRegistrationSerializer,
     PublicRegistrationSerializer,
 )
-
 from ndoh_hub.utils import validate_signature
 
 
