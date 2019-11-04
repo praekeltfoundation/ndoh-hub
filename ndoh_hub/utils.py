@@ -14,11 +14,13 @@ from rest_framework.authentication import TokenAuthentication
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.message_sender import MessageSenderApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
+from temba_client.v2 import TembaClient
 from wabclient import Client as WABClient
 
-# Import these here for backwards compatibility
+from ndoh_hub.auth import CachedTokenAuthentication
 from ndoh_hub.constants import (  # noqa:F401
     ID_TYPES,
+    JEMBI_LANGUAGES,
     LANGUAGES,
     PASSPORT_ORIGINS,
     WHATSAPP_LANGUAGE_MAP,
@@ -40,6 +42,9 @@ ms_client = MessageSenderApiClient(
 
 wab_client = WABClient(url=settings.ENGAGE_URL)
 wab_client.connection.set_token(settings.ENGAGE_TOKEN)
+
+if settings.EXTERNAL_REGISTRATIONS_V2:
+    rapidpro = TembaClient(settings.RAPIDPRO_URL, settings.RAPIDPRO_TOKEN)
 
 VERSION = pkg_resources.require("ndoh-hub")[0].version
 
@@ -347,7 +352,7 @@ def json_decode(data):
     return json.loads(data)
 
 
-class TokenAuthQueryString(TokenAuthentication):
+class TokenAuthQueryString(CachedTokenAuthentication):
     """
     Look for the token in the querystring parameter "token"
     """

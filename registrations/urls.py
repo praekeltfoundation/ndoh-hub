@@ -19,7 +19,11 @@ router.register(r"contacts", views.WhatsAppContactCheckViewSet)
 # Additionally, we include login URLs for the browseable API.
 urlpatterns = [
     url(r"^api/v1/registration/", views.RegistrationPost.as_view()),
-    url(r"^api/v1/extregistration/", views.ThirdPartyRegistration.as_view()),
+    url(
+        r"^api/v1/extregistration/",
+        views.ThirdPartyRegistration.as_view(),
+        name="external-registration",
+    ),
     url(r"^api/v1/jembiregistration/$", views.JembiAppRegistration.as_view()),
     url(
         r"^api/v1/jembiregistration/(?P<registration_id>[^/]+)/$",
@@ -58,6 +62,19 @@ urlpatterns = [
         "api/v1/rapidpro/public_registration",
         views.RapidProPublicRegistrationView.as_view(),
         name="rapidpro-public-registration",
+    ),
+    path(
+        "api/v1/facilityCheck", views.FacilityCheckView.as_view(), name="facility-check"
+    ),
+    path(
+        "api/v1/NCfacilityCheck",
+        views.NCFacilityCheckView.as_view(),
+        name="nc-facility-check",
+    ),
+    path(
+        "api/v1/nc/subscription",
+        views.NCSubscriptionView.as_view(),
+        name="nc-subscription",
     ),
     url(r"^api/v1/", include(router.urls)),
 ]

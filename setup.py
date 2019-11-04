@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="ndoh-hub",
-    version="0.7.1",
+    version="0.7.6",
     url="http://github.com/praekeltfoundation/ndoh-hub",
     license="BSD",
     author="Praekelt Foundation",
@@ -31,6 +31,7 @@ setup(
         "iso-639==0.4.5",
         "django-prometheus==1.0.15",
         "wabclient==2.2.1",
+        "rapidpro-python==2.6.1",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",

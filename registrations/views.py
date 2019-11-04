@@ -24,7 +24,11 @@ from django.urls import reverse
 from django.utils import timezone
 from requests.exceptions import RequestException
 from rest_framework import generics, mixins, status, viewsets
-from rest_framework.authentication import SessionAuthentication, TokenAuthentication
+from rest_framework.authentication import (
+    BasicAuthentication,
+    SessionAuthentication,
+    TokenAuthentication,
+)
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, AuthenticationFailed
@@ -47,7 +51,14 @@ from changes.models import Change
 from changes.serializers import ChangeSerializer
 from ndoh_hub.utils import get_available_metrics, is_client, sbm_client
 
-from .models import PositionTracker, Registration, Source, WhatsAppContact
+from .models import (
+    ClinicCode,
+    JembiSubmission,
+    PositionTracker,
+    Registration,
+    Source,
+    WhatsAppContact,
+)
 from .serializers import (
     BaseRapidProClinicRegistrationSerializer,
     CreateUserSerializer,
@@ -76,6 +87,7 @@ from .tasks import (
     create_rapidpro_public_registration,
     get_whatsapp_contact,
     request_to_jembi_api,
+    submit_third_party_registration_to_rapidpro,
     validate_subscribe_jembi_app_registration,
 )
 
@@ -322,16 +334,6 @@ class JembiHelpdeskOutgoingView(APIView):
         return json_template
 
     def post(self, request):
-        if not (
-            settings.JEMBI_BASE_URL
-            and settings.JEMBI_USERNAME
-            and settings.JEMBI_PASSWORD
-        ):
-            return Response(
-                "Jembi integration is not configured properly.",
-                status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
-
         serializer = JembiHelpdeskOutgoingSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -341,8 +343,7 @@ class JembiHelpdeskOutgoingView(APIView):
         if source.name == "NURSE Helpdesk App":
             endpoint = "nc/helpdesk"
             post_data["type"] = 12  # NC Helpdesk
-        jembi_url = urljoin(settings.JEMBI_BASE_URL, endpoint)
-        request_to_jembi_api.delay(jembi_url, post_data)
+        request_to_jembi_api.delay(endpoint, post_data)
 
         return Response(status=status.HTTP_200_OK)
 
@@ -429,6 +430,19 @@ class ThirdPartyRegistration(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
+        if settings.EXTERNAL_REGISTRATIONS_V2:
+            serializer = ThirdPartyRegistrationSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            # We encode and decode from JSON to ensure dates are encoded properly
+            data = json.loads(JSONEncoder().encode(serializer.validated_data))
+            submit_third_party_registration_to_rapidpro.delay(
+                request.user.username, data
+            )
+            return Response(status=status.HTTP_202_ACCEPTED)
+        else:
+            return self._post(request)
+
+    def _post(self, request):
         is_client = IdentityStoreApiClient(
             api_url=settings.IDENTITY_STORE_URL,
             auth_token=settings.IDENTITY_STORE_TOKEN,
@@ -541,15 +555,25 @@ class ThirdPartyRegistration(APIView):
                 "msisdn_device": device,
                 "id_type": id_type,
                 "language": lang_code,
-                "mom_dob": serializer.validated_data["mom_dob"],
-                "edd": serializer.validated_data["mom_edd"],
+                "mom_dob": (
+                    serializer.validated_data["mom_dob"].strftime("%Y-%m-%d")
+                    if serializer.validated_data["mom_dob"]
+                    else None
+                ),
+                "edd": (
+                    serializer.validated_data["mom_edd"].strftime("%Y-%m-%d")
+                    if serializer.validated_data["mom_edd"]
+                    else None
+                ),
                 "faccode": serializer.validated_data["clinic_code"],
                 "consent": serializer.validated_data["consent"],
                 "mha": serializer.validated_data.get("mha", 1),
                 "swt": serializer.validated_data.get("swt", 1),
             }
-            if "encdate" in serializer.validated_data:
-                reg_data["encdate"] = serializer.validated_data["encdate"]
+            if serializer.validated_data.get("encdate"):
+                reg_data["encdate"] = serializer.validated_data["encdate"].strftime(
+                    "%Y%m%d%H%M%S"
+                )
             if id_type == "sa_id":
                 reg_data["sa_id_no"] = serializer.validated_data["mom_id_no"]
             elif id_type == "passport":
@@ -763,23 +787,14 @@ class EngageContextView(EngageBaseView, generics.CreateAPIView):
         """
         Gets the MSISDN of the user, if present in the request, otherwise returns None
         """
-        msisdns = list(
-            filter(
-                lambda x: x, (message["from"] for message in data.get("messages", []))
-            )
+        return phonenumbers.format_number(
+            data["chat"]["owner"], phonenumbers.PhoneNumberFormat.E164
         )
-        if msisdns:
-            return phonenumbers.format_number(
-                msisdns[-1], phonenumbers.PhoneNumberFormat.E164
-            )
 
     def get_identity(self, msisdn):
         """
         Gets the identity for the msisdn, if exists, otherwise returns None
         """
-        if not msisdn:
-            return None
-
         try:
             identity = self.identity_store.get_identity_by_address("msisdn", msisdn)
             return next(identity["results"])
@@ -820,10 +835,14 @@ class EngageContextView(EngageBaseView, generics.CreateAPIView):
         except (KeyError, TypeError):
             return []
 
-        subscriptions = self.stage_based_messaging.get_subscriptions(
-            {"identity": identity_id, "active": True}
-        )
-        return [sub["messageset_label"] for sub in subscriptions["results"]]
+        try:
+            subscriptions = self.stage_based_messaging.get_subscriptions(
+                {"identity": identity_id, "active": True}
+            )
+            return [sub["messageset_label"] for sub in subscriptions["results"]]
+        except RequestException:
+            # Catch HTTP errors and fail in a clean way
+            return []
 
     def extract_registration_info(self, identity, registrations):
         """
@@ -1096,47 +1115,10 @@ class FacilityCodeCheckView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
-        if not (
-            settings.JEMBI_BASE_URL
-            and settings.JEMBI_USERNAME
-            and settings.JEMBI_PASSWORD
-        ):
-            return Response(
-                "Jembi integration is not configured properly.",
-                status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
-
-        try:
-            clinic_code = request.query_params.get("clinic_code")
-            result = requests.get(
-                urljoin(settings.JEMBI_BASE_URL, "facilityCheck"),
-                headers={"Content-Type": "application/json"},
-                auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
-                params={"criteria": "value:{}".format(clinic_code)},
-                verify=False,
-            )
-            result.raise_for_status()
-            jembi_result = result.json()
-            if len(jembi_result.get("rows")) > 0:
-                facility = jembi_result.get("rows")[0][3]
-                resp = {"Facility": facility}
-            else:
-                resp = {"Facility": "invalid"}
-
-        except (requests.exceptions.HTTPError,) as e:
-            if e.response.status_code == 400:
-                logger.warning(
-                    "400 Error when posting to Jembi.\n"
-                    "Response: %s\nPayload:" % (e.response.text)
-                )
-                return Response(
-                    "Error when posting to Jembi. Body: %s" % (e.response.content),
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            else:
-                raise e
-
-        return Response(resp, status=status.HTTP_200_OK)
+        clinic_code = request.query_params.get("clinic_code")
+        facility = ClinicCode.objects.filter(code=clinic_code).first()
+        facility = facility.name if facility else "invalid"
+        return Response({"Facility": facility}, status=status.HTTP_200_OK)
 
 
 class ServiceUnavailable(APIException):
@@ -1374,3 +1356,130 @@ class RapidProPublicRegistrationView(generics.CreateAPIView):
         create_rapidpro_public_registration.delay(data)
 
         return Response(data, status=status.HTTP_202_ACCEPTED)
+
+
+class FacilityCheckView(generics.RetrieveAPIView):
+    queryset = ClinicCode.objects.all()
+    permission_classes = (DjangoModelPermissions,)
+    authentication_classes = (BasicAuthentication,)
+
+    def get(self, request: Request) -> Response:
+        try:
+            field, value = request.query_params["criteria"].split(":")
+        except KeyError:
+            return Response(
+                {"error": "Must supply 'criteria' query parameter"},
+                status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError:
+            return Response(
+                {"error": "Criteria query parameter must be in 'field:value' format"},
+                status.HTTP_400_BAD_REQUEST,
+            )
+
+        results = ClinicCode.objects.filter(**{field: value}).values_list(
+            "code", "value", "uid", "name"
+        )
+        return Response(
+            {
+                "title": "FacilityCheck",
+                "headers": [
+                    {
+                        "hidden": False,
+                        "meta": False,
+                        "name": "code",
+                        "column": "code",
+                        "type": "java.lang.String",
+                    },
+                    {
+                        "hidden": False,
+                        "meta": False,
+                        "name": "value",
+                        "column": "value",
+                        "type": "java.lang.String",
+                    },
+                    {
+                        "hidden": False,
+                        "meta": False,
+                        "name": "uid",
+                        "column": "uid",
+                        "type": "java.lang.String",
+                    },
+                    {
+                        "hidden": False,
+                        "meta": False,
+                        "name": "name",
+                        "column": "name",
+                        "type": "java.lang.String",
+                    },
+                ],
+                "rows": results,
+                "width": 4,
+                "height": len(results),
+            }
+        )
+
+
+class NCFacilityCheckView(generics.RetrieveAPIView):
+    queryset = ClinicCode.objects.all()
+    permission_classes = (DjangoModelPermissions,)
+    authentication_classes = (BasicAuthentication,)
+
+    def get(self, request: Request) -> Response:
+        try:
+            field, value = request.query_params["criteria"].split(":")
+        except KeyError:
+            return Response(
+                {"error": "Must supply 'criteria' query parameter"},
+                status.HTTP_400_BAD_REQUEST,
+            )
+        except ValueError:
+            return Response(
+                {"error": "Criteria query parameter must be in 'field:value' format"},
+                status.HTTP_400_BAD_REQUEST,
+            )
+
+        results = ClinicCode.objects.filter(**{field: value}).values_list(
+            "value", "uid", "name"
+        )
+        return Response(
+            {
+                "title": "FacilityCheck",
+                "headers": [
+                    {
+                        "hidden": False,
+                        "meta": False,
+                        "name": "value",
+                        "column": "value",
+                        "type": "java.lang.String",
+                    },
+                    {
+                        "hidden": False,
+                        "meta": False,
+                        "name": "uid",
+                        "column": "uid",
+                        "type": "java.lang.String",
+                    },
+                    {
+                        "hidden": False,
+                        "meta": False,
+                        "name": "name",
+                        "column": "name",
+                        "type": "java.lang.String",
+                    },
+                ],
+                "rows": results,
+                "width": 3,
+                "height": len(results),
+            }
+        )
+
+
+class NCSubscriptionView(generics.CreateAPIView):
+    queryset = JembiSubmission.objects.all()
+    permission_classes = (DjangoModelPermissions,)
+    authentication_classes = (BasicAuthentication,)
+
+    def post(self, request: Request) -> Response:
+        request_to_jembi_api.delay("nc/subscription", request.data)
+        return Response("Accepted", status=status.HTTP_202_ACCEPTED)

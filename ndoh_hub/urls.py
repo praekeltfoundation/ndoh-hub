@@ -11,6 +11,7 @@ from rest_framework.documentation import include_docs_urls
 from eventstore.views import (
     BabySwitchViewSet,
     ChannelSwitchViewSet,
+    CHWRegistrationViewSet,
     OptOutViewSet,
     PostbirthRegistrationViewSet,
     PrebirthRegistrationViewSet,
@@ -26,6 +27,7 @@ v2router = routers.DefaultRouter()
 v2router.register("optouts", OptOutViewSet)
 v2router.register("babyswitches", BabySwitchViewSet)
 v2router.register("channelswitches", ChannelSwitchViewSet)
+v2router.register("chwregistrations", CHWRegistrationViewSet)
 v2router.register("publicregistrations", PublicRegistrationViewSet)
 v2router.register("prebirthregistrations", PrebirthRegistrationViewSet)
 v2router.register("postbirthregistrations", PostbirthRegistrationViewSet)

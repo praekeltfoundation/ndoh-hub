@@ -23,7 +23,7 @@ from wabclient.exceptions import AddressException
 from ndoh_hub import utils
 from ndoh_hub.celery import app
 
-from .models import Registration, Source, WhatsAppContact
+from .models import ClinicCode, JembiSubmission, Registration, Source, WhatsAppContact
 
 try:
     from urlparse import urljoin
@@ -823,13 +823,7 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
         """
         Checks to see if the specified clinic code is recognised or not
         """
-        r = requests.get(
-            urljoin(settings.JEMBI_BASE_URL, "facilityCheck"),
-            {"criteria": "code:{}".format(code)},
-            auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
-        )
-        r.raise_for_status()
-        return len(r.json().get("rows", [])) != 0
+        return ClinicCode.objects.filter(code=code).exists()
 
     def run(self, registration_id, **kwargs):
         registration = Registration.objects.get(id=registration_id)
@@ -1019,7 +1013,7 @@ class BasePushRegistrationToJembi(object):
             return
 
         json_doc = self.build_jembi_json(registration)
-        request_to_jembi_api(self.URL, json_doc)
+        request_to_jembi_api.delay(self.URL, json_doc)
 
 
 class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
@@ -1028,7 +1022,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
 
     name = "ndoh_hub.registrations.tasks.push_registration_to_jembi"
     log = get_task_logger(__name__)
-    URL = urljoin(settings.JEMBI_BASE_URL, "subscription")
+    URL = "subscription"
 
     def get_subscription_type(self, authority):
         authority_map = {
@@ -1134,7 +1128,7 @@ class PushPmtctRegistrationToJembi(PushRegistrationToJembi, Task):
     """
 
     name = "ndoh_hub.registrations.tasks.push_pmtct_registration_to_jembi"
-    URL = urljoin(settings.JEMBI_BASE_URL, "pmtctSubscription")
+    URL = "pmtctSubscription"
 
     def build_jembi_json(self, registration):
         json_template = super(PushPmtctRegistrationToJembi, self).build_jembi_json(
@@ -1178,7 +1172,7 @@ push_pmtct_registration_to_jembi = PushPmtctRegistrationToJembi()
 class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
     name = "ndoh_hub.registrations.tasks.push_nurse_registration_to_jembi"
     log = get_task_logger(__name__)
-    URL = urljoin(settings.JEMBI_BASE_URL, "nc/subscription")
+    URL = "nc/subscription"
 
     def get_persal(self, identity):
         details = identity["details"]
@@ -1522,6 +1516,12 @@ create_rapidpro_public_registration = (
 )
 
 
+@app.task
+def store_jembi_request(url, json_doc):
+    sub = JembiSubmission.objects.create(path=url, request_data=json_doc)
+    return sub.id, url, json_doc
+
+
 @app.task(
     autoretry_for=(RequestException, SoftTimeLimitExceeded),
     retry_backoff=True,
@@ -1530,15 +1530,35 @@ create_rapidpro_public_registration = (
     soft_time_limit=10,
     time_limit=15,
 )
-def request_to_jembi_api(url, json_doc):
+def push_to_jembi_api(args):
+    if not settings.ENABLE_JEMBI_EVENTS:
+        return
+    db_id, url, json_doc = args
     r = requests.post(
-        url=url,
+        url=urljoin(settings.JEMBI_BASE_URL, url),
         headers={"Content-Type": "application/json"},
         data=json.dumps(json_doc),
         auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
         verify=False,
     )
-    return r.raise_for_status()
+    r.raise_for_status()
+    JembiSubmission.objects.filter(pk=db_id).update(
+        submitted=True,
+        response_status_code=r.status_code,
+        response_headers=dict(r.headers),
+        response_body=r.text,
+    )
+
+
+if settings.ENABLE_JEMBI_EVENTS:
+    request_to_jembi_api = store_jembi_request.s() | push_to_jembi_api.s()
+else:
+    request_to_jembi_api = store_jembi_request.s()
+
+
+@app.task
+def delete_jembi_pii(msisdn):
+    JembiSubmission.objects.filter(request_data__cmsisdn=msisdn).delete()
 
 
 @app.task(
@@ -1623,3 +1643,59 @@ def send_welcome_message(language, channel, msisdn, identity_id):
             "metadata": {},
         }
     )
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def submit_third_party_registration_to_rapidpro(username, data):
+    from ndoh_hub.utils import rapidpro
+
+    registration = {
+        "registered_by": data["hcw_msisdn"],
+        "language": data["mom_lang"],
+        "timestamp": data["encdate"],
+        "source": username,
+    }
+
+    if data.get("mha"):
+        registration["mha"] = data["mha"]
+    if data.get("swt"):
+        registration["swt"] = data["swt"]
+
+    if data["authority"] in ("chw", "clinic"):
+        id_type = registration["id_type"] = data["mom_id_type"]
+        if id_type == "sa_id":
+            registration["sa_id_number"] = data["mom_id_no"]
+            registration["dob"] = data["mom_dob"]
+        elif id_type == "passport":
+            registration["passport_origin"] = data["mom_passport_origin"]
+            registration["passport_number"] = data["mom_id_no"]
+        elif id_type == "none":
+            registration["dob"] = data["mom_dob"]
+
+    if data["authority"] == "patient":
+        rapidpro.create_flow_start(
+            settings.RAPIDPRO_PUBLIC_REGISTRATION_FLOW,
+            urns=[f"tel:{data['mom_msisdn']}"],
+            extra=registration,
+        )
+    elif data["authority"] == "chw":
+        rapidpro.create_flow_start(
+            settings.RAPIDPRO_CHW_REGISTRATION_FLOW,
+            urns=[f"tel:{data['mom_msisdn']}"],
+            extra=registration,
+        )
+    elif data["authority"] == "clinic":
+        registration["edd"] = data["mom_edd"]
+        registration["clinic_code"] = data["clinic_code"]
+        rapidpro.create_flow_start(
+            settings.RAPIDPRO_CLINIC_REGISTRATION_FLOW,
+            urns=[f"tel:{data['mom_msisdn']}"],
+            extra=registration,
+        )

@@ -904,7 +904,7 @@ class SendHelpdeskResponseToDHIS2Tests(DisconnectRegistrationSignalsMixin, TestC
             registrant_id="identity-uuid", data={"faccode": "123456"}, source=source
         )
 
-        res = send_helpdesk_response_to_dhis2.apply_async(
+        send_helpdesk_response_to_dhis2.apply_async(
             args=[
                 {
                     "inbound_text": "Mother question",
@@ -920,7 +920,6 @@ class SendHelpdeskResponseToDHIS2Tests(DisconnectRegistrationSignalsMixin, TestC
             task_id=message_id,
         ).get()
 
-        self.assertEqual(json.loads(res), {})
         self.assertEqual(len(responses.calls), 1)
 
 

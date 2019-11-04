@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.7.6 (2019-10-31)
+1. Store jembi requests before forwarding
+   ([#261](https://github.com/praekeltfoundation/ndoh-hub/pull/261))
+1. Restrict event store passport country field to list of choices
+   ([#262](https://github.com/praekeltfoundation/ndoh-hub/pull/262))
+1. Add API for storing + relaying nurseconnect subscriptions to Jembi
+   ([#263](https://github.com/praekeltfoundation/ndoh-hub/pull/263))
+
+## 0.7.5 (2019-10-30)
+1. Fix sending of third party registrations to RapidPro
+   ([#257](https://github.com/praekeltfoundation/ndoh-hub/pull/257))
+1. Add CHW registrations to the event store
+   ([#258](https://github.com/praekeltfoundation/ndoh-hub/pull/258))
+1. Add API that mirrors Jembi's clinic code API
+   ([#259](https://github.com/praekeltfoundation/ndoh-hub/pull/259))
+   ([#260](https://github.com/praekeltfoundation/ndoh-hub/pull/260))
+
+## 0.7.4 (2019-10-24)
+1. Cache querystring token auth
+
+## 0.7.3 (2019-10-24)
+1. Allow third party registrations to be sent to RapidPro
+   ([#255](https://github.com/praekeltfoundation/ndoh-hub/pull/255))
+1. Bug fix for Turn context API
+   ([#256](https://github.com/praekeltfoundation/ndoh-hub/pull/256))
+
+## 0.7.2 (2019-10-18)
+1. Create event store with support for opt outs, baby switches, channel switches,
+   public, pre- and postbirth clinic registrations.
+   ([#247](https://github.com/praekeltfoundation/ndoh-hub/pull/247))
+   ([#248](https://github.com/praekeltfoundation/ndoh-hub/pull/248))
+   ([#249](https://github.com/praekeltfoundation/ndoh-hub/pull/249))
+   ([#250](https://github.com/praekeltfoundation/ndoh-hub/pull/250))
+   ([#251](https://github.com/praekeltfoundation/ndoh-hub/pull/251))
+   ([#252](https://github.com/praekeltfoundation/ndoh-hub/pull/252))
+   ([#253](https://github.com/praekeltfoundation/ndoh-hub/pull/253))
+1. Changes to handle changes in Turn Context API
+   ([#254](https://github.com/praekeltfoundation/ndoh-hub/pull/254))
+
 ## 0.7.1 (2019-09-03)
 1. Upgrade django to 2.2.4
    ([#241](https://github.com/praekeltfoundation/ndoh-hub/pull/241))

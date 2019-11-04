@@ -242,3 +242,20 @@ class WhatsAppContact(models.Model):
     class Meta:
         permissions = (("can_prune_whatsappcontact", "Can prune WhatsApp contact"),)
         verbose_name = "WhatsApp Contact"
+
+
+class ClinicCode(models.Model):
+    code = models.CharField(max_length=255)
+    value = models.CharField(max_length=255)
+    uid = models.CharField(max_length=255, primary_key=True)
+    name = models.CharField(max_length=255)
+
+
+class JembiSubmission(models.Model):
+    path = models.CharField(max_length=255)
+    request_data = JSONField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    submitted = models.BooleanField(default=False)
+    response_status_code = models.IntegerField(null=True, default=None)
+    response_headers = JSONField(default=dict)
+    response_body = models.TextField(blank=True, default="")
