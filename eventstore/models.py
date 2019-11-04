@@ -129,3 +129,27 @@ class PostbirthRegistration(models.Model):
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
     data = JSONField(default=dict, blank=True, null=True)
+
+
+class Messages(models.Model):
+    INBOUND = "I"
+    OUTBOUND = "O"
+    DIRECTION_TYPES = [(INBOUND, "Inbound"), (OUTBOUND, "Outbound")]
+
+    id = models.CharField(max_length=255, primary_key=True, blank=True)
+    contact_id = models.CharField(max_length=255, blank=True)
+    timestamp = models.DateTimeField(default=timezone.now)
+    type = models.CharField(max_length=255, blank=True)
+    data = JSONField(default=dict, blank=True, null=True)
+    message_direction = models.CharField(max_length=3, choices=DIRECTION_TYPES)
+    created_by = models.CharField(max_length=255, blank=True)
+    recipient_type = models.CharField(max_length=255, blank=True)
+
+
+class Events(models.Model):
+    message_id = models.CharField(max_length=255, blank=True)
+    recipient_id = models.CharField(max_length=255, blank=True)
+    status = models.CharField(max_length=255, blank=True)
+    timestamp = models.DateTimeField(default=timezone.now)
+    created_by = models.CharField(max_length=255, blank=True)
+    data = JSONField(default=dict, blank=True, null=True)
