@@ -1,10 +1,15 @@
 import datetime
+import hmac
+import base64
+from hashlib import sha256
+from pytz import UTC
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
+from rest_framework.renderers import JSONRenderer
 
 from eventstore.models import (
     PASSPORT_IDTYPE,
@@ -14,6 +19,8 @@ from eventstore.models import (
     PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
+    Messages,
+    Events,
 )
 
 
@@ -314,3 +321,162 @@ class PostbirthRegistrationViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(registration.facility_code, "123456")
         self.assertEqual(registration.source, "WhatsApp")
         self.assertEqual(registration.created_by, user.username)
+
+
+class MessagesViewSetTests(APITestCase):
+    url = reverse("messages-list")
+
+    def generate_hmac_signature(self, data, key):
+        data = JSONRenderer().render(data)
+        h = hmac.new(key.encode(), data, sha256)
+        return base64.b64encode(h.digest()).decode()
+
+    def test_successful_messages_request(self):
+        """
+        Should create a new Messages object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_messages"))
+        self.client.force_authenticate(user)
+        data = {
+            "messages": [
+                {
+                    "id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+                    "from": "sender-wa-id",
+                    "timestamp": "1518694700",
+                    "type": "image",
+                    "message_direction": "I",
+                    "recipient_type": "type",
+                    "context": {
+                        "from": "sender-wa-id-of-context-message",
+                        "group_id": "group-id-of-context-message",
+                        "id": "message-id-of-context-message",
+                        "mentions": ["wa-id1", "wa-id2"],
+                    },
+                    "image": {
+                        "file": "absolute-filepath-on-coreapp",
+                        "id": "media-id",
+                        "link": "link-to-image-file",
+                        "mime_type": "media-mime-type",
+                        "sha256": "checksum",
+                        "caption": "image-caption",
+                    },
+                    "location": {
+                        "address": "1 Hacker Way, Menlo Park, CA, 94025",
+                        "name": "location-name",
+                    },
+                    "system": {"body": "system-message-content"},
+                    "text": {"body": "text-message-content"},
+                }
+            ]
+        }
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        [messages] = Messages.objects.all()
+        self.assertEqual(str(messages.contact_id), "sender-wa-id")
+        self.assertEqual(
+            messages.timestamp, datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+        ),
+        self.assertEqual(messages.id, "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"),
+        self.assertEqual(messages.type, "image"),
+        self.assertEqual(messages.message_direction, "I"),
+        self.assertEqual(
+            messages.data,
+            {
+                "context": {
+                    "from": "sender-wa-id-of-context-message",
+                    "group_id": "group-id-of-context-message",
+                    "id": "message-id-of-context-message",
+                    "mentions": ["wa-id1", "wa-id2"],
+                },
+                "audio": None,
+                "document": None,
+                "errors": None,
+                "video": None,
+                "voice": None,
+                "image": {
+                    "file": "absolute-filepath-on-coreapp",
+                    "id": "media-id",
+                    "link": "link-to-image-file",
+                    "mime_type": "media-mime-type",
+                    "sha256": "checksum",
+                    "caption": "image-caption",
+                },
+                "location": {
+                    "address": "1 Hacker Way, Menlo Park, CA, 94025",
+                    "name": "location-name",
+                },
+                "system": {"body": "system-message-content"},
+                "text": {"body": "text-message-content"},
+            },
+        ),
+        self.assertEqual(messages.created_by, user.username)
+        self.assertEqual(messages.recipient_type, "type")
+
+    def test_successful_events_request(self):
+        """
+        Should create a new Events object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_messages"))
+        self.client.force_authenticate(user)
+        data = {
+            "statuses": [
+                {
+                    "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+                    "recipient_id": "16315555555",
+                    "status": "read",
+                    "timestamp": "1518694700",
+                }
+            ]
+        }
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        [events] = Events.objects.all()
+        self.assertEqual(str(events.message_id), "ABGGFlA5FpafAgo6tHcNmNjXmuSf")
+        self.assertEqual(str(events.recipient_id), "16315555555")
+        self.assertEqual(events.status, "read")
+        self.assertEqual(
+            events.timestamp, datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+        )
+        self.assertEqual(events.created_by, user.username)
+
+    def test_signature_required(self):
+        """
+        Should see if the signature hook is given,
+        otherwise, return a 401
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_messages"))
+        self.client.force_authenticate(user)
+        data = {
+            "messages": [
+                {
+                    "id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+                    "from": "sender-wa-id",
+                    "timestamp": "1518694700",
+                    "type": "image",
+                    "message_direction": "I",
+                    "recipient_type": "type",
+                }
+            ]
+        }
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
