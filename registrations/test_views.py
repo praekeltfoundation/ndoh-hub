@@ -18,6 +18,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.renderers import JSONRenderer
 from rest_framework.test import APITestCase
+from temba_client.v2 import TembaClient
 
 from changes.models import Change
 from changes.signals import psh_validate_implement
@@ -44,7 +45,6 @@ from registrations.views import (
     ServiceUnavailable,
     SubscriptionCheckView,
 )
-from temba_client.v2 import TembaClient
 
 
 class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):

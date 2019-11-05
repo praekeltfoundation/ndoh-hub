@@ -14,6 +14,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.message_sender import MessageSenderApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
+from temba_client.v2 import TembaClient
 from wabclient import Client as WABClient
 
 from ndoh_hub.auth import CachedTokenAuthentication
@@ -25,7 +26,6 @@ from ndoh_hub.constants import (  # noqa:F401
     WHATSAPP_LANGUAGE_MAP,
 )
 from registrations.models import PositionTracker
-from temba_client.v2 import TembaClient
 
 sbm_client = StageBasedMessagingApiClient(
     api_url=settings.STAGE_BASED_MESSAGING_URL,
