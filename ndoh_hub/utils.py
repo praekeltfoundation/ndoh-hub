@@ -9,7 +9,6 @@ from hashlib import sha256
 import pkg_resources
 import six
 from django.conf import settings
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.message_sender import MessageSenderApiClient
