@@ -443,6 +443,7 @@ class MessagesViewSetTests(APITestCase):
             format="json",
             HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
         )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
         token = Token.objects.create(user=user)
         url = "{}?token={}".format(reverse("messages-list"), str(token.key))
@@ -482,6 +483,53 @@ class MessagesViewSetTests(APITestCase):
             format="json",
             HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
             HTTP_X_TURN_HOOK_SUBSCRIPTION="other",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_missing_field_in_inbound_message_request(self):
+        """
+        If the data is missing a required field, we should return a
+        400 Bad Request error explaining that the field is needed
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_message"))
+        self.client.force_authenticate(user)
+        data = {
+            "messages": [
+                {
+                    "from": "sender-wa-id",
+                    "timestamp": "1518694700",
+                    "type": "image",
+                    "context": {
+                        "from": "sender-wa-id-of-context-message",
+                        "group_id": "group-id-of-context-message",
+                        "id": "message-id-of-context-message",
+                        "mentions": ["wa-id1", "wa-id2"],
+                    },
+                    "image": {
+                        "file": "absolute-filepath-on-coreapp",
+                        "id": "media-id",
+                        "link": "link-to-image-file",
+                        "mime_type": "media-mime-type",
+                        "sha256": "checksum",
+                        "caption": "image-caption",
+                    },
+                    "location": {
+                        "address": "1 Hacker Way, Menlo Park, CA, 94025",
+                        "name": "location-name",
+                    },
+                    "system": {"body": "system-message-content"},
+                    "text": {"body": "text-message-content"},
+                }
+            ]
+        }
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+            HTTP_X_TURN_HOOK_SUBSCRIPTION="whatsapp",
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -577,13 +625,13 @@ class MessagesViewSetTests(APITestCase):
         user.user_permissions.add(Permission.objects.get(codename="add_message"))
         self.client.force_authenticate(user)
         data = {
-            "id": "message-id",
             "preview_url": True,
             "render_mentions": True,
             "recipient_type": "individual",
             "to": "whatsapp-id",
             "type": "text",
             "text": {"body": "your-text-message-content"},
+            "random": "data",
         }
         response = self.client.post(
             self.url,
@@ -606,10 +654,11 @@ class MessagesViewSetTests(APITestCase):
                 "text": {"body": "your-text-message-content"},
                 "render_mentions": True,
                 "preview_url": True,
+                "random": "data",
+                "recipient_type": "individual",
             },
         ),
         self.assertEqual(messages.created_by, user.username)
-        self.assertEqual(messages.recipient_type, "individual")
 
     def test_successful_events_request(self):
         """

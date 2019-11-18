@@ -39,54 +39,69 @@ class MessagesViewSet(GenericViewSet):
         validate_signature(request)
         webhook_type = request.headers.get("X-Turn-Hook-Subscription", None)
         if webhook_type == "whatsapp":
-            for inbound in request.data.get("messages", []):
-                id = inbound.pop("id")
-                contact_id = inbound.pop("from")
-                type = inbound.pop("type")
-                timestamp = datetime.fromtimestamp(int(inbound.pop("timestamp")))
+            try:
+                for inbound in request.data.get("messages", []):
+                    id = inbound.pop("id")
+                    contact_id = inbound.pop("from")
+                    type = inbound.pop("type")
+                    timestamp = datetime.fromtimestamp(int(inbound.pop("timestamp")))
 
-                Message.objects.create(
-                    id=id,
-                    contact_id=contact_id,
-                    type=type,
-                    data=inbound,
-                    message_direction=Message.INBOUND,
-                    created_by=request.user.username,
-                    timestamp=timestamp,
-                )
+                    Message.objects.create(
+                        id=id,
+                        contact_id=contact_id,
+                        type=type,
+                        data=inbound,
+                        message_direction=Message.INBOUND,
+                        created_by=request.user.username,
+                        timestamp=timestamp,
+                    )
 
-            for statuses in request.data.get("statuses", []):
-                message_id = statuses.pop("id")
-                recipient_id = statuses.pop("recipient_id")
-                timestamp = datetime.fromtimestamp(int(statuses.pop("timestamp")))
-                message_status = statuses.pop("status")
-                Event.objects.create(
-                    message_id=message_id,
-                    recipient_id=recipient_id,
-                    timestamp=timestamp,
-                    status=message_status,
-                    created_by=request.user.username,
-                    data=statuses,
+                for statuses in request.data.get("statuses", []):
+                    message_id = statuses.pop("id")
+                    recipient_id = statuses.pop("recipient_id")
+                    timestamp = datetime.fromtimestamp(int(statuses.pop("timestamp")))
+                    message_status = statuses.pop("status")
+                    Event.objects.create(
+                        message_id=message_id,
+                        recipient_id=recipient_id,
+                        timestamp=timestamp,
+                        status=message_status,
+                        created_by=request.user.username,
+                        data=statuses,
+                    )
+            except KeyError:
+                return Response(
+                    {"request_error": "HTTP 400 Bad Request"},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
         elif webhook_type == "turn":
-            outbound = request.data
-            data = {
-                "text": outbound["text"],
-                "render_mentions": outbound["render_mentions"],
-                "preview_url": outbound["preview_url"],
-            }
-            Message.objects.create(
-                id=request.headers["X-WhatsApp-Id"],
-                contact_id=outbound["to"],
-                type=outbound["type"],
-                data=data,
-                message_direction=Message.OUTBOUND,
-                created_by=request.user.username,
-                recipient_type=outbound["recipient_type"],
-            )
+            try:
+                outbound = request.data
+                contact_id = outbound.pop("to")
+                type = outbound.pop("type")
+
+                Message.objects.create(
+                    id=request.headers["X-WhatsApp-Id"],
+                    contact_id=contact_id,
+                    type=type,
+                    data=outbound,
+                    message_direction=Message.OUTBOUND,
+                    created_by=request.user.username,
+                )
+            except KeyError:
+                return Response(
+                    {"request_error": "HTTP 400 Bad Request"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {
+                    "request_error": "X-Turn-Hook-Subscription header "
+                    + "must be whatsapp or turn, HTTP 400 Bad Request"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return Response(status=status.HTTP_201_CREATED)
 
 
