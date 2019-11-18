@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from rest_framework import status
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.exceptions import ValidationError
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.permissions import DjangoModelPermissions
@@ -11,8 +12,8 @@ from eventstore.models import (
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
-    Events,
-    Messages,
+    Event,
+    Message,
     OptOut,
     PostbirthRegistration,
     PrebirthRegistration,
@@ -27,89 +28,67 @@ from eventstore.serializers import (
     PrebirthRegistrationSerializer,
     PublicRegistrationSerializer,
 )
-from ndoh_hub.utils import validate_signature
+from ndoh_hub.utils import TokenAuthQueryString, validate_signature
 
 
 class MessagesViewSet(GenericViewSet):
+    queryset = Message.objects.all()
+    permission_classes = (DjangoModelPermissions,)
+    authentication_classes = (TokenAuthQueryString, TokenAuthentication)
+
     def create(self, request):
         validate_signature(request)
-        try:
-            webhook_type = request.META.get("HTTP_X_TURN_HOOK_SUBSCRIPTION", "whatsapp")
-            if webhook_type == "whatsapp":
-                for inbound in request.data.get("messages", []):
-                    data = {
-                        "context": inbound.get("context"),
-                        "errors": inbound.get("errors"),
-                        "audio": inbound.get("audio"),
-                        "document": inbound.get("document"),
-                        "image": inbound.get("image"),
-                        "system": inbound.get("system"),
-                        "location": inbound.get("location"),
-                        "text": inbound.get("text"),
-                        "video": inbound.get("video"),
-                        "voice": inbound.get("voice"),
-                    }
-                    Messages.objects.create(
-                        id=inbound["id"],
-                        contact_id=inbound["from"],
-                        type=inbound["type"],
-                        data=data,
-                        message_direction=Messages.INBOUND,
-                        created_by=request.user.username,
-                        recipient_type=inbound["recipient_type"],
-                        timestamp=datetime.fromtimestamp(int(inbound["timestamp"])),
-                    )
+        webhook_type = request.headers.get("X-Turn-Hook-Subscription", None)
+        if webhook_type == "whatsapp":
+            for inbound in request.data.get("messages", []):
+                id = inbound.pop("id")
+                contact_id = inbound.pop("from")
+                type = inbound.pop("type")
+                timestamp = datetime.fromtimestamp(int(inbound.pop("timestamp")))
 
-                for statuses in request.data.get("statuses", []):
-                    data = {"errors": statuses.get("errors")}
-                    Events.objects.create(
-                        message_id=statuses.get("id"),
-                        recipient_id=statuses.get("recipient_id"),
-                        timestamp=datetime.fromtimestamp(
-                            int(statuses.get("timestamp"))
-                        ),
-                        status=statuses.get("status"),
-                        created_by=request.user.username,
-                        data=data,
-                    )
+                Message.objects.create(
+                    id=id,
+                    contact_id=contact_id,
+                    type=type,
+                    data=inbound,
+                    message_direction=Message.INBOUND,
+                    created_by=request.user.username,
+                    timestamp=timestamp,
+                )
 
-            elif webhook_type == "turn":
-                inbound = request.data["messages"]
-                data = {
-                    "text": inbound.text,
-                    "render_mentions": inbound.render_mentions,
-                    "preview_url": inbound.preview_url,
-                }
-                Messages.objects.create(
-                    id=request.headers["X-WhatsApp-Id"],
-                    contact_id=inbound.to,
-                    type=type,
-                    data=data,
-                    message_direction=inbound.OUTBOUND,
+            for statuses in request.data.get("statuses", []):
+                message_id = statuses.pop("id")
+                recipient_id = statuses.pop("recipient_id")
+                timestamp = datetime.fromtimestamp(int(statuses.pop("timestamp")))
+                message_status = statuses.pop("status")
+                Event.objects.create(
+                    message_id=message_id,
+                    recipient_id=recipient_id,
+                    timestamp=timestamp,
+                    status=message_status,
                     created_by=request.user.username,
-                    recipient_type=inbound.recipient_type,
+                    data=statuses,
                 )
-            else:
-                data = {
-                    "text": inbound.text,
-                    "render_mentions": inbound.render_mentions,
-                    "preview_url": inbound.preview_url,
-                }
-                Messages.objects.create(
-                    id=request.headers["X-WhatsApp-Id"],
-                    contact_id=inbound.to,
-                    type=type,
-                    data=data,
-                    message_direction=inbound.OUTBOUND,
-                    created_by=request.user.username,
-                    recipient_type=inbound.recipient_type,
-                )
-        except ValidationError:
-            raise ValidationError(
-                "Unrecognised hook subscription {}".format(webhook_type)
+
+        elif webhook_type == "turn":
+            outbound = request.data
+            data = {
+                "text": outbound["text"],
+                "render_mentions": outbound["render_mentions"],
+                "preview_url": outbound["preview_url"],
+            }
+            Message.objects.create(
+                id=request.headers["X-WhatsApp-Id"],
+                contact_id=outbound["to"],
+                type=outbound["type"],
+                data=data,
+                message_direction=Message.OUTBOUND,
+                created_by=request.user.username,
+                recipient_type=outbound["recipient_type"],
             )
-
-        return Response(status=status.HTTP_202_ACCEPTED)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_201_CREATED)
 
 
 class OptOutViewSet(GenericViewSet, CreateModelMixin):

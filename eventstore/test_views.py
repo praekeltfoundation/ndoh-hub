@@ -8,6 +8,7 @@ from django.contrib.auth.models import Permission
 from django.urls import reverse
 from pytz import UTC
 from rest_framework import status
+from rest_framework.authtoken.models import Token
 from rest_framework.renderers import JSONRenderer
 from rest_framework.test import APITestCase
 
@@ -16,8 +17,8 @@ from eventstore.models import (
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
-    Events,
-    Messages,
+    Event,
+    Message,
     OptOut,
     PostbirthRegistration,
     PrebirthRegistration,
@@ -402,12 +403,95 @@ class MessagesViewSetTests(APITestCase):
         h = hmac.new(key.encode(), data, sha256)
         return base64.b64encode(h.digest()).decode()
 
-    def test_successful_messages_request(self):
+    def test_message_identification_required(self):
         """
-        Should create a new Messages object in the database
+        There must be identification of user to make the request
+        """
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_message_authentication_required(self):
+        """
+        The user needs the `add _message` permission
+        in order to make the request
+
         """
         user = get_user_model().objects.create_user("test")
-        user.user_permissions.add(Permission.objects.get(codename="add_messages"))
+        self.client.force_authenticate(user)
+        data = {"random": "data"}
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_message_authentication_errors(self):
+        """
+        We expect to get auth errors when no user token is added to the querystring,
+        but when added the request is made
+        """
+
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_message"))
+        data = {"random": "data"}
+
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+        )
+
+        token = Token.objects.create(user=user)
+        url = "{}?token={}".format(reverse("messages-list"), str(token.key))
+        response = self.client.post(
+            url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+            HTTP_X_TURN_HOOK_SUBSCRIPTION="whatsapp",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_incorrect_header_request(self):
+        """
+        If the header doesn't contain a value that we recognise,
+        we should return a 400 Bad Request error,
+        explaining that we only accept whatsapp and turn webhook types.
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_message"))
+        self.client.force_authenticate(user)
+        data = {
+            "statuses": [
+                {
+                    "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+                    "recipient_id": "16315555555",
+                    "status": "read",
+                    "timestamp": "1518694700",
+                    "random": "data",
+                }
+            ]
+        }
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+            HTTP_X_TURN_HOOK_SUBSCRIPTION="other",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_successful_inbound_messages_request(self):
+        """
+        Should create a new Inbound Message object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_message"))
         self.client.force_authenticate(user)
         data = {
             "messages": [
@@ -416,8 +500,6 @@ class MessagesViewSetTests(APITestCase):
                     "from": "sender-wa-id",
                     "timestamp": "1518694700",
                     "type": "image",
-                    "message_direction": "I",
-                    "recipient_type": "type",
                     "context": {
                         "from": "sender-wa-id-of-context-message",
                         "group_id": "group-id-of-context-message",
@@ -438,6 +520,7 @@ class MessagesViewSetTests(APITestCase):
                     },
                     "system": {"body": "system-message-content"},
                     "text": {"body": "text-message-content"},
+                    "random": "data",
                 }
             ]
         }
@@ -446,17 +529,18 @@ class MessagesViewSetTests(APITestCase):
             data,
             format="json",
             HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+            HTTP_X_TURN_HOOK_SUBSCRIPTION="whatsapp",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-        [messages] = Messages.objects.all()
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [messages] = Message.objects.all()
         self.assertEqual(str(messages.contact_id), "sender-wa-id")
         self.assertEqual(
             messages.timestamp, datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
         ),
         self.assertEqual(messages.id, "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"),
         self.assertEqual(messages.type, "image"),
-        self.assertEqual(messages.message_direction, "I"),
+        self.assertEqual(messages.message_direction, Message.INBOUND),
         self.assertEqual(
             messages.data,
             {
@@ -466,11 +550,6 @@ class MessagesViewSetTests(APITestCase):
                     "id": "message-id-of-context-message",
                     "mentions": ["wa-id1", "wa-id2"],
                 },
-                "audio": None,
-                "document": None,
-                "errors": None,
-                "video": None,
-                "voice": None,
                 "image": {
                     "file": "absolute-filepath-on-coreapp",
                     "id": "media-id",
@@ -485,17 +564,59 @@ class MessagesViewSetTests(APITestCase):
                 },
                 "system": {"body": "system-message-content"},
                 "text": {"body": "text-message-content"},
+                "random": "data",
             },
         ),
         self.assertEqual(messages.created_by, user.username)
-        self.assertEqual(messages.recipient_type, "type")
+
+    def test_successful_outbound_messages_request(self):
+        """
+        Should create a new Outbound Message object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_message"))
+        self.client.force_authenticate(user)
+        data = {
+            "id": "message-id",
+            "preview_url": True,
+            "render_mentions": True,
+            "recipient_type": "individual",
+            "to": "whatsapp-id",
+            "type": "text",
+            "text": {"body": "your-text-message-content"},
+        }
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+            HTTP_X_TURN_HOOK_SUBSCRIPTION="turn",
+            HTTP_X_WHATSAPP_ID="message-id",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [messages] = Message.objects.all()
+        self.assertEqual(str(messages.contact_id), "whatsapp-id")
+        self.assertEqual(messages.id, "message-id"),
+        self.assertEqual(messages.type, "text"),
+        self.assertEqual(messages.message_direction, Message.OUTBOUND),
+        self.assertEqual(
+            messages.data,
+            {
+                "text": {"body": "your-text-message-content"},
+                "render_mentions": True,
+                "preview_url": True,
+            },
+        ),
+        self.assertEqual(messages.created_by, user.username)
+        self.assertEqual(messages.recipient_type, "individual")
 
     def test_successful_events_request(self):
         """
-        Should create a new Events object in the database
+        Should create a new Event object in the database
         """
         user = get_user_model().objects.create_user("test")
-        user.user_permissions.add(Permission.objects.get(codename="add_messages"))
+        user.user_permissions.add(Permission.objects.get(codename="add_message"))
         self.client.force_authenticate(user)
         data = {
             "statuses": [
@@ -504,6 +625,7 @@ class MessagesViewSetTests(APITestCase):
                     "recipient_id": "16315555555",
                     "status": "read",
                     "timestamp": "1518694700",
+                    "random": "data",
                 }
             ]
         }
@@ -512,17 +634,19 @@ class MessagesViewSetTests(APITestCase):
             data,
             format="json",
             HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+            HTTP_X_TURN_HOOK_SUBSCRIPTION="whatsapp",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-        [events] = Events.objects.all()
-        self.assertEqual(str(events.message_id), "ABGGFlA5FpafAgo6tHcNmNjXmuSf")
-        self.assertEqual(str(events.recipient_id), "16315555555")
-        self.assertEqual(events.status, "read")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [event] = Event.objects.all()
+        self.assertEqual(str(event.message_id), "ABGGFlA5FpafAgo6tHcNmNjXmuSf")
+        self.assertEqual(str(event.recipient_id), "16315555555")
+        self.assertEqual(event.status, "read")
         self.assertEqual(
-            events.timestamp, datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+            event.timestamp, datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
         )
-        self.assertEqual(events.created_by, user.username)
+        self.assertEqual(event.created_by, user.username)
+        self.assertEqual(event.data, {"random": "data"})
 
     def test_signature_required(self):
         """
@@ -530,7 +654,7 @@ class MessagesViewSetTests(APITestCase):
         otherwise, return a 401
         """
         user = get_user_model().objects.create_user("test")
-        user.user_permissions.add(Permission.objects.get(codename="add_messages"))
+        user.user_permissions.add(Permission.objects.get(codename="add_message"))
         self.client.force_authenticate(user)
         data = {
             "messages": [

@@ -70,15 +70,13 @@ def get_identity_msisdn(registrant_id):
 
 
 def validate_signature(request):
-    secret = settings.TURN_CONTEXT_HMAC_SECRET
+    secret = settings.TURN_HMAC_SECRET
     try:
         signature = request.META["HTTP_X_TURN_HOOK_SIGNATURE"]
     except KeyError:
         raise AuthenticationFailed("X-Turn-Hook-Signature header required")
 
     h = hmac.new(secret.encode(), request.body, sha256)
-    print(request.body)
-    print(secret.encode())
 
     if not hmac.compare_digest(base64.b64encode(h.digest()).decode(), signature):
         raise AuthenticationFailed("Invalid hook signature")
