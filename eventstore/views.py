@@ -2,7 +2,6 @@ from datetime import datetime
 
 from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.exceptions import ValidationError
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.response import Response
