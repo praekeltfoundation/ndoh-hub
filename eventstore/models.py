@@ -174,7 +174,6 @@ class Message(models.Model):
     data = JSONField(default=dict, blank=True, null=True)
     message_direction = models.CharField(max_length=1, choices=DIRECTION_TYPES)
     created_by = models.CharField(max_length=255, blank=True)
-    recipient_type = models.CharField(max_length=255, blank=True)
 
 
 class Event(models.Model):
