@@ -160,3 +160,12 @@ class PostbirthRegistration(models.Model):
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
     data = JSONField(default=dict, blank=True, null=True)
+
+
+class ExternalRegistrationID(models.Model):
+    """
+    Keeps track of all the registration IDs that we've processed from external
+    registrations, so that we can deduplicate on them
+    """
+
+    id = models.CharField(max_length=255, primary_key=True)

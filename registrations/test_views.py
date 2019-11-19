@@ -203,6 +203,85 @@ class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
         self.assertEqual(json.loads(response.content), RegistrationSerializer(reg).data)
         task.assert_called_once_with(registration_id=str(reg.pk))
 
+    @override_settings(
+        EXTERNAL_REGISTRATIONS_V2=True, RAPIDPRO_JEMBI_REGISTRATION_FLOW="flow-uuid"
+    )
+    @mock.patch("registrations.tasks.rapidpro")
+    def test_rapidpro_flow_trigger(self, client):
+        """
+        If the settings flag is set, then we should instead send the registration to
+        be processed by RapidPro
+        """
+        response = self.normalclient.post(
+            "/api/v1/jembiregistration/",
+            {
+                "external_id": "test-external-id",
+                "mom_edd": "2016-06-06",
+                "mom_msisdn": "+27820000000",
+                "mom_consent": True,
+                "created": "2016-01-01 00:00:00",
+                "hcw_msisdn": "+27821111111",
+                "clinic_code": "123456",
+                "mom_lang": "eng_ZA",
+                "mha": 1,
+                "mom_dob": "1988-01-01",
+                "mom_id_type": "none",
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        client.create_flow_start.assert_called_once_with(
+            "flow-uuid",
+            urns=["tel:+27820000000"],
+            extra={
+                "msisdn_registrant": "+27820000000",
+                "msisdn_device": "+27821111111",
+                "id_type": "none",
+                "mom_dob": "1988-01-01",
+                "language": "eng_ZA",
+                "edd": "2016-06-06",
+                "consent": True,
+                "mom_opt_in": False,
+                "mom_pmtct": False,
+                "mom_whatsapp": False,
+                "faccode": "123456",
+                "mha": 1,
+                "created": "2016-01-01T00:00:00Z",
+            },
+        )
+
+    @override_settings(
+        EXTERNAL_REGISTRATIONS_V2=True, RAPIDPRO_JEMBI_REGISTRATION_FLOW="flow-uuid"
+    )
+    @mock.patch("registrations.tasks.rapidpro")
+    def test_rapidpro_flow_trigger_duplicates(self, client):
+        """
+        If the same external_id is sent twice, we should reject the request
+        """
+        request_data = {
+            "external_id": "test-external-id",
+            "mom_edd": "2016-06-06",
+            "mom_msisdn": "+27820000000",
+            "mom_consent": True,
+            "created": "2016-01-01 00:00:00",
+            "hcw_msisdn": "+27821111111",
+            "clinic_code": "123456",
+            "mom_lang": "eng_ZA",
+            "mha": 1,
+            "mom_dob": "1988-01-01",
+            "mom_id_type": "none",
+        }
+        response = self.normalclient.post("/api/v1/jembiregistration/", request_data)
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        client.create_flow_start.assert_called_once()
+        client.create_flow_start.reset_mock()
+
+        response = self.normalclient.post("/api/v1/jembiregistration/", request_data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {"external_id": ["This field must be unique."]})
+        client.create_flow_start.assert_not_called()
+
 
 class JembiAppRegistrationStatusViewTests(AuthenticatedAPITestCase):
     def test_authentication_required(self):
@@ -1793,9 +1872,9 @@ class ExternalRegistrationsV2Tests(APITestCase):
         self.user = User.objects.create_user("testuser")
         self.client.force_authenticate(self.user)
         # We have to manually add the client, since the setting won't exist on import
-        from ndoh_hub import utils
+        from registrations import tasks
 
-        utils.rapidpro = TembaClient(
+        tasks.rapidpro = TembaClient(
             "https://rapidpro.example.org", "testrapidprotoken"
         )
 
