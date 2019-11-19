@@ -49,6 +49,7 @@ from seed_services_client.stage_based_messaging import StageBasedMessagingApiCli
 
 from changes.models import Change
 from changes.serializers import ChangeSerializer
+from eventstore.models import ExternalRegistrationID
 from ndoh_hub.utils import get_available_metrics, is_client, sbm_client
 
 from .models import (
@@ -87,6 +88,7 @@ from .tasks import (
     create_rapidpro_public_registration,
     get_whatsapp_contact,
     request_to_jembi_api,
+    submit_jembi_registration_to_rapidpro,
     submit_third_party_registration_to_rapidpro,
     validate_subscribe_jembi_app_registration,
 )
@@ -605,10 +607,25 @@ class JembiAppRegistration(generics.CreateAPIView):
 
     @classmethod
     def create_registration(cls, user: User, data: dict) -> Tuple[int, dict]:
-        source = Source.objects.get(user=user)
         serializer = cls.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
 
+        if settings.EXTERNAL_REGISTRATIONS_V2:
+            # We encode and decode from JSON to ensure dates are encoded properly
+            data = json.loads(JSONEncoder().encode(serializer.validated_data))
+            external_id = data.pop("external_id", None)
+            if external_id:
+                try:
+                    ExternalRegistrationID.objects.create(id=external_id)
+                except IntegrityError:
+                    return (
+                        status.HTTP_400_BAD_REQUEST,
+                        {"external_id": ["This field must be unique."]},
+                    )
+            submit_jembi_registration_to_rapidpro.delay(data)
+            return status.HTTP_202_ACCEPTED, serializer.validated_data
+
+        source = Source.objects.get(user=user)
         created = serializer.validated_data.pop("created")
         external_id = serializer.validated_data.pop("external_id", None) or None
 
