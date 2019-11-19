@@ -409,6 +409,9 @@ class MessagesViewSetTests(APITestCase):
         """
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            response.data, {"detail": "Authentication credentials were not provided."}
+        )
 
     def test_message_authentication_required(self):
         """
@@ -426,6 +429,10 @@ class MessagesViewSetTests(APITestCase):
             HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(
+            response.data,
+            {"detail": "You do not have permission to perform this action."},
+        )
 
     def test_message_authentication_errors(self):
         """
@@ -486,6 +493,35 @@ class MessagesViewSetTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data,
+            {
+                "X-Turn-Hook-Subscription": [
+                    '"other" is not a valid choice for this header.'
+                ]
+            },
+        )
+
+    def test_missing_hook_subscription_header(self):
+        """
+        If the hook subscription type header is missing, we should return a descriptive
+        error
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_message"))
+        self.client.force_authenticate(user)
+        data = {}
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data, {"X-Turn-Hook-Subscription": ["This header is required."]}
+        )
 
     def test_missing_field_in_inbound_message_request(self):
         """
@@ -495,35 +531,7 @@ class MessagesViewSetTests(APITestCase):
         user = get_user_model().objects.create_user("test")
         user.user_permissions.add(Permission.objects.get(codename="add_message"))
         self.client.force_authenticate(user)
-        data = {
-            "messages": [
-                {
-                    "from": "sender-wa-id",
-                    "timestamp": "1518694700",
-                    "type": "image",
-                    "context": {
-                        "from": "sender-wa-id-of-context-message",
-                        "group_id": "group-id-of-context-message",
-                        "id": "message-id-of-context-message",
-                        "mentions": ["wa-id1", "wa-id2"],
-                    },
-                    "image": {
-                        "file": "absolute-filepath-on-coreapp",
-                        "id": "media-id",
-                        "link": "link-to-image-file",
-                        "mime_type": "media-mime-type",
-                        "sha256": "checksum",
-                        "caption": "image-caption",
-                    },
-                    "location": {
-                        "address": "1 Hacker Way, Menlo Park, CA, 94025",
-                        "name": "location-name",
-                    },
-                    "system": {"body": "system-message-content"},
-                    "text": {"body": "text-message-content"},
-                }
-            ]
-        }
+        data = {"messages": [{"timestamp": "A"}], "statuses": [{"timestamp": "B"}]}
         response = self.client.post(
             self.url,
             data,
@@ -533,6 +541,65 @@ class MessagesViewSetTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data,
+            {
+                "messages": {
+                    0: {
+                        "id": ["This field is required."],
+                        "type": ["This field is required."],
+                        "timestamp": ["Invalid POSIX timestamp."],
+                    }
+                },
+                "statuses": {
+                    0: {
+                        "id": ["This field is required."],
+                        "recipient_id": ["This field is required."],
+                        "timestamp": ["Invalid POSIX timestamp."],
+                        "status": ["This field is required."],
+                    }
+                },
+            },
+        )
+
+    def test_outbound_message_validation(self):
+        """
+        If there are any errors in the body or headers of the request, we should
+        return an error with a suitable description
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_message"))
+        self.client.force_authenticate(user)
+        data = {}
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+            HTTP_X_TURN_HOOK_SUBSCRIPTION="turn",
+            HTTP_X_WHATSAPP_ID="message-id",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {"to": ["This field is required."]})
+
+    def test_outbound_message_missing_id(self):
+        """
+        The header with the message ID is required. If it is not present, a descriptive
+        error should be returned
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_message"))
+        self.client.force_authenticate(user)
+        data = {"to": "27820001001"}
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+            HTTP_X_TURN_HOOK_SUBSCRIPTION="turn",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {"X-WhatsApp-Id": ["This header is required."]})
 
     def test_successful_inbound_messages_request(self):
         """
@@ -705,21 +772,28 @@ class MessagesViewSetTests(APITestCase):
         user = get_user_model().objects.create_user("test")
         user.user_permissions.add(Permission.objects.get(codename="add_message"))
         self.client.force_authenticate(user)
-        data = {
-            "messages": [
-                {
-                    "id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
-                    "from": "sender-wa-id",
-                    "timestamp": "1518694700",
-                    "type": "image",
-                    "message_direction": "I",
-                    "recipient_type": "type",
-                }
-            ]
-        }
+        data = {}
         response = self.client.post(self.url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            response.data, {"detail": "X-Turn-Hook-Signature header required"}
+        )
+
+    def test_signature_valid(self):
+        """
+        If the HMAC signature is invalid, we should return a descriptive error
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_message"))
+        self.client.force_authenticate(user)
+        data = {}
+        response = self.client.post(
+            self.url, data, format="json", HTTP_X_TURN_HOOK_SIGNATURE="foo"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data, {"detail": "Invalid hook signature"})
 
 
 class CHWRegistrationViewSetTests(APITestCase, BaseEventTestCase):

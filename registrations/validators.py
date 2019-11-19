@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from rest_framework.serializers import ValidationError
 
 from ndoh_hub import utils
@@ -28,3 +30,10 @@ def passport_no(value):
         raise ValidationError(
             "Invalid passport number. Must be at least 1 character long"
         )
+
+
+def posix_timestamp(value):
+    try:
+        datetime.fromtimestamp(int(value))
+    except ValueError:
+        raise ValidationError("Invalid POSIX timestamp.")

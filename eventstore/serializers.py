@@ -9,6 +9,7 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
 )
+from registrations.validators import posix_timestamp
 
 
 class BaseEventSerializer(serializers.ModelSerializer):
@@ -64,3 +65,32 @@ class PostbirthRegistrationSerializer(BaseEventSerializer):
         model = PostbirthRegistration
         fields = "__all__"
         read_only_fields = ("id", "created_by")
+
+
+class WhatsAppInboundMessageSerializer(serializers.Serializer):
+    id = serializers.CharField(required=True)
+    type = serializers.CharField()
+    timestamp = serializers.CharField(validators=[posix_timestamp])
+
+
+setattr(WhatsAppInboundMessageSerializer, "from", serializers.CharField())
+
+
+class WhatsAppEventSerializer(serializers.Serializer):
+    id = serializers.CharField(required=True)
+    recipient_id = serializers.CharField()
+    timestamp = serializers.CharField(validators=[posix_timestamp])
+    status = serializers.CharField()
+
+
+class WhatsAppWebhookSerializer(serializers.Serializer):
+    messages = serializers.ListField(
+        child=WhatsAppInboundMessageSerializer(), allow_empty=True, required=False
+    )
+    statuses = serializers.ListField(
+        child=WhatsAppEventSerializer(), allow_empty=True, required=False
+    )
+
+
+class TurnOutboundSerializer(serializers.Serializer):
+    to = serializers.CharField()
