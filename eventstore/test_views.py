@@ -638,6 +638,7 @@ class MessagesViewSetTests(APITestCase):
                     "random": "data",
                 }
             ]
+            * 2
         }
         response = self.client.post(
             self.url,
@@ -700,6 +701,14 @@ class MessagesViewSetTests(APITestCase):
             "text": {"body": "your-text-message-content"},
             "random": "data",
         }
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+            HTTP_X_TURN_HOOK_SUBSCRIPTION="turn",
+            HTTP_X_WHATSAPP_ID="message-id",
+        )
         response = self.client.post(
             self.url,
             data,

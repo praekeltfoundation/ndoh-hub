@@ -55,14 +55,16 @@ class MessagesViewSet(GenericViewSet):
                 type = inbound.pop("type")
                 timestamp = datetime.fromtimestamp(int(inbound.pop("timestamp")))
 
-                Message.objects.create(
+                Message.objects.update_or_create(
                     id=id,
-                    contact_id=contact_id,
-                    type=type,
-                    data=inbound,
-                    message_direction=Message.INBOUND,
-                    created_by=request.user.username,
-                    timestamp=timestamp,
+                    defaults={
+                        "contact_id": contact_id,
+                        "type": type,
+                        "data": inbound,
+                        "message_direction": Message.INBOUND,
+                        "created_by": request.user.username,
+                        "timestamp": timestamp,
+                    },
                 )
 
             for statuses in request.data.get("statuses", []):
@@ -92,13 +94,15 @@ class MessagesViewSet(GenericViewSet):
                     status.HTTP_400_BAD_REQUEST,
                 )
 
-            Message.objects.create(
+            Message.objects.update_or_create(
                 id=message_id,
-                contact_id=contact_id,
-                type=type,
-                data=outbound,
-                message_direction=Message.OUTBOUND,
-                created_by=request.user.username,
+                defaults={
+                    "contact_id": contact_id,
+                    "type": type,
+                    "data": outbound,
+                    "message_direction": Message.OUTBOUND,
+                    "created_by": request.user.username,
+                },
             )
         else:
             return Response(
