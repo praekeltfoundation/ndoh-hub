@@ -5,15 +5,16 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('eventstore', '0009_auto_20191031_1314'),
-    ]
+    dependencies = [("eventstore", "0009_auto_20191031_1314")]
 
     operations = [
         migrations.CreateModel(
-            name='ExternalRegistrationID',
+            name="ExternalRegistrationID",
             fields=[
-                ('id', models.CharField(max_length=255, primary_key=True, serialize=False)),
+                (
+                    "id",
+                    models.CharField(max_length=255, primary_key=True, serialize=False),
+                )
             ],
-        ),
+        )
     ]
