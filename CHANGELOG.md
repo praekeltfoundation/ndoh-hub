@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.7 (2019-11-05)
+1. Make sending events to Jembi optional
+   ([#264](https://github.com/praekeltfoundation/ndoh-hub/pull/264))
+
 ## 0.7.6 (2019-10-31)
 1. Store jembi requests before forwarding
    ([#261](https://github.com/praekeltfoundation/ndoh-hub/pull/261))

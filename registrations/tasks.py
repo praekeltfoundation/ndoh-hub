@@ -22,6 +22,7 @@ from wabclient.exceptions import AddressException
 
 from ndoh_hub import utils
 from ndoh_hub.celery import app
+from ndoh_hub.utils import rapidpro
 
 from .models import ClinicCode, JembiSubmission, Registration, Source, WhatsAppContact
 
@@ -931,6 +932,22 @@ class ValidateSubscribeJembiAppRegistration(HTTPRetryMixin, ValidateSubscribe):
 validate_subscribe_jembi_app_registration = ValidateSubscribeJembiAppRegistration()
 
 
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def submit_jembi_registration_to_rapidpro(data):
+    rapidpro.create_flow_start(
+        settings.RAPIDPRO_JEMBI_REGISTRATION_FLOW,
+        urns=[f"tel:{data['msisdn_registrant']}"],
+        extra=data,
+    )
+
+
 class BasePushRegistrationToJembi(object):
     """
     Base class that contains helper functions for pushing registration data
@@ -1654,8 +1671,6 @@ def send_welcome_message(language, channel, msisdn, identity_id):
     time_limit=15,
 )
 def submit_third_party_registration_to_rapidpro(username, data):
-    from ndoh_hub.utils import rapidpro
-
     registration = {
         "registered_by": data["hcw_msisdn"],
         "language": data["mom_lang"],

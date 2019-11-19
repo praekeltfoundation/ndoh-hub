@@ -42,6 +42,7 @@ ms_client = MessageSenderApiClient(
 wab_client = WABClient(url=settings.ENGAGE_URL)
 wab_client.connection.set_token(settings.ENGAGE_TOKEN)
 
+rapidpro = None
 if settings.EXTERNAL_REGISTRATIONS_V2:
     rapidpro = TembaClient(settings.RAPIDPRO_URL, settings.RAPIDPRO_TOKEN)
 
