@@ -13,6 +13,7 @@ setup(
         "Django==2.2.4",
         "djangorestframework==3.9.4",
         "coreapi==2.3.3",
+        "Markdown==3.1.1",
         "dj-database-url==0.5.0",
         "django-environ==0.4.5",
         "psycopg2==2.7.5",

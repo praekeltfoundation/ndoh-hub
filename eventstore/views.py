@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from rest_framework import status
-from rest_framework.authentication import TokenAuthentication
+from rest_framework import serializers, status
+from rest_framework.authentication import TokenAuthentication, SessionAuthentication
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.response import Response
@@ -33,9 +33,21 @@ from ndoh_hub.utils import TokenAuthQueryString, validate_signature
 
 
 class MessagesViewSet(GenericViewSet):
+    """
+    Receives webhooks in the [format specified by Turn][format] and stores them.
+
+    Supports the `turn` and `whatsapp` webhook types.
+
+    Requires authentication token, either in the `Authorization` header, or in the
+    value of the `token` query string.
+    
+    [format]: https://whatsapp.praekelt.org/docs/index.html#webhooks
+    """
+
     queryset = Message.objects.all()
     permission_classes = (DjangoModelPermissions,)
     authentication_classes = (TokenAuthQueryString, TokenAuthentication)
+    serializer_class = serializers.Serializer
 
     def create(self, request):
         validate_signature(request)
