@@ -14,6 +14,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import dateparse, timezone
+from pytz import UTC
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.renderers import JSONRenderer
@@ -1594,7 +1595,7 @@ class GetSubscriptionDescriptionTests(AuthenticatedAPITestCase):
         If there are no baby switches, then we should use datetime.min as the limiting
         timestamp
         """
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(tz=UTC)
         identity_id = str(uuid4())
         source = self.make_source_adminuser()
 
@@ -1631,7 +1632,7 @@ class GetSubscriptionDescriptionTests(AuthenticatedAPITestCase):
         Should combine registrations and changes to get a description of active
         subscriptions
         """
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(tz=UTC)
         identity_id = str(uuid4())
         source = self.make_source_adminuser()
 

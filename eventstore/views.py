@@ -1,11 +1,12 @@
 from datetime import datetime
 
 from rest_framework import serializers, status
-from rest_framework.authentication import TokenAuthentication, SessionAuthentication
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
+from pytz import UTC
 
 from eventstore.models import (
     BabySwitch,
@@ -65,7 +66,9 @@ class MessagesViewSet(GenericViewSet):
                 id = inbound.pop("id")
                 contact_id = inbound.pop("from")
                 type = inbound.pop("type")
-                timestamp = datetime.fromtimestamp(int(inbound.pop("timestamp")))
+                timestamp = datetime.fromtimestamp(
+                    int(inbound.pop("timestamp")), tz=UTC
+                )
 
                 Message.objects.update_or_create(
                     id=id,
@@ -82,7 +85,9 @@ class MessagesViewSet(GenericViewSet):
             for statuses in request.data.get("statuses", []):
                 message_id = statuses.pop("id")
                 recipient_id = statuses.pop("recipient_id")
-                timestamp = datetime.fromtimestamp(int(statuses.pop("timestamp")))
+                timestamp = datetime.fromtimestamp(
+                    int(statuses.pop("timestamp")), tz=UTC
+                )
                 message_status = statuses.pop("status")
                 Event.objects.create(
                     message_id=message_id,
