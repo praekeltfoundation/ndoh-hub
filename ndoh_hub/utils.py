@@ -1,11 +1,15 @@
 from __future__ import absolute_import, division
 
+import base64
 import datetime
+import hmac
 import json
+from hashlib import sha256
 
 import pkg_resources
 import six
 from django.conf import settings
+from rest_framework.exceptions import AuthenticationFailed
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.message_sender import MessageSenderApiClient
 from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
@@ -64,6 +68,19 @@ def get_identity_msisdn(registrant_id):
         if not ("optedout" in details and details["optedout"]):
             identity_msisdn = msisdn
     return identity_msisdn
+
+
+def validate_signature(request):
+    secret = settings.TURN_HMAC_SECRET
+    try:
+        signature = request.META["HTTP_X_TURN_HOOK_SIGNATURE"]
+    except KeyError:
+        raise AuthenticationFailed("X-Turn-Hook-Signature header required")
+
+    h = hmac.new(secret.encode(), request.body, sha256)
+
+    if not hmac.compare_digest(base64.b64encode(h.digest()).decode(), signature):
+        raise AuthenticationFailed("Invalid hook signature")
 
 
 def is_valid_uuid(id):

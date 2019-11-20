@@ -162,6 +162,29 @@ class PostbirthRegistration(models.Model):
     data = JSONField(default=dict, blank=True, null=True)
 
 
+class Message(models.Model):
+    INBOUND = "I"
+    OUTBOUND = "O"
+    DIRECTION_TYPES = [(INBOUND, "Inbound"), (OUTBOUND, "Outbound")]
+
+    id = models.CharField(max_length=255, primary_key=True, blank=True)
+    contact_id = models.CharField(max_length=255, blank=True)
+    timestamp = models.DateTimeField(default=timezone.now)
+    type = models.CharField(max_length=255, blank=True)
+    data = JSONField(default=dict, blank=True, null=True)
+    message_direction = models.CharField(max_length=1, choices=DIRECTION_TYPES)
+    created_by = models.CharField(max_length=255, blank=True)
+
+
+class Event(models.Model):
+    message_id = models.CharField(max_length=255, blank=True)
+    recipient_id = models.CharField(max_length=255, blank=True)
+    status = models.CharField(max_length=255, blank=True)
+    timestamp = models.DateTimeField(default=timezone.now)
+    created_by = models.CharField(max_length=255, blank=True)
+    data = JSONField(default=dict, blank=True, null=True)
+
+
 class ExternalRegistrationID(models.Model):
     """
     Keeps track of all the registration IDs that we've processed from external

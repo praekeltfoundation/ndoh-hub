@@ -1,11 +1,18 @@
+from datetime import datetime
+
+from rest_framework import status
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.permissions import DjangoModelPermissions
+from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from eventstore.models import (
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
+    Event,
+    Message,
     OptOut,
     PostbirthRegistration,
     PrebirthRegistration,
@@ -19,7 +26,94 @@ from eventstore.serializers import (
     PostbirthRegistrationSerializer,
     PrebirthRegistrationSerializer,
     PublicRegistrationSerializer,
+    TurnOutboundSerializer,
+    WhatsAppWebhookSerializer,
 )
+from ndoh_hub.utils import TokenAuthQueryString, validate_signature
+
+
+class MessagesViewSet(GenericViewSet):
+    queryset = Message.objects.all()
+    permission_classes = (DjangoModelPermissions,)
+    authentication_classes = (TokenAuthQueryString, TokenAuthentication)
+
+    def create(self, request):
+        validate_signature(request)
+        try:
+            webhook_type = request.headers["X-Turn-Hook-Subscription"]
+        except KeyError:
+            return Response(
+                {"X-Turn-Hook-Subscription": ["This header is required."]},
+                status.HTTP_400_BAD_REQUEST,
+            )
+
+        if webhook_type == "whatsapp":
+            WhatsAppWebhookSerializer(data=request.data).is_valid(raise_exception=True)
+            for inbound in request.data.get("messages", []):
+                id = inbound.pop("id")
+                contact_id = inbound.pop("from")
+                type = inbound.pop("type")
+                timestamp = datetime.fromtimestamp(int(inbound.pop("timestamp")))
+
+                Message.objects.update_or_create(
+                    id=id,
+                    defaults={
+                        "contact_id": contact_id,
+                        "type": type,
+                        "data": inbound,
+                        "message_direction": Message.INBOUND,
+                        "created_by": request.user.username,
+                        "timestamp": timestamp,
+                    },
+                )
+
+            for statuses in request.data.get("statuses", []):
+                message_id = statuses.pop("id")
+                recipient_id = statuses.pop("recipient_id")
+                timestamp = datetime.fromtimestamp(int(statuses.pop("timestamp")))
+                message_status = statuses.pop("status")
+                Event.objects.create(
+                    message_id=message_id,
+                    recipient_id=recipient_id,
+                    timestamp=timestamp,
+                    status=message_status,
+                    created_by=request.user.username,
+                    data=statuses,
+                )
+
+        elif webhook_type == "turn":
+            TurnOutboundSerializer(data=request.data).is_valid(raise_exception=True)
+            outbound = request.data
+            contact_id = outbound.pop("to")
+            type = outbound.pop("type", "")
+            try:
+                message_id = request.headers["X-WhatsApp-Id"]
+            except KeyError:
+                return Response(
+                    {"X-WhatsApp-Id": ["This header is required."]},
+                    status.HTTP_400_BAD_REQUEST,
+                )
+
+            Message.objects.update_or_create(
+                id=message_id,
+                defaults={
+                    "contact_id": contact_id,
+                    "type": type,
+                    "data": outbound,
+                    "message_direction": Message.OUTBOUND,
+                    "created_by": request.user.username,
+                },
+            )
+        else:
+            return Response(
+                {
+                    "X-Turn-Hook-Subscription": [
+                        f'"{webhook_type}" is not a valid choice for this header.'
+                    ]
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(status=status.HTTP_201_CREATED)
 
 
 class OptOutViewSet(GenericViewSet, CreateModelMixin):
