@@ -1,12 +1,12 @@
 from datetime import datetime
 
+from pytz import UTC
 from rest_framework import serializers, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-from pytz import UTC
 
 from eventstore.models import (
     BabySwitch,
@@ -41,7 +41,7 @@ class MessagesViewSet(GenericViewSet):
 
     Requires authentication token, either in the `Authorization` header, or in the
     value of the `token` query string.
-    
+
     [format]: https://whatsapp.praekelt.org/docs/index.html#webhooks
     """
 
