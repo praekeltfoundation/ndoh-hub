@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from rest_framework import status
+from pytz import UTC
+from rest_framework import serializers, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.permissions import DjangoModelPermissions
@@ -33,9 +34,21 @@ from ndoh_hub.utils import TokenAuthQueryString, validate_signature
 
 
 class MessagesViewSet(GenericViewSet):
+    """
+    Receives webhooks in the [format specified by Turn][format] and stores them.
+
+    Supports the `turn` and `whatsapp` webhook types.
+
+    Requires authentication token, either in the `Authorization` header, or in the
+    value of the `token` query string.
+
+    [format]: https://whatsapp.praekelt.org/docs/index.html#webhooks
+    """
+
     queryset = Message.objects.all()
     permission_classes = (DjangoModelPermissions,)
     authentication_classes = (TokenAuthQueryString, TokenAuthentication)
+    serializer_class = serializers.Serializer
 
     def create(self, request):
         validate_signature(request)
@@ -53,7 +66,9 @@ class MessagesViewSet(GenericViewSet):
                 id = inbound.pop("id")
                 contact_id = inbound.pop("from")
                 type = inbound.pop("type")
-                timestamp = datetime.fromtimestamp(int(inbound.pop("timestamp")))
+                timestamp = datetime.fromtimestamp(
+                    int(inbound.pop("timestamp")), tz=UTC
+                )
 
                 Message.objects.update_or_create(
                     id=id,
@@ -70,7 +85,9 @@ class MessagesViewSet(GenericViewSet):
             for statuses in request.data.get("statuses", []):
                 message_id = statuses.pop("id")
                 recipient_id = statuses.pop("recipient_id")
-                timestamp = datetime.fromtimestamp(int(statuses.pop("timestamp")))
+                timestamp = datetime.fromtimestamp(
+                    int(statuses.pop("timestamp")), tz=UTC
+                )
                 message_status = statuses.pop("status")
                 Event.objects.create(
                     message_id=message_id,

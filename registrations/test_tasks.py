@@ -1502,7 +1502,7 @@ class CreateRapidProClinicRegistrationTaskTests(AuthenticatedAPITestCase):
         responses.add(
             responses.GET,
             "http://is/api/v1/identities/search/?{}".format(
-                urlencode({"details__adresses_msisdn": "+27820001001"})
+                urlencode({"details__addresses__msisdn": "+27820001001"})
             ),
             json={"results": [{"id": "test-id-1", "details": {}}]},
         )
@@ -1514,7 +1514,7 @@ class CreateRapidProClinicRegistrationTaskTests(AuthenticatedAPITestCase):
         responses.add(
             responses.GET,
             "http://is/api/v1/identities/search/?{}".format(
-                urlencode({"details__adresses_msisdn": "+27820001002"})
+                urlencode({"details__addresses__msisdn": "+27820001002"})
             ),
             json={"results": [{"id": "test-id-2", "details": {}}]},
         )
@@ -1594,7 +1594,7 @@ class CreateRapidProPublicRegistrationTaskTests(AuthenticatedAPITestCase):
         responses.add(
             responses.GET,
             "http://is/api/v1/identities/search/?{}".format(
-                urlencode({"details__adresses_msisdn": "+27820001001"})
+                urlencode({"details__addresses__msisdn": "+27820001001"})
             ),
             json={"results": [{"id": "test-id-1", "details": {}}]},
         )

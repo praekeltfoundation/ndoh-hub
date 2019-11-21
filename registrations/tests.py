@@ -12,7 +12,6 @@ from django.core.management import call_command
 from django.db.models.signals import post_save
 from django.test import TestCase, override_settings
 from django.utils import timezone
-from requests_testadapter import TestAdapter, TestSession
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
@@ -45,20 +44,6 @@ except ImportError:
 
 def override_get_today():
     return datetime.datetime.strptime("2016-01-01", "%Y-%m-%d").date()
-
-
-class RecordingAdapter(TestAdapter):
-
-    """ Record the request that was handled by the adapter.
-    """
-
-    def __init__(self, *args, **kwargs):
-        self.requests = []
-        super(RecordingAdapter, self).__init__(*args, **kwargs)
-
-    def send(self, request, *args, **kw):
-        self.requests.append(request)
-        return super(RecordingAdapter, self).send(request, *args, **kw)
 
 
 class TestUtils(TestCase):
@@ -568,7 +553,6 @@ class APITestCase(TestCase):
         self.normalclient = APIClient()
         self.partialclient = APIClient()
         self.otherclient = APIClient()
-        self.session = TestSession()
         utils.get_today = override_get_today
 
 
@@ -4352,8 +4336,6 @@ class TestMetricsAPI(AuthenticatedAPITestCase):
     @responses.activate
     def test_post_metrics(self):
         # Setup
-        # deactivate Testsession for this test
-        self.session = None
         responses.add(
             responses.POST,
             "http://metrics-url/metrics/",

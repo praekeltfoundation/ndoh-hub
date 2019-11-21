@@ -23,7 +23,7 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 from requests.exceptions import RequestException
-from rest_framework import generics, mixins, status, viewsets
+from rest_framework import generics, mixins, serializers, status, viewsets
 from rest_framework.authentication import (
     BasicAuthentication,
     SessionAuthentication,
@@ -1493,9 +1493,15 @@ class NCFacilityCheckView(generics.RetrieveAPIView):
 
 
 class NCSubscriptionView(generics.CreateAPIView):
+    """
+    Accepts requests, stores them, and forwards them on to the `nc/subscription`
+    endpoint of the OpenHIM API.
+    """
+
     queryset = JembiSubmission.objects.all()
     permission_classes = (DjangoModelPermissions,)
     authentication_classes = (BasicAuthentication,)
+    serializer_class = serializers.Serializer
 
     def post(self, request: Request) -> Response:
         request_to_jembi_api.delay("nc/subscription", request.data)
