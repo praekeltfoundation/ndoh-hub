@@ -235,6 +235,7 @@ class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
             "flow-uuid",
             urns=["tel:+27820000000"],
             extra={
+                "external_id": "test-external-id",
                 "msisdn_registrant": "+27820000000",
                 "msisdn_device": "+27821111111",
                 "id_type": "none",
