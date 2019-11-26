@@ -1,4 +1,7 @@
 # Changelog
+#0.7.8 (2019-11-26)
+1. Storing Messages in the Event store
+    (([#265](https://github.com/praekeltfoundation/ndoh-hub/pull/265)))
 
 ## 0.7.7 (2019-11-05)
 1. Make sending events to Jembi optional
