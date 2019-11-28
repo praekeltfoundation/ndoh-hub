@@ -258,6 +258,8 @@ class ReceiveWhatsAppEvent(ReceiveWhatsAppBase):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         if webhook_type == "whatsapp":
+            if settings.DISABLE_WHATSAPP_EVENT_ACTIONS:
+                return Response()
             for item in serializer.validated_data["statuses"]:
                 # 410: Message expired
                 if any(error["code"] == 410 for error in item["errors"]):
@@ -289,6 +291,9 @@ class ReceiveWhatsAppSystemEvent(ReceiveWhatsAppBase):
         if not serializer.is_valid():
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
+        if settings.DISABLE_WHATSAPP_EVENT_ACTIONS:
+            return Response()
+
         for item in serializer.validated_data["events"]:
             tasks.process_whatsapp_system_event.delay(item["message_id"], item["type"])
 
@@ -307,6 +312,8 @@ class SeedMessageSenderHook(generics.GenericAPIView):
     authentication_classes = (TokenAuthQueryString,)
 
     def post(self, request):
+        if settings.DISABLE_WHATSAPP_EVENT_ACTIONS:
+            return Response()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         msisdn = serializer.validated_data["data"]["address"]

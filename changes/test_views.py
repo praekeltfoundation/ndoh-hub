@@ -153,6 +153,47 @@ class ReceiveWhatsAppEventViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         task.delay.assert_not_called()
 
+    @override_settings(DISABLE_WHATSAPP_EVENT_ACTIONS=True)
+    @mock.patch("changes.views.tasks.process_whatsapp_timeout_system_event")
+    def test_whatsapp_events_disabled(self, task, mock, mock_validate_signature):
+        """
+        The task should not be called if DISABLE_WHATSAPP_EVENT_ACTIONS is set
+        """
+        user = User.objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_change"))
+        self.client.force_authenticate(user=user)
+        url = reverse("whatsapp_event")
+
+        errors = [
+            {
+                "code": 500,
+                "title": (
+                    "structure unavailable: Client could not display highly structured "
+                    "message"
+                ),
+            },
+            {"code": 410, "title": "message expired"},
+        ]
+
+        response = self.client.post(
+            url,
+            {
+                "statuses": [
+                    {
+                        "errors": errors,
+                        "id": "41c377a47b064eba9abee5a1ea827b3d",
+                        "recipient_id": "27831112222",
+                        "status": "failed",
+                        "timestamp": "1538388353",
+                    }
+                ]
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        task.delay.assert_not_called()
+        mock.delay.assert_not_called()
+
     @mock.patch("changes.views.tasks.process_whatsapp_timeout_system_event")
     def test_timeout_serializer_succeeded(self, task, mock, mock_validate_signature):
         """
@@ -328,6 +369,33 @@ class ReceiveWhatsAppSystemEventViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         task.delay.assert_called_once_with("gBGGJ4NjeFMfAgl58_8Il_tnCNI", "undelivered")
 
+    @override_settings(DISABLE_WHATSAPP_EVENT_ACTIONS=True)
+    def test_events_disabled(self, task, mock_validate_signature):
+        """
+        If the whatsapp events are disabled, then we should do nothing
+        """
+        user = User.objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_change"))
+        self.client.force_authenticate(user=user)
+        url = reverse("whatsapp_system_event")
+
+        response = self.client.post(
+            url,
+            {
+                "events": [
+                    {
+                        "recipient_id": "278311155555",
+                        "timestamp": "1538388353",
+                        "message_id": "gBGGJ4NjeFMfAgl58_8Il_tnCNI",
+                        "type": "undelivered",
+                    }
+                ]
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        task.delay.assert_not_called()
+
     def test_serializer_failed(self, task, mock_validate_signature):
         """
         If the serializer doesn't pass, then a 400 should be returned, and the
@@ -471,6 +539,34 @@ class ReceiveSeedMessageSenderHookViewTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         task.delay.assert_called_once_with(str(user.pk), "+27820001001")
+
+    @mock.patch("changes.views.tasks.process_whatsapp_contact_check_fail")
+    @override_settings(DISABLE_WHATSAPP_EVENT_ACTIONS=True)
+    def test_whatsapp_events_disabled(self, task):
+        """
+        If the whatsapp events are disabled, then we shouldn't take any actions
+        """
+        user = User.objects.create_user("test")
+        token = Token.objects.create(user=user).key
+        url = "{}?{}".format(
+            reverse("message_sender_webhook"), urlencode({"token": token})
+        )
+
+        response = self.client.post(
+            url,
+            data={
+                "hook": {
+                    "id": 1,
+                    "event": "whatsapp.failed_contact_check",
+                    "target": "http://example.org",
+                },
+                "data": {"address": "+27820001001"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        task.delay.assert_not_called()
 
 
 class ReceiveSeedMessageSenderFailedMsisdnViewTests(APITestCase):
