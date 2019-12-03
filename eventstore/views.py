@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.conf import settings
 from pytz import UTC
 from rest_framework import serializers, status
 from rest_framework.authentication import TokenAuthentication
@@ -30,6 +31,7 @@ from eventstore.serializers import (
     TurnOutboundSerializer,
     WhatsAppWebhookSerializer,
 )
+from eventstore.whatsapp_actions import handle_outbound
 from ndoh_hub.utils import TokenAuthQueryString, validate_signature
 
 
@@ -111,7 +113,7 @@ class MessagesViewSet(GenericViewSet):
                     status.HTTP_400_BAD_REQUEST,
                 )
 
-            Message.objects.update_or_create(
+            msg, created = Message.objects.update_or_create(
                 id=message_id,
                 defaults={
                     "contact_id": contact_id,
@@ -121,6 +123,8 @@ class MessagesViewSet(GenericViewSet):
                     "created_by": request.user.username,
                 },
             )
+            if settings.ENABLE_EVENTSTORE_WHATSAPP_ACTIONS and created:
+                handle_outbound(msg)
         else:
             return Response(
                 {

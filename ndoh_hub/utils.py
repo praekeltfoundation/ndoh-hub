@@ -5,8 +5,8 @@ import datetime
 import hmac
 import json
 from hashlib import sha256
-import phonenumbers
 
+import phonenumbers
 import pkg_resources
 import six
 from django.conf import settings
