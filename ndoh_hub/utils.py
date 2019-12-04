@@ -6,6 +6,7 @@ import hmac
 import json
 from hashlib import sha256
 
+import phonenumbers
 import pkg_resources
 import six
 from django.conf import settings
@@ -348,6 +349,15 @@ def json_decode(data):
         data = data.decode("utf-8")
 
     return json.loads(data)
+
+
+def normalise_msisdn(msisdn: str) -> str:
+    """
+    Takes the MSISDN input, and normalises it to E164 format
+    """
+    return phonenumbers.format_number(
+        phonenumbers.parse(msisdn, "ZA"), phonenumbers.PhoneNumberFormat.E164
+    )
 
 
 class TokenAuthQueryString(CachedTokenAuthentication):

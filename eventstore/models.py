@@ -175,6 +175,21 @@ class Message(models.Model):
     message_direction = models.CharField(max_length=1, choices=DIRECTION_TYPES)
     created_by = models.CharField(max_length=255, blank=True)
 
+    @property
+    def is_operator_message(self):
+        """
+        Whether this message is from an operator on the frontend
+        """
+        try:
+            return (
+                self.message_direction == self.OUTBOUND
+                and self.type == "text"
+                and self.data["_vnd"]["v1"]["author"]["type"] == "OPERATOR"
+                and bool(self.data["_vnd"]["v1"]["chat"]["owner"])
+            )
+        except (KeyError, TypeError):
+            return False
+
 
 class Event(models.Model):
     message_id = models.CharField(max_length=255, blank=True)
