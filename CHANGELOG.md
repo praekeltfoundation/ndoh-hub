@@ -1,7 +1,21 @@
 # Changelog
-#0.7.8 (2019-11-26)
+
+## 0.7.9 (2019-12-05)
+1. Upgrade Django to 2.2.8 (Security vulnerability patch)
+   ([#271](https://github.com/praekeltfoundation/ndoh-hub/pull/271))
+1. Trigger RapidPro flow on receiving operator replies in eventstore
+   ([#270](https://github.com/praekeltfoundation/ndoh-hub/pull/270))
+1. Add flag for disabling all actions to whatsapp events
+   ([#269](https://github.com/praekeltfoundation/ndoh-hub/pull/269))
+1. Send Jembi registration to RapidPro if flag is set
+   ([#268](https://github.com/praekeltfoundation/ndoh-hub/pull/268))
+   ([#266](https://github.com/praekeltfoundation/ndoh-hub/pull/266))
+1. Fix docs and warnings
+   ([#267](https://github.com/praekeltfoundation/ndoh-hub/pull/267))
+
+## 0.7.8 (2019-11-26)
 1. Storing Messages in the Event store
-    (([#265](https://github.com/praekeltfoundation/ndoh-hub/pull/265)))
+   ([#265](https://github.com/praekeltfoundation/ndoh-hub/pull/265))
 
 ## 0.7.7 (2019-11-05)
 1. Make sending events to Jembi optional
