@@ -19,6 +19,7 @@ from eventstore.models import (
     CHWRegistration,
     Event,
     Message,
+    MSISDNSwitch,
     OptOut,
     PostbirthRegistration,
     PrebirthRegistration,
@@ -153,6 +154,46 @@ class ChannelSwitchViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(channelswitch.from_channel, "SMS")
         self.assertEqual(channelswitch.to_channel, "WhatsApp")
         self.assertEqual(channelswitch.created_by, user.username)
+
+
+class MSISDNSwitchViewSetTests(APITestCase, BaseEventTestCase):
+    url = reverse("msisdnswitch-list")
+
+    def test_data_validation(self):
+        """
+        The supplied data must be validated, and any errors returned
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_msisdnswitch"))
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_successful_request(self):
+        """
+        Should create a new ChannelSwitch object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_msisdnswitch"))
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "contact_id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+                "source": "POPI USSD",
+                "old_msisdn": "+27820001001",
+                "new_msisdn": "+27820001002",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [msisdnswitch] = MSISDNSwitch.objects.all()
+        self.assertEqual(
+            str(msisdnswitch.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
+        )
+        self.assertEqual(msisdnswitch.source, "POPI USSD")
+        self.assertEqual(msisdnswitch.old_msisdn, "+27820001001")
+        self.assertEqual(msisdnswitch.new_msisdn, "+27820001002")
+        self.assertEqual(msisdnswitch.created_by, user.username)
 
 
 class PublicRegistrationViewSetTests(APITestCase, BaseEventTestCase):

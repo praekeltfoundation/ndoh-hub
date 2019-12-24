@@ -13,6 +13,7 @@ from eventstore.views import (
     ChannelSwitchViewSet,
     CHWRegistrationViewSet,
     MessagesViewSet,
+    MSISDNSwitchViewSet,
     OptOutViewSet,
     PostbirthRegistrationViewSet,
     PrebirthRegistrationViewSet,
@@ -27,6 +28,7 @@ v2router = routers.DefaultRouter()
 v2router.register("optouts", OptOutViewSet)
 v2router.register("babyswitches", BabySwitchViewSet)
 v2router.register("channelswitches", ChannelSwitchViewSet)
+v2router.register("msisdnswitches", MSISDNSwitchViewSet)
 v2router.register("chwregistrations", CHWRegistrationViewSet)
 v2router.register("publicregistrations", PublicRegistrationViewSet)
 v2router.register("prebirthregistrations", PrebirthRegistrationViewSet)

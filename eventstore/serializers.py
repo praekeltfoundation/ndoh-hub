@@ -4,6 +4,7 @@ from eventstore.models import (
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
+    MSISDNSwitch,
     OptOut,
     PostbirthRegistration,
     PrebirthRegistration,
@@ -35,6 +36,13 @@ class BabySwitchSerializer(BaseEventSerializer):
 class ChannelSwitchSerializer(BaseEventSerializer):
     class Meta:
         model = ChannelSwitch
+        fields = "__all__"
+        read_only_fields = ("id", "created_by")
+
+
+class MSISDNSwitchSerializer(BaseEventSerializer):
+    class Meta:
+        model = MSISDNSwitch
         fields = "__all__"
         read_only_fields = ("id", "created_by")
 

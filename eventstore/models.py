@@ -74,6 +74,17 @@ class ChannelSwitch(models.Model):
         verbose_name_plural = "Channel switches"
 
 
+class MSISDNSwitch(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    contact_id = models.UUIDField()
+    source = models.CharField(max_length=255)
+    old_msisdn = models.CharField(max_length=255)
+    new_msisdn = models.CharField(max_length=255)
+    timestamp = models.DateTimeField(default=timezone.now)
+    created_by = models.CharField(max_length=255, blank=True, default="")
+    data = JSONField(default=dict, blank=True, null=True)
+
+
 class PublicRegistration(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     contact_id = models.UUIDField()
