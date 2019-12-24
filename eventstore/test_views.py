@@ -18,6 +18,7 @@ from eventstore.models import (
     ChannelSwitch,
     CHWRegistration,
     Event,
+    LanguageSwitch,
     Message,
     MSISDNSwitch,
     OptOut,
@@ -194,6 +195,46 @@ class MSISDNSwitchViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(msisdnswitch.old_msisdn, "+27820001001")
         self.assertEqual(msisdnswitch.new_msisdn, "+27820001002")
         self.assertEqual(msisdnswitch.created_by, user.username)
+
+
+class LanguageSwitchViewSetTests(APITestCase, BaseEventTestCase):
+    url = reverse("languageswitch-list")
+
+    def test_data_validation(self):
+        """
+        The supplied data must be validated, and any errors returned
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_languageswitch"))
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_successful_request(self):
+        """
+        Should create a new LanguageSwitch object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_languageswitch"))
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "contact_id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+                "source": "POPI USSD",
+                "old_language": "zul",
+                "new_language": "xho",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [languageswitch] = LanguageSwitch.objects.all()
+        self.assertEqual(
+            str(languageswitch.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
+        )
+        self.assertEqual(languageswitch.source, "POPI USSD")
+        self.assertEqual(languageswitch.old_language, "zul")
+        self.assertEqual(languageswitch.new_language, "xho")
+        self.assertEqual(languageswitch.created_by, user.username)
 
 
 class PublicRegistrationViewSetTests(APITestCase, BaseEventTestCase):

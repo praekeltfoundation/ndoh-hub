@@ -6,6 +6,7 @@ from django.utils.functional import cached_property
 from eventstore.models import (
     BabySwitch,
     ChannelSwitch,
+    LanguageSwitch,
     MSISDNSwitch,
     OptOut,
     PostbirthRegistration,
@@ -69,6 +70,12 @@ class ChannelSwitchAdmin(BaseEventAdmin):
 
 @admin.register(MSISDNSwitch)
 class MSISDNSwitchAdmin(BaseEventAdmin):
+    readonly_fields = ("id", "created_by", "timestamp")
+    list_display = ("contact_id", "source", "timestamp")
+
+
+@admin.register(LanguageSwitch)
+class LanguageSwitchAdmin(BaseEventAdmin):
     readonly_fields = ("id", "created_by", "timestamp")
     list_display = ("contact_id", "source", "timestamp")
 
