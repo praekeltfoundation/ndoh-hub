@@ -14,6 +14,7 @@ from eventstore.models import (
     ChannelSwitch,
     CHWRegistration,
     Event,
+    LanguageSwitch,
     Message,
     MSISDNSwitch,
     OptOut,
@@ -25,6 +26,7 @@ from eventstore.serializers import (
     BabySwitchSerializer,
     ChannelSwitchSerializer,
     CHWRegistrationSerializer,
+    LanguageSwitchSerializer,
     MSISDNSwitchSerializer,
     OptOutSerializer,
     PostbirthRegistrationSerializer,
@@ -160,6 +162,12 @@ class ChannelSwitchViewSet(GenericViewSet, CreateModelMixin):
 class MSISDNSwitchViewSet(GenericViewSet, CreateModelMixin):
     queryset = MSISDNSwitch.objects.all()
     serializer_class = MSISDNSwitchSerializer
+    permission_classes = (DjangoModelPermissions,)
+
+
+class LanguageSwitchViewSet(GenericViewSet, CreateModelMixin):
+    queryset = LanguageSwitch.objects.all()
+    serializer_class = LanguageSwitchSerializer
     permission_classes = (DjangoModelPermissions,)
 
 
