@@ -7,6 +7,24 @@ from django.utils import timezone
 
 LANGUAGE_TYPES = ((v["code"].rstrip("-za"), v["name"]) for v in LANG_INFO.values())
 
+SAID_IDTYPE = "sa_id"
+PASSPORT_IDTYPE = "passport"
+DOB_IDTYPE = "dob"
+IDTYPES = (
+    (SAID_IDTYPE, "SA ID"),
+    (PASSPORT_IDTYPE, "Passport"),
+    (DOB_IDTYPE, "Date of birth"),
+)
+PASSPORT_COUNTRY_TYPES = (
+    ("zw", "Zimbabwe"),
+    ("mz", "Mozambique"),
+    ("mw", "Malawi"),
+    ("ng", "Nigeria"),
+    ("cd", "DRC"),
+    ("so", "Somalia"),
+    ("other", "Other"),
+)
+
 
 class OptOut(models.Model):
     STOP_TYPE = "stop"
@@ -96,6 +114,28 @@ class LanguageSwitch(models.Model):
     data = JSONField(default=dict, blank=True, null=True)
 
 
+class IdentificationSwitch(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    contact_id = models.UUIDField()
+    source = models.CharField(max_length=255)
+    identification_type = models.CharField(max_length=8, choices=IDTYPES)
+    old_id_number = models.CharField(max_length=13, blank=True, default="")
+    new_id_number = models.CharField(max_length=13, blank=True, default="")
+    old_dob = models.DateField(blank=True, null=True, default=None)
+    new_dob = models.DateField(blank=True, null=True, default=None)
+    old_passport_country = models.CharField(
+        choices=PASSPORT_COUNTRY_TYPES, max_length=5, blank=True, default=""
+    )
+    new_passport_country = models.CharField(
+        choices=PASSPORT_COUNTRY_TYPES, max_length=5, blank=True, default=""
+    )
+    old_passport_number = models.CharField(max_length=255, blank=True, default="")
+    new_passport_number = models.CharField(max_length=255, blank=True, default="")
+    timestamp = models.DateTimeField(default=timezone.now)
+    created_by = models.CharField(max_length=255, blank=True, default="")
+    data = JSONField(default=dict, blank=True, null=True)
+
+
 class PublicRegistration(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     contact_id = models.UUIDField()
@@ -105,25 +145,6 @@ class PublicRegistration(models.Model):
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
     data = JSONField(default=dict, blank=True, null=True)
-
-
-SAID_IDTYPE = "sa_id"
-PASSPORT_IDTYPE = "passport"
-DOB_IDTYPE = "dob"
-IDTYPES = (
-    (SAID_IDTYPE, "SA ID"),
-    (PASSPORT_IDTYPE, "Passport"),
-    (DOB_IDTYPE, "Date of birth"),
-)
-PASSPORT_COUNTRY_TYPES = (
-    ("zw", "Zimbabwe"),
-    ("mz", "Mozambique"),
-    ("mw", "Malawi"),
-    ("ng", "Nigeria"),
-    ("cd", "DRC"),
-    ("so", "Somalia"),
-    ("other", "Other"),
-)
 
 
 class CHWRegistration(models.Model):
