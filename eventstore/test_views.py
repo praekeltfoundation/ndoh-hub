@@ -267,7 +267,8 @@ class IdentificationSwitchViewSetTests(APITestCase, BaseEventTestCase):
             {
                 "contact_id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
                 "source": "POPI USSD",
-                "identification_type": "passport",
+                "old_identification_type": "passport",
+                "new_identification_type": "passport",
                 "old_passport_country": "zw",
                 "old_passport_number": "A54321",
                 "new_passport_country": "other",
@@ -280,7 +281,7 @@ class IdentificationSwitchViewSetTests(APITestCase, BaseEventTestCase):
             str(identificationswitch.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
         )
         self.assertEqual(identificationswitch.source, "POPI USSD")
-        self.assertEqual(identificationswitch.identification_type, "passport")
+        self.assertEqual(identificationswitch.old_identification_type, "passport")
         self.assertEqual(identificationswitch.old_passport_country, "zw")
         self.assertEqual(identificationswitch.new_passport_country, "other")
         self.assertEqual(identificationswitch.old_dob, None)
