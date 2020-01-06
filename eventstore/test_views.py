@@ -18,6 +18,7 @@ from eventstore.models import (
     ChannelSwitch,
     CHWRegistration,
     Event,
+    IdentificationSwitch,
     LanguageSwitch,
     Message,
     MSISDNSwitch,
@@ -235,6 +236,56 @@ class LanguageSwitchViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(languageswitch.old_language, "zul")
         self.assertEqual(languageswitch.new_language, "xho")
         self.assertEqual(languageswitch.created_by, user.username)
+
+
+class IdentificationSwitchViewSetTests(APITestCase, BaseEventTestCase):
+    url = reverse("identificationswitch-list")
+
+    def test_data_validation(self):
+        """
+        The supplied data must be validated, and any errors returned
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_identificationswitch")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_successful_request(self):
+        """
+        Should create a new IdentificationSwitch object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_identificationswitch")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "contact_id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+                "source": "POPI USSD",
+                "old_identification_type": "passport",
+                "new_identification_type": "passport",
+                "old_passport_country": "zw",
+                "old_passport_number": "A54321",
+                "new_passport_country": "other",
+                "new_passport_number": "A1234567890123",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [identificationswitch] = IdentificationSwitch.objects.all()
+        self.assertEqual(
+            str(identificationswitch.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
+        )
+        self.assertEqual(identificationswitch.source, "POPI USSD")
+        self.assertEqual(identificationswitch.old_identification_type, "passport")
+        self.assertEqual(identificationswitch.old_passport_country, "zw")
+        self.assertEqual(identificationswitch.new_passport_country, "other")
+        self.assertEqual(identificationswitch.old_dob, None)
+        self.assertEqual(identificationswitch.created_by, user.username)
 
 
 class PublicRegistrationViewSetTests(APITestCase, BaseEventTestCase):

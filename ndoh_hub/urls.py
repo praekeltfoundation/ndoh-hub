@@ -12,6 +12,7 @@ from eventstore.views import (
     BabySwitchViewSet,
     ChannelSwitchViewSet,
     CHWRegistrationViewSet,
+    IdentificationSwitchViewSet,
     LanguageSwitchViewSet,
     MessagesViewSet,
     MSISDNSwitchViewSet,
@@ -31,6 +32,7 @@ v2router.register("babyswitches", BabySwitchViewSet)
 v2router.register("channelswitches", ChannelSwitchViewSet)
 v2router.register("msisdnswitches", MSISDNSwitchViewSet)
 v2router.register("languageswitches", LanguageSwitchViewSet)
+v2router.register("identificationswitches", IdentificationSwitchViewSet)
 v2router.register("chwregistrations", CHWRegistrationViewSet)
 v2router.register("publicregistrations", PublicRegistrationViewSet)
 v2router.register("prebirthregistrations", PrebirthRegistrationViewSet)
