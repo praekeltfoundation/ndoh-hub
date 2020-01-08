@@ -26,6 +26,7 @@ from eventstore.models import (
     PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
+    ResearchOptinSwitch,
 )
 
 
@@ -286,6 +287,49 @@ class IdentificationSwitchViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(identificationswitch.new_passport_country, "other")
         self.assertEqual(identificationswitch.old_dob, None)
         self.assertEqual(identificationswitch.created_by, user.username)
+
+
+class ResearchOptinSwitchViewSetTests(APITestCase, BaseEventTestCase):
+    url = reverse("researchoptinswitch-list")
+
+    def test_data_validation(self):
+        """
+        The supplied data must be validated, and any errors returned
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_researchoptinswitch")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_successful_request(self):
+        """
+        Should create a new ResearchOptinSwitch object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_researchoptinswitch")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "contact_id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+                "source": "POPI USSD",
+                "old_research_consent": False,
+                "new_research_consent": True,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [researchoptin] = ResearchOptinSwitch.objects.all()
+        self.assertEqual(
+            str(researchoptin.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
+        )
+        self.assertEqual(researchoptin.source, "POPI USSD")
+        self.assertEqual(researchoptin.old_research_consent, False)
+        self.assertEqual(researchoptin.new_research_consent, True)
 
 
 class PublicRegistrationViewSetTests(APITestCase, BaseEventTestCase):

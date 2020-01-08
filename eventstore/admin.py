@@ -13,6 +13,7 @@ from eventstore.models import (
     PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
+    ResearchOptinSwitch,
 )
 
 
@@ -83,7 +84,13 @@ class LanguageSwitchAdmin(BaseEventAdmin):
 
 @admin.register(IdentificationSwitch)
 class IdentificationSwitchAdmin(BaseEventAdmin):
-    readonlyfields = ("id", "created_by", "timestamp")
+    readonly_fields = ("id", "created_by", "timestamp")
+    list_display = ("contact_id", "source", "timestamp")
+
+
+@admin.register(ResearchOptinSwitch)
+class ResearchOptinSwitchAdmin(BaseEventAdmin):
+    readonly_fields = ("id", "created_by", "timestamp")
     list_display = ("contact_id", "source", "timestamp")
 
 
