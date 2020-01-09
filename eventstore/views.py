@@ -22,6 +22,7 @@ from eventstore.models import (
     PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
+    ResearchOptinSwitch,
 )
 from eventstore.serializers import (
     BabySwitchSerializer,
@@ -34,6 +35,7 @@ from eventstore.serializers import (
     PostbirthRegistrationSerializer,
     PrebirthRegistrationSerializer,
     PublicRegistrationSerializer,
+    ResearchOptinSwitchSerializer,
     TurnOutboundSerializer,
     WhatsAppWebhookSerializer,
 )
@@ -176,6 +178,12 @@ class LanguageSwitchViewSet(GenericViewSet, CreateModelMixin):
 class IdentificationSwitchViewSet(GenericViewSet, CreateModelMixin):
     queryset = IdentificationSwitch.objects.all()
     serializer_class = IdentificationSwitchSerializer
+    permission_classes = (DjangoModelPermissions,)
+
+
+class ResearchOptinSwitchViewSet(GenericViewSet, CreateModelMixin):
+    queryset = ResearchOptinSwitch.objects.all()
+    serializer_class = ResearchOptinSwitchSerializer
     permission_classes = (DjangoModelPermissions,)
 
 

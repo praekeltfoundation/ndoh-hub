@@ -20,6 +20,7 @@ from eventstore.views import (
     PostbirthRegistrationViewSet,
     PrebirthRegistrationViewSet,
     PublicRegistrationViewSet,
+    ResearchOptinSwitchViewSet,
 )
 from ndoh_hub.decorators import internal_only
 from registrations import views
@@ -37,6 +38,7 @@ v2router.register("chwregistrations", CHWRegistrationViewSet)
 v2router.register("publicregistrations", PublicRegistrationViewSet)
 v2router.register("prebirthregistrations", PrebirthRegistrationViewSet)
 v2router.register("postbirthregistrations", PostbirthRegistrationViewSet)
+v2router.register("researchoptins", ResearchOptinSwitchViewSet)
 v2router.register("messages", MessagesViewSet, basename="messages")
 
 urlpatterns = [

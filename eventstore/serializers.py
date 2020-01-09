@@ -11,6 +11,7 @@ from eventstore.models import (
     PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
+    ResearchOptinSwitch,
 )
 from registrations.validators import posix_timestamp
 
@@ -59,6 +60,13 @@ class LanguageSwitchSerializer(BaseEventSerializer):
 class IdentificationSwitchSerializer(BaseEventSerializer):
     class Meta:
         model = IdentificationSwitch
+        fields = "__all__"
+        read_only_fields = ("id", "created_by")
+
+
+class ResearchOptinSwitchSerializer(BaseEventSerializer):
+    class Meta:
+        model = ResearchOptinSwitch
         fields = "__all__"
         read_only_fields = ("id", "created_by")
 
