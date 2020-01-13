@@ -11,6 +11,8 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.renderers import JSONRenderer
 from rest_framework.test import APITestCase
+import responses
+from temba_client.v2 import TembaClient
 
 from eventstore.models import (
     PASSPORT_IDTYPE,
@@ -28,6 +30,7 @@ from eventstore.models import (
     PublicRegistration,
     ResearchOptinSwitch,
 )
+from eventstore import tasks
 
 
 class BaseEventTestCase(object):
@@ -84,6 +87,123 @@ class OptOutViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(optout.reason, OptOut.UNKNOWN_REASON)
         self.assertEqual(optout.source, "SMS")
         self.assertEqual(optout.created_by, user.username)
+
+    @responses.activate
+    def test_forget_optout(self):
+        """
+        Should anonymize the contact's data
+        """
+        tasks.rapidpro = TembaClient("textit.in", "test-token")
+        contact_id = "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
+        responses.add(
+            responses.GET,
+            f"https://textit.in/api/v2/contacts.json?uuid={contact_id}",
+            json={
+                "results": [
+                    {
+                        "uuid": contact_id,
+                        "name": "",
+                        "language": "zul",
+                        "groups": [],
+                        "fields": {},
+                        "blocked": False,
+                        "stopped": False,
+                        "created_on": "2015-11-11T08:30:24.922024+00:00",
+                        "modified_on": "2015-11-11T08:30:25.525936+00:00",
+                        "urns": ["tel:+27820001001"],
+                    }
+                ],
+                "next": None,
+            },
+        )
+        responses.add(
+            responses.DELETE,
+            f"https://textit.in/api/v2/contacts.json?uuid={contact_id}",
+        )
+
+        msisdnswitch = MSISDNSwitch.objects.create(
+            contact_id=contact_id,
+            source="POPI USSD",
+            old_msisdn="+27820001001",
+            new_msisdn="+27820001002",
+        )
+        identificationswitch = IdentificationSwitch.objects.create(
+            contact_id=contact_id,
+            source="POPI USSD",
+            old_identification_type="passport",
+            old_id_number="A12345",
+            new_identification_type="passport",
+            new_id_number="A54321",
+        )
+        chwregistration = CHWRegistration.objects.create(
+            contact_id=contact_id,
+            device_contact_id=contact_id,
+            source="CHW USSD",
+            id_type="passport",
+            passport_number="A12345",
+            language="zul",
+        )
+        prebirthregistration = PrebirthRegistration.objects.create(
+            contact_id=contact_id,
+            device_contact_id=contact_id,
+            source="CHW USSD",
+            id_type="passport",
+            passport_number="A12345",
+            language="zul",
+            edd="2020-12-01",
+        )
+        postbirthregistration = PostbirthRegistration.objects.create(
+            contact_id=contact_id,
+            device_contact_id=contact_id,
+            source="CHW USSD",
+            id_type="passport",
+            passport_number="A12345",
+            language="zul",
+            baby_dob="2020-01-01",
+        )
+        message = Message.objects.create(
+            contact_id="27820001001", message_direction=Message.INBOUND
+        )
+        event = Event.objects.create(recipient_id="27820001001")
+
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_optout"))
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "contact_id": contact_id,
+                "optout_type": OptOut.FORGET_TYPE,
+                "reason": OptOut.BABYLOSS_REASON,
+                "source": "Optout USSD",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        msisdnswitch.refresh_from_db()
+        self.assertEqual(msisdnswitch.old_msisdn, "")
+        self.assertEqual(msisdnswitch.new_msisdn, "")
+
+        identificationswitch.refresh_from_db()
+        self.assertEqual(identificationswitch.old_id_number, "")
+        self.assertEqual(identificationswitch.new_id_number, "")
+
+        chwregistration.refresh_from_db()
+        self.assertEqual(chwregistration.passport_number, "")
+
+        prebirthregistration.refresh_from_db()
+        self.assertEqual(prebirthregistration.passport_number, "")
+
+        postbirthregistration.refresh_from_db()
+        self.assertEqual(postbirthregistration.passport_number, "")
+
+        message.refresh_from_db()
+        self.assertEqual(message.contact_id, contact_id)
+
+        event.refresh_from_db()
+        self.assertEqual(event.recipient_id, contact_id)
+
+        self.assertEqual(len(responses.calls), 2)
 
 
 class BabySwitchViewSetTests(APITestCase, BaseEventTestCase):

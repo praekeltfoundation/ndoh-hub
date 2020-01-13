@@ -39,6 +39,7 @@ from eventstore.serializers import (
     TurnOutboundSerializer,
     WhatsAppWebhookSerializer,
 )
+from eventstore.tasks import forget_contact
 from eventstore.whatsapp_actions import handle_outbound
 from ndoh_hub.utils import TokenAuthQueryString, validate_signature
 
@@ -149,6 +150,11 @@ class OptOutViewSet(GenericViewSet, CreateModelMixin):
     queryset = OptOut.objects.all()
     serializer_class = OptOutSerializer
     permission_classes = (DjangoModelPermissions,)
+
+    def perform_create(self, serializer):
+        optout = serializer.save()
+        if optout.optout_type == OptOut.FORGET_TYPE:
+            forget_contact.delay(str(optout.contact_id))
 
 
 class BabySwitchViewSet(GenericViewSet, CreateModelMixin):
