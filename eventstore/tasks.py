@@ -7,8 +7,8 @@ from eventstore.models import (
     IdentificationSwitch,
     Message,
     MSISDNSwitch,
-    PrebirthRegistration,
     PostbirthRegistration,
+    PrebirthRegistration,
 )
 from ndoh_hub.celery import app
 from ndoh_hub.utils import rapidpro

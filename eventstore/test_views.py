@@ -3,6 +3,7 @@ import datetime
 import hmac
 from hashlib import sha256
 
+import responses
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.urls import reverse
@@ -11,9 +12,9 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.renderers import JSONRenderer
 from rest_framework.test import APITestCase
-import responses
 from temba_client.v2 import TembaClient
 
+from eventstore import tasks
 from eventstore.models import (
     PASSPORT_IDTYPE,
     BabySwitch,
@@ -30,7 +31,6 @@ from eventstore.models import (
     PublicRegistration,
     ResearchOptinSwitch,
 )
-from eventstore import tasks
 
 
 class BaseEventTestCase(object):
