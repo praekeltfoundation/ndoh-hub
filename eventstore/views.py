@@ -71,6 +71,8 @@ class MessagesViewSet(GenericViewSet):
                 status.HTTP_400_BAD_REQUEST,
             )
 
+        on_fallback_channel = request.headers.get("X-Turn-Fallback-Channel", "0") == "1"
+
         if webhook_type == "whatsapp":
             WhatsAppWebhookSerializer(data=request.data).is_valid(raise_exception=True)
             for inbound in request.data.get("messages", []):
@@ -90,6 +92,7 @@ class MessagesViewSet(GenericViewSet):
                         "message_direction": Message.INBOUND,
                         "created_by": request.user.username,
                         "timestamp": timestamp,
+                        "fallback_channel": on_fallback_channel,
                     },
                 )
 
@@ -107,6 +110,7 @@ class MessagesViewSet(GenericViewSet):
                     status=message_status,
                     created_by=request.user.username,
                     data=statuses,
+                    fallback_channel=on_fallback_channel,
                 )
 
         elif webhook_type == "turn":
@@ -130,6 +134,7 @@ class MessagesViewSet(GenericViewSet):
                     "data": outbound,
                     "message_direction": Message.OUTBOUND,
                     "created_by": request.user.username,
+                    "fallback_channel": on_fallback_channel,
                 },
             )
             if settings.ENABLE_EVENTSTORE_WHATSAPP_ACTIONS and created:
