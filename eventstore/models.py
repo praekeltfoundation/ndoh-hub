@@ -229,6 +229,7 @@ class Message(models.Model):
     data = JSONField(default=dict, blank=True, null=True)
     message_direction = models.CharField(max_length=1, choices=DIRECTION_TYPES)
     created_by = models.CharField(max_length=255, blank=True)
+    fallback_channel = models.BooleanField(default=False)
 
     @property
     def is_operator_message(self):
@@ -253,6 +254,7 @@ class Event(models.Model):
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True)
     data = JSONField(default=dict, blank=True, null=True)
+    fallback_channel = models.BooleanField(default=False)
 
 
 class ExternalRegistrationID(models.Model):

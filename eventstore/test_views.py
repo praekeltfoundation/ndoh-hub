@@ -1032,6 +1032,37 @@ class MessagesViewSetTests(APITestCase):
             },
         ),
         self.assertEqual(messages.created_by, user.username)
+        self.assertFalse(messages.fallback_channel)
+
+    def test_successful_outbound_messages_on_fallback(self):
+        """
+        Should create a new Outbound Message object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_message"))
+        self.client.force_authenticate(user)
+        data = {
+            "preview_url": True,
+            "render_mentions": True,
+            "recipient_type": "individual",
+            "to": "whatsapp-id",
+            "type": "text",
+            "text": {"body": "your-text-message-content"},
+            "random": "data",
+        }
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+            HTTP_X_TURN_HOOK_SUBSCRIPTION="turn",
+            HTTP_X_WHATSAPP_ID="message-id",
+            HTTP_X_TURN_FALLBACK_CHANNEL="1",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [messages] = Message.objects.all()
+        self.assertTrue(messages.fallback_channel)
 
     def test_successful_events_request(self):
         """
@@ -1068,7 +1099,38 @@ class MessagesViewSetTests(APITestCase):
             event.timestamp, datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
         )
         self.assertEqual(event.created_by, user.username)
-        self.assertEqual(event.data, {"random": "data"})
+        self.assertFalse(event.fallback_channel)
+
+    def test_successful_events_request_on_fallback_channel(self):
+        """
+        Should create a new Event object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_message"))
+        self.client.force_authenticate(user)
+        data = {
+            "statuses": [
+                {
+                    "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+                    "recipient_id": "16315555555",
+                    "status": "read",
+                    "timestamp": "1518694700",
+                    "random": "data",
+                }
+            ]
+        }
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+            HTTP_X_TURN_HOOK_SUBSCRIPTION="whatsapp",
+            HTTP_X_TURN_FALLBACK_CHANNEL="1",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [event] = Event.objects.all()
+        self.assertTrue(event.fallback_channel)
 
     def test_signature_required(self):
         """
