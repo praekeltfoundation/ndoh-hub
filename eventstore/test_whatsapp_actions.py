@@ -118,11 +118,11 @@ class UpdateRapidproPreferredChannelTests(TestCase):
         message = Mock()
         message.id = "test-id"
         message.fallback_channel = True
-        message.data = {"_vnd": {"v1": {"chat": {"owner": "27820001001"}}}}
+        message.contact_id = "27820001001"
 
         with patch("eventstore.tasks.rapidpro") as p:
             update_rapidpro_preferred_channel(message)
 
         p.update_contact.assert_called_once_with(
-            "tel:+27820001001", fields={"preferred_channnel": "WhatsApp"}
+            "whatsapp:27820001001", fields={"preferred_channnel": "WhatsApp"}
         )

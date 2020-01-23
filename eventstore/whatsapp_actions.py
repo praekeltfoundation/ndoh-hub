@@ -37,9 +37,6 @@ def handle_inbound(message):
 
 
 def update_rapidpro_preferred_channel(message):
-    whatsapp_contact_id = message.data["_vnd"]["v1"]["chat"]["owner"]
-    msisdn = normalise_msisdn(whatsapp_contact_id)
-
     update_rapidpro_contact.delay(
-        urn=f"tel:{msisdn}", fields={"preferred_channnel": "WhatsApp"}
+        urn=f"whatsapp:{message.contact_id}", fields={"preferred_channnel": "WhatsApp"}
     )
