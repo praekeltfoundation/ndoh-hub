@@ -1036,7 +1036,8 @@ class MessagesViewSetTests(APITestCase):
 
     def test_successful_outbound_messages_on_fallback(self):
         """
-        Should create a new Outbound Message object in the database
+        Should create a new Outbound Message object in the database with the
+        fallback channel flag on
         """
         user = get_user_model().objects.create_user("test")
         user.user_permissions.add(Permission.objects.get(codename="add_message"))
@@ -1103,7 +1104,8 @@ class MessagesViewSetTests(APITestCase):
 
     def test_successful_events_request_on_fallback_channel(self):
         """
-        Should create a new Event object in the database
+        Should create a new Event object in the database with the fallback
+        channel flag on
         """
         user = get_user_model().objects.create_user("test")
         user.user_permissions.add(Permission.objects.get(codename="add_message"))
