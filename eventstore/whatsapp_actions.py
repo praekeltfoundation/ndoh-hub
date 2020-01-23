@@ -2,7 +2,7 @@ from celery import chain
 from django.conf import settings
 
 from changes.tasks import get_engage_inbound_and_reply
-from eventstore.tasks import async_create_flow_start
+from eventstore.tasks import async_create_flow_start, update_rapidpro_contact
 from ndoh_hub.utils import normalise_msisdn
 
 
@@ -26,3 +26,20 @@ def handle_operator_message(message):
             flow=settings.RAPIDPRO_OPERATOR_REPLY_FLOW, urns=[f"tel:{msisdn}"]
         ),
     ).delay(whatsapp_contact_id, message.id)
+
+
+def handle_inbound(message):
+    """
+    Triggers all the actions that are required for this inbound message
+    """
+    if not message.fallback_channel:
+        update_rapidpro_preferred_channel(message)
+
+
+def update_rapidpro_preferred_channel(message):
+    whatsapp_contact_id = message.data["_vnd"]["v1"]["chat"]["owner"]
+    msisdn = normalise_msisdn(whatsapp_contact_id)
+
+    update_rapidpro_contact.delay(
+        urn=f"tel:{msisdn}", fields={"preferred_channnel": "WhatsApp"}
+    )

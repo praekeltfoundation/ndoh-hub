@@ -40,7 +40,7 @@ from eventstore.serializers import (
     WhatsAppWebhookSerializer,
 )
 from eventstore.tasks import forget_contact
-from eventstore.whatsapp_actions import handle_outbound
+from eventstore.whatsapp_actions import handle_inbound, handle_outbound
 from ndoh_hub.utils import TokenAuthQueryString, validate_signature
 
 
@@ -83,7 +83,7 @@ class MessagesViewSet(GenericViewSet):
                     int(inbound.pop("timestamp")), tz=UTC
                 )
 
-                Message.objects.update_or_create(
+                msg, created = Message.objects.update_or_create(
                     id=id,
                     defaults={
                         "contact_id": contact_id,
@@ -95,6 +95,8 @@ class MessagesViewSet(GenericViewSet):
                         "fallback_channel": on_fallback_channel,
                     },
                 )
+                if settings.ENABLE_EVENTSTORE_WHATSAPP_ACTIONS and created:
+                    handle_inbound(msg)
 
             for statuses in request.data.get("statuses", []):
                 message_id = statuses.pop("id")

@@ -29,6 +29,18 @@ def async_create_flow_start(extra, **kwargs):
 @app.task(
     autoretry_for=(RequestException, SoftTimeLimitExceeded),
     retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def update_rapidpro_contact(urn, fields):
+    rapidpro.update_contact(urn, fields=fields)
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
     max_retries=1,
     acks_late=True,
     soft_time_limit=10,

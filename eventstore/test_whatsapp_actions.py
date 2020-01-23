@@ -4,7 +4,12 @@ from unittest.mock import Mock, patch
 import responses
 from django.test import override_settings
 
-from eventstore.whatsapp_actions import handle_operator_message, handle_outbound
+from eventstore.whatsapp_actions import (
+    handle_inbound,
+    handle_operator_message,
+    handle_outbound,
+    update_rapidpro_preferred_channel,
+)
 
 
 class HandleOutboundTests(TestCase):
@@ -82,4 +87,42 @@ class HandleOperatorMessageTests(TestCase):
             },
             flow="test-flow-uuid",
             urns=["tel:+27820001001"],
+        )
+
+
+class HandleInboundTests(TestCase):
+    def test_contact_update(self):
+        """
+        If the message is not over the fallback channel then it should update
+        the preferred channel
+        """
+        message = Mock()
+
+        with patch(
+            "eventstore.whatsapp_actions.update_rapidpro_preferred_channel"
+        ) as update:
+            message.fallback_channel = True
+            handle_inbound(message)
+            update.assert_not_called()
+
+            message.fallback_channel = False
+            handle_inbound(message)
+            update.assert_called_once_with(message)
+
+
+class UpdateRapidproPreferredChannelTests(TestCase):
+    def test_contact_update_is_called(self):
+        """
+        Updates the rapidpro contact with the correct info
+        """
+        message = Mock()
+        message.id = "test-id"
+        message.fallback_channel = True
+        message.data = {"_vnd": {"v1": {"chat": {"owner": "27820001001"}}}}
+
+        with patch("eventstore.tasks.rapidpro") as p:
+            update_rapidpro_preferred_channel(message)
+
+        p.update_contact.assert_called_once_with(
+            "tel:+27820001001", fields={"preferred_channnel": "WhatsApp"}
         )
