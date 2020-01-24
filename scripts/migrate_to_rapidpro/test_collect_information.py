@@ -1,14 +1,15 @@
-from collections import OrderedDict
 import datetime
+from collections import OrderedDict
 from unittest import TestCase
+
 from .collect_information import (
+    deduplicate_msisdns,
     get_addresses,
+    process_change,
     process_identity,
     process_optout,
     process_registration,
-    process_change,
     process_subscription,
-    deduplicate_msisdns,
 )
 
 
