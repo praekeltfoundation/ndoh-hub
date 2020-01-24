@@ -997,7 +997,6 @@ class MessagesViewSetTests(APITestCase):
                     "timestamp": "1518694700",
                     "type": "image",
                     "text": {"body": "text-message-content"},
-
                 }
             ]
         }
@@ -1008,7 +1007,7 @@ class MessagesViewSetTests(APITestCase):
             HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
             HTTP_X_TURN_HOOK_SUBSCRIPTION="turn",
             HTTP_X_TURN_EVENT="1",
-            HTTP_X_TURN_FALLBACK_CHANNEL="1"
+            HTTP_X_TURN_FALLBACK_CHANNEL="1",
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
