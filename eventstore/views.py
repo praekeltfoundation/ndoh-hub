@@ -72,8 +72,9 @@ class MessagesViewSet(GenericViewSet):
             )
 
         on_fallback_channel = request.headers.get("X-Turn-Fallback-Channel", "0") == "1"
+        is_turn_event = request.headers.get("X-Turn-Event", "0") == "1"
 
-        if webhook_type == "whatsapp":
+        if webhook_type == "whatsapp" or is_turn_event:
             WhatsAppWebhookSerializer(data=request.data).is_valid(raise_exception=True)
             for inbound in request.data.get("messages", []):
                 id = inbound.pop("id")

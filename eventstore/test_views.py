@@ -982,6 +982,40 @@ class MessagesViewSetTests(APITestCase):
         ),
         self.assertEqual(messages.created_by, user.username)
 
+    def test_successful_inbound_from_fallback_channel(self):
+        """
+        Save inbound message when subscription is turn and x-turn-event is 1
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_message"))
+        self.client.force_authenticate(user)
+        data = {
+            "messages": [
+                {
+                    "id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+                    "from": "sender-wa-id",
+                    "timestamp": "1518694700",
+                    "type": "image",
+                    "text": {"body": "text-message-content"},
+
+                }
+            ]
+        }
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+            HTTP_X_TURN_HOOK_SUBSCRIPTION="turn",
+            HTTP_X_TURN_EVENT="1",
+            HTTP_X_TURN_FALLBACK_CHANNEL="1"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [message] = Message.objects.all()
+        self.assertEqual(str(message.contact_id), "sender-wa-id")
+        self.assertEqual(message.message_direction, Message.INBOUND)
+
     def test_successful_outbound_messages_request(self):
         """
         Should create a new Outbound Message object in the database
