@@ -124,5 +124,5 @@ class UpdateRapidproPreferredChannelTests(TestCase):
             update_rapidpro_preferred_channel(message)
 
         p.update_contact.assert_called_once_with(
-            "whatsapp:27820001001", fields={"preferred_channnel": "WhatsApp"}
+            "whatsapp:27820001001", fields={"preferred_channel": "WhatsApp"}
         )
