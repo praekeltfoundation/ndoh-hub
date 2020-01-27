@@ -38,5 +38,5 @@ def handle_inbound(message):
 
 def update_rapidpro_preferred_channel(message):
     update_rapidpro_contact.delay(
-        urn=f"whatsapp:{message.contact_id}", fields={"preferred_channnel": "WhatsApp"}
+        urn=f"whatsapp:{message.contact_id}", fields={"preferred_channel": "WhatsApp"}
     )
