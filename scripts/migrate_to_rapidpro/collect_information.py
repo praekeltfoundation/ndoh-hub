@@ -131,9 +131,11 @@ def process_change(identities, id, action, data, created):
             identities[id]["baby_dobs"].append(created)
 
 
-def process_subscription(identities, id, name):
+def process_subscription(identities, id, name, created_at):
     if not identities.get(id):
         return
+
+    created_at = created_at.isoformat()
 
     if "whatsapp" in name:
         identities[id]["channel"] = "WhatsApp"
@@ -145,12 +147,14 @@ def process_subscription(identities, id, name):
         name = "PMTCT"
     elif "loss" in name:
         identities[id]["optout_reason"] = name.split(".")[0].split("_")[-1]
+        identities[id]["optout_timestamp"] = created_at
         name = "Loss"
     elif (
         "momconnect_prebirth.patient" in name
         or "momconnect_prebirth.hw_partial" in name
     ):
         name = "Public"
+        identities[id]["public_registration_date"] = created_at
     elif "momconnect_prebirth.hw_full" in name:
         name = f"Prebirth {name[-1]}"
     elif "momconnect_postbirth.hw_full" in name:
@@ -326,7 +330,7 @@ if __name__ == "__main__":
     cursor.execute(
         """
     SELECT
-        subscription.identity, messageset.short_name
+        subscription.identity, messageset.short_name, subscription.created_at
     FROM
         subscriptions_subscription as subscription
     JOIN
@@ -341,8 +345,8 @@ if __name__ == "__main__":
     )
     total = 0
     start, d_print = time.time(), time.time()
-    for (id, name) in cursor:
-        process_subscription(identities, id, name)
+    for (id, name, created) in cursor:
+        process_subscription(identities, id, name, created)
         if time.time() - d_print > 1:
             print(
                 f"\rProcessed {total} subscriptions at "
