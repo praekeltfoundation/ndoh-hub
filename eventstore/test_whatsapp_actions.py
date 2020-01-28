@@ -1,8 +1,11 @@
+import datetime
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
 import responses
+from django.conf import settings
 from django.test import override_settings
+from pytz import UTC
 
 from eventstore.whatsapp_actions import (
     handle_event,
@@ -177,12 +180,19 @@ class HandleWhatsappEventsTests(TestCase):
         """
         event = Mock()
         event.recipient_id = "27820001001"
+        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
 
         with patch("eventstore.tasks.rapidpro") as p:
             handle_whatsapp_hsm_error(event)
 
         p.create_flow_start.assert_called_once_with(
-            extra={}, flow="test-flow-uuid", urns=["whatsapp:27820001001"]
+            extra={
+                "popi_ussd": settings.POPI_USSD_CODE,
+                "optout_ussd": settings.OPTOUT_USSD_CODE,
+                "timestamp": 1518694700,
+            },
+            flow="test-flow-uuid",
+            urns=["whatsapp:27820001001"],
         )
 
     @override_settings(RAPIDPRO_UNSENT_EVENT_FLOW="test-flow-uuid")
