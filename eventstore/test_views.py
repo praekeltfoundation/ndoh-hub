@@ -2,10 +2,12 @@ import base64
 import datetime
 import hmac
 from hashlib import sha256
+from unittest import mock
 
 import responses
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
+from django.test import override_settings
 from django.urls import reverse
 from pytz import UTC
 from rest_framework import status
@@ -1098,7 +1100,8 @@ class MessagesViewSetTests(APITestCase):
         [messages] = Message.objects.all()
         self.assertTrue(messages.fallback_channel)
 
-    def test_successful_events_request(self):
+    @mock.patch("eventstore.views.handle_event")
+    def test_successful_events_request(self, mock_handle_event):
         """
         Should create a new Event object in the database
         """
@@ -1135,7 +1138,10 @@ class MessagesViewSetTests(APITestCase):
         self.assertEqual(event.created_by, user.username)
         self.assertFalse(event.fallback_channel)
 
-    def test_successful_events_request_on_fallback_channel(self):
+        mock_handle_event.assert_not_called()
+
+    @mock.patch("eventstore.views.handle_event")
+    def test_successful_events_request_on_fallback_channel(self, mock_handle_event):
         """
         Should create a new Event object in the database with the fallback
         channel flag on
@@ -1166,6 +1172,41 @@ class MessagesViewSetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         [event] = Event.objects.all()
         self.assertTrue(event.fallback_channel)
+
+        mock_handle_event.assert_not_called()
+
+    @mock.patch("eventstore.views.handle_event")
+    @override_settings(ENABLE_EVENTSTORE_WHATSAPP_ACTIONS=True)
+    def test_events_request_calls_handle_event(self, mock_handle_event):
+        """
+        Should call handle_event if the eventstore whatsapp actions are enabled
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_message"))
+        self.client.force_authenticate(user)
+        data = {
+            "statuses": [
+                {
+                    "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+                    "recipient_id": "16315555555",
+                    "status": "read",
+                    "timestamp": "1518694700",
+                    "random": "data",
+                }
+            ]
+        }
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+            HTTP_X_TURN_HOOK_SUBSCRIPTION="whatsapp",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [event] = Event.objects.all()
+
+        mock_handle_event.assert_called_with(event)
 
     def test_signature_required(self):
         """

@@ -40,7 +40,7 @@ from eventstore.serializers import (
     WhatsAppWebhookSerializer,
 )
 from eventstore.tasks import forget_contact
-from eventstore.whatsapp_actions import handle_inbound, handle_outbound
+from eventstore.whatsapp_actions import handle_event, handle_inbound, handle_outbound
 from ndoh_hub.utils import TokenAuthQueryString, validate_signature
 
 
@@ -106,7 +106,7 @@ class MessagesViewSet(GenericViewSet):
                     int(statuses.pop("timestamp")), tz=UTC
                 )
                 message_status = statuses.pop("status")
-                Event.objects.create(
+                event = Event.objects.create(
                     message_id=message_id,
                     recipient_id=recipient_id,
                     timestamp=timestamp,
@@ -115,6 +115,9 @@ class MessagesViewSet(GenericViewSet):
                     data=statuses,
                     fallback_channel=on_fallback_channel,
                 )
+
+                if settings.ENABLE_EVENTSTORE_WHATSAPP_ACTIONS:
+                    handle_event(event)
 
         elif webhook_type == "turn":
             TurnOutboundSerializer(data=request.data).is_valid(raise_exception=True)

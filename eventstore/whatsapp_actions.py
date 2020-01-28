@@ -40,3 +40,28 @@ def update_rapidpro_preferred_channel(message):
     update_rapidpro_contact.delay(
         urn=f"whatsapp:{message.contact_id}", fields={"preferred_channel": "WhatsApp"}
     )
+
+
+def handle_event(event):
+    """
+    Triggers all the actions that are required for this event
+    """
+    if event.is_message_expired_error:
+        handle_whatsapp_message_expired_error(event)
+
+    if event.is_hsm_error:
+        handle_whatsapp_hsm_error(event)
+
+
+def handle_whatsapp_message_expired_error(event):
+    # TODO: handle whatsapp timeout system event
+    pass
+
+
+def handle_whatsapp_hsm_error(event):
+    if settings.ENABLE_UNSENT_EVENT_ACTION:
+        async_create_flow_start.delay(
+            extra={},
+            flow=settings.RAPIDPRO_UNSENT_EVENT_FLOW,
+            urns=[f"whatsapp:{event.recipient_id}"],
+        )
