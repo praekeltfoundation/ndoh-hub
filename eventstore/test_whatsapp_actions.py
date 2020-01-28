@@ -5,12 +5,12 @@ import responses
 from django.test import override_settings
 
 from eventstore.whatsapp_actions import (
+    handle_event,
     handle_inbound,
     handle_operator_message,
     handle_outbound,
-    update_rapidpro_preferred_channel,
-    handle_event,
     handle_whatsapp_event,
+    update_rapidpro_preferred_channel,
 )
 
 

@@ -40,7 +40,7 @@ from eventstore.serializers import (
     WhatsAppWebhookSerializer,
 )
 from eventstore.tasks import forget_contact
-from eventstore.whatsapp_actions import handle_inbound, handle_outbound, handle_event
+from eventstore.whatsapp_actions import handle_event, handle_inbound, handle_outbound
 from ndoh_hub.utils import TokenAuthQueryString, validate_signature
 
 
