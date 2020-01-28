@@ -46,26 +46,22 @@ def handle_event(event):
     """
     Triggers all the actions that are required for this event
     """
-    if not event.fallback_channel:
-        handle_whatsapp_event(event)
+    if event.is_message_expired_error:
+        handle_whatsapp_message_expired_error(event)
+
+    if event.is_hsm_error:
+        handle_whatsapp_hsm_error(event)
 
 
-def handle_whatsapp_event(event):
-    # 410: Message expired
-    if any(error["code"] == 410 for error in event.data["errors"]):
-        # TODO: handle whatsapp timeout system event
-        pass
-    elif settings.ENABLE_UNSENT_EVENT_ACTION:
-        hsm_error = False
-        for error in event.data["errors"]:
-            if "structure unavailable" in error["title"]:
-                hsm_error = True
-            if "envelope mismatch" in error["title"]:
-                hsm_error = True
+def handle_whatsapp_message_expired_error(event):
+    # TODO: handle whatsapp timeout system event
+    pass
 
-        if hsm_error:
-            async_create_flow_start.delay(
-                extra={},
-                flow=settings.RAPIDPRO_UNSENT_EVENT_FLOW,
-                urns=[f"whatsapp:{event.recipient_id}"],
-            )
+
+def handle_whatsapp_hsm_error(event):
+    if settings.ENABLE_UNSENT_EVENT_ACTION:
+        async_create_flow_start.delay(
+            extra={},
+            flow=settings.RAPIDPRO_UNSENT_EVENT_FLOW,
+            urns=[f"whatsapp:{event.recipient_id}"],
+        )

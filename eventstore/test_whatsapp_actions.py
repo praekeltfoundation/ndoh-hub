@@ -9,7 +9,7 @@ from eventstore.whatsapp_actions import (
     handle_inbound,
     handle_operator_message,
     handle_outbound,
-    handle_whatsapp_event,
+    handle_whatsapp_hsm_error,
     update_rapidpro_preferred_channel,
 )
 
@@ -131,59 +131,63 @@ class UpdateRapidproPreferredChannelTests(TestCase):
 
 
 class HandleEventTests(TestCase):
-    def test_event_fallback(self):
+    def test_expired_message(self):
         """
-        Event over whatsapp gets handled, events over fallback channel does
-        nothing
+        If the event is an message expired error, then it should trigger the
+        message expired action
         """
         event = Mock()
+        event.is_hsm_error = False
 
-        with patch("eventstore.whatsapp_actions.handle_whatsapp_event") as handle:
-            event.fallback_channel = True
+        with patch(
+            "eventstore.whatsapp_actions.handle_whatsapp_message_expired_error"
+        ) as h:
+            event.is_message_expired_error = False
             handle_event(event)
-            handle.assert_not_called()
+            h.assert_not_called()
 
-            event.fallback_channel = False
+            event.is_message_expired_error = True
             handle_event(event)
-            handle.assert_called_once_with(event)
+            h.assert_called_once_with(event)
+
+    def test_hsm_error(self):
+        """
+        If the event is an HSM error, then it should trigger the HSM error
+        action
+        """
+        event = Mock()
+        event.is_message_expired_error = False
+
+        with patch("eventstore.whatsapp_actions.handle_whatsapp_hsm_error") as h:
+            event.is_hsm_error = False
+            handle_event(event)
+            h.assert_not_called()
+
+            event.is_hsm_error = True
+            handle_event(event)
+            h.assert_called_once_with(event)
 
 
 class HandleWhatsappEventsTests(TestCase):
     @override_settings(RAPIDPRO_UNSENT_EVENT_FLOW="test-flow-uuid")
     @override_settings(ENABLE_UNSENT_EVENT_ACTION=True)
-    def test_handle_whatsapp_event_successful(self):
+    def test_handle_whatsapp_hsm_error_successful(self):
         """
         Triggers the correct flow with the correct details
         """
         event = Mock()
         event.recipient_id = "27820001001"
-        event.data = {"errors": [{"title": "structure unavailable", "code": 123}]}
 
         with patch("eventstore.tasks.rapidpro") as p:
-            handle_whatsapp_event(event)
+            handle_whatsapp_hsm_error(event)
 
         p.create_flow_start.assert_called_once_with(
             extra={}, flow="test-flow-uuid", urns=["whatsapp:27820001001"]
         )
 
     @override_settings(RAPIDPRO_UNSENT_EVENT_FLOW="test-flow-uuid")
-    @override_settings(ENABLE_UNSENT_EVENT_ACTION=True)
-    def test_handle_whatsapp_event_timeout_error(self):
-        """
-        Does nothing at this point.
-        """
-        event = Mock()
-        event.recipient_id = "27820001001"
-        event.data = {"errors": [{"title": "timeout error", "code": 410}]}
-
-        with patch("eventstore.tasks.rapidpro") as p:
-            handle_whatsapp_event(event)
-
-        p.create_flow_start.assert_not_called()
-
-    @override_settings(RAPIDPRO_UNSENT_EVENT_FLOW="test-flow-uuid")
     @override_settings(ENABLE_UNSENT_EVENT_ACTION=False)
-    def test_handle_whatsapp_event_unsent_disabled(self):
+    def test_handle_whatsapp_hsm_error_unsent_disabled(self):
         """
         Does nothing if ENABLE_UNSENT_EVENT_ACTION is False
         """
@@ -192,21 +196,6 @@ class HandleWhatsappEventsTests(TestCase):
         event.data = {"errors": [{"title": "structure unavailable", "code": 123}]}
 
         with patch("eventstore.tasks.rapidpro") as p:
-            handle_whatsapp_event(event)
-
-        p.create_flow_start.assert_not_called()
-
-    @override_settings(RAPIDPRO_UNSENT_EVENT_FLOW="test-flow-uuid")
-    @override_settings(ENABLE_UNSENT_EVENT_ACTION=True)
-    def test_handle_whatsapp_event_non_hsm(self):
-        """
-        Does nothing if it is not a HSM error or a 410 timeout error
-        """
-        event = Mock()
-        event.recipient_id = "27820001001"
-        event.data = {"errors": [{"title": "something else", "code": 123}]}
-
-        with patch("eventstore.tasks.rapidpro") as p:
-            handle_whatsapp_event(event)
+            handle_whatsapp_hsm_error(event)
 
         p.create_flow_start.assert_not_called()
