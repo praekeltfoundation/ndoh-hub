@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from upload_to_rapidpro import fields_from_contact
+from .upload_to_rapidpro import fields_from_contact
 
 
 class FieldsFromContactTests(TestCase):
