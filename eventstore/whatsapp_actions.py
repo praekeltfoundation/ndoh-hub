@@ -61,7 +61,11 @@ def handle_whatsapp_message_expired_error(event):
 def handle_whatsapp_hsm_error(event):
     if settings.ENABLE_UNSENT_EVENT_ACTION:
         async_create_flow_start.delay(
-            extra={},
+            extra={
+                "popi_ussd": settings.POPI_USSD_CODE,
+                "optout_ussd": settings.OPTOUT_USSD_CODE,
+                "timestamp": event.timestamp.timestamp(),
+            },
             flow=settings.RAPIDPRO_UNSENT_EVENT_FLOW,
             urns=[f"whatsapp:{event.recipient_id}"],
         )
