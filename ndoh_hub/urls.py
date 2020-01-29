@@ -17,6 +17,7 @@ from eventstore.views import (
     MessagesViewSet,
     MSISDNSwitchViewSet,
     OptOutViewSet,
+    PMTCTRegistrationViewSet,
     PostbirthRegistrationViewSet,
     PrebirthRegistrationViewSet,
     PublicRegistrationViewSet,
@@ -37,6 +38,7 @@ v2router.register("identificationswitches", IdentificationSwitchViewSet)
 v2router.register("chwregistrations", CHWRegistrationViewSet)
 v2router.register("publicregistrations", PublicRegistrationViewSet)
 v2router.register("prebirthregistrations", PrebirthRegistrationViewSet)
+v2router.register("pmtctregistrations", PMTCTRegistrationViewSet)
 v2router.register("postbirthregistrations", PostbirthRegistrationViewSet)
 v2router.register("researchoptins", ResearchOptinSwitchViewSet)
 v2router.register("messages", MessagesViewSet, basename="messages")

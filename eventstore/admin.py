@@ -10,6 +10,7 @@ from eventstore.models import (
     LanguageSwitch,
     MSISDNSwitch,
     OptOut,
+    PMTCTRegistration,
     PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
@@ -110,3 +111,9 @@ class PrebirthRegistrationAdmin(BaseEventAdmin):
 class PostbirthRegistrationAdmin(BaseEventAdmin):
     readonly_fields = ("id", "created_by", "timestamp")
     list_display = ("contact_id", "source", "baby_dob", "facility_code", "timestamp")
+
+
+@admin.register(PMTCTRegistration)
+class PMTCTRegistrationAdmin(BaseEventAdmin):
+    readonly_fields = ("id", "created_by", "timestamp")
+    list_display = ("contact_id", "source", "date_of_birth", "pmtct_risk", "timestamp")
