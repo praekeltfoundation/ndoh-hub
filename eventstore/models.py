@@ -265,7 +265,7 @@ class Event(models.Model):
             return False
 
         hsm_error = False
-        for error in self.data["errors"]:
+        for error in self.data.get("errors", []):
             if "structure unavailable" in error["title"]:
                 hsm_error = True
             if "envelope mismatch" in error["title"]:
@@ -278,7 +278,7 @@ class Event(models.Model):
         if self.fallback_channel:
             return False
 
-        return any(error["code"] == 410 for error in self.data["errors"])
+        return any(error["code"] == 410 for error in self.data.get("errors", []))
 
 
 class ExternalRegistrationID(models.Model):
