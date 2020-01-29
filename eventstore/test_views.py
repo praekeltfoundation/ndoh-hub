@@ -625,7 +625,7 @@ class PMTCTRegistrationViewSetTests(APITestCase, BaseEventTestCase):
             {
                 "contact_id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
                 "device_contact_id": "d80d51cb-8a95-4588-ac74-250d739edef8",
-                "pmtct_risk": "normal",
+                "pmtct_risk": "Normal",
                 "date_of_birth": "1990-02-03",
                 "source": "WhatsApp",
             },
@@ -640,8 +640,44 @@ class PMTCTRegistrationViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(
             str(registration.device_contact_id), "d80d51cb-8a95-4588-ac74-250d739edef8"
         )
-        self.assertEqual(registration.pmtct_risk, "normal")
+        self.assertEqual(registration.pmtct_risk, "Normal")
         self.assertEqual(registration.date_of_birth, datetime.date(1990, 2, 3))
+        self.assertEqual(registration.source, "WhatsApp")
+        self.assertEqual(registration.created_by, user.username)
+
+    def test_successful_request_with_null_date_of_birth(self):
+        """
+        Should create succuess object in the database if dob is null
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_pmtctregistration")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "contact_id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+                "device_contact_id": "d80d51cb-8a95-4588-ac74-250d739edef8",
+                "pmtct_risk": "Normal",
+                "date_of_birth": None,
+                "source": "WhatsApp",
+            },
+            format="json",
+        )
+
+        print(response.content)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [registration] = PMTCTRegistration.objects.all()
+        self.assertEqual(
+            str(registration.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
+        )
+        self.assertEqual(
+            str(registration.device_contact_id), "d80d51cb-8a95-4588-ac74-250d739edef8"
+        )
+        self.assertEqual(registration.pmtct_risk, "Normal")
+        self.assertEqual(registration.date_of_birth, None)
         self.assertEqual(registration.source, "WhatsApp")
         self.assertEqual(registration.created_by, user.username)
 
