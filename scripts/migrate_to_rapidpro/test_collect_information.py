@@ -450,19 +450,22 @@ class ProcessSubscriptionTests(TestCase):
         Should set the channel, but never overwrite WhatsApp with SMS
         """
         identities = {"identity-uuid": {"uuid": "identity-uuid"}}
+        timestamp = datetime.datetime(2020, 1, 1)
 
-        process_subscription(identities, "identity-uuid", "momconnect")
+        process_subscription(identities, "identity-uuid", "momconnect", timestamp)
         self.assertEqual(
             identities, {"identity-uuid": {"uuid": "identity-uuid", "channel": "SMS"}}
         )
 
-        process_subscription(identities, "identity-uuid", "whatsapp_momconnect")
+        process_subscription(
+            identities, "identity-uuid", "whatsapp_momconnect", timestamp
+        )
         self.assertEqual(
             identities,
             {"identity-uuid": {"uuid": "identity-uuid", "channel": "WhatsApp"}},
         )
 
-        process_subscription(identities, "identity-uuid", "momconnect")
+        process_subscription(identities, "identity-uuid", "momconnect", timestamp)
         self.assertEqual(
             identities,
             {"identity-uuid": {"uuid": "identity-uuid", "channel": "WhatsApp"}},
@@ -473,25 +476,37 @@ class ProcessSubscriptionTests(TestCase):
         Should add to the subscription list depending on the name
         """
         identities = {"identity-uuid": {"uuid": "identity-uuid"}}
+        timestamp = datetime.datetime(2020, 1, 1)
 
-        process_subscription(identities, "identity-uuid", "pmtct_prebirth.hw_full.1")
+        process_subscription(
+            identities, "identity-uuid", "pmtct_prebirth.hw_full.1", timestamp
+        )
         self.assertEqual(identities["identity-uuid"]["subscriptions"], ["PMTCT"])
 
-        process_subscription(identities, "identity-uuid", "loss_miscarriage.patient.1")
+        process_subscription(
+            identities, "identity-uuid", "loss_miscarriage.patient.1", timestamp
+        )
         self.assertEqual(
             identities["identity-uuid"]["subscriptions"], ["PMTCT", "Loss"]
         )
         self.assertEqual(identities["identity-uuid"]["optout_reason"], "miscarriage")
+        self.assertEqual(
+            identities["identity-uuid"]["optout_timestamp"], "2020-01-01T00:00:00"
+        )
 
         process_subscription(
-            identities, "identity-uuid", "momconnect_prebirth.hw_partial.1"
+            identities, "identity-uuid", "momconnect_prebirth.hw_partial.1", timestamp
         )
         self.assertEqual(
             identities["identity-uuid"]["subscriptions"], ["PMTCT", "Loss", "Public"]
         )
+        self.assertEqual(
+            identities["identity-uuid"]["public_registration_date"],
+            "2020-01-01T00:00:00",
+        )
 
         process_subscription(
-            identities, "identity-uuid", "momconnect_prebirth.hw_full.3"
+            identities, "identity-uuid", "momconnect_prebirth.hw_full.3", timestamp
         )
         self.assertEqual(
             identities["identity-uuid"]["subscriptions"],
@@ -499,14 +514,14 @@ class ProcessSubscriptionTests(TestCase):
         )
 
         process_subscription(
-            identities, "identity-uuid", "momconnect_postbirth.hw_full.2"
+            identities, "identity-uuid", "momconnect_postbirth.hw_full.2", timestamp
         )
         self.assertEqual(
             identities["identity-uuid"]["subscriptions"],
             ["PMTCT", "Loss", "Public", "Prebirth 3", "Postbirth"],
         )
 
-        process_subscription(identities, "identity-uuid", "irrelevant_name")
+        process_subscription(identities, "identity-uuid", "irrelevant_name", timestamp)
         self.assertEqual(
             identities["identity-uuid"]["subscriptions"],
             ["PMTCT", "Loss", "Public", "Prebirth 3", "Postbirth"],
