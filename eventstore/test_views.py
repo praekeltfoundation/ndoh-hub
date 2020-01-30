@@ -666,8 +666,6 @@ class PMTCTRegistrationViewSetTests(APITestCase, BaseEventTestCase):
             format="json",
         )
 
-        print(response.content)
-
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         [registration] = PMTCTRegistration.objects.all()
         self.assertEqual(
