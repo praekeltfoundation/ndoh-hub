@@ -46,6 +46,10 @@ class EventTests(TestCase):
         event.data = {"errors": [{"title": "envelope mismatch"}]}
         self.assertFalse(event.is_hsm_error)
 
+        event.fallback_channel = False
+        event.data = {}
+        self.assertFalse(event.is_hsm_error)
+
     def test_is_message_expired_error(self):
         """
         Is this event a message expired error
@@ -57,4 +61,7 @@ class EventTests(TestCase):
         self.assertFalse(event.is_message_expired_error)
 
         event = Event(fallback_channel=True, data={"errors": [{"code": 410}]})
+        self.assertFalse(event.is_message_expired_error)
+
+        event = Event(fallback_channel=False, data={})
         self.assertFalse(event.is_message_expired_error)
