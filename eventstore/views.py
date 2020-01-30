@@ -19,6 +19,7 @@ from eventstore.models import (
     Message,
     MSISDNSwitch,
     OptOut,
+    PMTCTRegistration,
     PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
@@ -32,6 +33,7 @@ from eventstore.serializers import (
     LanguageSwitchSerializer,
     MSISDNSwitchSerializer,
     OptOutSerializer,
+    PMTCTRegistrationSerializer,
     PostbirthRegistrationSerializer,
     PrebirthRegistrationSerializer,
     PublicRegistrationSerializer,
@@ -225,4 +227,10 @@ class PrebirthRegistrationViewSet(GenericViewSet, CreateModelMixin):
 class PostbirthRegistrationViewSet(GenericViewSet, CreateModelMixin):
     queryset = PostbirthRegistration.objects.all()
     serializer_class = PostbirthRegistrationSerializer
+    permission_classes = (DjangoModelPermissions,)
+
+
+class PMTCTRegistrationViewSet(GenericViewSet, CreateModelMixin):
+    queryset = PMTCTRegistration.objects.all()
+    serializer_class = PMTCTRegistrationSerializer
     permission_classes = (DjangoModelPermissions,)

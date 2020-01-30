@@ -197,6 +197,21 @@ class PrebirthRegistration(models.Model):
     data = JSONField(default=dict, blank=True, null=True)
 
 
+class PMTCTRegistration(models.Model):
+    NORMAL = "normal"
+    HIGH = "high"
+    RISK_TYPES = ((NORMAL, "Normal"), (HIGH, "High"))
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    contact_id = models.UUIDField()
+    device_contact_id = models.UUIDField()
+    date_of_birth = models.DateField(blank=True, null=True)
+    pmtct_risk = models.CharField(choices=RISK_TYPES, max_length=6)
+    source = models.CharField(max_length=255)
+    timestamp = models.DateTimeField(default=timezone.now)
+    created_by = models.CharField(max_length=255, blank=True, default="")
+    data = JSONField(default=dict, blank=True, null=True)
+
+
 class PostbirthRegistration(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     contact_id = models.UUIDField()

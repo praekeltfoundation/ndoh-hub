@@ -8,6 +8,7 @@ from eventstore.models import (
     LanguageSwitch,
     MSISDNSwitch,
     OptOut,
+    PMTCTRegistration,
     PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
@@ -95,6 +96,13 @@ class PrebirthRegistrationSerializer(BaseEventSerializer):
 class PostbirthRegistrationSerializer(BaseEventSerializer):
     class Meta:
         model = PostbirthRegistration
+        fields = "__all__"
+        read_only_fields = ("id", "created_by")
+
+
+class PMTCTRegistrationSerializer(BaseEventSerializer):
+    class Meta:
+        model = PMTCTRegistration
         fields = "__all__"
         read_only_fields = ("id", "created_by")
 
