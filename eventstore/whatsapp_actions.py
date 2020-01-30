@@ -19,11 +19,13 @@ def handle_operator_message(message):
     Triggers all the tasks that need to run for an outbound message from an operator
     """
     whatsapp_contact_id = message.data["_vnd"]["v1"]["chat"]["owner"]
+    # This should be in "+27xxxxxxxxx" format, but just in case it isn't
     msisdn = normalise_msisdn(whatsapp_contact_id)
     return chain(
         get_engage_inbound_and_reply.s(),
         async_create_flow_start.s(
-            flow=settings.RAPIDPRO_OPERATOR_REPLY_FLOW, urns=[f"tel:{msisdn}"]
+            flow=settings.RAPIDPRO_OPERATOR_REPLY_FLOW,
+            urns=[f"whatsapp:{msisdn.lstrip('+')}"],
         ),
     ).delay(whatsapp_contact_id, message.id)
 

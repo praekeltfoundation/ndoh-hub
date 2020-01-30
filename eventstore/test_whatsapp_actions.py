@@ -91,7 +91,7 @@ class HandleOperatorMessageTests(TestCase):
                 "reply_operator": 56748517727534413379787391391214157498,
             },
             flow="test-flow-uuid",
-            urns=["tel:+27820001001"],
+            urns=["whatsapp:27820001001"],
         )
 
 
