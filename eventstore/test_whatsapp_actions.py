@@ -9,6 +9,7 @@ from eventstore.whatsapp_actions import (
     handle_operator_message,
     handle_outbound,
     update_rapidpro_preferred_channel,
+    handle_inbound_with_label,
 )
 
 
@@ -126,3 +127,46 @@ class UpdateRapidproPreferredChannelTests(TestCase):
         p.update_contact.assert_called_once_with(
             "whatsapp:27820001001", fields={"preferred_channnel": "WhatsApp"}
         )
+
+
+class handleinboundwithlabel(TestCase):
+    @override_settings(RAPIDPRO_OPERATOR_REPLY_FLOW="test-flow-uuid")
+    @responses.activate
+    def test_flow_triggered_with_tag(self):
+        """
+        Triggers the correct rapidpro flow with the correct details for inbound with tag
+        """
+        message = Mock()
+        message.id = "test-id"
+        message.contact_id = "123"
+        message.data = {
+          "messages": [{
+            "to": "27820001002",
+            "from": "27820001001",
+            "type": "text",
+            "_vnd": {
+              "v1": {
+                "direction": "outbound",
+                "in_reply_to": "an-earlier-inbound-external-id",
+                "author": {
+                  "name": "the name of the author",
+                  "type": "SYSTEM | OPERATOR",
+                },
+                "labels": [{
+                  "uuid": "27820001001",
+                  "value": "EDD"
+                }]
+              }
+            }
+          }, ]
+        }
+
+        with patch("eventstore.tasks.rapidpro") as p:
+            handle_inbound_with_label(message)
+        p.create_flow_start.assert_called_once_with(
+            extra={
+                "inbound_text": "Inbound question",
+            },
+            flow="test-flow-uuid",
+            urns=["tel:+27820001001"],
+        ) 
