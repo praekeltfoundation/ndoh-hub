@@ -198,10 +198,9 @@ class PrebirthRegistration(models.Model):
 
 
 class PMTCTRegistration(models.Model):
-    normal = "Normal"
-    high = "High"
-    RISK_TYPES = [(normal, "Normal"), (high, "High")]
-
+    NORMAL = "normal"
+    HIGH = "high"
+    RISK_TYPES = ((NORMAL, "Normal"), (HIGH, "High"))
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     contact_id = models.UUIDField()
     device_contact_id = models.UUIDField()

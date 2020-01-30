@@ -625,7 +625,7 @@ class PMTCTRegistrationViewSetTests(APITestCase, BaseEventTestCase):
             {
                 "contact_id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
                 "device_contact_id": "d80d51cb-8a95-4588-ac74-250d739edef8",
-                "pmtct_risk": "Normal",
+                "pmtct_risk": "normal",
                 "date_of_birth": "1990-02-03",
                 "source": "WhatsApp",
             },
@@ -640,7 +640,7 @@ class PMTCTRegistrationViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(
             str(registration.device_contact_id), "d80d51cb-8a95-4588-ac74-250d739edef8"
         )
-        self.assertEqual(registration.pmtct_risk, "Normal")
+        self.assertEqual(registration.pmtct_risk, "normal")
         self.assertEqual(registration.date_of_birth, datetime.date(1990, 2, 3))
         self.assertEqual(registration.source, "WhatsApp")
         self.assertEqual(registration.created_by, user.username)
@@ -659,7 +659,7 @@ class PMTCTRegistrationViewSetTests(APITestCase, BaseEventTestCase):
             {
                 "contact_id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
                 "device_contact_id": "d80d51cb-8a95-4588-ac74-250d739edef8",
-                "pmtct_risk": "Normal",
+                "pmtct_risk": "normal",
                 "date_of_birth": None,
                 "source": "WhatsApp",
             },
@@ -674,7 +674,7 @@ class PMTCTRegistrationViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(
             str(registration.device_contact_id), "d80d51cb-8a95-4588-ac74-250d739edef8"
         )
-        self.assertEqual(registration.pmtct_risk, "Normal")
+        self.assertEqual(registration.pmtct_risk, "normal")
         self.assertEqual(registration.date_of_birth, None)
         self.assertEqual(registration.source, "WhatsApp")
         self.assertEqual(registration.created_by, user.username)
