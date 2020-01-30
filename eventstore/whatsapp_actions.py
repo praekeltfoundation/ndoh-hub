@@ -23,7 +23,8 @@ def handle_operator_message(message):
     return chain(
         get_engage_inbound_and_reply.s(),
         async_create_flow_start.s(
-            flow=settings.RAPIDPRO_OPERATOR_REPLY_FLOW, urns=[f"tel:{msisdn}"]
+            flow=settings.RAPIDPRO_OPERATOR_REPLY_FLOW,
+            urns=[f"whatsapp:{msisdn.lstrip('+')}"],
         ),
     ).delay(whatsapp_contact_id, message.id)
 
