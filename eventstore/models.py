@@ -261,6 +261,23 @@ class Message(models.Model):
         except (KeyError, TypeError):
             return False
 
+    def has_label(self, label):
+        """
+        Does this message have the specified label
+        """
+        if self.fallback_channel:
+            return False
+
+        labels = [
+            l["value"]
+            for l in self.data.get("_vnd", {}).get("v1", {}).get("labels", [])
+        ]
+
+        if label in labels:
+            return True
+
+        return False
+
 
 class Event(models.Model):
     message_id = models.CharField(max_length=255, blank=True)

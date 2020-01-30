@@ -8,6 +8,7 @@ from django.test import override_settings
 from pytz import UTC
 
 from eventstore.whatsapp_actions import (
+    handle_edd_message,
     handle_event,
     handle_inbound,
     handle_operator_message,
@@ -102,6 +103,7 @@ class HandleInboundTests(TestCase):
         the preferred channel
         """
         message = Mock()
+        message.has_label.return_value = False
 
         with patch(
             "eventstore.whatsapp_actions.update_rapidpro_preferred_channel"
@@ -113,6 +115,22 @@ class HandleInboundTests(TestCase):
             message.fallback_channel = False
             handle_inbound(message)
             update.assert_called_once_with(message)
+
+    def test_handle_edd_label(self):
+        """
+        If the message has the EDD label then the correct flow should be started
+        """
+        message = Mock()
+        message.has_label.return_value = False
+
+        with patch("eventstore.whatsapp_actions.handle_edd_message") as handle:
+            handle_inbound(message)
+            handle.assert_not_called()
+
+            message.has_label.return_value = True
+
+            handle_inbound(message)
+            handle.assert_called_once_with(message)
 
 
 class UpdateRapidproPreferredChannelTests(TestCase):
@@ -130,6 +148,23 @@ class UpdateRapidproPreferredChannelTests(TestCase):
 
         p.update_contact.assert_called_once_with(
             "whatsapp:27820001001", fields={"preferred_channel": "WhatsApp"}
+        )
+
+
+class HandleEddLabelTests(TestCase):
+    @override_settings(RAPIDPRO_EDD_LABEL_FLOW="test-flow-uuid")
+    def test_handle_edd_message(self):
+        """
+        Triggers the correct flow with the correct details
+        """
+        message = Mock()
+        message.data = {"_vnd": {"v1": {"chat": {"owner": "27820001001"}}}}
+
+        with patch("eventstore.tasks.rapidpro") as p:
+            handle_edd_message(message)
+
+        p.create_flow_start.assert_called_once_with(
+            extra={}, flow="test-flow-uuid", urns=["whatsapp:27820001001"]
         )
 
 

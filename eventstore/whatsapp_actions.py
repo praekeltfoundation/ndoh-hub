@@ -37,10 +37,24 @@ def handle_inbound(message):
     if not message.fallback_channel:
         update_rapidpro_preferred_channel(message)
 
+    if message.has_label("EDD"):
+        handle_edd_message(message)
+
 
 def update_rapidpro_preferred_channel(message):
     update_rapidpro_contact.delay(
         urn=f"whatsapp:{message.contact_id}", fields={"preferred_channel": "WhatsApp"}
+    )
+
+
+def handle_edd_message(message):
+    whatsapp_contact_id = message.data["_vnd"]["v1"]["chat"]["owner"]
+    # This should be in "+27xxxxxxxxx" format, but just in case it isn't
+    msisdn = normalise_msisdn(whatsapp_contact_id)
+    async_create_flow_start.delay(
+        extra={},
+        flow=settings.RAPIDPRO_EDD_LABEL_FLOW,
+        urns=[f"whatsapp:{msisdn.lstrip('+')}"],
     )
 
 

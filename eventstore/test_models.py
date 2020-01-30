@@ -24,6 +24,25 @@ class MessageTests(TestCase):
         msg.data = {}
         self.assertEqual(msg.is_operator_message, False)
 
+    def test_has_label(self):
+        """
+        Test if a message contains a label
+        """
+        msg = Message(
+            message_direction=Message.OUTBOUND,
+            type="text",
+            data={"_vnd": {"v1": {"labels": [{"value": "Label1", "id": "label-id"}]}}},
+        )
+        self.assertTrue(msg.has_label("Label1"))
+        self.assertFalse(msg.has_label("Label2"))
+
+        msg.fallback_channel = True
+        self.assertFalse(msg.has_label("Label1"))
+
+        msg.data = {}
+        msg.fallback_channel = False
+        self.assertFalse(msg.has_label("Label1"))
+
 
 class EventTests(TestCase):
     def test_is_hsm_error(self):
