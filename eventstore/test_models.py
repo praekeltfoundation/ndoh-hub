@@ -84,3 +84,16 @@ class EventTests(TestCase):
 
         event = Event(fallback_channel=False, data={})
         self.assertFalse(event.is_message_expired_error)
+
+    def test_is_whatsapp_failed_delivery(self):
+        """
+        Is this event a message expired error
+        """
+        event = Event(fallback_channel=False, status="failed")
+        self.assertTrue(event.is_whatsapp_failed_delivery_event)
+
+        event = Event(fallback_channel=False, status="sent")
+        self.assertFalse(event.is_whatsapp_failed_delivery_event)
+
+        event = Event(fallback_channel=True, status="failed")
+        self.assertFalse(event.is_whatsapp_failed_delivery_event)

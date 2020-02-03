@@ -312,6 +312,13 @@ class Event(models.Model):
 
         return any(error["code"] == 410 for error in self.data.get("errors", []))
 
+    @property
+    def is_whatsapp_failed_delivery_event(self):
+        if self.fallback_channel:
+            return False
+
+        return self.status == "failed"
+
 
 class ExternalRegistrationID(models.Model):
     """
