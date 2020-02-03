@@ -271,6 +271,8 @@ JUNEBUG_PASSWORD = os.environ.get("JUNEBUG_PASSWORD", "REPLACEME")
 WHATSAPP_CHANNEL_TYPE = os.environ.get("WHATSAPP_CHANNEL_TYPE", "wassup")
 ENGAGE_URL = os.environ.get("WASSUP_URL", "http://engage")
 ENGAGE_TOKEN = os.environ.get("WASSUP_TOKEN", "engage-token")
+TURN_URL = os.environ.get("TURN_URL", "http://turn")
+TURN_TOKEN = os.environ.get("TURN_TOKEN", "turn-token")
 
 NURSECONNECT_RTHB = os.environ.get("NURSECONNECT_RTHB", "false").lower() == "true"
 

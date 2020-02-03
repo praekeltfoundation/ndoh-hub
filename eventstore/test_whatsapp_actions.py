@@ -1,4 +1,5 @@
 import datetime
+import json
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
@@ -6,7 +7,9 @@ import responses
 from django.conf import settings
 from django.test import override_settings
 from pytz import UTC
+from temba_client.v2 import TembaClient
 
+from eventstore import tasks
 from eventstore.whatsapp_actions import (
     handle_edd_message,
     handle_event,
@@ -14,6 +17,7 @@ from eventstore.whatsapp_actions import (
     handle_operator_message,
     handle_outbound,
     handle_whatsapp_hsm_error,
+    handle_whatsapp_message_expired_error,
     update_rapidpro_preferred_channel,
 )
 
@@ -216,6 +220,7 @@ class HandleWhatsappEventsTests(TestCase):
         event = Mock()
         event.recipient_id = "27820001001"
         event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+        event.is_message_expired_error.return_value = False
 
         with patch("eventstore.tasks.rapidpro") as p:
             handle_whatsapp_hsm_error(event)
@@ -239,8 +244,222 @@ class HandleWhatsappEventsTests(TestCase):
         event = Mock()
         event.recipient_id = "27820001001"
         event.data = {"errors": [{"title": "structure unavailable", "code": 123}]}
+        event.is_message_expired_error.return_value = False
 
         with patch("eventstore.tasks.rapidpro") as p:
             handle_whatsapp_hsm_error(event)
 
         p.create_flow_start.assert_not_called()
+
+    @responses.activate
+    @patch("eventstore.tasks.get_utc_now")
+    def test_handle_whatsapp_message_expired_error(self, mock_get_utc_now):
+        """
+        Sends a SMS and updates the contact if the contact hasn't been sent this
+        message in 30 days
+        """
+        timestamp = 1543999390.069308
+        mock_get_utc_now.return_value = datetime.datetime.fromtimestamp(timestamp)
+
+        event = Mock()
+        event.recipient_id = "27820001001"
+        event.is_hsm_error.return_value = False
+
+        tasks.rapidpro = TembaClient("textit.in", "test-token")
+
+        responses.add(
+            responses.GET,
+            "https://textit.in/api/v2/contacts.json?urn=whatsapp:27820001001",
+            json={
+                "results": [
+                    {
+                        "uuid": "contact-id",
+                        "name": "",
+                        "language": "zul",
+                        "groups": [],
+                        "fields": {},
+                        "blocked": False,
+                        "stopped": False,
+                        "created_on": "2015-11-11T08:30:24.922024+00:00",
+                        "modified_on": "2015-11-11T08:30:25.525936+00:00",
+                        "urns": ["tel:+27820001001"],
+                    }
+                ],
+                "next": None,
+            },
+        )
+
+        responses.add(responses.POST, "http://turn/v1/messages", json={})
+
+        responses.add(
+            responses.POST,
+            "https://textit.in/api/v2/contacts.json?urn=whatsapp:27820001001",
+            json={
+                "uuid": "contact-id",
+                "name": "",
+                "language": "zul",
+                "groups": [],
+                "fields": {},
+                "blocked": False,
+                "stopped": False,
+                "created_on": "2015-11-11T08:30:24.922024+00:00",
+                "modified_on": "2015-11-11T08:30:25.525936+00:00",
+                "urns": ["tel:+27820001001"],
+            },
+        )
+
+        handle_whatsapp_message_expired_error(event)
+
+        [_, turn_call, rapidpro_post] = responses.calls
+
+        self.assertEqual(
+            json.loads(turn_call.request.body),
+            {
+                "preview_url": False,
+                "recipient_type": "individual",
+                "to": "27820001001",
+                "type": "text",
+                "text": {
+                    "body": "Sibona ukuthi imiyalezo yeWhatsApp yakho yeMomConnect "
+                    "ayifikanga. Ukuthola imiyalezo nge-SMS, phendula uthi "
+                    "\u201cSMS\u201d (kusebenza izindleko ezijwayelekile)."
+                },
+            },
+        )
+        self.assertEqual(turn_call.request.headers["x-turn-fallback-channel"], "1")
+
+        self.assertEqual(
+            json.loads(rapidpro_post.request.body),
+            {"fields": {"whatsapp_undelivered_timestamp": "2018-12-05 08:43:10"}},
+        )
+
+    @responses.activate
+    @patch("eventstore.tasks.get_utc_now")
+    def test_handle_whatsapp_message_expired_error_with_old_timestamp(
+        self, mock_get_utc_now
+    ):
+        """
+        Sends a SMS and updates the contact if the contact hasn't been sent this
+        message in 30 days
+        """
+        timestamp = 1543999390.069308
+        mock_get_utc_now.return_value = datetime.datetime.fromtimestamp(timestamp)
+
+        event = Mock()
+        event.recipient_id = "27820001001"
+        event.is_hsm_error.return_value = False
+
+        tasks.rapidpro = TembaClient("textit.in", "test-token")
+
+        responses.add(
+            responses.GET,
+            "https://textit.in/api/v2/contacts.json?urn=whatsapp:27820001001",
+            json={
+                "results": [
+                    {
+                        "uuid": "contact-id",
+                        "name": "",
+                        "language": "zul",
+                        "groups": [],
+                        "fields": {
+                            "whatsapp_undelivered_timestamp": "2018-11-05 08:43:10"
+                        },
+                        "blocked": False,
+                        "stopped": False,
+                        "created_on": "2015-11-11T08:30:24.922024+00:00",
+                        "modified_on": "2015-11-11T08:30:25.525936+00:00",
+                        "urns": ["tel:+27820001001"],
+                    }
+                ],
+                "next": None,
+            },
+        )
+
+        responses.add(responses.POST, "http://turn/v1/messages", json={})
+
+        responses.add(
+            responses.POST,
+            "https://textit.in/api/v2/contacts.json?urn=whatsapp:27820001001",
+            json={
+                "uuid": "contact-id",
+                "name": "",
+                "language": "zul",
+                "groups": [],
+                "fields": {},
+                "blocked": False,
+                "stopped": False,
+                "created_on": "2015-11-11T08:30:24.922024+00:00",
+                "modified_on": "2015-11-11T08:30:25.525936+00:00",
+                "urns": ["tel:+27820001001"],
+            },
+        )
+
+        handle_whatsapp_message_expired_error(event)
+
+        [_, turn_call, rapidpro_post] = responses.calls
+
+        self.assertEqual(
+            json.loads(turn_call.request.body),
+            {
+                "preview_url": False,
+                "recipient_type": "individual",
+                "to": "27820001001",
+                "type": "text",
+                "text": {
+                    "body": "Sibona ukuthi imiyalezo yeWhatsApp yakho yeMomConnect "
+                    "ayifikanga. Ukuthola imiyalezo nge-SMS, phendula uthi "
+                    "\u201cSMS\u201d (kusebenza izindleko ezijwayelekile)."
+                },
+            },
+        )
+        self.assertEqual(turn_call.request.headers["x-turn-fallback-channel"], "1")
+
+        self.assertEqual(
+            json.loads(rapidpro_post.request.body),
+            {"fields": {"whatsapp_undelivered_timestamp": "2018-12-05 08:43:10"}},
+        )
+
+    @responses.activate
+    @patch("eventstore.tasks.get_utc_now")
+    def test_handle_whatsapp_message_expired_error_with_new_timestamp(
+        self, mock_get_utc_now
+    ):
+        """
+        Doesn't send a SMS if contact recieved the message in the last 30 days
+        """
+        timestamp = 1543999390.069308
+        mock_get_utc_now.return_value = datetime.datetime.fromtimestamp(timestamp)
+
+        event = Mock()
+        event.recipient_id = "27820001001"
+        event.is_hsm_error.return_value = False
+
+        tasks.rapidpro = TembaClient("textit.in", "test-token")
+
+        responses.add(
+            responses.GET,
+            "https://textit.in/api/v2/contacts.json?urn=whatsapp:27820001001",
+            json={
+                "results": [
+                    {
+                        "uuid": "contact-id",
+                        "name": "",
+                        "language": "zul",
+                        "groups": [],
+                        "fields": {
+                            "whatsapp_undelivered_timestamp": "2018-11-06 08:43:10"
+                        },
+                        "blocked": False,
+                        "stopped": False,
+                        "created_on": "2015-11-11T08:30:24.922024+00:00",
+                        "modified_on": "2015-11-11T08:30:25.525936+00:00",
+                        "urns": ["tel:+27820001001"],
+                    }
+                ],
+                "next": None,
+            },
+        )
+
+        handle_whatsapp_message_expired_error(event)
+
+        self.assertEqual(len(responses.calls), 1)

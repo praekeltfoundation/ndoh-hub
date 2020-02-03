@@ -2,7 +2,11 @@ from celery import chain
 from django.conf import settings
 
 from changes.tasks import get_engage_inbound_and_reply
-from eventstore.tasks import async_create_flow_start, update_rapidpro_contact
+from eventstore.tasks import (
+    async_create_flow_start,
+    handle_whatsapp_delivery_error,
+    update_rapidpro_contact,
+)
 from ndoh_hub.utils import normalise_msisdn
 
 
@@ -70,8 +74,7 @@ def handle_event(event):
 
 
 def handle_whatsapp_message_expired_error(event):
-    # TODO: handle whatsapp timeout system event
-    pass
+    handle_whatsapp_delivery_error(f"whatsapp:{event.recipient_id}")
 
 
 def handle_whatsapp_hsm_error(event):
