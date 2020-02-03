@@ -348,7 +348,11 @@ class HandleWhatsappEventsTests(TestCase):
 
         self.assertEqual(
             json.loads(rapidpro_post.request.body),
-            {"fields": {"whatsapp_undelivered_timestamp": "2018-12-05 08:43:10"}},
+            {
+                "fields": {
+                    "whatsapp_undelivered_timestamp": "2018-12-05T08:43:10.069308"
+                }
+            },
         )
 
     @responses.activate
@@ -432,7 +436,11 @@ class HandleWhatsappEventsTests(TestCase):
 
         self.assertEqual(
             json.loads(rapidpro_post.request.body),
-            {"fields": {"whatsapp_undelivered_timestamp": "2018-12-05 08:43:10"}},
+            {
+                "fields": {
+                    "whatsapp_undelivered_timestamp": "2018-12-05T08:43:10.069308"
+                }
+            },
         )
 
     @responses.activate

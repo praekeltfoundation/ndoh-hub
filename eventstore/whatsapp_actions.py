@@ -74,7 +74,7 @@ def handle_event(event):
 
 
 def handle_whatsapp_delivery_error(event):
-    async_handle_whatsapp_delivery_error(f"whatsapp:{event.recipient_id}")
+    async_handle_whatsapp_delivery_error.delay(f"whatsapp:{event.recipient_id}")
 
 
 def handle_whatsapp_hsm_error(event):

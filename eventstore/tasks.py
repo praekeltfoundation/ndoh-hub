@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from urllib.parse import urljoin
 
+import pytz
 import requests
 from celery.exceptions import SoftTimeLimitExceeded
 from django.conf import settings
@@ -22,7 +23,7 @@ from ndoh_hub.utils import rapidpro
 
 
 def get_utc_now():
-    return datetime.utcnow()
+    return datetime.now(tz=pytz.utc)
 
 
 @app.task(
@@ -135,7 +136,7 @@ forget_contact = (
 @app.task(
     autoretry_for=(RequestException, SoftTimeLimitExceeded),
     retry_backoff=True,
-    max_retries=1,
+    max_retries=15,
     acks_late=True,
     soft_time_limit=10,
     time_limit=15,
@@ -147,8 +148,8 @@ def get_rapidpro_contact_by_urn(urn):
 
 
 @app.task(
-    autoretry_for=(RequestException, SoftTimeLimitExceeded),
-    retry_backoff=True,
+    autoretry_for=(SoftTimeLimitExceeded,),
+    retry_backoff=False,
     max_retries=1,
     acks_late=True,
     soft_time_limit=10,
@@ -238,11 +239,7 @@ def update_rapidpro_contact_error_timestamp(context):
     msisdn = context["msisdn"]
     rapidpro.update_contact(
         f"whatsapp:{msisdn}",
-        fields={
-            "whatsapp_undelivered_timestamp": get_utc_now().strftime(
-                "%Y-%m-%d %H:%M:%S"
-            )
-        },
+        fields={"whatsapp_undelivered_timestamp": get_utc_now().isoformat()},
     )
 
 
