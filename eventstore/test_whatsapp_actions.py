@@ -16,8 +16,8 @@ from eventstore.whatsapp_actions import (
     handle_inbound,
     handle_operator_message,
     handle_outbound,
+    handle_whatsapp_delivery_error,
     handle_whatsapp_hsm_error,
-    handle_whatsapp_message_expired_error,
     update_rapidpro_preferred_channel,
 )
 
@@ -176,19 +176,36 @@ class HandleEventTests(TestCase):
     def test_expired_message(self):
         """
         If the event is an message expired error, then it should trigger the
-        message expired action
+        message delivery failed action
         """
         event = Mock()
         event.is_hsm_error = False
+        event.is_whatsapp_failed_delivery_event = False
 
-        with patch(
-            "eventstore.whatsapp_actions.handle_whatsapp_message_expired_error"
-        ) as h:
+        with patch("eventstore.whatsapp_actions.handle_whatsapp_delivery_error") as h:
             event.is_message_expired_error = False
             handle_event(event)
             h.assert_not_called()
 
             event.is_message_expired_error = True
+            handle_event(event)
+            h.assert_called_once_with(event)
+
+    def test_delivery_failed_error(self):
+        """
+        If the event is of type Failed, then it should trigger the message
+        delivery failed action
+        """
+        event = Mock()
+        event.is_message_expired_error = False
+        event.is_hsm_error = False
+
+        with patch("eventstore.whatsapp_actions.handle_whatsapp_delivery_error") as h:
+            event.is_whatsapp_failed_delivery_event = False
+            handle_event(event)
+            h.assert_not_called()
+
+            event.is_whatsapp_failed_delivery_event = True
             handle_event(event)
             h.assert_called_once_with(event)
 
@@ -199,6 +216,7 @@ class HandleEventTests(TestCase):
         """
         event = Mock()
         event.is_message_expired_error = False
+        event.is_whatsapp_failed_delivery_event = False
 
         with patch("eventstore.whatsapp_actions.handle_whatsapp_hsm_error") as h:
             event.is_hsm_error = False
@@ -253,7 +271,7 @@ class HandleWhatsappEventsTests(TestCase):
 
     @responses.activate
     @patch("eventstore.tasks.get_utc_now")
-    def test_handle_whatsapp_message_expired_error(self, mock_get_utc_now):
+    def test_handle_whatsapp_delivery_error(self, mock_get_utc_now):
         """
         Sends a SMS and updates the contact if the contact hasn't been sent this
         message in 30 days
@@ -308,7 +326,7 @@ class HandleWhatsappEventsTests(TestCase):
             },
         )
 
-        handle_whatsapp_message_expired_error(event)
+        handle_whatsapp_delivery_error(event)
 
         [_, turn_call, rapidpro_post] = responses.calls
 
@@ -335,9 +353,7 @@ class HandleWhatsappEventsTests(TestCase):
 
     @responses.activate
     @patch("eventstore.tasks.get_utc_now")
-    def test_handle_whatsapp_message_expired_error_with_old_timestamp(
-        self, mock_get_utc_now
-    ):
+    def test_handle_whatsapp_delivery_error_with_old_timestamp(self, mock_get_utc_now):
         """
         Sends a SMS and updates the contact if the contact hasn't been sent this
         message in 30 days
@@ -394,7 +410,7 @@ class HandleWhatsappEventsTests(TestCase):
             },
         )
 
-        handle_whatsapp_message_expired_error(event)
+        handle_whatsapp_delivery_error(event)
 
         [_, turn_call, rapidpro_post] = responses.calls
 
@@ -421,9 +437,7 @@ class HandleWhatsappEventsTests(TestCase):
 
     @responses.activate
     @patch("eventstore.tasks.get_utc_now")
-    def test_handle_whatsapp_message_expired_error_with_new_timestamp(
-        self, mock_get_utc_now
-    ):
+    def test_handle_whatsapp_delivery_error_with_new_timestamp(self, mock_get_utc_now):
         """
         Doesn't send a SMS if contact recieved the message in the last 30 days
         """
@@ -460,6 +474,6 @@ class HandleWhatsappEventsTests(TestCase):
             },
         )
 
-        handle_whatsapp_message_expired_error(event)
+        handle_whatsapp_delivery_error(event)
 
         self.assertEqual(len(responses.calls), 1)

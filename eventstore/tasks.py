@@ -246,7 +246,7 @@ def update_rapidpro_contact_error_timestamp(context):
     )
 
 
-handle_whatsapp_delivery_error = (
+async_handle_whatsapp_delivery_error = (
     get_rapidpro_contact_by_urn.s()
     | check_contact_timestamp.s()
     | send_undelivered_sms.s()

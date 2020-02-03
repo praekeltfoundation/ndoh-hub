@@ -4,7 +4,7 @@ from django.conf import settings
 from changes.tasks import get_engage_inbound_and_reply
 from eventstore.tasks import (
     async_create_flow_start,
-    handle_whatsapp_delivery_error,
+    async_handle_whatsapp_delivery_error,
     update_rapidpro_contact,
 )
 from ndoh_hub.utils import normalise_msisdn
@@ -66,15 +66,15 @@ def handle_event(event):
     """
     Triggers all the actions that are required for this event
     """
-    if event.is_message_expired_error:
-        handle_whatsapp_message_expired_error(event)
+    if event.is_message_expired_error or event.is_whatsapp_failed_delivery_event:
+        handle_whatsapp_delivery_error(event)
 
     if event.is_hsm_error:
         handle_whatsapp_hsm_error(event)
 
 
-def handle_whatsapp_message_expired_error(event):
-    handle_whatsapp_delivery_error(f"whatsapp:{event.recipient_id}")
+def handle_whatsapp_delivery_error(event):
+    async_handle_whatsapp_delivery_error(f"whatsapp:{event.recipient_id}")
 
 
 def handle_whatsapp_hsm_error(event):
