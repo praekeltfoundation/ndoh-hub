@@ -30,7 +30,8 @@ class OptOut(models.Model):
     STOP_TYPE = "stop"
     FORGET_TYPE = "forget"
     LOSS_TYPE = "loss"
-    OPTOUT_TYPES = ((STOP_TYPE, "Stop"), (FORGET_TYPE, "Forget"), (LOSS_TYPE, "Loss"))
+    NONLOSS_TYPE = "nonloss"
+    OPTOUT_TYPES = ((STOP_TYPE, "Stop"), (FORGET_TYPE, "Forget"), (LOSS_TYPE, "Loss"), (NONLOSS_TYPE, "Nonloss"))
 
     NOT_USEFUL_REASON = "not_useful"
     OTHER_REASON = "other"
