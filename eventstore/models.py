@@ -25,6 +25,10 @@ PASSPORT_COUNTRY_TYPES = (
     ("other", "Other"),
 )
 
+SMS_CHANNELTYPE = "SMS"
+WHATSAPP_CHANNELTYPE = "WhatsApp"
+CHANNEL_TYPES = ((SMS_CHANNELTYPE, "SMS"), (WHATSAPP_CHANNELTYPE, "WhatsApp"))
+
 
 class OptOut(models.Model):
     STOP_TYPE = "stop"
@@ -154,6 +158,7 @@ class PublicRegistration(models.Model):
     device_contact_id = models.UUIDField()
     source = models.CharField(max_length=255)
     language = models.CharField(max_length=3, choices=LANGUAGE_TYPES)
+    channel = models.CharField(max_length=8, choices=CHANNEL_TYPES, default="")
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
     data = JSONField(default=dict, blank=True, null=True)
@@ -172,6 +177,7 @@ class CHWRegistration(models.Model):
     passport_number = models.CharField(max_length=255, blank=True)
     date_of_birth = models.DateField(blank=True, null=True)
     language = models.CharField(max_length=3, choices=LANGUAGE_TYPES)
+    channel = models.CharField(max_length=8, choices=CHANNEL_TYPES, default="")
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
     data = JSONField(default=dict, blank=True, null=True)
@@ -189,6 +195,7 @@ class PrebirthRegistration(models.Model):
     passport_number = models.CharField(max_length=255, blank=True)
     date_of_birth = models.DateField(blank=True, null=True)
     language = models.CharField(max_length=3, choices=LANGUAGE_TYPES)
+    channel = models.CharField(max_length=8, choices=CHANNEL_TYPES, default="")
     edd = models.DateField()
     facility_code = models.CharField(max_length=6)
     source = models.CharField(max_length=255)
@@ -227,6 +234,7 @@ class PostbirthRegistration(models.Model):
     baby_dob = models.DateField()
     facility_code = models.CharField(max_length=6)
     source = models.CharField(max_length=255)
+    channel = models.CharField(max_length=8, choices=CHANNEL_TYPES, default="")
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
     data = JSONField(default=dict, blank=True, null=True)

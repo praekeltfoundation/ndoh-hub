@@ -10,13 +10,20 @@ from django.utils import dateparse, translation
 from requests.exceptions import RequestException
 
 from eventstore.models import (
+    BabySwitch,
+    ChannelSwitch,
     CHWRegistration,
     Event,
     IdentificationSwitch,
+    LanguageSwitch,
     Message,
     MSISDNSwitch,
+    OptOut,
+    PMTCTRegistration,
     PostbirthRegistration,
     PrebirthRegistration,
+    PublicRegistration,
+    ResearchOptinSwitch,
 )
 from ndoh_hub.celery import app
 from ndoh_hub.utils import rapidpro
@@ -83,23 +90,31 @@ def delete_contact_pii(contact):
         return
 
     MSISDNSwitch.objects.filter(contact_id=contact_uuid).update(
-        old_msisdn="", new_msisdn=""
+        old_msisdn="", new_msisdn="", data={}
     )
     IdentificationSwitch.objects.filter(contact_id=contact_uuid).update(
         old_id_number="",
         new_id_number="",
         old_passport_number="",
         new_passport_number="",
+        data={},
     )
     CHWRegistration.objects.filter(contact_id=contact_uuid).update(
-        id_number="", passport_number=""
+        id_number="", passport_number="", data={}
     )
     PrebirthRegistration.objects.filter(contact_id=contact_uuid).update(
-        id_number="", passport_number=""
+        id_number="", passport_number="", data={}
     )
     PostbirthRegistration.objects.filter(contact_id=contact_uuid).update(
-        id_number="", passport_number=""
+        id_number="", passport_number="", data={}
     )
+    OptOut.objects.filter(contact_id=contact_uuid).update(data={})
+    BabySwitch.objects.filter(contact_id=contact_uuid).update(data={})
+    ChannelSwitch.objects.filter(contact_id=contact_uuid).update(data={})
+    LanguageSwitch.objects.filter(contact_id=contact_uuid).update(data={})
+    ResearchOptinSwitch.objects.filter(contact_id=contact_uuid).update(data={})
+    PublicRegistration.objects.filter(contact_id=contact_uuid).update(data={})
+    PMTCTRegistration.objects.filter(contact_id=contact_uuid).update(data={})
 
     try:
         _, msisdn = contact["urns"][0].split(":")
