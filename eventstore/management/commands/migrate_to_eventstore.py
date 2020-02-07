@@ -2,10 +2,16 @@ import time
 
 from django.core.management.base import BaseCommand
 
+from changes.models import Change
 from eventstore.models import (
+    BabySwitch,
+    ChannelSwitch,
     CHWRegistration,
+    IdentificationSwitch,
+    LanguageSwitch,
+    MSISDNSwitch,
+    OptOut,
     PMTCTRegistration,
-    PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
 )
@@ -171,6 +177,116 @@ class Command(BaseCommand):
             },
         )
 
+    def handle_babyswitch_change(self, change):
+        BabySwitch.objects.update_or_create(
+            id=change.id,
+            defaults={
+                "contact_id": change.registrant_id,
+                "source": change.source.name,
+                "timestamp": change.created_at,
+                "created_by": change.source.user.username,
+                "data": change.data or {},
+            },
+        )
+
+    def handle_optout_change(self, change):
+        data = change.data or {}
+        if change.action in ("pmtct_loss_switch", "momconnect_loss_switch"):
+            optout_type = "loss"
+        elif (
+            change.data.get("identity_store_optout", {}).get("optout_type") == "forget"
+        ):
+            optout_type = "forget"
+        else:
+            optout_type = "stop"
+        reason = data.pop("reason", "")
+
+        OptOut.objects.update_or_create(
+            id=change.id,
+            defaults={
+                "contact_id": change.registrant_id,
+                "optout_type": optout_type,
+                "reason": reason,
+                "source": change.source.name,
+                "timestamp": change.created_at,
+                "created_by": change.source.user.username,
+                "data": data,
+            },
+        )
+
+    def handle_channelswitch_change(self, change):
+        data = change.data or {}
+        to_channel = {"sms": "SMS", "whatsapp": "WhatsApp"}[data.pop("channel")]
+        from_channel = data.pop(
+            "old_channel", {"SMS": "whatsapp", "WhatsApp": "sms"}[to_channel]
+        )
+        from_channel = {"sms": "SMS", "whatsapp": "WhatsApp"}[from_channel]
+        ChannelSwitch.objects.update_or_create(
+            id=change.id,
+            defaults={
+                "contact_id": change.registrant_id,
+                "source": change.source.name,
+                "from_channel": from_channel,
+                "to_channel": to_channel,
+                "timestamp": change.created_at,
+                "created_by": change.source.user.username,
+                "data": data,
+            },
+        )
+
+    def handle_msisdnswitch_change(self, change):
+        data = change.data or {}
+        msisdn = data.pop("msisdn", "")
+        MSISDNSwitch.objects.update_or_create(
+            id=change.id,
+            defaults={
+                "contact_id": change.registrant_id,
+                "source": change.source.name,
+                "new_msisdn": msisdn,
+                "timestamp": change.created_at,
+                "created_by": change.source.user.username,
+                "data": data,
+            },
+        )
+
+    def handle_languageswitch_change(self, change):
+        data = change.data or {}
+        new_language = data.pop("language").rstrip("_ZA")
+        old_language = (data.pop("old_language") or "").rstrip("_ZA")
+        LanguageSwitch.objects.update_or_create(
+            id=change.id,
+            defaults={
+                "contact_id": change.registrant_id,
+                "source": change.source.name,
+                "old_language": old_language,
+                "new_language": new_language,
+                "timestamp": change.created_at,
+                "created_by": change.source.user.username,
+                "data": data,
+            },
+        )
+
+    def handle_identificationswitch_change(self, change):
+        data = change.data or {}
+        id_type = data.pop("id_type", "")
+        passport_no = data.pop("passport_no", "")
+        passport_origin = data.pop("passport_origin", "")
+        sa_id_no = data.pop("sa_id_no", "")
+        IdentificationSwitch.objects.update_or_create(
+            id=change.id,
+            defaults={
+                "contact_id": change.registrant_id,
+                "source": change.source.name,
+                "new_identification_type": id_type,
+                "new_passport_number": passport_no,
+                "new_passport_country": passport_origin,
+                "new_id_number": sa_id_no,
+                "timestamp": change.created_at,
+                "created_by": change.source.user.username,
+                "data": data,
+            },
+        )
+
     def handle(self, *args, **options):
         queries = {
             "public": Registration.objects.filter(
@@ -206,4 +322,42 @@ class Command(BaseCommand):
             )
             if options["delete"]:
                 self.stdout.write(f"Deleting {name} registrations...")
+                query.delete()
+
+        queries = {
+            "babyswitch": Change.objects.filter(
+                action="baby_switch", validated=True
+            ).select_related("source", "source__user"),
+            "optout": Change.objects.filter(
+                action__in=(
+                    "pmtct_loss_switch",
+                    "pmtct_loss_optout",
+                    "pmtct_nonloss_optout",
+                    "momconnect_loss_switch",
+                    "momconnect_loss_optout",
+                    "momconnect_nonloss_optout",
+                ),
+                validated=True,
+            ).select_related("source", "source__user"),
+            "channelswitch": Change.objects.filter(
+                action="switch_channel", validated=True
+            ).select_related("source", "source__user"),
+            "msisdnswitch": Change.objects.filter(
+                action="momconnect_change_msisdn", validated=True
+            ).select_related("source", "source__user"),
+            "languageswitch": Change.objects.filter(
+                action="momconnect_change_language", validated=True
+            ).select_related("source", "source__user"),
+            "identificationswitch": Change.objects.filter(
+                action="momconnect_change_identification", validated=True
+            ).select_related("source", "source__user"),
+        }
+
+        for name, query in queries.items():
+            self.stdout.write(f"Processing {name} changes...")
+            self.execute_with_progress(
+                getattr(self, f"handle_{name}_change"), query.iterator()
+            )
+            if options["delete"]:
+                self.stdout.write(f"Deleting {name} changes...")
                 query.delete()
