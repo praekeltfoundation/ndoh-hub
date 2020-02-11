@@ -169,10 +169,7 @@ if __name__ == "__main__":
             VALUES %s
             ON CONFLICT DO NOTHING
             """,
-            (
-                (contact_id, f"tel:{msisdn}", msisdn, None, "tel", 1, 50, None, None),
-                (contact_id, f"whatsapp:{wa}", wa, None, "whatsapp", 1, 50, None, None),
-            ),
+            ((contact_id, f"whatsapp:{wa}", wa, None, "whatsapp", 1, 50, None, None),),
         )
 
         execute_values(

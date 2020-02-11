@@ -233,7 +233,7 @@ class JembiAppRegistrationViewTests(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         client.create_flow_start.assert_called_once_with(
             "flow-uuid",
-            urns=["tel:+27820000000"],
+            urns=["whatsapp:27820000000"],
             extra={
                 "external_id": "test-external-id",
                 "msisdn_registrant": "+27820000000",
@@ -1933,7 +1933,7 @@ class ExternalRegistrationsV2Tests(APITestCase):
         self.assertEqual(
             body,
             {
-                "urns": ["tel:+27820001001"],
+                "urns": ["whatsapp:27820001001"],
                 "flow": "flow-uuid-public",
                 "extra": {
                     "language": "xh",
@@ -1973,7 +1973,7 @@ class ExternalRegistrationsV2Tests(APITestCase):
         self.assertEqual(
             body,
             {
-                "urns": ["tel:+27820001001"],
+                "urns": ["whatsapp:27820001001"],
                 "flow": "flow-uuid-chw",
                 "extra": {
                     "language": "xh",
@@ -2023,7 +2023,7 @@ class ExternalRegistrationsV2Tests(APITestCase):
         self.assertEqual(
             body,
             {
-                "urns": ["tel:+27820001001"],
+                "urns": ["whatsapp:27820001001"],
                 "flow": "flow-uuid-clinic",
                 "extra": {
                     "language": "xh",
