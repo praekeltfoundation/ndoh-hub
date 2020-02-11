@@ -943,7 +943,7 @@ validate_subscribe_jembi_app_registration = ValidateSubscribeJembiAppRegistratio
 def submit_jembi_registration_to_rapidpro(data):
     rapidpro.create_flow_start(
         settings.RAPIDPRO_JEMBI_REGISTRATION_FLOW,
-        urns=[f"tel:{data['msisdn_registrant']}"],
+        urns=[f"whatsapp:{data['msisdn_registrant'].strip('+')}"],
         extra=data,
     )
 
@@ -1697,13 +1697,13 @@ def submit_third_party_registration_to_rapidpro(username, data):
     if data["authority"] == "patient":
         rapidpro.create_flow_start(
             settings.RAPIDPRO_PUBLIC_REGISTRATION_FLOW,
-            urns=[f"tel:{data['mom_msisdn']}"],
+            urns=[f"whatsapp:{data['mom_msisdn'].strip('+')}"],
             extra=registration,
         )
     elif data["authority"] == "chw":
         rapidpro.create_flow_start(
             settings.RAPIDPRO_CHW_REGISTRATION_FLOW,
-            urns=[f"tel:{data['mom_msisdn']}"],
+            urns=[f"whatsapp:{data['mom_msisdn'].strip('+')}"],
             extra=registration,
         )
     elif data["authority"] == "clinic":
@@ -1711,6 +1711,6 @@ def submit_third_party_registration_to_rapidpro(username, data):
         registration["clinic_code"] = data["clinic_code"]
         rapidpro.create_flow_start(
             settings.RAPIDPRO_CLINIC_REGISTRATION_FLOW,
-            urns=[f"tel:{data['mom_msisdn']}"],
+            urns=[f"whatsapp:{data['mom_msisdn'].strip('+')}"],
             extra=registration,
         )
