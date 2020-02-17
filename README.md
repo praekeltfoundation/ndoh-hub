@@ -1,4 +1,5 @@
 # ndoh-hub
+
 NDOH Registration and Change service for MomConnect and NurseConnect
 
 ## Registration Information
@@ -253,6 +254,7 @@ NDOH Registration and Change service for MomConnect and NurseConnect
     }
 
 ## Releasing
+
 Releasing is done by building a new docker image. This is done automatically as
 part of the travis build.
 
@@ -271,17 +273,24 @@ and then push that tag. A new docker image and tag will be created according to
 the version specified in the git tag.
 
 ## Translations
+
 To update the translation files from the source, run:
 
     django-admin makemessages -a
 
 To compile translation files from the source, run:
+
     django-admin compilemessages
 
 You can then use a tool like POEdit to update the PO files with the relevant
 translations
 
 ## Development
+
+To install pre-commit
+
+    pre-commit install
+
 This project uses isort for the formatting of imports, to format run:
 
     isort -rc .

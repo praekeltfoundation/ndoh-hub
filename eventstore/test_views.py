@@ -2,10 +2,12 @@ import base64
 import datetime
 import hmac
 from hashlib import sha256
+from unittest import mock
 
 import responses
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
+from django.test import override_settings
 from django.urls import reverse
 from pytz import UTC
 from rest_framework import status
@@ -26,6 +28,7 @@ from eventstore.models import (
     Message,
     MSISDNSwitch,
     OptOut,
+    PMTCTRegistration,
     PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
@@ -595,6 +598,90 @@ class PrebirthRegistrationViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(registration.passport_country, "other")
 
 
+class PMTCTRegistrationViewSetTests(APITestCase, BaseEventTestCase):
+    url = reverse("pmtctregistration-list")
+
+    def test_data_validation(self):
+        """
+        The supplied data must be validated, and any errors returned
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_pmtctregistration")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_successful_pmtct_registration_request(self):
+        """
+        Should create a new PMTCTRegistration object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_pmtctregistration")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "contact_id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+                "device_contact_id": "d80d51cb-8a95-4588-ac74-250d739edef8",
+                "pmtct_risk": "normal",
+                "date_of_birth": "1990-02-03",
+                "source": "WhatsApp",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [registration] = PMTCTRegistration.objects.all()
+        self.assertEqual(
+            str(registration.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
+        )
+        self.assertEqual(
+            str(registration.device_contact_id), "d80d51cb-8a95-4588-ac74-250d739edef8"
+        )
+        self.assertEqual(registration.pmtct_risk, "normal")
+        self.assertEqual(registration.date_of_birth, datetime.date(1990, 2, 3))
+        self.assertEqual(registration.source, "WhatsApp")
+        self.assertEqual(registration.created_by, user.username)
+
+    def test_successful_request_with_null_date_of_birth(self):
+        """
+        Should create succuess object in the database if dob is null
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_pmtctregistration")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "contact_id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+                "device_contact_id": "d80d51cb-8a95-4588-ac74-250d739edef8",
+                "pmtct_risk": "normal",
+                "date_of_birth": None,
+                "source": "WhatsApp",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [registration] = PMTCTRegistration.objects.all()
+        self.assertEqual(
+            str(registration.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
+        )
+        self.assertEqual(
+            str(registration.device_contact_id), "d80d51cb-8a95-4588-ac74-250d739edef8"
+        )
+        self.assertEqual(registration.pmtct_risk, "normal")
+        self.assertEqual(registration.date_of_birth, None)
+        self.assertEqual(registration.source, "WhatsApp")
+        self.assertEqual(registration.created_by, user.username)
+
+
 class PostbirthRegistrationViewSetTests(APITestCase, BaseEventTestCase):
     url = reverse("postbirthregistration-list")
 
@@ -982,6 +1069,39 @@ class MessagesViewSetTests(APITestCase):
         ),
         self.assertEqual(messages.created_by, user.username)
 
+    def test_successful_inbound_from_fallback_channel(self):
+        """
+        Save inbound message when subscription is turn and x-turn-event is 1
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_message"))
+        self.client.force_authenticate(user)
+        data = {
+            "messages": [
+                {
+                    "id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+                    "from": "sender-wa-id",
+                    "timestamp": "1518694700",
+                    "type": "image",
+                    "text": {"body": "text-message-content"},
+                }
+            ]
+        }
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+            HTTP_X_TURN_HOOK_SUBSCRIPTION="turn",
+            HTTP_X_TURN_EVENT="1",
+            HTTP_X_TURN_FALLBACK_CHANNEL="1",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [message] = Message.objects.all()
+        self.assertEqual(str(message.contact_id), "sender-wa-id")
+        self.assertEqual(message.message_direction, Message.INBOUND)
+
     def test_successful_outbound_messages_request(self):
         """
         Should create a new Outbound Message object in the database
@@ -1065,7 +1185,8 @@ class MessagesViewSetTests(APITestCase):
         [messages] = Message.objects.all()
         self.assertTrue(messages.fallback_channel)
 
-    def test_successful_events_request(self):
+    @mock.patch("eventstore.views.handle_event")
+    def test_successful_events_request(self, mock_handle_event):
         """
         Should create a new Event object in the database
         """
@@ -1102,7 +1223,10 @@ class MessagesViewSetTests(APITestCase):
         self.assertEqual(event.created_by, user.username)
         self.assertFalse(event.fallback_channel)
 
-    def test_successful_events_request_on_fallback_channel(self):
+        mock_handle_event.assert_not_called()
+
+    @mock.patch("eventstore.views.handle_event")
+    def test_successful_events_request_on_fallback_channel(self, mock_handle_event):
         """
         Should create a new Event object in the database with the fallback
         channel flag on
@@ -1133,6 +1257,41 @@ class MessagesViewSetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         [event] = Event.objects.all()
         self.assertTrue(event.fallback_channel)
+
+        mock_handle_event.assert_not_called()
+
+    @mock.patch("eventstore.views.handle_event")
+    @override_settings(ENABLE_EVENTSTORE_WHATSAPP_ACTIONS=True)
+    def test_events_request_calls_handle_event(self, mock_handle_event):
+        """
+        Should call handle_event if the eventstore whatsapp actions are enabled
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_message"))
+        self.client.force_authenticate(user)
+        data = {
+            "statuses": [
+                {
+                    "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+                    "recipient_id": "16315555555",
+                    "status": "read",
+                    "timestamp": "1518694700",
+                    "random": "data",
+                }
+            ]
+        }
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+            HTTP_X_TURN_HOOK_SUBSCRIPTION="whatsapp",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [event] = Event.objects.all()
+
+        mock_handle_event.assert_called_with(event)
 
     def test_signature_required(self):
         """
