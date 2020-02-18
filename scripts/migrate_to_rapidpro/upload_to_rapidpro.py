@@ -48,7 +48,7 @@ def fields_from_contact(field_mapping, contact):
     baby_dobs = map(normalize_timestamp, contact.get("baby_dobs", []))
     baby_dobs = sorted(set(baby_dobs), reverse=True)
     for i, baby_dob in enumerate(baby_dobs[:3], 1):
-        datetime_field(f"baby_dob_{i}", baby_dob)
+        datetime_field(f"baby_dob{i}", baby_dob)
     datetime_field("date_of_birth", contact.get("mom_dob"))
     datetime_field("edd", contact.get("edd"))
     string_field("facility_code", contact.get("faccode"))
@@ -67,6 +67,11 @@ def fields_from_contact(field_mapping, contact):
     string_field("preferred_channel", contact.get("channel"))
     datetime_field("public_registration_date", contact.get("public_registration_date"))
     string_field("registered_by", contact.get("msisdn_device"))
+    string_field("pmtct_messaging", contact.get("pmtct_messaging"))
+    string_field("loss_messaging", contact.get("loss_messaging"))
+    string_field("public_messaging", contact.get("public_messaging"))
+    string_field("prebirth_messaging", contact.get("prebirth_messaging"))
+    string_field("postbirth_messaging", contact.get("postbirth_messaging"))
 
     return ret
 
@@ -83,16 +88,6 @@ if __name__ == "__main__":
         (ORG,),
     )
     field_mapping = dict(cursor)
-
-    cursor.execute(
-        """
-        SELECT name, id
-        FROM contacts_contactgroup
-        WHERE org_id=%s
-        """,
-        (ORG,),
-    )
-    group_mapping = dict(cursor)
 
     cursor.execute(
         """
@@ -170,19 +165,6 @@ if __name__ == "__main__":
             ON CONFLICT DO NOTHING
             """,
             ((contact_id, f"whatsapp:{wa}", wa, None, "whatsapp", 1, 50, None, None),),
-        )
-
-        execute_values(
-            cursor,
-            """
-            INSERT INTO contacts_contactgroup_contacts ( contactgroup_id, contact_id )
-            VALUES %s
-            ON CONFLICT DO NOTHING
-            """,
-            (
-                (group_mapping[group], contact_id)
-                for group in set(contact.get("subscriptions", []))
-            ),
         )
 
         if time.time() - d_print > 1:

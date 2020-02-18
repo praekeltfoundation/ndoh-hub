@@ -481,14 +481,12 @@ class ProcessSubscriptionTests(TestCase):
         process_subscription(
             identities, "identity-uuid", "pmtct_prebirth.hw_full.1", timestamp
         )
-        self.assertEqual(identities["identity-uuid"]["subscriptions"], ["PMTCT"])
+        self.assertEqual(identities["identity-uuid"]["pmtct_messaging"], "TRUE")
 
         process_subscription(
             identities, "identity-uuid", "loss_miscarriage.patient.1", timestamp
         )
-        self.assertEqual(
-            identities["identity-uuid"]["subscriptions"], ["PMTCT", "Loss"]
-        )
+        self.assertEqual(identities["identity-uuid"]["loss_messaging"], "TRUE")
         self.assertEqual(identities["identity-uuid"]["optout_reason"], "miscarriage")
         self.assertEqual(
             identities["identity-uuid"]["optout_timestamp"], "2020-01-01T00:00:00"
@@ -497,9 +495,7 @@ class ProcessSubscriptionTests(TestCase):
         process_subscription(
             identities, "identity-uuid", "momconnect_prebirth.hw_partial.1", timestamp
         )
-        self.assertEqual(
-            identities["identity-uuid"]["subscriptions"], ["PMTCT", "Loss", "Public"]
-        )
+        self.assertEqual(identities["identity-uuid"]["public_messaging"], "TRUE")
         self.assertEqual(
             identities["identity-uuid"]["public_registration_date"],
             "2020-01-01T00:00:00",
@@ -508,24 +504,12 @@ class ProcessSubscriptionTests(TestCase):
         process_subscription(
             identities, "identity-uuid", "momconnect_prebirth.hw_full.3", timestamp
         )
-        self.assertEqual(
-            identities["identity-uuid"]["subscriptions"],
-            ["PMTCT", "Loss", "Public", "Prebirth 3"],
-        )
+        self.assertEqual(identities["identity-uuid"]["prebirth_messaging"], "3")
 
         process_subscription(
             identities, "identity-uuid", "momconnect_postbirth.hw_full.2", timestamp
         )
-        self.assertEqual(
-            identities["identity-uuid"]["subscriptions"],
-            ["PMTCT", "Loss", "Public", "Prebirth 3", "Postbirth"],
-        )
-
-        process_subscription(identities, "identity-uuid", "irrelevant_name", timestamp)
-        self.assertEqual(
-            identities["identity-uuid"]["subscriptions"],
-            ["PMTCT", "Loss", "Public", "Prebirth 3", "Postbirth"],
-        )
+        self.assertEqual(identities["identity-uuid"]["postbirth_messaging"], "TRUE")
 
 
 class DeduplicateMSISDNsTests(TestCase):
