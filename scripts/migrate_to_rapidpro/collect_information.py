@@ -144,28 +144,23 @@ def process_subscription(identities, id, name, created_at):
             identities[id]["channel"] = "SMS"
 
     if "pmtct" in name:
-        name = "PMTCT"
+        identities[id]["pmtct_messaging"] = "TRUE"
     elif "loss" in name:
         identities[id]["optout_reason"] = name.split(".")[0].split("_")[-1]
         identities[id]["optout_timestamp"] = created_at
-        name = "Loss"
+        identities[id]["loss_messaging"] = "TRUE"
     elif (
         "momconnect_prebirth.patient" in name
         or "momconnect_prebirth.hw_partial" in name
     ):
-        name = "Public"
+        identities[id]["public_messaging"] = "TRUE"
         identities[id]["public_registration_date"] = created_at
     elif "momconnect_prebirth.hw_full" in name:
-        name = f"Prebirth {name[-1]}"
+        identities[id]["prebirth_messaging"] = name[-1]
     elif "momconnect_postbirth.hw_full" in name:
-        name = "Postbirth"
+        identities[id]["postbirth_messaging"] = "TRUE"
     else:
         return
-
-    if identities[id].get("subscriptions"):
-        identities[id]["subscriptions"].append(name)
-    else:
-        identities[id]["subscriptions"] = [name]
 
 
 def merge_dicts(d1, d2):
