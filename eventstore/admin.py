@@ -4,8 +4,10 @@ from django.db import OperationalError, connection, transaction
 from django.utils.functional import cached_property
 
 from eventstore.models import (
+    BabyDobSwitch,
     BabySwitch,
     ChannelSwitch,
+    EddSwitch,
     IdentificationSwitch,
     LanguageSwitch,
     MSISDNSwitch,
@@ -15,8 +17,6 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
-    EddSwitch,
-    BabyDobSwitch,
 )
 
 

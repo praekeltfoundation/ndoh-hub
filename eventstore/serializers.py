@@ -1,9 +1,11 @@
 from rest_framework import serializers
 
 from eventstore.models import (
+    BabyDobSwitch,
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
+    EddSwitch,
     IdentificationSwitch,
     LanguageSwitch,
     MSISDNSwitch,
@@ -13,8 +15,6 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
-    EddSwitch,
-    BabyDobSwitch,
 )
 from registrations.validators import posix_timestamp
 

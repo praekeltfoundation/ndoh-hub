@@ -9,9 +9,11 @@ from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.documentation import include_docs_urls
 
 from eventstore.views import (
+    BabyDobSwitchViewSet,
     BabySwitchViewSet,
     ChannelSwitchViewSet,
     CHWRegistrationViewSet,
+    EddSwitchViewSet,
     IdentificationSwitchViewSet,
     LanguageSwitchViewSet,
     MessagesViewSet,
@@ -22,8 +24,6 @@ from eventstore.views import (
     PrebirthRegistrationViewSet,
     PublicRegistrationViewSet,
     ResearchOptinSwitchViewSet,
-    EddSwitchViewSet,
-    BabyDobSwitchViewSet,
 )
 from ndoh_hub.decorators import internal_only
 from registrations import views

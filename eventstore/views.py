@@ -10,9 +10,11 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from eventstore.models import (
+    BabyDobSwitch,
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
+    EddSwitch,
     Event,
     IdentificationSwitch,
     LanguageSwitch,
@@ -24,13 +26,13 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
-    EddSwitch,
-    BabyDobSwitch,
 )
 from eventstore.serializers import (
+    BabyDobSwitchSerializer,
     BabySwitchSerializer,
     ChannelSwitchSerializer,
     CHWRegistrationSerializer,
+    EddSwitchSerializer,
     IdentificationSwitchSerializer,
     LanguageSwitchSerializer,
     MSISDNSwitchSerializer,
@@ -42,8 +44,6 @@ from eventstore.serializers import (
     ResearchOptinSwitchSerializer,
     TurnOutboundSerializer,
     WhatsAppWebhookSerializer,
-    EddSwitchSerializer,
-    BabyDobSwitchSerializer,
 )
 from eventstore.tasks import forget_contact
 from eventstore.whatsapp_actions import handle_event, handle_inbound, handle_outbound

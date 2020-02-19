@@ -1,9 +1,9 @@
 import base64
 import datetime
 import hmac
+from datetime import date
 from hashlib import sha256
 from unittest import mock
-from datetime import date
 
 import responses
 from django.contrib.auth import get_user_model
@@ -20,9 +20,11 @@ from temba_client.v2 import TembaClient
 from eventstore import tasks
 from eventstore.models import (
     PASSPORT_IDTYPE,
+    BabyDobSwitch,
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
+    EddSwitch,
     Event,
     IdentificationSwitch,
     LanguageSwitch,
@@ -34,8 +36,6 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
-    EddSwitch,
-    BabyDobSwitch,
 )
 
 

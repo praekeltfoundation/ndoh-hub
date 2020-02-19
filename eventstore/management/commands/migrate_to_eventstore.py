@@ -4,9 +4,11 @@ from django.core.management.base import BaseCommand
 
 from changes.models import Change
 from eventstore.models import (
+    BabyDobSwitch,
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
+    EddSwitch,
     IdentificationSwitch,
     LanguageSwitch,
     MSISDNSwitch,
@@ -14,8 +16,6 @@ from eventstore.models import (
     PMTCTRegistration,
     PrebirthRegistration,
     PublicRegistration,
-    EddSwitch,
-    BabyDobSwitch,
 )
 from ndoh_hub.constants import LANGUAGES
 from registrations.models import Registration

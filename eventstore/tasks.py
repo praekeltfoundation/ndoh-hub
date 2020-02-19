@@ -10,9 +10,11 @@ from django.utils import dateparse, translation
 from requests.exceptions import RequestException
 
 from eventstore.models import (
+    BabyDobSwitch,
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
+    EddSwitch,
     Event,
     IdentificationSwitch,
     LanguageSwitch,
@@ -24,8 +26,6 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
-    EddSwitch,
-    BabyDobSwitch,
 )
 from ndoh_hub.celery import app
 from ndoh_hub.utils import rapidpro
