@@ -271,7 +271,7 @@ class Command(BaseCommand):
     def handle_eddswitch_change(self, change):
         data = change.data or {}
         new_edd = data.pop("edd")
-        old_edd = (data.pop("old_edd") or "")
+        old_edd = data.pop("old_edd") or ""
         EddSwitch.objects.update_or_create(
             id=change.id,
             defaults={
@@ -288,7 +288,7 @@ class Command(BaseCommand):
     def handle_babydobswitch_change(self, change):
         data = change.data or {}
         new_baby_dob = data.pop("baby_dob")
-        old_baby_dob = (data.pop("old_baby_dob") or "")
+        old_baby_dob = data.pop("old_baby_dob") or ""
         BabyDobSwitch.objects.update_or_create(
             id=change.id,
             defaults={

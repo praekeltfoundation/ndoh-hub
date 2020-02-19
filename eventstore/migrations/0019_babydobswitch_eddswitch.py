@@ -9,35 +9,65 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('eventstore', '0018_auto_20200205_1033'),
-    ]
+    dependencies = [("eventstore", "0018_auto_20200205_1033")]
 
     operations = [
         migrations.CreateModel(
-            name='BabyDobSwitch',
+            name="BabyDobSwitch",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('contact_id', models.UUIDField()),
-                ('source', models.CharField(max_length=255)),
-                ('old_baby_dob', models.DateField()),
-                ('new_baby_dob', models.DateField()),
-                ('timestamp', models.DateTimeField(default=django.utils.timezone.now)),
-                ('created_by', models.CharField(blank=True, default='', max_length=255)),
-                ('data', django.contrib.postgres.fields.jsonb.JSONField(blank=True, default=dict, null=True)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("contact_id", models.UUIDField()),
+                ("source", models.CharField(max_length=255)),
+                ("old_baby_dob", models.DateField()),
+                ("new_baby_dob", models.DateField()),
+                ("timestamp", models.DateTimeField(default=django.utils.timezone.now)),
+                (
+                    "created_by",
+                    models.CharField(blank=True, default="", max_length=255),
+                ),
+                (
+                    "data",
+                    django.contrib.postgres.fields.jsonb.JSONField(
+                        blank=True, default=dict, null=True
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='EddSwitch',
+            name="EddSwitch",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('contact_id', models.UUIDField()),
-                ('source', models.CharField(max_length=255)),
-                ('old_edd', models.DateField()),
-                ('new_edd', models.DateField()),
-                ('timestamp', models.DateTimeField(default=django.utils.timezone.now)),
-                ('created_by', models.CharField(blank=True, default='', max_length=255)),
-                ('data', django.contrib.postgres.fields.jsonb.JSONField(blank=True, default=dict, null=True)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("contact_id", models.UUIDField()),
+                ("source", models.CharField(max_length=255)),
+                ("old_edd", models.DateField()),
+                ("new_edd", models.DateField()),
+                ("timestamp", models.DateTimeField(default=django.utils.timezone.now)),
+                (
+                    "created_by",
+                    models.CharField(blank=True, default="", max_length=255),
+                ),
+                (
+                    "data",
+                    django.contrib.postgres.fields.jsonb.JSONField(
+                        blank=True, default=dict, null=True
+                    ),
+                ),
             ],
         ),
     ]
