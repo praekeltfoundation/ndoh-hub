@@ -24,6 +24,8 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
+    EddSwitch,
+    BabyDobSwitch,
 )
 from eventstore.serializers import (
     BabySwitchSerializer,
@@ -40,6 +42,8 @@ from eventstore.serializers import (
     ResearchOptinSwitchSerializer,
     TurnOutboundSerializer,
     WhatsAppWebhookSerializer,
+    EddSwitchSerializer,
+    BabyDobSwitchSerializer,
 )
 from eventstore.tasks import forget_contact
 from eventstore.whatsapp_actions import handle_event, handle_inbound, handle_outbound
@@ -233,4 +237,16 @@ class PostbirthRegistrationViewSet(GenericViewSet, CreateModelMixin):
 class PMTCTRegistrationViewSet(GenericViewSet, CreateModelMixin):
     queryset = PMTCTRegistration.objects.all()
     serializer_class = PMTCTRegistrationSerializer
+    permission_classes = (DjangoModelPermissions,)
+
+
+class EddSwitchViewSet(GenericViewSet, CreateModelMixin):
+    queryset = EddSwitch.objects.all()
+    serializer_class = EddSwitchSerializer
+    permission_classes = (DjangoModelPermissions,)
+
+
+class BabyDobSwitchViewSet(GenericViewSet, CreateModelMixin):
+    queryset = BabyDobSwitch.objects.all()
+    serializer_class = BabyDobSwitchSerializer
     permission_classes = (DjangoModelPermissions,)

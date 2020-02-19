@@ -14,6 +14,8 @@ from eventstore.models import (
     PMTCTRegistration,
     PrebirthRegistration,
     PublicRegistration,
+    EddSwitch,
+    BabyDobSwitch,
 )
 from ndoh_hub.constants import LANGUAGES
 from registrations.models import Registration
@@ -260,6 +262,40 @@ class Command(BaseCommand):
                 "source": change.source.name,
                 "old_language": old_language,
                 "new_language": new_language,
+                "timestamp": change.created_at,
+                "created_by": change.source.user.username,
+                "data": data,
+            },
+        )
+
+    def handle_eddswitch_change(self, change):
+        data = change.data or {}
+        new_edd = data.pop("edd")
+        old_edd = (data.pop("old_edd") or "")
+        EddSwitch.objects.update_or_create(
+            id=change.id,
+            defaults={
+                "contact_id": change.registrant_id,
+                "source": change.source.name,
+                "old_edd": old_edd,
+                "new_edd": new_edd,
+                "timestamp": change.created_at,
+                "created_by": change.source.user.username,
+                "data": data,
+            },
+        )
+
+    def handle_babydobswitch_change(self, change):
+        data = change.data or {}
+        new_baby_dob = data.pop("baby_dob")
+        old_baby_dob = (data.pop("old_baby_dob") or "")
+        BabyDobSwitch.objects.update_or_create(
+            id=change.id,
+            defaults={
+                "contact_id": change.registrant_id,
+                "source": change.source.name,
+                "old_baby_dob": old_baby_dob,
+                "new_baby_dob": new_baby_dob,
                 "timestamp": change.created_at,
                 "created_by": change.source.user.username,
                 "data": data,

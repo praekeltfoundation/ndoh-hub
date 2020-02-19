@@ -13,6 +13,8 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
+    EddSwitch,
+    BabyDobSwitch,
 )
 from registrations.validators import posix_timestamp
 
@@ -134,3 +136,17 @@ class WhatsAppWebhookSerializer(serializers.Serializer):
 
 class TurnOutboundSerializer(serializers.Serializer):
     to = serializers.CharField()
+
+
+class EddSwitchSerializer(BaseEventSerializer):
+    class Meta:
+        model = EddSwitch
+        fields = "__all__"
+        read_only_fields = ("id", "created_by")
+
+
+class BabyDobSwitchSerializer(BaseEventSerializer):
+    class Meta:
+        model = BabyDobSwitch
+        fields = "__all__"
+        read_only_fields = ("id", "created_by")

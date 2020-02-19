@@ -15,6 +15,8 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
+    EddSwitch,
+    BabyDobSwitch,
 )
 
 
@@ -117,3 +119,15 @@ class PostbirthRegistrationAdmin(BaseEventAdmin):
 class PMTCTRegistrationAdmin(BaseEventAdmin):
     readonly_fields = ("id", "created_by", "timestamp")
     list_display = ("contact_id", "source", "date_of_birth", "pmtct_risk", "timestamp")
+
+
+@admin.register(EddSwitch)
+class EddSwitch(BaseEventAdmin):
+    readonly_fields = ("id", "created_by", "timestamp")
+    list_display = ("contact_id", "source", "timestamp")
+
+
+@admin.register(BabyDobSwitch)
+class BabyDobSwitch(BaseEventAdmin):
+    readonly_fields = ("id", "created_by", "timestamp")
+    list_display = ("contact_id", "source", "timestamp")

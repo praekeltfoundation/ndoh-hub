@@ -3,6 +3,7 @@ import datetime
 import hmac
 from hashlib import sha256
 from unittest import mock
+from datetime import date
 
 import responses
 from django.contrib.auth import get_user_model
@@ -33,6 +34,8 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
+    EddSwitch,
+    BabyDobSwitch,
 )
 
 
@@ -360,6 +363,74 @@ class LanguageSwitchViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(languageswitch.old_language, "zul")
         self.assertEqual(languageswitch.new_language, "xho")
         self.assertEqual(languageswitch.created_by, user.username)
+
+
+class EddSwitchViewsettests(APITestCase, BaseEventTestCase):
+    url = reverse("eddswitch-list")
+
+    def test_data_validation(self):
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_eddswitch"))
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_successful_request(self):
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_eddswitch"))
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "contact_id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+                "source": "POPI USSD",
+                "old_edd": "2020-06-06",
+                "new_edd": "2020-06-07",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [eddswitch] = EddSwitch.objects.all()
+        self.assertEqual(
+            str(eddswitch.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
+        )
+        self.assertEqual(eddswitch.source, "POPI USSD")
+        self.assertEqual(eddswitch.old_edd, date(2020, 6, 6))
+        self.assertEqual(eddswitch.new_edd, date(2020, 6, 7))
+        self.assertEqual(eddswitch.created_by, user.username)
+
+
+class BabyDobSwitchViewSettests(APITestCase, BaseEventTestCase):
+    url = reverse("babydobswitch-list")
+
+    def test_data_validation(self):
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_babydobswitch"))
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_successful_request(self):
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_babydobswitch"))
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "contact_id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+                "source": "POPI USSD",
+                "old_baby_dob": "2020-06-06",
+                "new_baby_dob": "2020-06-07",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [babydobswitch] = BabyDobSwitch.objects.all()
+        self.assertEqual(
+            str(babydobswitch.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
+        )
+        self.assertEqual(babydobswitch.source, "POPI USSD")
+        self.assertEqual(babydobswitch.old_baby_dob, date(2020, 6, 6))
+        self.assertEqual(babydobswitch.new_baby_dob, date(2020, 6, 7))
+        self.assertEqual(babydobswitch.created_by, user.username)
 
 
 class IdentificationSwitchViewSetTests(APITestCase, BaseEventTestCase):
