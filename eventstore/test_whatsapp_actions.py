@@ -19,7 +19,6 @@ from eventstore.whatsapp_actions import (
     handle_whatsapp_delivery_error,
     handle_whatsapp_hsm_error,
     update_rapidpro_preferred_channel,
-    handle_inbound_with_label,
 )
 
 

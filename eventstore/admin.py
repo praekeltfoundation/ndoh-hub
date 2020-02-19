@@ -122,12 +122,12 @@ class PMTCTRegistrationAdmin(BaseEventAdmin):
 
 
 @admin.register(EddSwitch)
-class EddSwitch(BaseEventAdmin):
+class EddSwitchAdmin(BaseEventAdmin):
     readonly_fields = ("id", "created_by", "timestamp")
     list_display = ("contact_id", "source", "timestamp")
 
 
 @admin.register(BabyDobSwitch)
-class BabyDobSwitch(BaseEventAdmin):
+class BabyDobSwitchAdmin(BaseEventAdmin):
     readonly_fields = ("id", "created_by", "timestamp")
     list_display = ("contact_id", "source", "timestamp")
