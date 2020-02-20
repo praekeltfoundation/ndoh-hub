@@ -9,9 +9,11 @@ from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.documentation import include_docs_urls
 
 from eventstore.views import (
+    BabyDobSwitchViewSet,
     BabySwitchViewSet,
     ChannelSwitchViewSet,
     CHWRegistrationViewSet,
+    EddSwitchViewSet,
     IdentificationSwitchViewSet,
     LanguageSwitchViewSet,
     MessagesViewSet,
@@ -42,6 +44,8 @@ v2router.register("pmtctregistrations", PMTCTRegistrationViewSet)
 v2router.register("postbirthregistrations", PostbirthRegistrationViewSet)
 v2router.register("researchoptins", ResearchOptinSwitchViewSet)
 v2router.register("messages", MessagesViewSet, basename="messages")
+v2router.register("eddswitches", EddSwitchViewSet)
+v2router.register("babydobswitches", BabyDobSwitchViewSet)
 
 urlpatterns = [
     path("admin/", admin.site.urls),

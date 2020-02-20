@@ -240,6 +240,28 @@ class PostbirthRegistration(models.Model):
     data = JSONField(default=dict, blank=True, null=True)
 
 
+class EddSwitch(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    contact_id = models.UUIDField()
+    source = models.CharField(max_length=255)
+    old_edd = models.DateField()
+    new_edd = models.DateField()
+    timestamp = models.DateTimeField(default=timezone.now)
+    created_by = models.CharField(max_length=255, blank=True, default="")
+    data = JSONField(default=dict, blank=True, null=True)
+
+
+class BabyDobSwitch(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    contact_id = models.UUIDField()
+    source = models.CharField(max_length=255)
+    old_baby_dob = models.DateField()
+    new_baby_dob = models.DateField()
+    timestamp = models.DateTimeField(default=timezone.now)
+    created_by = models.CharField(max_length=255, blank=True, default="")
+    data = JSONField(default=dict, blank=True, null=True)
+
+
 class Message(models.Model):
     INBOUND = "I"
     OUTBOUND = "O"

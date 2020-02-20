@@ -10,9 +10,11 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from eventstore.models import (
+    BabyDobSwitch,
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
+    EddSwitch,
     Event,
     IdentificationSwitch,
     LanguageSwitch,
@@ -26,9 +28,11 @@ from eventstore.models import (
     ResearchOptinSwitch,
 )
 from eventstore.serializers import (
+    BabyDobSwitchSerializer,
     BabySwitchSerializer,
     ChannelSwitchSerializer,
     CHWRegistrationSerializer,
+    EddSwitchSerializer,
     IdentificationSwitchSerializer,
     LanguageSwitchSerializer,
     MSISDNSwitchSerializer,
@@ -233,4 +237,16 @@ class PostbirthRegistrationViewSet(GenericViewSet, CreateModelMixin):
 class PMTCTRegistrationViewSet(GenericViewSet, CreateModelMixin):
     queryset = PMTCTRegistration.objects.all()
     serializer_class = PMTCTRegistrationSerializer
+    permission_classes = (DjangoModelPermissions,)
+
+
+class EddSwitchViewSet(GenericViewSet, CreateModelMixin):
+    queryset = EddSwitch.objects.all()
+    serializer_class = EddSwitchSerializer
+    permission_classes = (DjangoModelPermissions,)
+
+
+class BabyDobSwitchViewSet(GenericViewSet, CreateModelMixin):
+    queryset = BabyDobSwitch.objects.all()
+    serializer_class = BabyDobSwitchSerializer
     permission_classes = (DjangoModelPermissions,)

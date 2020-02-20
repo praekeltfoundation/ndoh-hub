@@ -10,9 +10,11 @@ from django.utils import dateparse, translation
 from requests.exceptions import RequestException
 
 from eventstore.models import (
+    BabyDobSwitch,
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
+    EddSwitch,
     Event,
     IdentificationSwitch,
     LanguageSwitch,
@@ -115,6 +117,8 @@ def delete_contact_pii(contact):
     ResearchOptinSwitch.objects.filter(contact_id=contact_uuid).update(data={})
     PublicRegistration.objects.filter(contact_id=contact_uuid).update(data={})
     PMTCTRegistration.objects.filter(contact_id=contact_uuid).update(data={})
+    EddSwitch.objects.filter(contact_id=contact_uuid).update(data={})
+    BabyDobSwitch.objects.filter(contact_id=contact_uuid).update(data={})
 
     try:
         _, msisdn = contact["urns"][0].split(":")
