@@ -44,7 +44,7 @@ v2router.register("pmtctregistrations", PMTCTRegistrationViewSet)
 v2router.register("postbirthregistrations", PostbirthRegistrationViewSet)
 v2router.register("researchoptins", ResearchOptinSwitchViewSet)
 v2router.register("messages", MessagesViewSet, basename="messages")
-v2router.register("eddeswitches", EddSwitchViewSet)
+v2router.register("eddswitches", EddSwitchViewSet)
 v2router.register("babydobswitches", BabyDobSwitchViewSet)
 
 urlpatterns = [
