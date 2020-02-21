@@ -9,7 +9,7 @@ import requests
 
 def length_limit(limit):
     def validate_length(instance, attribute, value):
-        if len(value) > 1024:
+        if len(value) > limit:
             raise ValueError(
                 f"{attribute.name} must be shorter or equal to {limit} characters"
             )
