@@ -33,6 +33,7 @@ setup(
         "django-prometheus==1.0.15",
         "wabclient==2.2.1",
         "rapidpro-python==2.6.1",
+        "attrs",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
