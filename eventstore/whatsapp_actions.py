@@ -2,13 +2,13 @@ from celery import chain
 from django.conf import settings
 
 from changes.tasks import get_engage_inbound_and_reply
+from eventstore.models import DeliveryFailures, Event
 from eventstore.tasks import (
     async_create_flow_start,
     async_handle_whatsapp_delivery_error,
     update_rapidpro_contact,
 )
 from ndoh_hub.utils import normalise_msisdn
-from eventstore.models import Event, DeliveryFailures
 
 
 def handle_outbound(message):
@@ -75,8 +75,7 @@ def handle_event(event):
 
 
 def handle_whatsapp_delivery_error(event):
-    print(Event.fallback_channel)
-    if not Event.fallback_channel:
+    if not event.fallback_channel:
         async_handle_whatsapp_delivery_error.delay(f"whatsapp:{event.recipient_id}")
     else:
         df = DeliveryFailures.objects.get(contact_id=event.recipient_id)

@@ -1,16 +1,15 @@
 import datetime
 import json
-from django.test import TestCase
 from unittest.mock import Mock, patch
 
 import responses
 from django.conf import settings
-from django.test import override_settings
+from django.test import TestCase, override_settings
 from pytz import UTC
 from temba_client.v2 import TembaClient
-from eventstore.models import DeliveryFailures, Event
 
 from eventstore import tasks
+from eventstore.models import DeliveryFailures, Event
 from eventstore.whatsapp_actions import (
     handle_edd_message,
     handle_event,
@@ -217,8 +216,6 @@ class HandleEventTests(TestCase):
         then it should trigger the message delivery failed action
         """
         event = Event.objects.create()
-        # event.is_message_expired_error = False
-        # event.is_hsm_error = False
         event.fallback_channel = True
         event.recipient_id = "27820001001"
         event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
@@ -304,9 +301,9 @@ class HandleWhatsappEventsTests(TestCase):
         timestamp = 1543999390.069308
         mock_get_utc_now.return_value = datetime.datetime.fromtimestamp(timestamp)
 
-        event = Mock()
+        event = Event.objects.create()
         event.recipient_id = "27820001001"
-        event.is_hsm_error.return_value = False
+        event.fallback_channel = False
 
         tasks.rapidpro = TembaClient("textit.in", "test-token")
 
@@ -390,9 +387,9 @@ class HandleWhatsappEventsTests(TestCase):
         timestamp = 1543999390.069308
         mock_get_utc_now.return_value = datetime.datetime.fromtimestamp(timestamp)
 
-        event = Mock()
+        event = Event.objects.create()
         event.recipient_id = "27820001001"
-        event.is_hsm_error.return_value = False
+        event.fallback_channel = False
 
         tasks.rapidpro = TembaClient("textit.in", "test-token")
 
@@ -477,9 +474,9 @@ class HandleWhatsappEventsTests(TestCase):
         timestamp = 1543999390.069308
         mock_get_utc_now.return_value = datetime.datetime.fromtimestamp(timestamp)
 
-        event = Mock()
+        event = Event.objects.create()
         event.recipient_id = "27820001001"
-        event.is_hsm_error.return_value = False
+        event.fallback_channel = False
 
         tasks.rapidpro = TembaClient("textit.in", "test-token")
 

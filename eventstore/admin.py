@@ -6,6 +6,7 @@ from django.utils.functional import cached_property
 from eventstore.models import (
     BabySwitch,
     ChannelSwitch,
+    DeliveryFailures,
     IdentificationSwitch,
     LanguageSwitch,
     MSISDNSwitch,
@@ -15,7 +16,6 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
-    DeliveryFailures,
 )
 
 
