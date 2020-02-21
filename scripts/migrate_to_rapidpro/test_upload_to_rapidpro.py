@@ -21,9 +21,9 @@ class FieldsFromContactTests(TestCase):
                     k: f"{k.replace('_', '-')}-uuid"
                     for k in [
                         "consent",
-                        "baby_dob_1",
-                        "baby_dob_2",
-                        "baby_dob_3",
+                        "baby_dob1",
+                        "baby_dob2",
+                        "baby_dob3",
                         "date_of_birth",
                         "edd",
                         "facility_code",
@@ -65,15 +65,15 @@ class FieldsFromContactTests(TestCase):
             ),
             {
                 "consent-uuid": {"text": "TRUE"},
-                "baby-dob-1-uuid": {
+                "baby-dob1-uuid": {
                     "datetime": "2020-01-01T00:00:00+00:00",
                     "text": "2020-01-01T00:00:00+00:00",
                 },
-                "baby-dob-2-uuid": {
+                "baby-dob2-uuid": {
                     "datetime": "2019-01-01T00:00:00+00:00",
                     "text": "2019-01-01T00:00:00+00:00",
                 },
-                "baby-dob-3-uuid": {
+                "baby-dob3-uuid": {
                     "datetime": "2018-01-01T00:00:00+00:00",
                     "text": "2018-01-01T00:00:00+00:00",
                 },

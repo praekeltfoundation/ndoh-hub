@@ -1,9 +1,11 @@
 from rest_framework import serializers
 
 from eventstore.models import (
+    BabyDobSwitch,
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
+    EddSwitch,
     IdentificationSwitch,
     LanguageSwitch,
     MSISDNSwitch,
@@ -134,3 +136,17 @@ class WhatsAppWebhookSerializer(serializers.Serializer):
 
 class TurnOutboundSerializer(serializers.Serializer):
     to = serializers.CharField()
+
+
+class EddSwitchSerializer(BaseEventSerializer):
+    class Meta:
+        model = EddSwitch
+        fields = "__all__"
+        read_only_fields = ("id", "created_by")
+
+
+class BabyDobSwitchSerializer(BaseEventSerializer):
+    class Meta:
+        model = BabyDobSwitch
+        fields = "__all__"
+        read_only_fields = ("id", "created_by")
