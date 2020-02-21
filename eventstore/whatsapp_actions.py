@@ -8,6 +8,7 @@ from eventstore.tasks import (
     update_rapidpro_contact,
 )
 from ndoh_hub.utils import normalise_msisdn
+from eventstore.models import Event, DeliveryFailures
 
 
 def handle_outbound(message):
@@ -74,7 +75,23 @@ def handle_event(event):
 
 
 def handle_whatsapp_delivery_error(event):
-    async_handle_whatsapp_delivery_error.delay(f"whatsapp:{event.recipient_id}")
+    print(Event.fallback_channel)
+    if not Event.fallback_channel:
+        async_handle_whatsapp_delivery_error.delay(f"whatsapp:{event.recipient_id}")
+    else:
+        df = DeliveryFailures.objects.get(contact_id=event.recipient_id)
+        df.number_of_failures += 1
+        df.save()
+
+        if df.number_of_failures >= 5:
+            async_create_flow_start.delay(
+                extra={
+                    "optout_reason": "sms_failure",
+                    "timestamp": event.timestamp.timestamp(),
+                },
+                flow=settings.RAPIDPRO_OPTOUT_FLOW,
+                urns=[f"whatsapp:{event.recipient_id}"],
+            )
 
 
 def handle_whatsapp_hsm_error(event):

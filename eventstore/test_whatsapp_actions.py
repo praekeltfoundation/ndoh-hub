@@ -1,6 +1,6 @@
 import datetime
 import json
-from unittest import TestCase
+from django.test import TestCase
 from unittest.mock import Mock, patch
 
 import responses
@@ -8,6 +8,7 @@ from django.conf import settings
 from django.test import override_settings
 from pytz import UTC
 from temba_client.v2 import TembaClient
+from eventstore.models import DeliveryFailures, Event
 
 from eventstore import tasks
 from eventstore.whatsapp_actions import (
@@ -208,6 +209,30 @@ class HandleEventTests(TestCase):
             event.is_whatsapp_failed_delivery_event = True
             handle_event(event)
             h.assert_called_once_with(event)
+
+    @override_settings(RAPIDPRO_OPTOUT_FLOW="test-flow-uuid")
+    def test_delivery_failed_on_fallback_channel_error(self):
+        """
+        If the event is of type Failed, and uses the fallback channel,
+        then it should trigger the message delivery failed action
+        """
+        event = Event.objects.create()
+        # event.is_message_expired_error = False
+        # event.is_hsm_error = False
+        event.fallback_channel = True
+        event.recipient_id = "27820001001"
+        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+
+        DeliveryFailures.objects.create(number_of_failures=5, contact_id="27820001001")
+
+        with patch("eventstore.tasks.rapidpro") as p:
+            handle_whatsapp_delivery_error(event)
+
+        p.create_flow_start.assert_called_once_with(
+            extra={"optout_reason": "sms_failure", "timestamp": 1518694700},
+            flow="test-flow-uuid",
+            urns=["whatsapp:27820001001"],
+        )
 
     def test_hsm_error(self):
         """

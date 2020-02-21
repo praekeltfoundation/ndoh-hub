@@ -15,6 +15,7 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
+    DeliveryFailures,
 )
 
 
@@ -111,6 +112,12 @@ class PrebirthRegistrationAdmin(BaseEventAdmin):
 class PostbirthRegistrationAdmin(BaseEventAdmin):
     readonly_fields = ("id", "created_by", "timestamp")
     list_display = ("contact_id", "source", "baby_dob", "facility_code", "timestamp")
+
+
+@admin.register(DeliveryFailures)
+class DeliveryFailuresAdmin(BaseEventAdmin):
+    readonly_fields = ("id", "timestamp")
+    list_display = ("contact_id", "number_of_failures", "timestamp")
 
 
 @admin.register(PMTCTRegistration)
