@@ -2,7 +2,7 @@ from celery import chain
 from django.conf import settings
 
 from changes.tasks import get_engage_inbound_and_reply
-from eventstore.models import DeliveryFailures, Event
+from eventstore.models import DeliveryFailures
 from eventstore.tasks import (
     async_create_flow_start,
     async_handle_whatsapp_delivery_error,
