@@ -134,25 +134,26 @@ class HandleOperatorMessageTests(DjangoTestCase):
             },
         )
 
-    class HandleInboundTests(TestCase):
-        def test_contact_update(self):
-            """
-            If the message is not over the fallback channel then it should update
-            the preferred channel
-            """
-            message = Mock()
-            message.has_label.return_value = False
 
-            with patch(
-                "eventstore.whatsapp_actions.update_rapidpro_preferred_channel"
-            ) as update:
-                message.fallback_channel = True
-                handle_inbound(message)
-                update.assert_not_called()
+class HandleInboundTests(TestCase):
+    def test_contact_update(self):
+        """
+        If the message is not over the fallback channel then it should update
+        the preferred channel
+        """
+        message = Mock()
+        message.has_label.return_value = False
 
-                message.fallback_channel = False
-                handle_inbound(message)
-            update.assert_called_once_with(message)
+        with patch(
+            "eventstore.whatsapp_actions.update_rapidpro_preferred_channel"
+        ) as update:
+            message.fallback_channel = True
+            handle_inbound(message)
+            update.assert_not_called()
+
+            message.fallback_channel = False
+            handle_inbound(message)
+        update.assert_called_once_with(message)
 
     def test_handle_edd_label(self):
         """
