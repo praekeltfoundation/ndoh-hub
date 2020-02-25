@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 
 import responses
 from django.conf import settings
+from django.test import TestCase as DjangoTestCase
 from django.test import override_settings
 from pytz import UTC
 from temba_client.v2 import TembaClient
@@ -20,6 +21,7 @@ from eventstore.whatsapp_actions import (
     handle_whatsapp_hsm_error,
     update_rapidpro_preferred_channel,
 )
+from registrations.models import JembiSubmission
 
 
 class HandleOutboundTests(TestCase):
@@ -40,7 +42,7 @@ class HandleOutboundTests(TestCase):
             h.assert_called_once_with(message)
 
 
-class HandleOperatorMessageTests(TestCase):
+class HandleOperatorMessageTests(DjangoTestCase):
     @override_settings(RAPIDPRO_OPERATOR_REPLY_FLOW="test-flow-uuid")
     @responses.activate
     def test_flow_triggered(self):
@@ -50,6 +52,7 @@ class HandleOperatorMessageTests(TestCase):
         message = Mock()
         message.id = "test-id"
         message.data = {"_vnd": {"v1": {"chat": {"owner": "27820001001"}}}}
+        tasks.rapidpro = TembaClient("textit.in", "test-token")
         responses.add(
             responses.GET,
             "http://engage/v1/contacts/27820001001/messages",
@@ -82,42 +85,73 @@ class HandleOperatorMessageTests(TestCase):
                 ]
             },
         )
-
-        with patch("eventstore.tasks.rapidpro") as p:
-            handle_operator_message(message)
-        p.create_flow_start.assert_called_once_with(
-            extra={
-                "inbound_text": "Inbound question",
-                "inbound_timestamp": 1540802983,
-                "inbound_address": "27820001001",
-                "inbound_labels": [],
-                "reply_text": "Operator response",
-                "reply_timestamp": 1540803363,
-                "reply_operator": 56748517727534413379787391391214157498,
+        responses.add(
+            responses.GET,
+            "https://textit.in/api/v2/contacts.json?urn=whatsapp:27820001001",
+            json={
+                "results": [
+                    {
+                        "uuid": "contact-id",
+                        "name": "",
+                        "language": "zul",
+                        "groups": [],
+                        "fields": {"facility_code": "123456"},
+                        "blocked": False,
+                        "stopped": False,
+                        "created_on": "2015-11-11T08:30:24.922024+00:00",
+                        "modified_on": "2015-11-11T08:30:25.525936+00:00",
+                        "urns": ["tel:+27820001001"],
+                    }
+                ],
+                "next": None,
             },
-            flow="test-flow-uuid",
-            urns=["whatsapp:27820001001"],
+        )
+        responses.add(
+            responses.POST,
+            "https://textit.in/api/v2/contacts.json?urn=whatsapp:27820001001",
+            json={},
+        )
+        responses.add(responses.POST, "http://jembi/ws/rest/v1/helpdesk", json={})
+
+        handle_operator_message(message)
+        [jembi_request] = JembiSubmission.objects.all()
+        jembi_request.request_data.pop("eid")
+        self.assertEqual(
+            jembi_request.request_data,
+            {
+                "class": "Unclassified",
+                "cmsisdn": "+27820001001",
+                "data": {"answer": "Operator response", "question": "Inbound question"},
+                "dmsisdn": "+27820001001",
+                "encdate": "20181029084943",
+                "faccode": "123456",
+                "mha": 1,
+                "op": "56748517727534413379787391391214157498",
+                "repdate": "20181029085603",
+                "sid": "contact-id",
+                "swt": 4,
+                "type": 7,
+            },
         )
 
+    class HandleInboundTests(TestCase):
+        def test_contact_update(self):
+            """
+            If the message is not over the fallback channel then it should update
+            the preferred channel
+            """
+            message = Mock()
+            message.has_label.return_value = False
 
-class HandleInboundTests(TestCase):
-    def test_contact_update(self):
-        """
-        If the message is not over the fallback channel then it should update
-        the preferred channel
-        """
-        message = Mock()
-        message.has_label.return_value = False
+            with patch(
+                "eventstore.whatsapp_actions.update_rapidpro_preferred_channel"
+            ) as update:
+                message.fallback_channel = True
+                handle_inbound(message)
+                update.assert_not_called()
 
-        with patch(
-            "eventstore.whatsapp_actions.update_rapidpro_preferred_channel"
-        ) as update:
-            message.fallback_channel = True
-            handle_inbound(message)
-            update.assert_not_called()
-
-            message.fallback_channel = False
-            handle_inbound(message)
+                message.fallback_channel = False
+                handle_inbound(message)
             update.assert_called_once_with(message)
 
     def test_handle_edd_label(self):

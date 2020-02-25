@@ -5,6 +5,8 @@ from changes.tasks import get_engage_inbound_and_reply
 from eventstore.tasks import (
     async_create_flow_start,
     async_handle_whatsapp_delivery_error,
+    get_rapidpro_contact_by_msisdn,
+    send_helpdesk_response_to_dhis2,
     update_rapidpro_contact,
 )
 from ndoh_hub.utils import normalise_msisdn
@@ -25,13 +27,17 @@ def handle_operator_message(message):
     whatsapp_contact_id = message.data["_vnd"]["v1"]["chat"]["owner"]
     # This should be in "+27xxxxxxxxx" format, but just in case it isn't
     msisdn = normalise_msisdn(whatsapp_contact_id)
-    return chain(
+    # Submit to Jembi
+    chain(
         get_engage_inbound_and_reply.s(),
-        async_create_flow_start.s(
-            flow=settings.RAPIDPRO_OPERATOR_REPLY_FLOW,
-            urns=[f"whatsapp:{msisdn.lstrip('+')}"],
-        ),
+        get_rapidpro_contact_by_msisdn.s("inbound_address"),
+        send_helpdesk_response_to_dhis2.s(),
     ).delay(whatsapp_contact_id, message.id)
+
+    # Clear the wait_for_helpdesk flag
+    update_rapidpro_contact.delay(
+        f"whatsapp:{msisdn.lstrip('+')}", {"wait_for_helpdesk": ""}
+    )
 
 
 def handle_inbound(message):
