@@ -1,8 +1,9 @@
-from collections import defaultdict
-import psycopg2
-from uuid import uuid4
 import json
+from collections import defaultdict
 from typing import Tuple
+from uuid import uuid4
+
+import psycopg2
 
 PREBIRTH: Tuple[Tuple[str, str, Tuple[int, ...], int], ...] = (
     ("pmtct_prebirth.patient.1", "PMTCT 1 SMS", (0,), 5),
