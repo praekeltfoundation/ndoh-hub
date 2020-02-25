@@ -153,7 +153,7 @@ class HandleInboundTests(TestCase):
 
             message.fallback_channel = False
             handle_inbound(message)
-        update.assert_called_once_with(message)
+            update.assert_called_once_with(message)
 
     def test_handle_edd_label(self):
         """
