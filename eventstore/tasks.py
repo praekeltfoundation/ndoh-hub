@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from urllib.parse import urljoin
 
+import phonenumbers
 import pytz
 import requests
 from celery.exceptions import SoftTimeLimitExceeded
@@ -29,6 +30,7 @@ from eventstore.models import (
 )
 from ndoh_hub.celery import app
 from ndoh_hub.utils import rapidpro
+from registrations.tasks import request_to_jembi_api
 
 
 def get_utc_now():
@@ -74,6 +76,55 @@ def get_rapidpro_contact_by_uuid(contact_uuid):
         rapidpro.get_contacts(uuid=contact_uuid)
         .first(retry_on_rate_exceed=True)
         .serialize()
+    )
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def get_rapidpro_contact_by_msisdn(context, field):
+    context["contact"] = (
+        rapidpro.get_contacts(urn=f"whatsapp:{context[field]}")
+        .first(retry_on_rate_exceed=True)
+        .serialize()
+    )
+    return context
+
+
+@app.task(acks_late=True, soft_time_limit=10, time_limit=15, bind=True)
+def send_helpdesk_response_to_dhis2(self, context):
+    encdate = datetime.utcfromtimestamp(int(context["inbound_timestamp"]))
+    repdate = datetime.utcfromtimestamp(int(context["reply_timestamp"]))
+
+    msisdn = phonenumbers.parse(context["inbound_address"], "ZA")
+    msisdn = phonenumbers.format_number(msisdn, phonenumbers.PhoneNumberFormat.E164)
+    contact = context["contact"]
+
+    request_to_jembi_api.delay(
+        "helpdesk",
+        {
+            "encdate": encdate.strftime("%Y%m%d%H%M%S"),
+            "repdate": repdate.strftime("%Y%m%d%H%M%S"),
+            "mha": 1,  # Praekelt
+            "swt": 4,  # WhatsApp
+            "cmsisdn": msisdn,
+            "dmsisdn": msisdn,
+            "faccode": contact.get("fields", {}).get("facility_code"),
+            "data": {
+                "question": context["inbound_text"],
+                "answer": context["reply_text"],
+            },
+            "class": ",".join(context["inbound_labels"]) or "Unclassified",
+            "type": 7,  # Helpdesk
+            "op": str(context["reply_operator"]),
+            "eid": self.request.id,
+            "sid": contact.get("uuid"),
+        },
     )
 
 
