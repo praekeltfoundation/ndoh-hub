@@ -9,10 +9,11 @@ from pytz import UTC
 from temba_client.v2 import TembaClient
 
 from eventstore import tasks
-from eventstore.models import DeliveryFailures, Event
+from eventstore.models import DeliveryFailure, Event
 from eventstore.whatsapp_actions import (
     handle_edd_message,
     handle_event,
+    handle_fallback_delivery_error,
     handle_inbound,
     handle_operator_message,
     handle_outbound,
@@ -210,7 +211,7 @@ class HandleEventTests(TestCase):
             h.assert_called_once_with(event)
 
     @override_settings(RAPIDPRO_OPTOUT_FLOW="test-flow-uuid")
-    def test_delivery_failed_on_fallback_channel_error(self):
+    def test_fallback_channel_delivery_failure_error(self):
         """
         If the event is of type Failed, and uses the fallback channel,
         then it should trigger the message delivery failed action
@@ -220,16 +221,49 @@ class HandleEventTests(TestCase):
         event.recipient_id = "27820001001"
         event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
 
-        DeliveryFailures.objects.create(number_of_failures=5, contact_id="27820001001")
+        DeliveryFailure.objects.create(number_of_failures=5, contact_id="27820001001")
 
         with patch("eventstore.tasks.rapidpro") as p:
-            handle_whatsapp_delivery_error(event)
+            handle_fallback_delivery_error(event)
 
         p.create_flow_start.assert_called_once_with(
             extra={"optout_reason": "sms_failure", "timestamp": 1518694700},
             flow="test-flow-uuid",
             urns=["whatsapp:27820001001"],
         )
+
+    def test_fallback_channel_delivery_failure_less_than_5(self):
+        """
+        If the event is of type Failed, and uses the fallback channel,
+        but delivery failures are less than 5, should not call
+        the rapidpro flow
+        """
+        event = Event.objects.create()
+        event.fallback_channel = True
+        event.recipient_id = "27820001001"
+        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+
+        with patch("eventstore.tasks.rapidpro") as p:
+            handle_fallback_delivery_error(event)
+
+        p.create_flow_start.assert_not_called()
+        df = DeliveryFailure.objects.get(contact_id="27820001001")
+        self.assertEqual(df.number_of_failures, 1)
+
+    def test_fallback_channel_successful_delivery_event(self):
+        """
+        If the event uses the fallback channel, but is a successful delivery,
+        should not call the rapidpro flow
+        """
+        event = Event.objects.create()
+        event.fallback_channel = True
+        event.recipient_id = "27820001001"
+        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+
+        with patch("eventstore.tasks.rapidpro") as p:
+            handle_fallback_delivery_error(event)
+
+        p.create_flow_start.assert_not_called()
 
     def test_hsm_error(self):
         """

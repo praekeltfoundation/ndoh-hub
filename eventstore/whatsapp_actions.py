@@ -2,7 +2,7 @@ from celery import chain
 from django.conf import settings
 
 from changes.tasks import get_engage_inbound_and_reply
-from eventstore.models import DeliveryFailures
+from eventstore.models import DeliveryFailure
 from eventstore.tasks import (
     async_create_flow_start,
     async_handle_whatsapp_delivery_error,
@@ -73,12 +73,13 @@ def handle_event(event):
     if event.is_hsm_error:
         handle_whatsapp_hsm_error(event)
 
+    if event.fallback_channel is True:
+        handle_fallback_delivery_error(event)
 
-def handle_whatsapp_delivery_error(event):
-    if not event.fallback_channel:
-        async_handle_whatsapp_delivery_error.delay(f"whatsapp:{event.recipient_id}")
-    else:
-        df = DeliveryFailures.objects.get(contact_id=event.recipient_id)
+
+def handle_fallback_delivery_error(event):
+    try:
+        df = DeliveryFailure.objects.get(contact_id=event.recipient_id)
         df.number_of_failures += 1
         df.save()
 
@@ -91,6 +92,14 @@ def handle_whatsapp_delivery_error(event):
                 flow=settings.RAPIDPRO_OPTOUT_FLOW,
                 urns=[f"whatsapp:{event.recipient_id}"],
             )
+    except DeliveryFailure.DoesNotExist:
+        df = DeliveryFailure(contact_id=event.recipient_id, number_of_failures=0)
+        df.number_of_failures += 1
+        df.save()
+
+
+def handle_whatsapp_delivery_error(event):
+    async_handle_whatsapp_delivery_error.delay(f"whatsapp:{event.recipient_id}")
 
 
 def handle_whatsapp_hsm_error(event):
