@@ -4,7 +4,8 @@ from unittest.mock import Mock, patch
 
 import responses
 from django.conf import settings
-from django.test import TestCase, override_settings
+from django.test import TestCase as DjangoTestCase
+from django.test import override_settings
 from pytz import UTC
 from temba_client.v2 import TembaClient
 
@@ -23,7 +24,7 @@ from eventstore.whatsapp_actions import (
 )
 
 
-class HandleOutboundTests(TestCase):
+class HandleOutboundTests(DjangoTestCase):
     def test_operator_message(self):
         """
         If the message is an operator message, then it should trigger the operator
@@ -41,7 +42,7 @@ class HandleOutboundTests(TestCase):
             h.assert_called_once_with(message)
 
 
-class HandleOperatorMessageTests(TestCase):
+class HandleOperatorMessageTests(DjangoTestCase):
     @override_settings(RAPIDPRO_OPERATOR_REPLY_FLOW="test-flow-uuid")
     @responses.activate
     def test_flow_triggered(self):
@@ -101,7 +102,7 @@ class HandleOperatorMessageTests(TestCase):
         )
 
 
-class HandleInboundTests(TestCase):
+class HandleInboundTests(DjangoTestCase):
     def test_contact_update(self):
         """
         If the message is not over the fallback channel then it should update
@@ -138,7 +139,7 @@ class HandleInboundTests(TestCase):
             handle.assert_called_once_with(message)
 
 
-class UpdateRapidproPreferredChannelTests(TestCase):
+class UpdateRapidproPreferredChannelTests(DjangoTestCase):
     def test_contact_update_is_called(self):
         """
         Updates the rapidpro contact with the correct info
@@ -156,7 +157,7 @@ class UpdateRapidproPreferredChannelTests(TestCase):
         )
 
 
-class HandleEddLabelTests(TestCase):
+class HandleEddLabelTests(DjangoTestCase):
     @override_settings(RAPIDPRO_EDD_LABEL_FLOW="test-flow-uuid")
     def test_handle_edd_message(self):
         """
@@ -173,7 +174,7 @@ class HandleEddLabelTests(TestCase):
         )
 
 
-class HandleEventTests(TestCase):
+class HandleEventTests(DjangoTestCase):
     def test_expired_message(self):
         """
         If the event is an message expired error, then it should trigger the
@@ -284,7 +285,7 @@ class HandleEventTests(TestCase):
             h.assert_called_once_with(event)
 
 
-class HandleWhatsappEventsTests(TestCase):
+class HandleWhatsappEventsTests(DjangoTestCase):
     @override_settings(RAPIDPRO_UNSENT_EVENT_FLOW="test-flow-uuid")
     @override_settings(ENABLE_UNSENT_EVENT_ACTION=True)
     def test_handle_whatsapp_hsm_error_successful(self):
