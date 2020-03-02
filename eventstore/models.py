@@ -107,6 +107,11 @@ class MSISDNSwitch(models.Model):
     data = JSONField(default=dict, blank=True, null=True)
 
 
+class DeliveryFailure(models.Model):
+    contact_id = models.CharField(primary_key=True, max_length=255, blank=False)
+    number_of_failures = models.IntegerField(null=False, default=0)
+
+
 class LanguageSwitch(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     contact_id = models.UUIDField()
@@ -310,9 +315,20 @@ class Message(models.Model):
 
 
 class Event(models.Model):
+    SENT = "sent"
+    DELIVERED = "delivered"
+    READ = "read"
+    FAILED = "failed"
+    STATUS = [
+        (SENT, "sent"),
+        (DELIVERED, "delivered"),
+        (READ, "read"),
+        (FAILED, "failed"),
+    ]
+
     message_id = models.CharField(max_length=255, blank=True)
     recipient_id = models.CharField(max_length=255, blank=True)
-    status = models.CharField(max_length=255, blank=True)
+    status = models.CharField(max_length=255, blank=True, choices=STATUS)
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True)
     data = JSONField(default=dict, blank=True, null=True)

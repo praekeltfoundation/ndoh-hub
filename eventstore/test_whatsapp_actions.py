@@ -1,6 +1,5 @@
 import datetime
 import json
-from unittest import TestCase
 from unittest.mock import Mock, patch
 
 import responses
@@ -11,9 +10,11 @@ from pytz import UTC
 from temba_client.v2 import TembaClient
 
 from eventstore import tasks
+from eventstore.models import DeliveryFailure, Event
 from eventstore.whatsapp_actions import (
     handle_edd_message,
     handle_event,
+    handle_fallback_event,
     handle_inbound,
     handle_operator_message,
     handle_outbound,
@@ -24,7 +25,7 @@ from eventstore.whatsapp_actions import (
 from registrations.models import JembiSubmission
 
 
-class HandleOutboundTests(TestCase):
+class HandleOutboundTests(DjangoTestCase):
     def test_operator_message(self):
         """
         If the message is an operator message, then it should trigger the operator
@@ -135,7 +136,7 @@ class HandleOperatorMessageTests(DjangoTestCase):
         )
 
 
-class HandleInboundTests(TestCase):
+class HandleInboundTests(DjangoTestCase):
     def test_contact_update(self):
         """
         If the message is not over the fallback channel then it should update
@@ -172,7 +173,7 @@ class HandleInboundTests(TestCase):
             handle.assert_called_once_with(message)
 
 
-class UpdateRapidproPreferredChannelTests(TestCase):
+class UpdateRapidproPreferredChannelTests(DjangoTestCase):
     def test_contact_update_is_called(self):
         """
         Updates the rapidpro contact with the correct info
@@ -190,7 +191,7 @@ class UpdateRapidproPreferredChannelTests(TestCase):
         )
 
 
-class HandleEddLabelTests(TestCase):
+class HandleEddLabelTests(DjangoTestCase):
     @override_settings(RAPIDPRO_EDD_LABEL_FLOW="test-flow-uuid")
     def test_handle_edd_message(self):
         """
@@ -207,7 +208,7 @@ class HandleEddLabelTests(TestCase):
         )
 
 
-class HandleEventTests(TestCase):
+class HandleEventTests(DjangoTestCase):
     def test_expired_message(self):
         """
         If the event is an message expired error, then it should trigger the
@@ -244,6 +245,88 @@ class HandleEventTests(TestCase):
             handle_event(event)
             h.assert_called_once_with(event)
 
+    @override_settings(RAPIDPRO_OPTOUT_FLOW="test-flow-uuid")
+    def test_fallback_channel_delivery_failure_error(self):
+        """
+        If the event is of type Failed, and uses the fallback channel,
+        then it should trigger the message delivery failed action
+        """
+        event = Event.objects.create()
+        event.fallback_channel = True
+        event.status = Event.FAILED
+        event.recipient_id = "27820001001"
+        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+
+        DeliveryFailure.objects.create(number_of_failures=5, contact_id="27820001001")
+
+        with patch("eventstore.tasks.rapidpro") as p:
+            handle_fallback_event(event)
+
+        p.create_flow_start.assert_called_once_with(
+            extra={"optout_reason": "sms_failure", "timestamp": 1518694700},
+            flow="test-flow-uuid",
+            urns=["whatsapp:27820001001"],
+        )
+
+    def test_fallback_channel_delivery_failure_less_than_5(self):
+        """
+        If the event is of type Failed, and uses the fallback channel,
+        but delivery failures are less than 5, should not call
+        the rapidpro flow
+        """
+        event = Event.objects.create()
+        event.fallback_channel = True
+        event.status = Event.FAILED
+        event.recipient_id = "27820001001"
+        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+
+        with patch("eventstore.tasks.rapidpro") as p:
+            handle_fallback_event(event)
+
+        p.create_flow_start.assert_not_called()
+        df = DeliveryFailure.objects.get(contact_id="27820001001")
+        self.assertEqual(df.number_of_failures, 1)
+
+    def test_fallback_channel_successful_with_no_existing_delivery_failure(self):
+        """
+        If the event uses the fallback channel, but is a successful delivery
+        with no existing delivery failure, it should not call the rapidpro flow
+        and number_of_failures should be reset to 0
+        """
+        event = Event.objects.create()
+        event.fallback_channel = True
+        event.status = Event.READ
+        event.recipient_id = "27820001001"
+        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+
+        with patch("eventstore.tasks.rapidpro") as p:
+            handle_fallback_event(event)
+
+        p.create_flow_start.assert_not_called()
+        df = DeliveryFailure.objects.get(contact_id="27820001001")
+        self.assertEqual(df.number_of_failures, 0)
+
+    def test_fallback_channel_successful_with_existing_delivery_failure(self):
+        """
+        If the event uses the fallback channel, but is a successful delivery
+        with an existing delivery failure, it should not call the rapidpro flow
+        and number_of_failures should be reset to 0
+        """
+        event = Event.objects.create()
+        event.fallback_channel = True
+        event.status = Event.READ
+        event.recipient_id = "27820001001"
+        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+
+        DeliveryFailure.objects.create(number_of_failures=1, contact_id="27820001001")
+
+        with patch("eventstore.tasks.rapidpro") as p:
+            handle_fallback_event(event)
+
+        p.create_flow_start.assert_not_called()
+        df = DeliveryFailure.objects.get(contact_id="27820001001")
+        self.assertEqual(df.number_of_failures, 0)
+
     def test_hsm_error(self):
         """
         If the event is an HSM error, then it should trigger the HSM error
@@ -263,7 +346,7 @@ class HandleEventTests(TestCase):
             h.assert_called_once_with(event)
 
 
-class HandleWhatsappEventsTests(TestCase):
+class HandleWhatsappEventsTests(DjangoTestCase):
     @override_settings(RAPIDPRO_UNSENT_EVENT_FLOW="test-flow-uuid")
     @override_settings(ENABLE_UNSENT_EVENT_ACTION=True)
     def test_handle_whatsapp_hsm_error_successful(self):
@@ -314,9 +397,9 @@ class HandleWhatsappEventsTests(TestCase):
         timestamp = 1543999390.069308
         mock_get_utc_now.return_value = datetime.datetime.fromtimestamp(timestamp)
 
-        event = Mock()
+        event = Event.objects.create()
         event.recipient_id = "27820001001"
-        event.is_hsm_error.return_value = False
+        event.fallback_channel = False
 
         tasks.rapidpro = TembaClient("textit.in", "test-token")
 
@@ -400,9 +483,9 @@ class HandleWhatsappEventsTests(TestCase):
         timestamp = 1543999390.069308
         mock_get_utc_now.return_value = datetime.datetime.fromtimestamp(timestamp)
 
-        event = Mock()
+        event = Event.objects.create()
         event.recipient_id = "27820001001"
-        event.is_hsm_error.return_value = False
+        event.fallback_channel = False
 
         tasks.rapidpro = TembaClient("textit.in", "test-token")
 
@@ -487,9 +570,9 @@ class HandleWhatsappEventsTests(TestCase):
         timestamp = 1543999390.069308
         mock_get_utc_now.return_value = datetime.datetime.fromtimestamp(timestamp)
 
-        event = Mock()
+        event = Event.objects.create()
         event.recipient_id = "27820001001"
-        event.is_hsm_error.return_value = False
+        event.fallback_channel = False
 
         tasks.rapidpro = TembaClient("textit.in", "test-token")
 
