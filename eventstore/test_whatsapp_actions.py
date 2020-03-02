@@ -253,7 +253,7 @@ class HandleEventTests(DjangoTestCase):
         """
         event = Event.objects.create()
         event.fallback_channel = True
-        event.status = "failed"
+        event.status = Event.FAILED
         event.recipient_id = "27820001001"
         event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
 
@@ -276,7 +276,7 @@ class HandleEventTests(DjangoTestCase):
         """
         event = Event.objects.create()
         event.fallback_channel = True
-        event.status = "failed"
+        event.status = Event.FAILED
         event.recipient_id = "27820001001"
         event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
 
@@ -287,16 +287,38 @@ class HandleEventTests(DjangoTestCase):
         df = DeliveryFailure.objects.get(contact_id="27820001001")
         self.assertEqual(df.number_of_failures, 1)
 
-    def test_fallback_channel_successful_delivery_event(self):
+    def test_fallback_channel_successful_with_no_existing_delivery_failure(self):
         """
-        If the event uses the fallback channel, but is a successful delivery,
-        should not call the rapidpro flow
+        If the event uses the fallback channel, but is a successful delivery
+        with no existing delivery failure, it should not call the rapidpro flow
+        and number_of_failures should be reset to 0
         """
         event = Event.objects.create()
         event.fallback_channel = True
-        event.status = "read"
+        event.status = Event.READ
         event.recipient_id = "27820001001"
         event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+
+        with patch("eventstore.tasks.rapidpro") as p:
+            handle_fallback_event(event)
+
+        p.create_flow_start.assert_not_called()
+        df = DeliveryFailure.objects.get(contact_id="27820001001")
+        self.assertEqual(df.number_of_failures, 0)
+
+    def test_fallback_channel_successful_with_existing_delivery_failure(self):
+        """
+        If the event uses the fallback channel, but is a successful delivery
+        with an existing delivery failure, it should not call the rapidpro flow
+        and number_of_failures should be reset to 0
+        """
+        event = Event.objects.create()
+        event.fallback_channel = True
+        event.status = Event.READ
+        event.recipient_id = "27820001001"
+        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+
+        DeliveryFailure.objects.create(number_of_failures=1, contact_id="27820001001")
 
         with patch("eventstore.tasks.rapidpro") as p:
             handle_fallback_event(event)

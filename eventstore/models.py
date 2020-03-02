@@ -108,7 +108,7 @@ class MSISDNSwitch(models.Model):
 
 
 class DeliveryFailure(models.Model):
-    contact_id = models.CharField(primary_key=True, max_length=255, blank=True)
+    contact_id = models.CharField(primary_key=True, max_length=255, blank=False)
     number_of_failures = models.IntegerField(null=False, default=0)
 
 
