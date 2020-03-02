@@ -5,23 +5,29 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('eventstore', '0020_deliveryfailure'),
-    ]
+    dependencies = [("eventstore", "0020_deliveryfailure")]
 
     operations = [
-        migrations.RemoveField(
-            model_name='deliveryfailure',
-            name='id',
+        migrations.RemoveField(model_name="deliveryfailure", name="id"),
+        migrations.AlterField(
+            model_name="deliveryfailure",
+            name="contact_id",
+            field=models.CharField(
+                blank=True, max_length=255, primary_key=True, serialize=False
+            ),
         ),
         migrations.AlterField(
-            model_name='deliveryfailure',
-            name='contact_id',
-            field=models.CharField(blank=True, max_length=255, primary_key=True, serialize=False),
-        ),
-        migrations.AlterField(
-            model_name='event',
-            name='status',
-            field=models.CharField(blank=True, choices=[('sent', 'sent'), ('delivered', 'delivered'), ('read', 'read'), ('failed', 'failed')], max_length=255),
+            model_name="event",
+            name="status",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("sent", "sent"),
+                    ("delivered", "delivered"),
+                    ("read", "read"),
+                    ("failed", "failed"),
+                ],
+                max_length=255,
+            ),
         ),
     ]
