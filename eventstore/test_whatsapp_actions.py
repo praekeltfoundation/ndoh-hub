@@ -14,7 +14,7 @@ from eventstore.models import DeliveryFailure, Event
 from eventstore.whatsapp_actions import (
     handle_edd_message,
     handle_event,
-    handle_fallback_delivery_error,
+    handle_fallback_event,
     handle_inbound,
     handle_operator_message,
     handle_outbound,
@@ -253,13 +253,14 @@ class HandleEventTests(DjangoTestCase):
         """
         event = Event.objects.create()
         event.fallback_channel = True
+        event.status = "failed"
         event.recipient_id = "27820001001"
         event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
 
         DeliveryFailure.objects.create(number_of_failures=5, contact_id="27820001001")
 
         with patch("eventstore.tasks.rapidpro") as p:
-            handle_fallback_delivery_error(event)
+            handle_fallback_event(event)
 
         p.create_flow_start.assert_called_once_with(
             extra={"optout_reason": "sms_failure", "timestamp": 1518694700},
@@ -275,11 +276,12 @@ class HandleEventTests(DjangoTestCase):
         """
         event = Event.objects.create()
         event.fallback_channel = True
+        event.status = "failed"
         event.recipient_id = "27820001001"
         event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
 
         with patch("eventstore.tasks.rapidpro") as p:
-            handle_fallback_delivery_error(event)
+            handle_fallback_event(event)
 
         p.create_flow_start.assert_not_called()
         df = DeliveryFailure.objects.get(contact_id="27820001001")
@@ -292,13 +294,16 @@ class HandleEventTests(DjangoTestCase):
         """
         event = Event.objects.create()
         event.fallback_channel = True
+        event.status = "read"
         event.recipient_id = "27820001001"
         event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
 
         with patch("eventstore.tasks.rapidpro") as p:
-            handle_fallback_delivery_error(event)
+            handle_fallback_event(event)
 
         p.create_flow_start.assert_not_called()
+        df = DeliveryFailure.objects.get(contact_id="27820001001")
+        self.assertEqual(df.number_of_failures, 0)
 
     def test_hsm_error(self):
         """
