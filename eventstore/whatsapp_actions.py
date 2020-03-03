@@ -97,9 +97,9 @@ def handle_fallback_event(event):
                     extra={
                         "optout_reason": OptOut.SMS_FAILURE_REASON,
                         "timestamp": event.timestamp.timestamp(),
-                        "babyloss_subscription": False,
-                        "delete_info_for_babyloss": False,
-                        "delete_info_consent": False,
+                        "babyloss_subscription": "FALSE",
+                        "delete_info_for_babyloss": "FALSE",
+                        "delete_info_consent": "FALSE",
                         "source": "System",
                     },
                     flow=settings.RAPIDPRO_OPTOUT_FLOW,

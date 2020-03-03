@@ -266,9 +266,9 @@ class HandleEventTests(DjangoTestCase):
             extra={
                 "optout_reason": "sms_failure",
                 "timestamp": 1518694700,
-                "babyloss_subscription": False,
-                "delete_info_for_babyloss": False,
-                "delete_info_consent": False,
+                "babyloss_subscription": "FALSE",
+                "delete_info_for_babyloss": "FALSE",
+                "delete_info_consent": "FALSE",
                 "source": "System",
             },
             flow="test-flow-uuid",
