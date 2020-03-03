@@ -9,6 +9,7 @@ from celery.exceptions import SoftTimeLimitExceeded
 from django.conf import settings
 from django.utils import dateparse, translation
 from requests.exceptions import RequestException
+from temba_client.exceptions import TembaHttpError
 
 from eventstore.models import (
     BabyDobSwitch,
@@ -38,7 +39,7 @@ def get_utc_now():
 
 
 @app.task(
-    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
     retry_backoff=True,
     max_retries=15,
     acks_late=True,
@@ -50,7 +51,7 @@ def async_create_flow_start(extra, **kwargs):
 
 
 @app.task(
-    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
     retry_backoff=True,
     max_retries=15,
     acks_late=True,
@@ -62,7 +63,7 @@ def update_rapidpro_contact(urn, fields):
 
 
 @app.task(
-    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
     retry_backoff=True,
     max_retries=1,
     acks_late=True,
@@ -80,7 +81,7 @@ def get_rapidpro_contact_by_uuid(contact_uuid):
 
 
 @app.task(
-    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
     retry_backoff=True,
     max_retries=15,
     acks_late=True,
@@ -183,7 +184,7 @@ def delete_contact_pii(contact):
 
 
 @app.task(
-    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
     retry_backoff=True,
     max_retries=1,
     acks_late=True,
@@ -204,7 +205,7 @@ forget_contact = (
 
 
 @app.task(
-    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
     retry_backoff=True,
     max_retries=15,
     acks_late=True,
@@ -295,7 +296,7 @@ def send_undelivered_sms(context):
 
 
 @app.task(
-    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
     retry_backoff=True,
     max_retries=15,
     acks_late=True,
