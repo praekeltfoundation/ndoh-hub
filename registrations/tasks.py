@@ -18,6 +18,7 @@ from django.utils import translation
 from requests.exceptions import ConnectionError, HTTPError, RequestException
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.service_rating import ServiceRatingApiClient
+from temba_client.exceptions import TembaHttpError
 from wabclient.exceptions import AddressException
 
 from ndoh_hub import utils
@@ -933,7 +934,7 @@ validate_subscribe_jembi_app_registration = ValidateSubscribeJembiAppRegistratio
 
 
 @app.task(
-    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
     retry_backoff=True,
     max_retries=15,
     acks_late=True,
@@ -1663,7 +1664,7 @@ def send_welcome_message(language, channel, msisdn, identity_id):
 
 
 @app.task(
-    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
     retry_backoff=True,
     max_retries=15,
     acks_late=True,
