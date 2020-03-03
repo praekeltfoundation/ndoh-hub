@@ -3,7 +3,7 @@ from django.conf import settings
 from django.db.models import F
 
 from changes.tasks import get_engage_inbound_and_reply
-from eventstore.models import DeliveryFailure
+from eventstore.models import DeliveryFailure, OptOut
 from eventstore.tasks import (
     async_create_flow_start,
     async_handle_whatsapp_delivery_error,
@@ -95,8 +95,12 @@ def handle_fallback_event(event):
             if df.number_of_failures >= 5:
                 async_create_flow_start.delay(
                     extra={
-                        "optout_reason": "sms_failure",
+                        "optout_reason": OptOut.SMS_FAILURE_REASON,
                         "timestamp": event.timestamp.timestamp(),
+                        "babyloss_subscription": False,
+                        "delete_info_for_babyloss": False,
+                        "delete_info_consent": False,
+                        "source": "System",
                     },
                     flow=settings.RAPIDPRO_OPTOUT_FLOW,
                     urns=[f"whatsapp:{event.recipient_id}"],

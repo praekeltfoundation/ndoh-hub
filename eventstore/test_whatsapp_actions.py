@@ -263,7 +263,14 @@ class HandleEventTests(DjangoTestCase):
             handle_fallback_event(event)
 
         p.create_flow_start.assert_called_once_with(
-            extra={"optout_reason": "sms_failure", "timestamp": 1518694700},
+            extra={
+                "optout_reason": "sms_failure",
+                "timestamp": 1518694700,
+                "babyloss_subscription": False,
+                "delete_info_for_babyloss": False,
+                "delete_info_consent": False,
+                "source": "System",
+            },
             flow="test-flow-uuid",
             urns=["whatsapp:27820001001"],
         )
