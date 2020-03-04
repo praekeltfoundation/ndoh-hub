@@ -6,6 +6,7 @@
 2. Optout user after n delivery failures
    ([#298](https://github.com/praekeltfoundation/ndoh-hub/pull/298))
    ([#302](https://github.com/praekeltfoundation/ndoh-hub/pull/302))
+   ([#305](https://github.com/praekeltfoundation/ndoh-hub/pull/305))
 
 ## 0.8.0 (2020-02-26)
 1. Migration to RapidPro
