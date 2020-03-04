@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.1 (2020-03-04)
+1. Retry TembaHttpError
+   ([#301](https://github.com/praekeltfoundation/ndoh-hub/pull/301))
+2. Optout user after n delivery failures
+   ([#298](https://github.com/praekeltfoundation/ndoh-hub/pull/298))
+   ([#302](https://github.com/praekeltfoundation/ndoh-hub/pull/302))
+
 ## 0.8.0 (2020-02-26)
 1. Migration to RapidPro
    ([#300](https://github.com/praekeltfoundation/ndoh-hub/pull/300))
