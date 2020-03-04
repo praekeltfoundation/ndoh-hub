@@ -1,9 +1,16 @@
 # Changelog
 
+## 0.8.2 (2020-03-04)
+1. Fix for rapidpro contacts with None as language
+   ([#303](https://github.com/praekeltfoundation/ndoh-hub/pull/303))
+1. Fix for rapidpro contacts not found
+   ([#304](https://github.com/praekeltfoundation/ndoh-hub/pull/304))
+
+
 ## 0.8.1 (2020-03-04)
 1. Retry TembaHttpError
    ([#301](https://github.com/praekeltfoundation/ndoh-hub/pull/301))
-2. Optout user after n delivery failures
+1. Optout user after n delivery failures
    ([#298](https://github.com/praekeltfoundation/ndoh-hub/pull/298))
    ([#302](https://github.com/praekeltfoundation/ndoh-hub/pull/302))
 
