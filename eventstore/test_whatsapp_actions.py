@@ -610,3 +610,46 @@ class HandleWhatsappEventsTests(DjangoTestCase):
         handle_whatsapp_delivery_error(event)
 
         self.assertEqual(len(responses.calls), 1)
+
+    @responses.activate
+    @patch("eventstore.tasks.get_utc_now")
+    def test_handle_whatsapp_delivery_error_with_empty_language(self, mock_get_utc_now):
+        """
+        Doesn't fail when the language is None
+        """
+        timestamp = 1543999390.069308
+        mock_get_utc_now.return_value = datetime.datetime.fromtimestamp(timestamp)
+
+        event = Event.objects.create()
+        event.recipient_id = "27820001001"
+        event.fallback_channel = False
+
+        tasks.rapidpro = TembaClient("textit.in", "test-token")
+
+        responses.add(
+            responses.GET,
+            "https://textit.in/api/v2/contacts.json?urn=whatsapp:27820001001",
+            json={
+                "results": [
+                    {
+                        "uuid": "contact-id",
+                        "name": "",
+                        "language": None,
+                        "groups": [],
+                        "fields": {
+                            "whatsapp_undelivered_timestamp": "2018-11-06 08:43:10"
+                        },
+                        "blocked": False,
+                        "stopped": False,
+                        "created_on": "2015-11-11T08:30:24.922024+00:00",
+                        "modified_on": "2015-11-11T08:30:25.525936+00:00",
+                        "urns": ["tel:+27820001001"],
+                    }
+                ],
+                "next": None,
+            },
+        )
+
+        handle_whatsapp_delivery_error(event)
+
+        self.assertEqual(len(responses.calls), 1)
