@@ -238,8 +238,8 @@ def check_contact_timestamp(contact):
     else:
         send = True
 
-    language = contact.get("language", "eng").lower()
-    context = {"language": f"{language}-ZA"}
+    language = contact.get("language") or "eng"
+    context = {"language": f"{language.lower()}-ZA"}
     if send:
         try:
             _, msisdn = contact["urns"][0].split(":")
