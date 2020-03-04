@@ -85,37 +85,34 @@ def handle_event(event):
 
 
 def handle_fallback_event(event):
-    if event.status != Event.SENT:
-        if event.status == Event.FAILED:
-            try:
-                df = DeliveryFailure.objects.get(contact_id=event.recipient_id)
+    if event.status == Event.FAILED:
+        try:
+            df = DeliveryFailure.objects.get(contact_id=event.recipient_id)
 
-                df.number_of_failures = F("number_of_failures") + 1
-                df.save()
-                df.refresh_from_db()
+            df.number_of_failures = F("number_of_failures") + 1
+            df.save()
+            df.refresh_from_db()
 
-                if df.number_of_failures >= 5:
-                    async_create_flow_start.delay(
-                        extra={
-                            "optout_reason": OptOut.SMS_FAILURE_REASON,
-                            "timestamp": event.timestamp.timestamp(),
-                            "babyloss_subscription": "FALSE",
-                            "delete_info_for_babyloss": "FALSE",
-                            "delete_info_consent": "FALSE",
-                            "source": "System",
-                        },
-                        flow=settings.RAPIDPRO_OPTOUT_FLOW,
-                        urns=[f"whatsapp:{event.recipient_id}"],
-                    )
-            except DeliveryFailure.DoesNotExist:
-                df = DeliveryFailure(
-                    contact_id=event.recipient_id, number_of_failures=1
+            if df.number_of_failures >= 5:
+                async_create_flow_start.delay(
+                    extra={
+                        "optout_reason": OptOut.SMS_FAILURE_REASON,
+                        "timestamp": event.timestamp.timestamp(),
+                        "babyloss_subscription": "FALSE",
+                        "delete_info_for_babyloss": "FALSE",
+                        "delete_info_consent": "FALSE",
+                        "source": "System",
+                    },
+                    flow=settings.RAPIDPRO_OPTOUT_FLOW,
+                    urns=[f"whatsapp:{event.recipient_id}"],
                 )
-                df.save()
-        else:
-            df = DeliveryFailure.objects.update_or_create(
-                contact_id=event.recipient_id, defaults={"number_of_failures": 0}
-            )
+        except DeliveryFailure.DoesNotExist:
+            df = DeliveryFailure(contact_id=event.recipient_id, number_of_failures=1)
+            df.save()
+    elif event.status == Event.READ or event.status == Event.DELIVERED:
+        df = DeliveryFailure.objects.update_or_create(
+            contact_id=event.recipient_id, defaults={"number_of_failures": 0}
+        )
 
 
 def handle_whatsapp_delivery_error(event):
