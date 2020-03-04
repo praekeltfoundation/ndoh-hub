@@ -213,9 +213,11 @@ forget_contact = (
     time_limit=15,
 )
 def get_rapidpro_contact_by_urn(urn):
-    if not urn:
-        return
-    return rapidpro.get_contacts(urn=urn).first(retry_on_rate_exceed=True).serialize()
+    if urn:
+        contact = rapidpro.get_contacts(urn=urn).first(retry_on_rate_exceed=True)
+
+        if contact:
+            return contact.serialize()
 
 
 @app.task(
@@ -227,6 +229,9 @@ def get_rapidpro_contact_by_urn(urn):
     time_limit=15,
 )
 def check_contact_timestamp(contact):
+    if not contact:
+        return {}
+
     timestamp = contact["fields"].get("whatsapp_undelivered_timestamp")
     current_date = get_utc_now()
 
