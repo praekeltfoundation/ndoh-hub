@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.3 (2020-03-05)
+1. Optout user after n delivery failures
+   ([#305](https://github.com/praekeltfoundation/ndoh-hub/pull/305))
+
 ## 0.8.2 (2020-03-04)
 1. Fix for rapidpro contacts with None as language
    ([#303](https://github.com/praekeltfoundation/ndoh-hub/pull/303))
