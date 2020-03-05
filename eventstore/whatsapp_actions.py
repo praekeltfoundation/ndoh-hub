@@ -3,7 +3,7 @@ from django.conf import settings
 from django.db.models import F
 
 from changes.tasks import get_engage_inbound_and_reply
-from eventstore.models import DeliveryFailure, OptOut
+from eventstore.models import DeliveryFailure, Event, OptOut
 from eventstore.tasks import (
     async_create_flow_start,
     async_handle_whatsapp_delivery_error,
@@ -85,9 +85,10 @@ def handle_event(event):
 
 
 def handle_fallback_event(event):
-    if event.status == "failed":
+    if event.status == Event.FAILED:
         try:
             df = DeliveryFailure.objects.get(contact_id=event.recipient_id)
+
             df.number_of_failures = F("number_of_failures") + 1
             df.save()
             df.refresh_from_db()
@@ -108,9 +109,10 @@ def handle_fallback_event(event):
         except DeliveryFailure.DoesNotExist:
             df = DeliveryFailure(contact_id=event.recipient_id, number_of_failures=1)
             df.save()
-    else:
-        df = DeliveryFailure(contact_id=event.recipient_id, number_of_failures=0)
-        df.save()
+    elif event.status == Event.READ or event.status == Event.DELIVERED:
+        df = DeliveryFailure.objects.update_or_create(
+            contact_id=event.recipient_id, defaults={"number_of_failures": 0}
+        )
 
 
 def handle_whatsapp_delivery_error(event):

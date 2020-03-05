@@ -313,6 +313,27 @@ class HandleEventTests(DjangoTestCase):
         df = DeliveryFailure.objects.get(contact_id="27820001001")
         self.assertEqual(df.number_of_failures, 0)
 
+    def test_fallback_channel_successful_with_sent_status(self):
+        """
+        If the event uses the fallback channel, but with a send delivery status,
+        it should not call the rapidpro flow, and number of failures should
+        not be reset
+        """
+        event = Event.objects.create()
+        event.fallback_channel = True
+        event.status = Event.SENT
+        event.recipient_id = "27820001001"
+        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+
+        DeliveryFailure.objects.create(number_of_failures=3, contact_id="27820001001")
+
+        with patch("eventstore.tasks.rapidpro") as p:
+            handle_fallback_event(event)
+
+        p.create_flow_start.assert_not_called()
+        df = DeliveryFailure.objects.get(contact_id="27820001001")
+        self.assertEqual(df.number_of_failures, 3)
+
     def test_fallback_channel_successful_with_existing_delivery_failure(self):
         """
         If the event uses the fallback channel, but is a successful delivery
