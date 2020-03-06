@@ -1,6 +1,5 @@
 from celery import chain
 from django.conf import settings
-from django.db.models import F
 
 from changes.tasks import get_engage_inbound_and_reply
 from eventstore.models import DeliveryFailure, Event, OptOut
