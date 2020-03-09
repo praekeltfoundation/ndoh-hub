@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.4 (2020-03-09)
+1. Optout user after n delivery failures
+   ([#307](https://github.com/praekeltfoundation/ndoh-hub/pull/307))
+
 ## 0.8.3 (2020-03-05)
 1. Optout user after n delivery failures
    ([#305](https://github.com/praekeltfoundation/ndoh-hub/pull/305))
