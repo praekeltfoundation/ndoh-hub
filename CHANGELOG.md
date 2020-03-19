@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.6 (2020-03-19)
+1. Trigger flows for 'EDD SWITCH' keyword instead of 'EDD'
+   ([#309](https://github.com/praekeltfoundation/ndoh-hub/pull/309))
+
 ## 0.8.4 (2020-03-09)
 1. Optout user after n delivery failures
    ([#307](https://github.com/praekeltfoundation/ndoh-hub/pull/307))
