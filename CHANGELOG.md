@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.8.6 (2020-19-03)
+## 0.8.6 (2020-03-19)
 1. Trigger flows for 'EDD SWITCH' keyword instead of 'EDD'
    ([#309](https://github.com/praekeltfoundation/ndoh-hub/pull/309))
 
