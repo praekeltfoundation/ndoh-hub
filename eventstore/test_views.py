@@ -24,6 +24,7 @@ from eventstore.models import (
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
+    Covid19Triage,
     EddSwitch,
     Event,
     IdentificationSwitch,
@@ -1478,3 +1479,55 @@ class CHWRegistrationViewSetTests(APITestCase, BaseEventTestCase):
             str(registration.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
         )
         self.assertEqual(registration.passport_country, "other")
+
+
+class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
+    url = reverse("covid19triage-list")
+
+    def test_data_validation(self):
+        """
+        The supplied data must be validated, and any errors returned
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_successful_request(self):
+        """
+        Should create a new Covid19Triage object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "msisdn": "+27820001001",
+                "source": "USSD",
+                "province": "ZA-WC",
+                "city": "cape town",
+                "age": Covid19Triage.AGE_18T40,
+                "fever": False,
+                "cough": False,
+                "sore_throat": False,
+                "exposure": Covid19Triage.EXPOSURE_NO,
+                "tracing": True,
+                "risk": Covid19Triage.RISK_LOW,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [covid19triage] = Covid19Triage.objects.all()
+        self.assertEqual(covid19triage.msisdn, "+27820001001")
+        self.assertEqual(covid19triage.source, "USSD")
+        self.assertEqual(covid19triage.province, "ZA-WC")
+        self.assertEqual(covid19triage.city, "cape town")
+        self.assertEqual(covid19triage.age, Covid19Triage.AGE_18T40)
+        self.assertEqual(covid19triage.fever, False)
+        self.assertEqual(covid19triage.cough, False)
+        self.assertEqual(covid19triage.sore_throat, False)
+        self.assertEqual(covid19triage.exposure, Covid19Triage.EXPOSURE_NO)
+        self.assertEqual(covid19triage.tracing, True)
+        self.assertEqual(covid19triage.risk, Covid19Triage.RISK_LOW)
+        self.assertEqual(covid19triage.created_by, user.username)
