@@ -13,6 +13,7 @@ from eventstore.views import (
     BabySwitchViewSet,
     ChannelSwitchViewSet,
     CHWRegistrationViewSet,
+    Covid19TriageViewSet,
     EddSwitchViewSet,
     IdentificationSwitchViewSet,
     LanguageSwitchViewSet,
@@ -34,6 +35,7 @@ v2router = routers.DefaultRouter()
 v2router.register("optouts", OptOutViewSet)
 v2router.register("babyswitches", BabySwitchViewSet)
 v2router.register("channelswitches", ChannelSwitchViewSet)
+v2router.register("covid19triage", Covid19TriageViewSet)
 v2router.register("msisdnswitches", MSISDNSwitchViewSet)
 v2router.register("languageswitches", LanguageSwitchViewSet)
 v2router.register("identificationswitches", IdentificationSwitchViewSet)

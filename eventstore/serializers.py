@@ -5,6 +5,7 @@ from eventstore.models import (
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
+    Covid19Triage,
     EddSwitch,
     IdentificationSwitch,
     LanguageSwitch,
@@ -105,6 +106,13 @@ class PostbirthRegistrationSerializer(BaseEventSerializer):
 class PMTCTRegistrationSerializer(BaseEventSerializer):
     class Meta:
         model = PMTCTRegistration
+        fields = "__all__"
+        read_only_fields = ("id", "created_by")
+
+
+class Covid19TriageSerializer(BaseEventSerializer):
+    class Meta:
+        model = Covid19Triage
         fields = "__all__"
         read_only_fields = ("id", "created_by")
 

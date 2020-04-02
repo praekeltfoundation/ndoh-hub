@@ -14,6 +14,7 @@ from eventstore.models import (
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
+    Covid19Triage,
     EddSwitch,
     Event,
     IdentificationSwitch,
@@ -32,6 +33,7 @@ from eventstore.serializers import (
     BabySwitchSerializer,
     ChannelSwitchSerializer,
     CHWRegistrationSerializer,
+    Covid19TriageSerializer,
     EddSwitchSerializer,
     IdentificationSwitchSerializer,
     LanguageSwitchSerializer,
@@ -249,4 +251,10 @@ class EddSwitchViewSet(GenericViewSet, CreateModelMixin):
 class BabyDobSwitchViewSet(GenericViewSet, CreateModelMixin):
     queryset = BabyDobSwitch.objects.all()
     serializer_class = BabyDobSwitchSerializer
+    permission_classes = (DjangoModelPermissions,)
+
+
+class Covid19TriageViewSet(GenericViewSet, CreateModelMixin):
+    queryset = Covid19Triage.objects.all()
+    serializer_class = Covid19TriageSerializer
     permission_classes = (DjangoModelPermissions,)
