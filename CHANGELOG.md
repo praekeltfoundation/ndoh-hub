@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.7 (2020-04-03)
+1. Add table for storing covid19 triage results
+   ([#311](https://github.com/praekeltfoundation/ndoh-hub/pull/311))
+
 ## 0.8.6 (2020-03-19)
 1. Trigger flows for 'EDD SWITCH' keyword instead of 'EDD'
    ([#309](https://github.com/praekeltfoundation/ndoh-hub/pull/309))
