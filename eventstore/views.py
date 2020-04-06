@@ -12,6 +12,7 @@ from rest_framework.viewsets import GenericViewSet
 from eventstore.models import (
     BabyDobSwitch,
     BabySwitch,
+    CDUAddressUpdate,
     ChannelSwitch,
     CHWRegistration,
     Covid19Triage,
@@ -31,6 +32,7 @@ from eventstore.models import (
 from eventstore.serializers import (
     BabyDobSwitchSerializer,
     BabySwitchSerializer,
+    CDUAddressUpdateSerializer,
     ChannelSwitchSerializer,
     CHWRegistrationSerializer,
     Covid19TriageSerializer,
@@ -257,4 +259,10 @@ class BabyDobSwitchViewSet(GenericViewSet, CreateModelMixin):
 class Covid19TriageViewSet(GenericViewSet, CreateModelMixin):
     queryset = Covid19Triage.objects.all()
     serializer_class = Covid19TriageSerializer
+    permission_classes = (DjangoModelPermissions,)
+
+
+class CDUAddressUpdateViewSet(GenericViewSet, CreateModelMixin):
+    queryset = CDUAddressUpdate.objects.all()
+    serializer_class = CDUAddressUpdateSerializer
     permission_classes = (DjangoModelPermissions,)

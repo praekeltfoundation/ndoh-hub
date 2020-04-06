@@ -427,3 +427,20 @@ class Covid19Triage(models.Model):
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
     data = JSONField(default=dict, blank=True, null=True)
+
+
+class CDUAddressUpdate(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created_by = models.CharField(max_length=255, blank=True, default="")
+    timestamp = models.DateTimeField(default=timezone.now)
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+    id_type = models.CharField(max_length=8, choices=IDTYPES)
+    id_number = models.CharField(max_length=13, blank=True, null=True)
+    date_of_birth = models.DateField(blank=True, null=True)
+    folder_number = models.CharField(max_length=255)
+    municipality = models.CharField(max_length=255)
+    city = models.CharField(max_length=255)
+    suburb = models.CharField(max_length=255)
+    street_name = models.CharField(max_length=255)
+    street_number = models.CharField(max_length=255)

@@ -3,6 +3,7 @@ from rest_framework import serializers
 from eventstore.models import (
     BabyDobSwitch,
     BabySwitch,
+    CDUAddressUpdate,
     ChannelSwitch,
     CHWRegistration,
     Covid19Triage,
@@ -113,6 +114,13 @@ class PMTCTRegistrationSerializer(BaseEventSerializer):
 class Covid19TriageSerializer(BaseEventSerializer):
     class Meta:
         model = Covid19Triage
+        fields = "__all__"
+        read_only_fields = ("id", "created_by")
+
+
+class CDUAddressUpdateSerializer(BaseEventSerializer):
+    class Meta:
+        model = CDUAddressUpdate
         fields = "__all__"
         read_only_fields = ("id", "created_by")
 
