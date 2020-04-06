@@ -1,33 +1,44 @@
 # Changelog
 
+## 0.8.9 (2020-04-06)
+
+1. Add CDU address updates to admin
+   ([#313](https://github.com/praekeltfoundation/ndoh-hub/pull/313))
+
 ## 0.8.8 (2020-04-06)
+
 1. Add table for storing CDU address updates
    ([#312](https://github.com/praekeltfoundation/ndoh-hub/pull/312))
 
 ## 0.8.7 (2020-04-03)
+
 1. Add table for storing covid19 triage results
    ([#311](https://github.com/praekeltfoundation/ndoh-hub/pull/311))
 
 ## 0.8.6 (2020-03-19)
+
 1. Trigger flows for 'EDD SWITCH' keyword instead of 'EDD'
    ([#309](https://github.com/praekeltfoundation/ndoh-hub/pull/309))
 
 ## 0.8.4 (2020-03-09)
+
 1. Optout user after n delivery failures
    ([#307](https://github.com/praekeltfoundation/ndoh-hub/pull/307))
 
 ## 0.8.3 (2020-03-05)
+
 1. Optout user after n delivery failures
    ([#305](https://github.com/praekeltfoundation/ndoh-hub/pull/305))
 
 ## 0.8.2 (2020-03-04)
+
 1. Fix for rapidpro contacts with None as language
    ([#303](https://github.com/praekeltfoundation/ndoh-hub/pull/303))
 1. Fix for rapidpro contacts not found
    ([#304](https://github.com/praekeltfoundation/ndoh-hub/pull/304))
 
-
 ## 0.8.1 (2020-03-04)
+
 1. Retry TembaHttpError
    ([#301](https://github.com/praekeltfoundation/ndoh-hub/pull/301))
 1. Optout user after n delivery failures
@@ -35,6 +46,7 @@
    ([#302](https://github.com/praekeltfoundation/ndoh-hub/pull/302))
 
 ## 0.8.0 (2020-02-26)
+
 1. Migration to RapidPro
    ([#300](https://github.com/praekeltfoundation/ndoh-hub/pull/300))
    ([#299](https://github.com/praekeltfoundation/ndoh-hub/pull/299))
@@ -63,6 +75,7 @@
    ([#272](https://github.com/praekeltfoundation/ndoh-hub/pull/272))
 
 ## 0.7.9 (2019-12-05)
+
 1. Upgrade Django to 2.2.8 (Security vulnerability patch)
    ([#271](https://github.com/praekeltfoundation/ndoh-hub/pull/271))
 1. Trigger RapidPro flow on receiving operator replies in eventstore
@@ -76,14 +89,17 @@
    ([#267](https://github.com/praekeltfoundation/ndoh-hub/pull/267))
 
 ## 0.7.8 (2019-11-26)
+
 1. Storing Messages in the Event store
    ([#265](https://github.com/praekeltfoundation/ndoh-hub/pull/265))
 
 ## 0.7.7 (2019-11-05)
+
 1. Make sending events to Jembi optional
    ([#264](https://github.com/praekeltfoundation/ndoh-hub/pull/264))
 
 ## 0.7.6 (2019-10-31)
+
 1. Store jembi requests before forwarding
    ([#261](https://github.com/praekeltfoundation/ndoh-hub/pull/261))
 1. Restrict event store passport country field to list of choices
@@ -92,6 +108,7 @@
    ([#263](https://github.com/praekeltfoundation/ndoh-hub/pull/263))
 
 ## 0.7.5 (2019-10-30)
+
 1. Fix sending of third party registrations to RapidPro
    ([#257](https://github.com/praekeltfoundation/ndoh-hub/pull/257))
 1. Add CHW registrations to the event store
@@ -101,15 +118,18 @@
    ([#260](https://github.com/praekeltfoundation/ndoh-hub/pull/260))
 
 ## 0.7.4 (2019-10-24)
+
 1. Cache querystring token auth
 
 ## 0.7.3 (2019-10-24)
+
 1. Allow third party registrations to be sent to RapidPro
    ([#255](https://github.com/praekeltfoundation/ndoh-hub/pull/255))
 1. Bug fix for Turn context API
    ([#256](https://github.com/praekeltfoundation/ndoh-hub/pull/256))
 
 ## 0.7.2 (2019-10-18)
+
 1. Create event store with support for opt outs, baby switches, channel switches,
    public, pre- and postbirth clinic registrations.
    ([#247](https://github.com/praekeltfoundation/ndoh-hub/pull/247))
@@ -123,6 +143,7 @@
    ([#254](https://github.com/praekeltfoundation/ndoh-hub/pull/254))
 
 ## 0.7.1 (2019-09-03)
+
 1. Upgrade django to 2.2.4
    ([#241](https://github.com/praekeltfoundation/ndoh-hub/pull/241))
 1. Cache auth token lookup
@@ -133,6 +154,7 @@
    ([#246](https://github.com/praekeltfoundation/ndoh-hub/pull/246))
 
 ## 0.7.0 (2019-08-19)
+
 1. Send registrations via WhatsApp to Jembi
    ([#232](https://github.com/praekeltfoundation/ndoh-hub/pull/232))
    ([#234](https://github.com/praekeltfoundation/ndoh-hub/pull/234))
@@ -147,8 +169,8 @@
 1. Send welcome message after successful prebirth registration
    ([#239](https://github.com/praekeltfoundation/ndoh-hub/pull/239))
 
-
 ## 0.6.7 (2019-06-20)
+
 1. Add missing translations
    ([#216](https://github.com/praekeltfoundation/ndoh-hub/pull/216))
    ([#217](https://github.com/praekeltfoundation/ndoh-hub/pull/217))
@@ -172,6 +194,7 @@
    ([#225](https://github.com/praekeltfoundation/ndoh-hub/pull/225))
 
 ## 0.6.6 (2019-05-14)
+
 1. Add missing translations
    ([#213](https://github.com/praekeltfoundation/ndoh-hub/pull/213))
 1. Add new view for proxying the health check to the OpenHIM API
@@ -180,6 +203,7 @@
    ([#215](https://github.com/praekeltfoundation/ndoh-hub/pull/215))
 
 ## 0.6.5 (2019-04-23)
+
 1. Add scripts for extract for GrowGreat send
    ([#209](https://github.com/praekeltfoundation/ndoh-hub/pull/209))
 1. Update WhatsApp language mapping to use english for all languages
@@ -190,6 +214,7 @@
    ([#212](https://github.com/praekeltfoundation/ndoh-hub/pull/212))
 
 ## 0.6.4 (2019-03-27)
+
 1. Add actions to Turn context
    ([#204](https://github.com/praekeltfoundation/ndoh-hub/pull/204))
    ([#208](https://github.com/praekeltfoundation/ndoh-hub/pull/208))
@@ -200,6 +225,7 @@
    ([#207](https://github.com/praekeltfoundation/ndoh-hub/pull/207))
 
 ## 0.6.3 (2019-02-06)
+
 1. Add endpoint for receiving failed address lookup webhooks from the message sender
    ([#200](https://github.com/praekeltfoundation/ndoh-hub/pull/200))
 1. Change to new Turn API for context objects
@@ -209,16 +235,19 @@
    ([#203](https://github.com/praekeltfoundation/ndoh-hub/pull/203))
 
 ## 0.6.2 (2019-01-31)
+
 1. Add retries for HTTP failures for process_whatsapp_system_event task
    ([#198](https://github.com/praekeltfoundation/ndoh-hub/pull/198))
 1. Fix loss switch change missing language code
    ([#199](https://github.com/praekeltfoundation/ndoh-hub/pull/199))
 
 ## 0.6.1 (2019-01-09)
+
 1. Add handling for additional message types from Turn
    ([#197](https://github.com/praekeltfoundation/ndoh-hub/pull/197))
 
 ## 0.6.0 (2018-12-18)
+
 1. Add WhatsApp message expiry event handling
    ([#190](https://github.com/praekeltfoundation/ndoh-hub/pull/190))
 1. Bug fixes for submission of Turn helpdesk responses to DHIS2
@@ -229,12 +258,14 @@
    ([#193](https://github.com/praekeltfoundation/ndoh-hub/pull/193))
 
 ## 0.5.0 (2018-11-28)
+
 1. Fix author field for helpdesk submissions to OpenHIM
    ([#188](https://github.com/praekeltfoundation/ndoh-hub/pull/188))
 1. Remove websockets + django channels
    ([#189](https://github.com/praekeltfoundation/ndoh-hub/pull/189))
 
 ## 0.4.4 (2018-11-16)
+
 1. Send WhatsApp helpdesk replies to DHIS2
    ([#182](https://github.com/praekeltfoundation/ndoh-hub/pull/182))
    ([#184](https://github.com/praekeltfoundation/ndoh-hub/pull/184))
@@ -247,6 +278,7 @@
    ([b1b6a2b](https://github.com/praekeltfoundation/ndoh-hub/commit/b1b6a2b4f8bc5bbd85a94f163c163f367e92c998))
 
 ## 0.4.3 (2018-11-09)
+
 1. Cache junebug lookup for jembi software type.
    ([#179](https://github.com/praekeltfoundation/ndoh-hub/pull/179))
 2. Handle race condition in Jembi registration endpoint.
@@ -255,10 +287,12 @@
    ([#181](https://github.com/praekeltfoundation/ndoh-hub/pull/181))
 
 ## 0.4.2 (2018-11-01)
+
 1. Fix channel switch between WhatsApp and SMS for public subscriptions.
    ([#178](https://github.com/praekeltfoundation/ndoh-hub/pull/178))
 
 ## 0.4.1 (2018-10-31)
+
 1. Fix service info subscription request function
    ([#175](https://github.com/praekeltfoundation/ndoh-hub/pull/175))
 2. Channel switch between WhatsApp and SMS fix for service info subscriptions.
@@ -266,21 +300,28 @@
    ([#177](https://github.com/praekeltfoundation/ndoh-hub/pull/177))
 
 ## 0.4.0 (2018-10-30)
+
 1. Change WhatsApp contact check from Wassup API to Engage API
    ([#174](https://github.com/praekeltfoundation/ndoh-hub/pull/174))
 
 ## 0.3.2 (2018-10-17)
+
 ### Enhancements
+
 1. Add list of active subscriptions to engage context
    ([#173](https://github.com/praekeltfoundation/ndoh-hub/pull/173))
 
 ## 0.3.1 (2018-10-17)
+
 ### Enhancements
+
 1. Add endpoint for engage context
    ([#172](https://github.com/praekeltfoundation/ndoh-hub/pull/171))
 
 ## 0.3.0 (2018-10-16)
+
 ### Enhancements
+
 1. Switch to WhatsApp API for failure event types
    ([#165](https://github.com/praekeltfoundation/ndoh-hub/pull/165))
 1. Handling for HSM errors from WhatsApp API
@@ -291,7 +332,9 @@
    ([#168](https://github.com/praekeltfoundation/ndoh-hub/pull/168))
 1. Webhook receiver for Seed Message Sender webhooks, WhatsApp contact check failure
    ([#169](https://github.com/praekeltfoundation/ndoh-hub/pull/168))
+
 ### Code Health
+
 1. Upgrade to Django 2.1, and upgrade all other packages
    ([#170](https://github.com/praekeltfoundation/ndoh-hub/pull/170))
 1. Add Black automatic formatting and isort import formatting
