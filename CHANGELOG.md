@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.8 (2020-04-06)
+1. Add table for storing CDU address updates
+   ([#312](https://github.com/praekeltfoundation/ndoh-hub/pull/312))
+
 ## 0.8.7 (2020-04-03)
 1. Add table for storing covid19 triage results
    ([#311](https://github.com/praekeltfoundation/ndoh-hub/pull/311))
