@@ -22,6 +22,7 @@ from eventstore.models import (
     PASSPORT_IDTYPE,
     BabyDobSwitch,
     BabySwitch,
+    CDUAddressUpdate,
     ChannelSwitch,
     CHWRegistration,
     Covid19Triage,
@@ -1531,3 +1532,58 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(covid19triage.tracing, True)
         self.assertEqual(covid19triage.risk, Covid19Triage.RISK_LOW)
         self.assertEqual(covid19triage.created_by, user.username)
+
+
+class CDUAddressUpdateViewSetTests(APITestCase, BaseEventTestCase):
+    url = reverse("cduaddressupdate-list")
+
+    def test_data_validation(self):
+        """
+        The supplied data must be validated, and any errors returned
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_cduaddressupdate")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_successful_request(self):
+        """
+        Should create a new CDUAddressUpdate object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_cduaddressupdate")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "first_name": "Jane",
+                "last_name": "Smith",
+                "id_type": "dob",
+                "id_number": "",
+                "date_of_birth": "1990-02-03",
+                "folder_number": "12345567",
+                "municipality": "Cape Town",
+                "city": "Cape Town",
+                "suburb": "Sea Point",
+                "street_name": "High Level Road",
+                "street_number": "197",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [cduAddressUpdate] = CDUAddressUpdate.objects.all()
+        self.assertEqual(cduAddressUpdate.first_name, "Jane")
+        self.assertEqual(cduAddressUpdate.last_name, "Smith")
+        self.assertEqual(cduAddressUpdate.id_type, "dob")
+        self.assertEqual(cduAddressUpdate.id_number, "")
+        self.assertEqual(cduAddressUpdate.date_of_birth, datetime.date(1990, 2, 3))
+        self.assertEqual(cduAddressUpdate.folder_number, "12345567")
+        self.assertEqual(cduAddressUpdate.municipality, "Cape Town")
+        self.assertEqual(cduAddressUpdate.city, "Cape Town")
+        self.assertEqual(cduAddressUpdate.suburb, "Sea Point")
+        self.assertEqual(cduAddressUpdate.street_name, "High Level Road")
+        self.assertEqual(cduAddressUpdate.street_number, "197")
