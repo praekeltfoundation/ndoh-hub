@@ -1572,6 +1572,7 @@ class CDUAddressUpdateViewSetTests(APITestCase, BaseEventTestCase):
                 "suburb": "Sea Point",
                 "street_name": "High Level Road",
                 "street_number": "197",
+                "msisdn": "+278564546",
             },
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -1587,3 +1588,4 @@ class CDUAddressUpdateViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(cduAddressUpdate.suburb, "Sea Point")
         self.assertEqual(cduAddressUpdate.street_name, "High Level Road")
         self.assertEqual(cduAddressUpdate.street_number, "197")
+        self.assertEqual(cduAddressUpdate.msisdn, "+278564546")

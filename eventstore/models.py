@@ -433,6 +433,7 @@ class CDUAddressUpdate(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created_by = models.CharField(max_length=255, blank=True, default="")
     timestamp = models.DateTimeField(default=timezone.now)
+    msisdn = models.CharField(max_length=255)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     id_type = models.CharField(max_length=8, choices=IDTYPES)
