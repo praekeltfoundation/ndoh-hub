@@ -1517,6 +1517,7 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
                 "tracing": True,
                 "risk": Covid19Triage.RISK_LOW,
             },
+            format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         [covid19triage] = Covid19Triage.objects.all()
@@ -1528,6 +1529,7 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(covid19triage.fever, False)
         self.assertEqual(covid19triage.cough, False)
         self.assertEqual(covid19triage.sore_throat, False)
+        self.assertEqual(covid19triage.difficulty_breathing, None)
         self.assertEqual(covid19triage.exposure, Covid19Triage.EXPOSURE_NO)
         self.assertEqual(covid19triage.tracing, True)
         self.assertEqual(covid19triage.risk, Covid19Triage.RISK_LOW)

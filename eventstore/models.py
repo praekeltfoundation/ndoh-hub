@@ -388,7 +388,7 @@ class Covid19Triage(models.Model):
         (AGE_O65, AGE_O65),
     )
 
-    PROVINCE_CHOICES = tuple(
+    PROVINCE_CHOICES = sorted(
         (s.code, s.name) for s in pycountry.subdivisions.get(country_code="ZA")
     )
 
@@ -421,6 +421,7 @@ class Covid19Triage(models.Model):
     fever = models.BooleanField()
     cough = models.BooleanField()
     sore_throat = models.BooleanField()
+    difficulty_breathing = models.BooleanField(null=True, blank=True, default=None)
     exposure = models.CharField(max_length=9, choices=EXPOSURE_CHOICES)
     tracing = models.BooleanField(help_text="Whether the NDoH can contact the user")
     risk = models.CharField(max_length=8, choices=RISK_CHOICES)
