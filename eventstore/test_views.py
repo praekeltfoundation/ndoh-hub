@@ -1567,7 +1567,8 @@ class CDUAddressUpdateViewSetTests(APITestCase, BaseEventTestCase):
                 "id_number": "",
                 "date_of_birth": "1990-02-03",
                 "folder_number": "12345567",
-                "municipality": "Cape Town",
+                "district": "Cape Town",
+                "municipality": "Cape Town East",
                 "city": "Cape Town",
                 "suburb": "Sea Point",
                 "street_name": "High Level Road",
@@ -1583,7 +1584,8 @@ class CDUAddressUpdateViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(cduAddressUpdate.id_number, "")
         self.assertEqual(cduAddressUpdate.date_of_birth, datetime.date(1990, 2, 3))
         self.assertEqual(cduAddressUpdate.folder_number, "12345567")
-        self.assertEqual(cduAddressUpdate.municipality, "Cape Town")
+        self.assertEqual(cduAddressUpdate.district, "Cape Town")
+        self.assertEqual(cduAddressUpdate.municipality, "Cape Town East")
         self.assertEqual(cduAddressUpdate.city, "Cape Town")
         self.assertEqual(cduAddressUpdate.suburb, "Sea Point")
         self.assertEqual(cduAddressUpdate.street_name, "High Level Road")
