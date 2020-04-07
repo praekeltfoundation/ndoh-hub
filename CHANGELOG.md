@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.10 (2020-04-07)
+
+1. Add msisdn column to CDU address updates
+   ([#314](https://github.com/praekeltfoundation/ndoh-hub/pull/314))
+
 ## 0.8.9 (2020-04-06)
 
 1. Add CDU address updates to admin
