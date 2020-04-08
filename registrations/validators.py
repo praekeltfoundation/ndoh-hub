@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from iso6709 import Location
 from rest_framework.serializers import ValidationError
 
 from ndoh_hub import utils
@@ -37,3 +38,10 @@ def posix_timestamp(value):
         datetime.fromtimestamp(int(value))
     except ValueError:
         raise ValidationError("Invalid POSIX timestamp.")
+
+
+def geographic_coordinate(value):
+    try:
+        Location(value)
+    except AttributeError:
+        raise ValidationError("Invalid ISO6709 geographic coordinate")

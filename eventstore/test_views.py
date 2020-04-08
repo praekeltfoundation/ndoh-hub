@@ -1532,6 +1532,13 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(covid19triage.difficulty_breathing, None)
         self.assertEqual(covid19triage.exposure, Covid19Triage.EXPOSURE_NO)
         self.assertEqual(covid19triage.tracing, True)
+        self.assertEqual(covid19triage.gender, "")
+        self.assertEqual(covid19triage.location, "")
+        self.assertEqual(covid19triage.muscle_pain, None)
+        self.assertEqual(covid19triage.smell, None)
+        self.assertEqual(covid19triage.preexisting_condition, "")
+        self.assertIsInstance(covid19triage.deduplication_id, str)
+        self.assertNotEqual(covid19triage.deduplication_id, "")
         self.assertEqual(covid19triage.risk, Covid19Triage.RISK_LOW)
         self.assertEqual(covid19triage.created_by, user.username)
 

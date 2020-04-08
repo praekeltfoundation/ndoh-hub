@@ -35,6 +35,7 @@ setup(
         "rapidpro-python==2.6.1",
         "pycountry==19.8.18",
         "attrs",
+        "iso6709==0.1.5",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",

@@ -6,6 +6,8 @@ from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.utils import timezone
 
+from registrations.validators import geographic_coordinate
+
 LANGUAGE_TYPES = ((v["code"].rstrip("-za"), v["name"]) for v in LANG_INFO.values())
 
 SAID_IDTYPE = "sa_id"
@@ -412,7 +414,19 @@ class Covid19Triage(models.Model):
         (RISK_CRITICAL, "Critical"),
     )
 
+    GENDER_MALE = "male"
+    GENDER_FEMALE = "female"
+    GENDER_OTHER = "other"
+    GENDER_NOT_SAY = "not_say"
+    GENDER_CHOICES = (
+        (GENDER_MALE, "Male"),
+        (GENDER_FEMALE, "Female"),
+        (GENDER_OTHER, "Other"),
+        (GENDER_NOT_SAY, "Rather not say"),
+    )
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    deduplication_id = models.CharField(max_length=255, default=uuid.uuid4, unique=True)
     msisdn = models.CharField(max_length=255)
     source = models.CharField(max_length=255)
     province = models.CharField(max_length=6, choices=PROVINCE_CHOICES)
@@ -425,6 +439,17 @@ class Covid19Triage(models.Model):
     exposure = models.CharField(max_length=9, choices=EXPOSURE_CHOICES)
     tracing = models.BooleanField(help_text="Whether the NDoH can contact the user")
     risk = models.CharField(max_length=8, choices=RISK_CHOICES)
+    gender = models.CharField(
+        max_length=7, choices=GENDER_CHOICES, blank=True, default=""
+    )
+    location = models.CharField(
+        max_length=255, blank=True, default="", validators=[geographic_coordinate]
+    )
+    muscle_pain = models.BooleanField(null=True, blank=True, default=None)
+    smell = models.BooleanField(null=True, blank=True, default=None)
+    preexisting_condition = models.CharField(
+        max_length=9, choices=EXPOSURE_CHOICES, blank=True, default=""
+    )
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
     data = JSONField(default=dict, blank=True, null=True)
