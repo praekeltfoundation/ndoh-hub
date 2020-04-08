@@ -1,10 +1,11 @@
 from datetime import datetime
 
 from django.conf import settings
+from django_filters import rest_framework as filters
 from pytz import UTC
 from rest_framework import serializers, status
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.mixins import CreateModelMixin
+from rest_framework.mixins import CreateModelMixin, ListModelMixin
 from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
@@ -52,6 +53,7 @@ from eventstore.serializers import (
 from eventstore.tasks import forget_contact
 from eventstore.whatsapp_actions import handle_event, handle_inbound, handle_outbound
 from ndoh_hub.utils import TokenAuthQueryString, validate_signature
+from registrations.views import CursorPaginationFactory
 
 
 class MessagesViewSet(GenericViewSet):
@@ -256,10 +258,21 @@ class BabyDobSwitchViewSet(GenericViewSet, CreateModelMixin):
     permission_classes = (DjangoModelPermissions,)
 
 
-class Covid19TriageViewSet(GenericViewSet, CreateModelMixin):
+class Covid19TriageFilter(filters.FilterSet):
+    timestamp_gt = filters.IsoDateTimeFilter(field_name="timestamp", lookup_expr="gt")
+
+    class Meta:
+        model = Covid19Triage
+        fields: list = []
+
+
+class Covid19TriageViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
     queryset = Covid19Triage.objects.all()
     serializer_class = Covid19TriageSerializer
     permission_classes = (DjangoModelPermissions,)
+    pagination_class = CursorPaginationFactory("timestamp")
+    filter_backends = [filters.DjangoFilterBackend]
+    filterset_class = Covid19TriageFilter
 
 
 class CDUAddressUpdateViewSet(GenericViewSet, CreateModelMixin):

@@ -4,6 +4,7 @@ import hmac
 from datetime import date
 from hashlib import sha256
 from unittest import mock
+from urllib.parse import urlencode
 
 import responses
 from django.contrib.auth import get_user_model
@@ -39,6 +40,7 @@ from eventstore.models import (
     PublicRegistration,
     ResearchOptinSwitch,
 )
+from eventstore.serializers import Covid19TriageSerializer
 
 
 class BaseEventTestCase(object):
@@ -1505,7 +1507,7 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         response = self.client.post(
             self.url,
             {
-                "msisdn": "+27820001001",
+                "msisdn": "27820001001",
                 "source": "USSD",
                 "province": "ZA-WC",
                 "city": "cape town",
@@ -1532,8 +1534,88 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(covid19triage.difficulty_breathing, None)
         self.assertEqual(covid19triage.exposure, Covid19Triage.EXPOSURE_NO)
         self.assertEqual(covid19triage.tracing, True)
+        self.assertEqual(covid19triage.gender, "")
+        self.assertEqual(covid19triage.location, "")
+        self.assertEqual(covid19triage.muscle_pain, None)
+        self.assertEqual(covid19triage.smell, None)
+        self.assertEqual(covid19triage.preexisting_condition, "")
+        self.assertIsInstance(covid19triage.deduplication_id, str)
+        self.assertNotEqual(covid19triage.deduplication_id, "")
         self.assertEqual(covid19triage.risk, Covid19Triage.RISK_LOW)
         self.assertEqual(covid19triage.created_by, user.username)
+
+    def test_invalid_location_request(self):
+        """
+        Should create a new Covid19Triage object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "msisdn": "+27820001001",
+                "source": "USSD",
+                "province": "ZA-WC",
+                "city": "cape town",
+                "age": Covid19Triage.AGE_18T40,
+                "fever": False,
+                "cough": False,
+                "sore_throat": False,
+                "exposure": Covid19Triage.EXPOSURE_NO,
+                "tracing": True,
+                "risk": Covid19Triage.RISK_LOW,
+                "location": "invalid",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["location"], ["Invalid ISO6709 geographic coordinate"]
+        )
+
+    def test_get_list(self):
+        """
+        Should return the data, filtered by the querystring
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="view_covid19triage"))
+        self.client.force_authenticate(user)
+
+        triage_old = Covid19Triage.objects.create(
+            msisdn="+27820001001",
+            source="USSD",
+            province="ZA-WC",
+            city="Cape Town",
+            age=Covid19Triage.AGE_18T40,
+            fever=False,
+            cough=False,
+            sore_throat=False,
+            exposure=Covid19Triage.EXPOSURE_NO,
+            tracing=True,
+            risk=Covid19Triage.RISK_LOW,
+        )
+        triage_new = Covid19Triage.objects.create(
+            msisdn="+27820001001",
+            source="USSD",
+            province="ZA-WC",
+            city="Cape Town",
+            age=Covid19Triage.AGE_18T40,
+            fever=False,
+            cough=False,
+            sore_throat=False,
+            exposure=Covid19Triage.EXPOSURE_NO,
+            tracing=True,
+            risk=Covid19Triage.RISK_LOW,
+        )
+        response = self.client.get(
+            f"{self.url}?"
+            f"{urlencode({'timestamp_gt': triage_old.timestamp.isoformat()})}"
+        )
+        self.assertEqual(
+            response.data["results"],
+            [Covid19TriageSerializer(instance=triage_new).data],
+        )
 
 
 class CDUAddressUpdateViewSetTests(APITestCase, BaseEventTestCase):

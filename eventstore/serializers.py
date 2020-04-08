@@ -18,6 +18,7 @@ from eventstore.models import (
     PublicRegistration,
     ResearchOptinSwitch,
 )
+from registrations.serializers import MSISDNField
 from registrations.validators import posix_timestamp
 
 
@@ -112,6 +113,8 @@ class PMTCTRegistrationSerializer(BaseEventSerializer):
 
 
 class Covid19TriageSerializer(BaseEventSerializer):
+    msisdn = MSISDNField(country="ZA")
+
     class Meta:
         model = Covid19Triage
         fields = "__all__"
