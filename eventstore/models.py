@@ -450,6 +450,7 @@ class Covid19Triage(models.Model):
     preexisting_condition = models.CharField(
         max_length=9, choices=EXPOSURE_CHOICES, blank=True, default=""
     )
+    completed_timestamp = models.DateTimeField(default=timezone.now)
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
     data = JSONField(default=dict, blank=True, null=True)
