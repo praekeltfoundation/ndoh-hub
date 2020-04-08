@@ -6,7 +6,7 @@ from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.utils import timezone
 
-from registrations.validators import geographic_coordinate
+from registrations.validators import geographic_coordinate, za_phone_number
 
 LANGUAGE_TYPES = ((v["code"].rstrip("-za"), v["name"]) for v in LANG_INFO.values())
 
@@ -427,7 +427,7 @@ class Covid19Triage(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     deduplication_id = models.CharField(max_length=255, default=uuid.uuid4, unique=True)
-    msisdn = models.CharField(max_length=255)
+    msisdn = models.CharField(max_length=255, validators=[za_phone_number])
     source = models.CharField(max_length=255)
     province = models.CharField(max_length=6, choices=PROVINCE_CHOICES)
     city = models.CharField(max_length=255)
