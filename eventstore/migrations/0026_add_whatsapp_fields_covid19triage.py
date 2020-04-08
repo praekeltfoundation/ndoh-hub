@@ -7,12 +7,27 @@ from django.db import migrations, models
 import registrations.validators
 
 
+def set_default(apps, schema_editor):
+    Covid19Triage = apps.get_model("eventstore", "Covid19Triage")
+    Covid19Triage.objects.update(deduplication_id=models.F("id"))
+
+
+def noop(apps, schema_editor):
+    pass
+
+
 class Migration(migrations.Migration):
 
     dependencies = [("eventstore", "0025_add_difficulty_breathing")]
 
     operations = [
         migrations.AddField(
+            model_name="covid19triage",
+            name="deduplication_id",
+            field=models.CharField(default=uuid.uuid4, max_length=255),
+        ),
+        migrations.RunPython(set_default, noop),
+        migrations.AlterField(
             model_name="covid19triage",
             name="deduplication_id",
             field=models.CharField(default=uuid.uuid4, max_length=255, unique=True),
