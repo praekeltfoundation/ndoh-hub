@@ -36,6 +36,7 @@ setup(
         "pycountry==19.8.18",
         "attrs",
         "iso6709==0.1.5",
+        "pysftp==0.2.9",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",

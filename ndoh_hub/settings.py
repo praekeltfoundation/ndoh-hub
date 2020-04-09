@@ -252,6 +252,11 @@ WHATSAPP_EXPIRY_SMS_BOUNCE_DAYS = int(
     os.environ.get("WHATSAPP_EXPIRY_SMS_BOUNCE_DAYS", "30")
 )
 
+SFTP_HOST = os.environ.get("SFTP_HOST", "REPLACEME")
+SFTP_USERNAME = os.environ.get("SFTP_USERNAME", "REPLACEME")
+SFTP_PASSWORD = os.environ.get("SFTP_PASSWORD", "REPLACEME")
+SFTP_PORT = os.environ.get("SFTP_PORT", 5022)
+
 STAGE_BASED_MESSAGING_URL = os.environ.get(
     "STAGE_BASED_MESSAGING_URL", "http://sbm/api/v1"
 )

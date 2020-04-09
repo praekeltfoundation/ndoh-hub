@@ -1,19 +1,23 @@
+import csv
 import json
 from datetime import datetime
 from urllib.parse import urljoin
 
 import phonenumbers
+import pysftp
 import pytz
 import requests
 from celery.exceptions import SoftTimeLimitExceeded
 from django.conf import settings
 from django.utils import dateparse, translation
+from pysftp import ConnectionException
 from requests.exceptions import RequestException
 from temba_client.exceptions import TembaHttpError
 
 from eventstore.models import (
     BabyDobSwitch,
     BabySwitch,
+    CDUAddressUpdate,
     ChannelSwitch,
     CHWRegistration,
     EddSwitch,
@@ -317,6 +321,76 @@ def update_rapidpro_contact_error_timestamp(context):
         f"whatsapp:{msisdn}",
         fields={"whatsapp_undelivered_timestamp": get_utc_now().isoformat()},
     )
+
+
+@app.task(
+    autoretry_for=(RequestException, ConnectionException),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def upload_and_delete_cdu_address_updates(self):
+
+    Headers = [
+        "msisdn",
+        "first_name",
+        "last_name",
+        "id_type",
+        "id_number",
+        "date_of_birth",
+        "folder_number",
+        "district",
+        "municipality",
+        "city",
+        "suburb",
+        "street_name",
+        "street_number",
+    ]
+    data = []
+    ids_to_delete = []
+    for address_update in CDUAddressUpdate.objects.all():
+        ids_to_delete.append(address_update.id)
+        row = ",".join([str(getattr(address_update, header)) for header in Headers])
+        data.append(row)
+
+    # Write to csv
+    with open("./CDU_address.csv", "w", newline="") as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow(Headers)
+        for row in data:
+            writer.writerow(row.replace('"', "").split(","))
+
+    # Start FTP Session
+    cnopts = pysftp.CnOpts()
+    cnopts.hostkeys = None
+    with pysftp.Connection(
+        host=settings.SFTP_HOST,
+        username=settings.SFTP_USERNAME,
+        password=settings.SFTP_PASSWORD,
+        port=settings.SFTP_PORT,
+        cnopts=cnopts,
+    ) as sftp:
+        remotepath = "/home/pgwc-phdc/dataexchange/covid6/CSVs/CDU_address.csv"
+        localpath = "./CDU_address.csv"
+        sftp.put(localpath, remotepath)
+
+    CDUAddressUpdate.objects.filter(id__in=ids_to_delete).delete()
+
+
+@app.task(
+    autoretry_for=(RequestException),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def read_data(data):
+    with open(data, "r") as f:
+        data = [row for row in csv.reader(f.read().splitlines())]
+        return data
 
 
 async_handle_whatsapp_delivery_error = (
