@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.11 (2020-04-09)
+
+1. Add district column to CDU address updates
+   ([#315](https://github.com/praekeltfoundation/ndoh-hub/pull/315))
+2. Add difficulty breathing to covid19 triage
+   ([#316](https://github.com/praekeltfoundation/ndoh-hub/pull/316))
+3. Add API for getting covid19 triage data
+   ([#317](https://github.com/praekeltfoundation/ndoh-hub/pull/317))
+
 ## 0.8.10 (2020-04-07)
 
 1. Add msisdn column to CDU address updates
