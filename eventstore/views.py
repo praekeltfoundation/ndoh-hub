@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.conf import settings
+from django.db import IntegrityError
 from django_filters import rest_framework as filters
 from pytz import UTC
 from rest_framework import serializers, status
@@ -273,6 +274,13 @@ class Covid19TriageViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
     pagination_class = CursorPaginationFactory("timestamp")
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = Covid19TriageFilter
+
+    def create(self, *args, **kwargs):
+        try:
+            return super().create(*args, **kwargs)
+        except IntegrityError:
+            # We already have this entry
+            return Response(status=status.HTTP_200_OK)
 
 
 class CDUAddressUpdateViewSet(GenericViewSet, CreateModelMixin):
