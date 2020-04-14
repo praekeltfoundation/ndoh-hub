@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.8.11 (2020-04-14)
+## 0.8.12 (2020-04-14)
 1. Return 200 for duplicate covid19 triage entries
    ([#319](https://github.com/praekeltfoundation/ndoh-hub/pull/319))
 1. Add API for fetching covid19 triage data
