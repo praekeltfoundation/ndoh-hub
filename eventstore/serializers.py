@@ -1,3 +1,5 @@
+import uuid
+
 from rest_framework import serializers
 
 from eventstore.models import (
@@ -114,6 +116,7 @@ class PMTCTRegistrationSerializer(BaseEventSerializer):
 
 class Covid19TriageSerializer(BaseEventSerializer):
     msisdn = MSISDNField(country="ZA")
+    deduplication_id = serializers.CharField(default=uuid.uuid4, max_length=255)
 
     class Meta:
         model = Covid19Triage

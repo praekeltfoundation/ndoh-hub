@@ -1544,6 +1544,32 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(covid19triage.risk, Covid19Triage.RISK_LOW)
         self.assertEqual(covid19triage.created_by, user.username)
 
+    def test_duplicate_request(self):
+        """
+        Should create on the first request, and just return 200 on subsequent requests
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+        self.client.force_authenticate(user)
+        data = {
+            "deduplication_id": "testid",
+            "msisdn": "27820001001",
+            "source": "USSD",
+            "province": "ZA-WC",
+            "city": "cape town",
+            "age": Covid19Triage.AGE_18T40,
+            "fever": False,
+            "cough": False,
+            "sore_throat": False,
+            "exposure": Covid19Triage.EXPOSURE_NO,
+            "tracing": True,
+            "risk": Covid19Triage.RISK_LOW,
+        }
+        response = self.client.post(self.url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response = self.client.post(self.url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
     def test_invalid_location_request(self):
         """
         Should create a new Covid19Triage object in the database
