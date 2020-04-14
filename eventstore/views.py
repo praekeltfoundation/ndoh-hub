@@ -282,6 +282,13 @@ class Covid19TriageViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
             # We already have this entry
             return Response(status=status.HTTP_200_OK)
 
+    def get_throttles(self):
+        """
+        Set the throttle_scope dynamically to get different rates per action
+        """
+        self.throttle_scope = f"covid19triage.{self.action}"
+        return super().get_throttles()
+
 
 class CDUAddressUpdateViewSet(GenericViewSet, CreateModelMixin):
     queryset = CDUAddressUpdate.objects.all()
