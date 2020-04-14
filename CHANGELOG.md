@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.13 (2020-04-14)
+1. Rate limits for covid19triage endpoint
+   ([#320](https://github.com/praekeltfoundation/ndoh-hub/pull/319))
+
 ## 0.8.12 (2020-04-14)
 1. Return 200 for duplicate covid19 triage entries
    ([#319](https://github.com/praekeltfoundation/ndoh-hub/pull/319))
