@@ -164,7 +164,7 @@ if __name__ == "__main__":
             VALUES %s
             ON CONFLICT DO NOTHING
             """,
-            ((contact_id, f"whatsapp:{wa}", wa, None, "whatsapp", 1, 50, None, None),),
+            ((contact_id, f"whatsapp:{wa}", wa, None, "whatsapp", ORG, 50, None, None),),
         )
 
         if time.time() - d_print > 1:
