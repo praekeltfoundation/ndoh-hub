@@ -4,6 +4,7 @@ import hmac
 from datetime import date
 from hashlib import sha256
 from unittest import mock
+from urllib.parse import urlencode
 
 import responses
 from django.contrib.auth import get_user_model
@@ -22,8 +23,10 @@ from eventstore.models import (
     PASSPORT_IDTYPE,
     BabyDobSwitch,
     BabySwitch,
+    CDUAddressUpdate,
     ChannelSwitch,
     CHWRegistration,
+    Covid19Triage,
     EddSwitch,
     Event,
     IdentificationSwitch,
@@ -37,6 +40,7 @@ from eventstore.models import (
     PublicRegistration,
     ResearchOptinSwitch,
 )
+from eventstore.serializers import Covid19TriageSerializer
 
 
 class BaseEventTestCase(object):
@@ -1478,3 +1482,222 @@ class CHWRegistrationViewSetTests(APITestCase, BaseEventTestCase):
             str(registration.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
         )
         self.assertEqual(registration.passport_country, "other")
+
+
+class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
+    url = reverse("covid19triage-list")
+
+    def test_data_validation(self):
+        """
+        The supplied data must be validated, and any errors returned
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_successful_request(self):
+        """
+        Should create a new Covid19Triage object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "msisdn": "27820001001",
+                "source": "USSD",
+                "province": "ZA-WC",
+                "city": "cape town",
+                "age": Covid19Triage.AGE_18T40,
+                "fever": False,
+                "cough": False,
+                "sore_throat": False,
+                "exposure": Covid19Triage.EXPOSURE_NO,
+                "tracing": True,
+                "risk": Covid19Triage.RISK_LOW,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [covid19triage] = Covid19Triage.objects.all()
+        self.assertEqual(covid19triage.msisdn, "+27820001001")
+        self.assertEqual(covid19triage.source, "USSD")
+        self.assertEqual(covid19triage.province, "ZA-WC")
+        self.assertEqual(covid19triage.city, "cape town")
+        self.assertEqual(covid19triage.age, Covid19Triage.AGE_18T40)
+        self.assertEqual(covid19triage.fever, False)
+        self.assertEqual(covid19triage.cough, False)
+        self.assertEqual(covid19triage.sore_throat, False)
+        self.assertEqual(covid19triage.difficulty_breathing, None)
+        self.assertEqual(covid19triage.exposure, Covid19Triage.EXPOSURE_NO)
+        self.assertEqual(covid19triage.tracing, True)
+        self.assertEqual(covid19triage.gender, "")
+        self.assertEqual(covid19triage.location, "")
+        self.assertEqual(covid19triage.muscle_pain, None)
+        self.assertEqual(covid19triage.smell, None)
+        self.assertEqual(covid19triage.preexisting_condition, "")
+        self.assertIsInstance(covid19triage.deduplication_id, str)
+        self.assertNotEqual(covid19triage.deduplication_id, "")
+        self.assertEqual(covid19triage.risk, Covid19Triage.RISK_LOW)
+        self.assertEqual(covid19triage.created_by, user.username)
+
+    def test_duplicate_request(self):
+        """
+        Should create on the first request, and just return 200 on subsequent requests
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+        self.client.force_authenticate(user)
+        data = {
+            "deduplication_id": "testid",
+            "msisdn": "27820001001",
+            "source": "USSD",
+            "province": "ZA-WC",
+            "city": "cape town",
+            "age": Covid19Triage.AGE_18T40,
+            "fever": False,
+            "cough": False,
+            "sore_throat": False,
+            "exposure": Covid19Triage.EXPOSURE_NO,
+            "tracing": True,
+            "risk": Covid19Triage.RISK_LOW,
+        }
+        response = self.client.post(self.url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response = self.client.post(self.url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_invalid_location_request(self):
+        """
+        Should create a new Covid19Triage object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "msisdn": "+27820001001",
+                "source": "USSD",
+                "province": "ZA-WC",
+                "city": "cape town",
+                "age": Covid19Triage.AGE_18T40,
+                "fever": False,
+                "cough": False,
+                "sore_throat": False,
+                "exposure": Covid19Triage.EXPOSURE_NO,
+                "tracing": True,
+                "risk": Covid19Triage.RISK_LOW,
+                "location": "invalid",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["location"], ["Invalid ISO6709 geographic coordinate"]
+        )
+
+    def test_get_list(self):
+        """
+        Should return the data, filtered by the querystring
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="view_covid19triage"))
+        self.client.force_authenticate(user)
+
+        triage_old = Covid19Triage.objects.create(
+            msisdn="+27820001001",
+            source="USSD",
+            province="ZA-WC",
+            city="Cape Town",
+            age=Covid19Triage.AGE_18T40,
+            fever=False,
+            cough=False,
+            sore_throat=False,
+            exposure=Covid19Triage.EXPOSURE_NO,
+            tracing=True,
+            risk=Covid19Triage.RISK_LOW,
+        )
+        triage_new = Covid19Triage.objects.create(
+            msisdn="+27820001001",
+            source="USSD",
+            province="ZA-WC",
+            city="Cape Town",
+            age=Covid19Triage.AGE_18T40,
+            fever=False,
+            cough=False,
+            sore_throat=False,
+            exposure=Covid19Triage.EXPOSURE_NO,
+            tracing=True,
+            risk=Covid19Triage.RISK_LOW,
+        )
+        response = self.client.get(
+            f"{self.url}?"
+            f"{urlencode({'timestamp_gt': triage_old.timestamp.isoformat()})}"
+        )
+        self.assertEqual(
+            response.data["results"],
+            [Covid19TriageSerializer(instance=triage_new).data],
+        )
+
+
+class CDUAddressUpdateViewSetTests(APITestCase, BaseEventTestCase):
+    url = reverse("cduaddressupdate-list")
+
+    def test_data_validation(self):
+        """
+        The supplied data must be validated, and any errors returned
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_cduaddressupdate")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_successful_request(self):
+        """
+        Should create a new CDUAddressUpdate object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_cduaddressupdate")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "first_name": "Jane",
+                "last_name": "Smith",
+                "id_type": "dob",
+                "id_number": "",
+                "date_of_birth": "1990-02-03",
+                "folder_number": "12345567",
+                "district": "Cape Town",
+                "municipality": "Cape Town East",
+                "city": "Cape Town",
+                "suburb": "Sea Point",
+                "street_name": "High Level Road",
+                "street_number": "197",
+                "msisdn": "+278564546",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [cduAddressUpdate] = CDUAddressUpdate.objects.all()
+        self.assertEqual(cduAddressUpdate.first_name, "Jane")
+        self.assertEqual(cduAddressUpdate.last_name, "Smith")
+        self.assertEqual(cduAddressUpdate.id_type, "dob")
+        self.assertEqual(cduAddressUpdate.id_number, "")
+        self.assertEqual(cduAddressUpdate.date_of_birth, datetime.date(1990, 2, 3))
+        self.assertEqual(cduAddressUpdate.folder_number, "12345567")
+        self.assertEqual(cduAddressUpdate.district, "Cape Town")
+        self.assertEqual(cduAddressUpdate.municipality, "Cape Town East")
+        self.assertEqual(cduAddressUpdate.city, "Cape Town")
+        self.assertEqual(cduAddressUpdate.suburb, "Sea Point")
+        self.assertEqual(cduAddressUpdate.street_name, "High Level Road")
+        self.assertEqual(cduAddressUpdate.street_number, "197")
+        self.assertEqual(cduAddressUpdate.msisdn, "+278564546")

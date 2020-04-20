@@ -11,8 +11,10 @@ from rest_framework.documentation import include_docs_urls
 from eventstore.views import (
     BabyDobSwitchViewSet,
     BabySwitchViewSet,
+    CDUAddressUpdateViewSet,
     ChannelSwitchViewSet,
     CHWRegistrationViewSet,
+    Covid19TriageViewSet,
     EddSwitchViewSet,
     IdentificationSwitchViewSet,
     LanguageSwitchViewSet,
@@ -34,6 +36,7 @@ v2router = routers.DefaultRouter()
 v2router.register("optouts", OptOutViewSet)
 v2router.register("babyswitches", BabySwitchViewSet)
 v2router.register("channelswitches", ChannelSwitchViewSet)
+v2router.register("covid19triage", Covid19TriageViewSet)
 v2router.register("msisdnswitches", MSISDNSwitchViewSet)
 v2router.register("languageswitches", LanguageSwitchViewSet)
 v2router.register("identificationswitches", IdentificationSwitchViewSet)
@@ -46,6 +49,7 @@ v2router.register("researchoptins", ResearchOptinSwitchViewSet)
 v2router.register("messages", MessagesViewSet, basename="messages")
 v2router.register("eddswitches", EddSwitchViewSet)
 v2router.register("babydobswitches", BabyDobSwitchViewSet)
+v2router.register("cduaddressupdate", CDUAddressUpdateViewSet)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
