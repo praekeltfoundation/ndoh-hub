@@ -26,8 +26,7 @@ class MigrateToEventstoreTests(TestCase):
         migrate_registration_info.rapidpro = TembaClient("textit.in", "test-token")
         responses.add(
             responses.GET,
-            "https://textit.in/api/v2"
-            "/contacts.json?uuid=0bbb7161-ba0a-45e2-9888-d1a29fa0",
+            "https://textit.in/api/v2/contacts.json?uuid=0bbb7161-ba0a-45e2-9888-d1a29fa0",  # noqa
             json={
                 "results": [
                     {
@@ -67,8 +66,7 @@ class MigrateToEventstoreTests(TestCase):
         migrate_registration_info.rapidpro = TembaClient("textit.in", "test-token")
         responses.add(
             responses.GET,
-            "https://textit.in/api/v2"
-            "/contacts.json?uuid=0bbb7161-ba0a-45e2-9888-d1a29fa0",
+            "https://textit.in/api/v2/contacts.json?uuid=0bbb7161-ba0a-45e2-9888-d1a29fa0",  # noqa
             json={
                 "results": [
                     {
@@ -108,8 +106,7 @@ class MigrateToEventstoreTests(TestCase):
         migrate_registration_info.rapidpro = TembaClient("textit.in", "test-token")
         responses.add(
             responses.GET,
-            "https://textit.in/api/v2"
-            "/contacts.json?uuid=0bbb7161-ba0a-45e2-9888-d1a29fa0",
+            "https://textit.in/api/v2/contacts.json?uuid=0bbb7161-ba0a-45e2-9888-d1a29fa0",  # noqa
             json={
                 "results": [
                     {
