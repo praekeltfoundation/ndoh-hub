@@ -1,10 +1,14 @@
+import uuid
+
 from rest_framework import serializers
 
 from eventstore.models import (
     BabyDobSwitch,
     BabySwitch,
+    CDUAddressUpdate,
     ChannelSwitch,
     CHWRegistration,
+    Covid19Triage,
     EddSwitch,
     IdentificationSwitch,
     LanguageSwitch,
@@ -16,6 +20,7 @@ from eventstore.models import (
     PublicRegistration,
     ResearchOptinSwitch,
 )
+from registrations.serializers import MSISDNField
 from registrations.validators import posix_timestamp
 
 
@@ -105,6 +110,23 @@ class PostbirthRegistrationSerializer(BaseEventSerializer):
 class PMTCTRegistrationSerializer(BaseEventSerializer):
     class Meta:
         model = PMTCTRegistration
+        fields = "__all__"
+        read_only_fields = ("id", "created_by")
+
+
+class Covid19TriageSerializer(BaseEventSerializer):
+    msisdn = MSISDNField(country="ZA")
+    deduplication_id = serializers.CharField(default=uuid.uuid4, max_length=255)
+
+    class Meta:
+        model = Covid19Triage
+        fields = "__all__"
+        read_only_fields = ("id", "created_by")
+
+
+class CDUAddressUpdateSerializer(BaseEventSerializer):
+    class Meta:
+        model = CDUAddressUpdate
         fields = "__all__"
         read_only_fields = ("id", "created_by")
 

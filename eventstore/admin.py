@@ -6,7 +6,9 @@ from django.utils.functional import cached_property
 from eventstore.models import (
     BabyDobSwitch,
     BabySwitch,
+    CDUAddressUpdate,
     ChannelSwitch,
+    Covid19Triage,
     DeliveryFailure,
     EddSwitch,
     IdentificationSwitch,
@@ -138,3 +140,15 @@ class EddSwitchAdmin(BaseEventAdmin):
 class BabyDobSwitchAdmin(BaseEventAdmin):
     readonly_fields = ("id", "created_by", "timestamp")
     list_display = ("contact_id", "source", "timestamp")
+
+
+@admin.register(Covid19Triage)
+class Covid19TriageAdmin(BaseEventAdmin):
+    readonly_fields = ("id", "created_by", "timestamp")
+    list_display = ("msisdn", "risk", "source", "timestamp")
+
+
+@admin.register(CDUAddressUpdate)
+class CDUAddressUpdateAdmin(BaseEventAdmin):
+    readonly_fields = ("id", "created_by", "timestamp")
+    list_display = ("last_name", "folder_number", "timestamp")

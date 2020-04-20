@@ -1,10 +1,12 @@
 from datetime import datetime
 
 from django.conf import settings
+from django.db import IntegrityError
+from django_filters import rest_framework as filters
 from pytz import UTC
 from rest_framework import serializers, status
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.mixins import CreateModelMixin
+from rest_framework.mixins import CreateModelMixin, ListModelMixin
 from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
@@ -12,8 +14,10 @@ from rest_framework.viewsets import GenericViewSet
 from eventstore.models import (
     BabyDobSwitch,
     BabySwitch,
+    CDUAddressUpdate,
     ChannelSwitch,
     CHWRegistration,
+    Covid19Triage,
     EddSwitch,
     Event,
     IdentificationSwitch,
@@ -30,8 +34,10 @@ from eventstore.models import (
 from eventstore.serializers import (
     BabyDobSwitchSerializer,
     BabySwitchSerializer,
+    CDUAddressUpdateSerializer,
     ChannelSwitchSerializer,
     CHWRegistrationSerializer,
+    Covid19TriageSerializer,
     EddSwitchSerializer,
     IdentificationSwitchSerializer,
     LanguageSwitchSerializer,
@@ -48,6 +54,7 @@ from eventstore.serializers import (
 from eventstore.tasks import forget_contact
 from eventstore.whatsapp_actions import handle_event, handle_inbound, handle_outbound
 from ndoh_hub.utils import TokenAuthQueryString, validate_signature
+from registrations.views import CursorPaginationFactory
 
 
 class MessagesViewSet(GenericViewSet):
@@ -249,4 +256,41 @@ class EddSwitchViewSet(GenericViewSet, CreateModelMixin):
 class BabyDobSwitchViewSet(GenericViewSet, CreateModelMixin):
     queryset = BabyDobSwitch.objects.all()
     serializer_class = BabyDobSwitchSerializer
+    permission_classes = (DjangoModelPermissions,)
+
+
+class Covid19TriageFilter(filters.FilterSet):
+    timestamp_gt = filters.IsoDateTimeFilter(field_name="timestamp", lookup_expr="gt")
+
+    class Meta:
+        model = Covid19Triage
+        fields: list = []
+
+
+class Covid19TriageViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
+    queryset = Covid19Triage.objects.all()
+    serializer_class = Covid19TriageSerializer
+    permission_classes = (DjangoModelPermissions,)
+    pagination_class = CursorPaginationFactory("timestamp")
+    filter_backends = [filters.DjangoFilterBackend]
+    filterset_class = Covid19TriageFilter
+
+    def create(self, *args, **kwargs):
+        try:
+            return super().create(*args, **kwargs)
+        except IntegrityError:
+            # We already have this entry
+            return Response(status=status.HTTP_200_OK)
+
+    def get_throttles(self):
+        """
+        Set the throttle_scope dynamically to get different rates per action
+        """
+        self.throttle_scope = f"covid19triage.{self.action}"
+        return super().get_throttles()
+
+
+class CDUAddressUpdateViewSet(GenericViewSet, CreateModelMixin):
+    queryset = CDUAddressUpdate.objects.all()
+    serializer_class = CDUAddressUpdateSerializer
     permission_classes = (DjangoModelPermissions,)

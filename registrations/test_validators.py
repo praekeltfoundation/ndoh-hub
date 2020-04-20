@@ -71,3 +71,14 @@ class ValidatorsTests(TestCase):
             validators.baby_dob,
             datetime.date(2014, 1, 1),
         )
+
+    def test_invalid_geographic_coordinate(self):
+        """
+        Should raise a validation error for invalid coordinates
+        """
+        self.assertRaisesMessage(
+            ValidationError,
+            "Invalid ISO6709 geographic coordinate",
+            validators.geographic_coordinate,
+            "not-a-coordinate",
+        )
