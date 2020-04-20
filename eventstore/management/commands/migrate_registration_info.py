@@ -16,7 +16,6 @@ class Command(BaseCommand):
         "for the contact, and adds it to the registration"
     )
 
-    @responses.activate
     def handle_channel_migration(self):
         for each in PublicRegistration.objects.filter(channel=""):
             contact = rapidpro.get_contacts(uuid=each.contact_id).first()
