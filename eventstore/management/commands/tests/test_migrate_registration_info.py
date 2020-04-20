@@ -12,7 +12,6 @@ from eventstore.models import (
 
 
 class MigrateToEventstoreTests(TestCase):
-    @responses.activate
     def test_add_channel_public_registration(self):
         """
         Should successfully migrate a public registration
@@ -52,7 +51,6 @@ class MigrateToEventstoreTests(TestCase):
         p.refresh_from_db()
         self.assertEqual(p.channel, "SMS")
 
-    @responses.activate
     def test_add_channel_prebirth_registration(self):
         """
         Should successfully migrate a prebirth registration
@@ -93,7 +91,6 @@ class MigrateToEventstoreTests(TestCase):
         p.refresh_from_db()
         self.assertEqual(p.channel, "SMS")
 
-    @responses.activate
     def test_add_channel_postbirth_registration(self):
         """
         Should successfully migrate a public registration
