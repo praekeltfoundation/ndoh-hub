@@ -1,4 +1,3 @@
-import responses
 from django.core.management.base import BaseCommand
 
 from eventstore.models import (
