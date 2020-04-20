@@ -12,8 +12,6 @@ from eventstore.models import (
 
 
 class MigrateToEventstoreTests(TestCase):
-
-    # @responses.activate
     def test_add_channel_public_registration(self):
         """
         Should successfully migrate a public registration
@@ -28,7 +26,8 @@ class MigrateToEventstoreTests(TestCase):
         migrate_registration_info.rapidpro = TembaClient("textit.in", "test-token")
         responses.add(
             responses.GET,
-            "https://textit.in/api/v2/contacts.json?uuid=0bbb7161-ba0a-45e2-9888-d1a29fa01b40",
+            "https://textit.in/api/v2"
+            "/contacts.json?uuid=0bbb7161-ba0a-45e2-9888-d1a29fa0",
             json={
                 "results": [
                     {
@@ -53,7 +52,6 @@ class MigrateToEventstoreTests(TestCase):
         p.refresh_from_db()
         self.assertEqual(p.channel, "SMS")
 
-    # @responses.activate
     def test_add_channel_prebirth_registration(self):
         """
         Should successfully migrate a prebirth registration
@@ -69,7 +67,8 @@ class MigrateToEventstoreTests(TestCase):
         migrate_registration_info.rapidpro = TembaClient("textit.in", "test-token")
         responses.add(
             responses.GET,
-            "https://textit.in/api/v2/contacts.json?uuid=0bbb7161-ba0a-45e2-9888-d1a29fa01b40",
+            "https://textit.in/api/v2"
+            "/contacts.json?uuid=0bbb7161-ba0a-45e2-9888-d1a29fa0",
             json={
                 "results": [
                     {
@@ -94,7 +93,6 @@ class MigrateToEventstoreTests(TestCase):
         p.refresh_from_db()
         self.assertEqual(p.channel, "SMS")
 
-    # @responses.activate
     def test_add_channel_postbirth_registration(self):
         """
         Should successfully migrate a public registration
@@ -110,7 +108,8 @@ class MigrateToEventstoreTests(TestCase):
         migrate_registration_info.rapidpro = TembaClient("textit.in", "test-token")
         responses.add(
             responses.GET,
-            "https://textit.in/api/v2/contacts.json?uuid=0bbb7161-ba0a-45e2-9888-d1a29fa01b40",
+            "https://textit.in/api/v2"
+            "/contacts.json?uuid=0bbb7161-ba0a-45e2-9888-d1a29fa0",
             json={
                 "results": [
                     {
