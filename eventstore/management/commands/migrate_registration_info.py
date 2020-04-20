@@ -1,12 +1,12 @@
-from ndoh_hub.utils import rapidpro
 import responses
-
 from django.core.management.base import BaseCommand
+
 from eventstore.models import (
     PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
 )
+from ndoh_hub.utils import rapidpro
 
 
 class Command(BaseCommand):

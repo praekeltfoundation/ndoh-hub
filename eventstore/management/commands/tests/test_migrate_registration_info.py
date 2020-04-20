@@ -1,13 +1,14 @@
-from django.test import TestCase
+import responses
 from django.core.management import call_command
+from django.test import TestCase
+from temba_client.v2 import TembaClient
+
+from eventstore.management.commands import migrate_registration_info
 from eventstore.models import (
     PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
 )
-from eventstore.management.commands import migrate_registration_info
-from temba_client.v2 import TembaClient
-import responses
 
 
 class MigrateToEventstoreTests(TestCase):
