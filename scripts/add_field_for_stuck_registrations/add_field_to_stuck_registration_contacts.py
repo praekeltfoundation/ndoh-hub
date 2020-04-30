@@ -1,8 +1,10 @@
 import argparse
 import csv
 import sys
+from temba_client.v2 import TembaClient
+import environ
 
-from ndoh_hub.utils import rapidpro
+rapidpro = TembaClient(environ["RAPIDPRO_URL"], environ["RAPIDPRO_TOKEN"])
 
 
 def process(contact_id):
