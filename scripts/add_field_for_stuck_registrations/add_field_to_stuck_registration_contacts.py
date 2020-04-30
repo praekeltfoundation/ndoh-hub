@@ -1,8 +1,9 @@
 import argparse
 import csv
 import sys
-from temba_client.v2 import TembaClient
+
 import environ
+from temba_client.v2 import TembaClient
 
 rapidpro = TembaClient(environ["RAPIDPRO_URL"], environ["RAPIDPRO_TOKEN"])
 
