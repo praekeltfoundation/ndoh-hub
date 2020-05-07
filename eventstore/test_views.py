@@ -1642,6 +1642,35 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
             response.data["results"],
             [Covid19TriageSerializer(instance=triage_new).data],
         )
+        [r] = response.data["results"]
+        r.pop("id")
+        r.pop("deduplication_id")
+        r.pop("timestamp")
+        r.pop("completed_timestamp")
+        self.assertEqual(
+            r,
+            {
+                "msisdn": "+27820001001",
+                "source": "USSD",
+                "province": "ZA-WC",
+                "city": "Cape Town",
+                "age": Covid19Triage.AGE_18T40,
+                "fever": False,
+                "cough": False,
+                "sore_throat": False,
+                "difficulty_breathing": None,
+                "exposure": Covid19Triage.EXPOSURE_NO,
+                "tracing": True,
+                "risk": Covid19Triage.RISK_LOW,
+                "gender": "",
+                "location": "",
+                "muscle_pain": None,
+                "smell": None,
+                "preexisting_condition": "",
+                "created_by": "",
+                "data": {},
+            },
+        )
 
 
 class CDUAddressUpdateViewSetTests(APITestCase, BaseEventTestCase):
