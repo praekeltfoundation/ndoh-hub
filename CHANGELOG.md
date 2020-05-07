@@ -1,8 +1,18 @@
 # Changelog
 
+## 0.8.14
+1. Additional fields for covid19 triage confirmed contact
+   ([#324](https://github.com/praekeltfoundation/ndoh-hub/pull/324))
+1. Add management command for filling in channel for historical registrations
+   ([#321](https://github.com/praekeltfoundation/ndoh-hub/pull/321))
+1. Add script for manipulating rapidpro contact fields
+   ([#322](https://github.com/praekeltfoundation/ndoh-hub/pull/322))
+   ([#323](https://github.com/praekeltfoundation/ndoh-hub/pull/323))
+
+
 ## 0.8.13 (2020-04-14)
 1. Rate limits for covid19triage endpoint
-   ([#320](https://github.com/praekeltfoundation/ndoh-hub/pull/319))
+   ([#320](https://github.com/praekeltfoundation/ndoh-hub/pull/320))
 
 ## 0.8.12 (2020-04-14)
 1. Return 200 for duplicate covid19 triage entries
