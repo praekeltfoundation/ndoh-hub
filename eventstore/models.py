@@ -428,15 +428,19 @@ class Covid19Triage(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     deduplication_id = models.CharField(max_length=255, default=uuid.uuid4, unique=True)
     msisdn = models.CharField(max_length=255, validators=[za_phone_number])
+    first_name = models.CharField(max_length=255, blank=True, null=True, default=None)
+    last_name = models.CharField(max_length=255, blank=True, null=True, default=None)
     source = models.CharField(max_length=255)
     province = models.CharField(max_length=6, choices=PROVINCE_CHOICES)
     city = models.CharField(max_length=255)
     age = models.CharField(max_length=5, choices=AGE_CHOICES)
+    date_of_birth = models.DateField(blank=True, null=True, default=None)
     fever = models.BooleanField()
     cough = models.BooleanField()
     sore_throat = models.BooleanField()
     difficulty_breathing = models.BooleanField(null=True, blank=True, default=None)
     exposure = models.CharField(max_length=9, choices=EXPOSURE_CHOICES)
+    confirmed_contact = models.BooleanField(blank=True, null=True, default=None)
     tracing = models.BooleanField(help_text="Whether the NDoH can contact the user")
     risk = models.CharField(max_length=8, choices=RISK_CHOICES)
     gender = models.CharField(
@@ -445,11 +449,20 @@ class Covid19Triage(models.Model):
     location = models.CharField(
         max_length=255, blank=True, default="", validators=[geographic_coordinate]
     )
+    city_location = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        default=None,
+        validators=[geographic_coordinate],
+    )
     muscle_pain = models.BooleanField(null=True, blank=True, default=None)
     smell = models.BooleanField(null=True, blank=True, default=None)
     preexisting_condition = models.CharField(
         max_length=9, choices=EXPOSURE_CHOICES, blank=True, default=""
     )
+    rooms_in_household = models.IntegerField(blank=True, null=True, default=None)
+    persons_in_household = models.IntegerField(blank=True, null=True, default=None)
     completed_timestamp = models.DateTimeField(default=timezone.now)
     timestamp = models.DateTimeField(default=timezone.now, db_index=True)
     created_by = models.CharField(max_length=255, blank=True, default="")
