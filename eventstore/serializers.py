@@ -120,7 +120,31 @@ class Covid19TriageSerializer(BaseEventSerializer):
 
     class Meta:
         model = Covid19Triage
-        fields = "__all__"
+        fields = (
+            "id",
+            "deduplication_id",
+            "msisdn",
+            "source",
+            "province",
+            "city",
+            "age",
+            "fever",
+            "cough",
+            "sore_throat",
+            "difficulty_breathing",
+            "exposure",
+            "tracing",
+            "risk",
+            "gender",
+            "location",
+            "muscle_pain",
+            "smell",
+            "preexisting_condition",
+            "completed_timestamp",
+            "timestamp",
+            "created_by",
+            "data",
+        )
         read_only_fields = ("id", "created_by")
 
 
