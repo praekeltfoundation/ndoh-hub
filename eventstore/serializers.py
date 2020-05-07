@@ -148,6 +148,47 @@ class Covid19TriageSerializer(BaseEventSerializer):
         read_only_fields = ("id", "created_by")
 
 
+class Covid19TriageV2Serializer(BaseEventSerializer):
+    msisdn = MSISDNField(country="ZA")
+    deduplication_id = serializers.CharField(default=uuid.uuid4, max_length=255)
+
+    class Meta:
+        model = Covid19Triage
+        fields = (
+            "id",
+            "deduplication_id",
+            "msisdn",
+            "first_name",
+            "last_name",
+            "source",
+            "province",
+            "city",
+            "age",
+            "date_of_birth",
+            "fever",
+            "cough",
+            "sore_throat",
+            "difficulty_breathing",
+            "exposure",
+            "confirmed_contact",
+            "tracing",
+            "risk",
+            "gender",
+            "location",
+            "city_location",
+            "muscle_pain",
+            "smell",
+            "preexisting_condition",
+            "rooms_in_household",
+            "persons_in_household",
+            "completed_timestamp",
+            "timestamp",
+            "created_by",
+            "data",
+        )
+        read_only_fields = ("id", "created_by")
+
+
 class CDUAddressUpdateSerializer(BaseEventSerializer):
     class Meta:
         model = CDUAddressUpdate

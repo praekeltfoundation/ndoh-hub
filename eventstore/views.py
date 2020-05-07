@@ -38,6 +38,7 @@ from eventstore.serializers import (
     ChannelSwitchSerializer,
     CHWRegistrationSerializer,
     Covid19TriageSerializer,
+    Covid19TriageV2Serializer,
     EddSwitchSerializer,
     IdentificationSwitchSerializer,
     LanguageSwitchSerializer,
@@ -288,6 +289,10 @@ class Covid19TriageViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
         """
         self.throttle_scope = f"covid19triage.{self.action}"
         return super().get_throttles()
+
+
+class Covid19TriageV2ViewSet(Covid19TriageViewSet):
+    serializer_class = Covid19TriageV2Serializer
 
 
 class CDUAddressUpdateViewSet(GenericViewSet, CreateModelMixin):
