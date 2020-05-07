@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.8.15
+1. Fix docker image translations
+
 ## 0.8.14
 1. Additional fields for covid19 triage confirmed contact
    ([#324](https://github.com/praekeltfoundation/ndoh-hub/pull/324))
