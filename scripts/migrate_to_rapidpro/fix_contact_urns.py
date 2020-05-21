@@ -11,7 +11,7 @@ if __name__ == "__main__":
     conn = psycopg2.connect(**DB)
     update_conn = psycopg2.connect(**DB)
 
-    cursor = conn.cursor()
+    cursor = conn.cursor("contact_urns")
     update_cursor = update_conn.cursor()
 
     print("Processing contact urns...")  # noqa
