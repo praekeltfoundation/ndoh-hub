@@ -43,6 +43,7 @@ from eventstore.serializers import (
     IdentificationSwitchSerializer,
     LanguageSwitchSerializer,
     MSISDNSwitchSerializer,
+    MSISDNSerializer,
     OptOutSerializer,
     PMTCTRegistrationSerializer,
     PostbirthRegistrationSerializer,
@@ -293,6 +294,42 @@ class Covid19TriageViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
 
 class Covid19TriageV2ViewSet(Covid19TriageViewSet):
     serializer_class = Covid19TriageV2Serializer
+    returning_user_skipped_fields = {
+        "first_name",
+        "last_name",
+        "province",
+        "city",
+        "date_of_birth",
+        "gender",
+        "location",
+        "city_location",
+        "preexisting_condition",
+        "rooms_in_household",
+        "persons_in_household",
+    }
+
+    def _get_msisdn(self, data):
+        """ Gets the MSISDN from the data, or raises a ValidationError """
+        serializer = MSISDNSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        return serializer.validated_data["msisdn"]
+
+    def _update_data(self, data, triage):
+        """ Updates the data from the values in triage """
+        for field in self.returning_user_skipped_fields:
+            value = getattr(triage, field)
+            if value:
+                data[field] = value
+
+    def create(self, request, *args, **kwargs):
+        # If all of the returning user skipped fields are missing
+        if all(not request.data.get(f) for f in self.returning_user_skipped_fields):
+            # Get those fields from a previous completed HealthCheck
+            msisdn = self._get_msisdn(request.data)
+            triage = Covid19Triage.objects.filter(msisdn=msisdn).earliest("timestamp")
+            if triage:
+                self._update_data(request.data, triage)
+        return super().create(request, *args, **kwargs)
 
 
 class CDUAddressUpdateViewSet(GenericViewSet, CreateModelMixin):
