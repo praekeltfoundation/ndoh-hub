@@ -53,7 +53,7 @@ from eventstore.serializers import (
     TurnOutboundSerializer,
     WhatsAppWebhookSerializer,
 )
-from eventstore.tasks import forget_contact
+from eventstore.tasks import forget_contact, mark_turn_contact_healthcheck_complete
 from eventstore.whatsapp_actions import handle_event, handle_inbound, handle_outbound
 from ndoh_hub.utils import TokenAuthQueryString, validate_signature
 from registrations.views import CursorPaginationFactory
@@ -276,6 +276,11 @@ class Covid19TriageViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
     pagination_class = CursorPaginationFactory("timestamp")
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = Covid19TriageFilter
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        mark_turn_contact_healthcheck_complete.delay(instance.msisdn)
+        return instance
 
     def create(self, *args, **kwargs):
         try:

@@ -325,3 +325,27 @@ async_handle_whatsapp_delivery_error = (
     | send_undelivered_sms.s()
     | update_rapidpro_contact_error_timestamp.s()
 )
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def mark_turn_contact_healthcheck_complete(msisdn):
+    if settings.HC_TURN_URL is None or settings.HC_TURN_TOKEN is None:
+        return
+    contact_id = msisdn.lstrip("+")
+    url = urljoin(settings.HC_TURN_URL, f"v1/contacts/{contact_id}/profile")
+    response = requests.patch(
+        url,
+        json={"healthcheck_completed": True},
+        headers={
+            "Authorization": f"Bearer {settings.HC_TURN_TOKEN}",
+            "Accept": "application/vnd.v1+json",
+        },
+    )
+    response.raise_for_status()

@@ -1497,7 +1497,8 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_successful_request(self):
+    @mock.patch("eventstore.views.mark_turn_contact_healthcheck_complete")
+    def test_successful_request(self, task):
         """
         Should create a new Covid19Triage object in the database
         """
@@ -1543,6 +1544,7 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         self.assertNotEqual(covid19triage.deduplication_id, "")
         self.assertEqual(covid19triage.risk, Covid19Triage.RISK_LOW)
         self.assertEqual(covid19triage.created_by, user.username)
+        task.delay.assert_called_once_with("+27820001001")
 
     def test_duplicate_request(self):
         """
