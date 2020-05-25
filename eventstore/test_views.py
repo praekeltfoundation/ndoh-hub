@@ -1755,6 +1755,54 @@ class Covid19TriageV2ViewSetTests(Covid19TriageViewSetTests):
             },
         )
 
+    def test_returning_user(self):
+        """
+        Should create a new Covid19Triage object in the database using information
+        from the first entry in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+        Covid19Triage.objects.create(
+            msisdn="+27820001001",
+            province="ZA-WC",
+            city="cape town",
+            fever=False,
+            cough=False,
+            sore_throat=False,
+            tracing=True,
+        )
+        Covid19Triage.objects.create(
+            msisdn="+27820001001",
+            province="ZA-GT",
+            city="sandton",
+            fever=False,
+            cough=False,
+            sore_throat=False,
+            tracing=True,
+        )
+
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "msisdn": "27820001001",
+                "source": "USSD",
+                "age": Covid19Triage.AGE_18T40,
+                "fever": False,
+                "cough": False,
+                "sore_throat": False,
+                "exposure": Covid19Triage.EXPOSURE_NO,
+                "tracing": True,
+                "risk": Covid19Triage.RISK_LOW,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        triage_id = response.data["id"]
+        covid19triage = Covid19Triage.objects.get(id=triage_id)
+        self.assertEqual(covid19triage.province, "ZA-WC")
+        self.assertEqual(covid19triage.city, "cape town")
+
 
 class CDUAddressUpdateViewSetTests(APITestCase, BaseEventTestCase):
     url = reverse("cduaddressupdate-list")

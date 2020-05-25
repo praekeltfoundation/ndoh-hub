@@ -468,6 +468,9 @@ class Covid19Triage(models.Model):
     created_by = models.CharField(max_length=255, blank=True, default="")
     data = JSONField(default=dict, blank=True, null=True)
 
+    class Meta:
+        indexes = [models.Index(fields=["msisdn", "timestamp"])]
+
 
 class CDUAddressUpdate(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

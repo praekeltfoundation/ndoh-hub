@@ -189,6 +189,10 @@ class Covid19TriageV2Serializer(BaseEventSerializer):
         read_only_fields = ("id", "created_by")
 
 
+class MSISDNSerializer(serializers.Serializer):
+    msisdn = MSISDNField(country="ZA")
+
+
 class CDUAddressUpdateSerializer(BaseEventSerializer):
     class Meta:
         model = CDUAddressUpdate
