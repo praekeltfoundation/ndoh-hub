@@ -72,6 +72,7 @@ if __name__ == "__main__":
 
     total = 0
     updated = 0
+    contact_id = 0
 
     start, d_print = time.time(), time.time()
     for (path, contact_id, fields) in cursor:
@@ -85,7 +86,10 @@ if __name__ == "__main__":
             is_fallback_active = contact_details.get("contact_details")
 
             update = True
-            if preferred_channel == "WhatsApp" and is_fallback_active is not False:
+            if preferred_channel == "WhatsApp" and is_fallback_active not in (
+                False,
+                None,
+            ):
                 contact_details["is_fallback_active"] = False
             elif preferred_channel == "SMS" and is_fallback_active is not True:
                 contact_details["is_fallback_active"] = True
@@ -106,7 +110,7 @@ if __name__ == "__main__":
         if time.time() - d_print > 1:
             print(  # noqa
                 f"\rProcessed {total}/{updated} contacts at "
-                f"{total/(time.time() - start):.0f}/s",
+                f"{total/(time.time() - start):.0f}/s - ({contact_id})",
                 end="",
             )
             d_print = time.time()
@@ -114,5 +118,6 @@ if __name__ == "__main__":
         total += 1
 
     print(  # noqa
-        f"\rProcessed {total}/{updated} contacts at {total/(time.time() - start):.0f}/s"
+        f"\rProcessed {total}/{updated} contacts at "
+        f"{total/(time.time() - start):.0f}/s - ({contact_id})"
     )
