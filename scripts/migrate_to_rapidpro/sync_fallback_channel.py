@@ -1,4 +1,3 @@
-import json
 import time
 from urllib.parse import urljoin
 
@@ -23,7 +22,8 @@ def get_turn_contact_details(wa_id):
         "Accept": "application/vnd.v1+json",
     }
     response = requests.get(urljoin(TURN_URL, f"/v1/contacts/{wa_id}"), headers=headers)
-    return json.loads(response.content)
+    response.raise_for_status()
+    return response.json()
 
 
 def update_turn_contact_details(wa_id, details):
@@ -32,9 +32,10 @@ def update_turn_contact_details(wa_id, details):
         "content-type": "application/json",
         "Accept": "application/vnd.v1+json",
     }
-    return requests.patch(
+    response = requests.patch(
         urljoin(TURN_URL, f"/v1/contacts/{wa_id}"), json=details, headers=headers
     )
+    response.raise_for_status()
 
 
 if __name__ == "__main__":
@@ -83,7 +84,7 @@ if __name__ == "__main__":
         if preferred_channel in ("WhatsApp", "SMS"):
             contact_details = get_turn_contact_details(path)
 
-            is_fallback_active = contact_details.get("contact_details")
+            is_fallback_active = contact_details.get("is_fallback_active")
 
             update = True
             if preferred_channel == "WhatsApp" and is_fallback_active not in (
@@ -97,13 +98,7 @@ if __name__ == "__main__":
                 update = False
 
             if update:
-                response = update_turn_contact_details(path, contact_details)
-
-                if response.status_code != 200:
-                    print(response.status_code)  # noqa
-                    print(response.content)  # noqa
-                    print(f"last contact_id: {contact_id}")  # noqa
-                    raise Exception("update failed")
+                update_turn_contact_details(path, contact_details)
 
                 updated += 1
 
