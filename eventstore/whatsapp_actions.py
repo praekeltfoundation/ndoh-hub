@@ -90,7 +90,7 @@ def handle_fallback_event(event):
         )
         df.number_of_failures += 1
         df.save()
-        if df.number_of_failures >= 5:
+        if df.number_of_failures == 5:
             async_create_flow_start.delay(
                 extra={
                     "optout_reason": OptOut.SMS_FAILURE_REASON,
