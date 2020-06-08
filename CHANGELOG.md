@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.16
+1. Add functionality to the API for healthcheck returning users
+   ([#326](https://github.com/praekeltfoundation/ndoh-hub/pull/326))
+1. Add task to update Turn Contact on completed healthchecks
+   ([#327](https://github.com/praekeltfoundation/ndoh-hub/pull/327))
+1. Fix duplicate optouts happening
+   ([#332](https://github.com/praekeltfoundation/ndoh-hub/pull/332))
+
 ## 0.8.15
 1. Fix docker image translations
 
