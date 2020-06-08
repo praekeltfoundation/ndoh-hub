@@ -10,7 +10,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
-        "Django==2.2.8",
+        "Django==2.2.13",
         "djangorestframework==3.9.4",
         "coreapi==2.3.3",
         "Markdown==3.1.1",
