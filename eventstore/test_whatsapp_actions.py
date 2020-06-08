@@ -257,7 +257,7 @@ class HandleEventTests(DjangoTestCase):
         event.recipient_id = "27820001001"
         event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
 
-        DeliveryFailure.objects.create(number_of_failures=5, contact_id="27820001001")
+        DeliveryFailure.objects.create(number_of_failures=4, contact_id="27820001001")
 
         with patch("eventstore.tasks.rapidpro") as p:
             handle_fallback_event(event)
@@ -274,6 +274,27 @@ class HandleEventTests(DjangoTestCase):
             flow="test-flow-uuid",
             urns=["whatsapp:27820001001"],
         )
+
+    @override_settings(RAPIDPRO_OPTOUT_FLOW="test-flow-uuid")
+    def test_fallback_channel_delivery_failure_error_more_than_5(self):
+        """
+        If the event is of type Failed, and uses the fallback channel,
+        then it should trigger the message delivery failed action
+        """
+        event = Event.objects.create()
+        event.fallback_channel = True
+        event.status = Event.FAILED
+        event.recipient_id = "27820001001"
+        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+
+        DeliveryFailure.objects.create(number_of_failures=5, contact_id="27820001001")
+
+        with patch("eventstore.tasks.rapidpro") as p:
+            handle_fallback_event(event)
+
+        p.create_flow_start.assert_not_called()
+        df = DeliveryFailure.objects.get(contact_id="27820001001")
+        self.assertEqual(df.number_of_failures, 6)
 
     def test_fallback_channel_delivery_failure_less_than_5(self):
         """
