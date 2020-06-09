@@ -381,8 +381,8 @@ def archive_turn_conversation(urn, message_id, reason):
     retry_backoff=True,
     max_retries=15,
     acks_late=True,
-    soft_time_limit=10,
-    time_limit=15,
+    soft_time_limit=600,
+    time_limit=600,
 )
 def handle_expired_helpdesk_contacts():
     for contact_batch in rapidpro.get_contacts(

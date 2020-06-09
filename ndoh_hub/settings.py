@@ -247,10 +247,14 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
 
+HANDLE_EXPIRED_HELPDESK_CONTACTS_HOUR = env.str(
+    "HANDLE_EXPIRED_HELPDESK_CONTACTS_HOUR", "3"
+)
+
 CELERYBEAT_SCHEDULE = {
     "handle_expired_helpdesk_contacts": {
         "task": "eventstore.tasks.handle_expired_helpdesk_contacts",
-        "schedule": crontab(minute="0", hour="3"),
+        "schedule": crontab(minute="0", hour=HANDLE_EXPIRED_HELPDESK_CONTACTS_HOUR),
     }
 }
 
