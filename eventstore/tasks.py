@@ -30,7 +30,7 @@ from eventstore.models import (
     ResearchOptinSwitch,
 )
 from ndoh_hub.celery import app
-from ndoh_hub.utils import rapidpro
+from ndoh_hub.utils import get_today, rapidpro
 from registrations.tasks import request_to_jembi_api
 
 
@@ -349,3 +349,72 @@ def mark_turn_contact_healthcheck_complete(msisdn):
         },
     )
     response.raise_for_status()
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def archive_turn_conversation(urn, message_id, reason):
+    headers = {
+        "Authorization": "Bearer {}".format(settings.TURN_TOKEN),
+        "Accept": "application/vnd.v1+json",
+        "Content-Type": "application/json",
+    }
+
+    data = json.dumps({"before": message_id, "reason": reason})
+
+    r = requests.post(
+        urljoin(settings.TURN_URL, f"v1/chats/{urn}/archive"),
+        headers=headers,
+        data=data,
+    )
+    r.raise_for_status()
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=600,
+    time_limit=600,
+)
+def handle_expired_helpdesk_contacts():
+    for contact_batch in rapidpro.get_contacts(
+        group="Waiting for helpdesk"
+    ).iterfetches(retry_on_rate_exceed=True):
+        for contact in contact_batch:
+            if contact.fields.get("helpdesk_timeout") and contact.fields.get(
+                "helpdesk_message_id"
+            ):
+                timeout_date = datetime.strptime(
+                    contact.fields["helpdesk_timeout"], "%Y-%m-%d"
+                ).date()
+
+                delta = get_today() - timeout_date
+                if delta.days > settings.HELPDESK_TIMEOUT_DAYS:
+                    update_rapidpro_contact.delay(
+                        contact.uuid,
+                        {
+                            "helpdesk_timeout": None,
+                            "wait_for_helpdesk": None,
+                            "helpdesk_message_id": None,
+                        },
+                    )
+
+                    wa_id = None
+                    for urn in contact.urns:
+                        if "whatsapp" in urn:
+                            wa_id = urn.split(":")[1]
+
+                    if wa_id:
+                        archive_turn_conversation.delay(
+                            wa_id,
+                            contact.fields["helpdesk_message_id"],
+                            f"Auto archived after {delta.days} days",
+                        )

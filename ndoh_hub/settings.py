@@ -14,6 +14,7 @@ import os
 import dj_database_url
 import django.conf.locale
 import environ
+from celery.schedules import crontab
 from kombu import Exchange, Queue
 
 env = environ.Env(ENABLE_UNSENT_EVENT_ACTION=(bool, True))
@@ -232,7 +233,7 @@ CELERY_TASK_QUEUES = (Queue("ndoh_hub", Exchange("ndoh_hub"), routing_key="ndoh_
 CELERY_TASK_ALWAYS_EAGER = False
 
 # Tell Celery where to find the tasks
-CELERY_IMPORTS = ("registrations.tasks", "changes.tasks")
+CELERY_IMPORTS = ("registrations.tasks", "changes.tasks", "eventstore.tasks")
 
 CELERY_TASK_CREATE_MISSING_QUEUES = True
 CELERY_TASK_ROUTES = {
@@ -245,6 +246,17 @@ CELERY_TASK_ROUTES = {
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
+
+HANDLE_EXPIRED_HELPDESK_CONTACTS_HOUR = env.str(
+    "HANDLE_EXPIRED_HELPDESK_CONTACTS_HOUR", "3"
+)
+
+CELERYBEAT_SCHEDULE = {
+    "handle_expired_helpdesk_contacts": {
+        "task": "eventstore.tasks.handle_expired_helpdesk_contacts",
+        "schedule": crontab(minute="0", hour=HANDLE_EXPIRED_HELPDESK_CONTACTS_HOUR),
+    }
+}
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 
@@ -316,6 +328,8 @@ if ENABLE_EVENTSTORE_WHATSAPP_ACTIONS:
     RAPIDPRO_UNSENT_EVENT_FLOW = env.str("RAPIDPRO_UNSENT_EVENT_FLOW")
     RAPIDPRO_OPTOUT_FLOW = env.str("RAPIDPRO_OPTOUT_FLOW")
     RAPIDPRO_EDD_LABEL_FLOW = env.str("RAPIDPRO_EDD_LABEL_FLOW")
+
+HELPDESK_TIMEOUT_DAYS = env.int("HELPDESK_TIMEOUT_DAYS", 10)
 
 # HealthCheck
 HC_TURN_URL = env.str("HC_TURN_URL", None)
