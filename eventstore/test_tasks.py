@@ -132,7 +132,7 @@ class HandleOldWaitingForHelpdeskContactsTests(TestCase):
             json.loads(turn_archive.request.body),
             {
                 "before": "ABGGJ4NjeFMfAgo-sCqKaSQU4UzP",
-                "reason": f"Auto archive after 11 days",
+                "reason": f"Auto archived after 11 days",
             },
         )
 
