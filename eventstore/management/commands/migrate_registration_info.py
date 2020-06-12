@@ -1,10 +1,10 @@
 from django.core.management.base import BaseCommand
 
 from eventstore.models import (
+    CHWRegistration,
     PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
-    CHWRegistration
 )
 from ndoh_hub.utils import rapidpro
 

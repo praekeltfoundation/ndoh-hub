@@ -5,10 +5,10 @@ from temba_client.v2 import TembaClient
 
 from eventstore.management.commands import migrate_registration_info
 from eventstore.models import (
+    CHWRegistration,
     PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
-    CHWRegistration
 )
 
 
