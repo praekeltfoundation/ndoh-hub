@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 
 from eventstore.models import (
+    CHWRegistration,
     PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
@@ -29,6 +30,12 @@ class Command(BaseCommand):
                 each.save(update_fields=["channel"])
 
         for each in PostbirthRegistration.objects.filter(channel=""):
+            contact = rapidpro.get_contacts(uuid=each.contact_id).first()
+            if contact.fields["channel"] != "":
+                each.channel = contact.fields["channel"]
+                each.save(update_fields=["channel"])
+
+        for each in CHWRegistration.objects.filter(channel=""):
             contact = rapidpro.get_contacts(uuid=each.contact_id).first()
             if contact.fields["channel"] != "":
                 each.channel = contact.fields["channel"]
