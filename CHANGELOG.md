@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.17
+1. Added CHWRegistration to django admin
+  ([#336](https://github.com/praekeltfoundation/ndoh-hub/pull/336))
+1. ran registration migration
+  ([#321](https://github.com/praekeltfoundation/ndoh-hub/pull/321))
+
 ## 0.8.16
 1. Add functionality to the API for healthcheck returning users
    ([#326](https://github.com/praekeltfoundation/ndoh-hub/pull/326))
