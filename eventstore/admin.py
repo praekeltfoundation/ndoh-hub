@@ -20,6 +20,7 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
+    CHWRegistration
 )
 
 
@@ -114,6 +115,12 @@ class PrebirthRegistrationAdmin(BaseEventAdmin):
 
 @admin.register(PostbirthRegistration)
 class PostbirthRegistrationAdmin(BaseEventAdmin):
+    readonly_fields = ("id", "created_by", "timestamp")
+    list_display = ("contact_id", "source", "timestamp")
+
+
+@admin.register(CHWRegistration)
+class CHWRegistrationAdmin(BaseEventAdmin):
     readonly_fields = ("id", "created_by", "timestamp")
     list_display = ("contact_id", "source", "baby_dob", "facility_code", "timestamp")
 
