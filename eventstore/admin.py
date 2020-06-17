@@ -8,6 +8,7 @@ from eventstore.models import (
     BabySwitch,
     CDUAddressUpdate,
     ChannelSwitch,
+    CHWRegistration,
     Covid19Triage,
     DeliveryFailure,
     EddSwitch,
@@ -20,7 +21,6 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
-    CHWRegistration
 )
 
 
