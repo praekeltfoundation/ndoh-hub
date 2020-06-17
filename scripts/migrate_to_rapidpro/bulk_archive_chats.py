@@ -23,7 +23,7 @@ client = TembaClient(RAPIDPRO_URL, RAPIDPRO_TOKEN)
 def get_whatsapp_messages(wa_id):
     headers = {
         "Authorization": "Bearer {}".format(TURN_TOKEN),
-        "content-type": "application/json",
+        "Content-Type": "application/json",
         "Accept": "application/vnd.v1+json",
     }
     response = requests.get(
