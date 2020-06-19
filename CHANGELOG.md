@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.18
+1. Changed rapidpro variable for channel preference
+  ([#339](https://github.com/praekeltfoundation/ndoh-hub/pull/339))
+
 ## 0.8.17
 1. Added CHWRegistration to django admin
   ([#336](https://github.com/praekeltfoundation/ndoh-hub/pull/336))
