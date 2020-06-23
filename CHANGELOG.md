@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.19
+1. Add disable sms failure optouts flag
+  ([#342](https://github.com/praekeltfoundation/ndoh-hub/pull/342))
+
 ## 0.8.18
 1. Changed rapidpro variable for channel preference
   ([#339](https://github.com/praekeltfoundation/ndoh-hub/pull/339))
