@@ -85,6 +85,9 @@ def handle_event(event):
 
 def handle_fallback_event(event):
     if event.status == Event.FAILED:
+        if settings.DISABLE_SMS_FAILURE_OPTOUTS:
+            return
+
         df, created = DeliveryFailure.objects.get_or_create(
             contact_id=event.recipient_id, defaults={"number_of_failures": 0}
         )

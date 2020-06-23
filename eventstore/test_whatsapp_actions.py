@@ -315,6 +315,27 @@ class HandleEventTests(DjangoTestCase):
         df = DeliveryFailure.objects.get(contact_id="27820001001")
         self.assertEqual(df.number_of_failures, 1)
 
+    @override_settings(DISABLE_SMS_FAILURE_OPTOUTS=True)
+    def test_fallback_channel_delivery_failure_optouts_disabled(self):
+        """
+        If the event is of type Failed, and uses the fallback channel,
+        but SMS failure optouts are disabled, it should not call the rapidpro
+        flow
+        """
+        event = Event.objects.create()
+        event.fallback_channel = True
+        event.status = Event.FAILED
+        event.recipient_id = "27820001001"
+        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+
+        with patch("eventstore.tasks.rapidpro") as p:
+            handle_fallback_event(event)
+
+        p.create_flow_start.assert_not_called()
+        self.assertFalse(
+            DeliveryFailure.objects.filter(contact_id="27820001001").exists()
+        )
+
     def test_fallback_channel_successful_with_no_existing_delivery_failure(self):
         """
         If the event uses the fallback channel, but is a successful delivery
