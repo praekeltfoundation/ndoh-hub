@@ -53,7 +53,11 @@ from eventstore.serializers import (
     TurnOutboundSerializer,
     WhatsAppWebhookSerializer,
 )
-from eventstore.tasks import forget_contact, mark_turn_contact_healthcheck_complete
+from eventstore.tasks import (
+    forget_contact,
+    mark_turn_contact_healthcheck_complete,
+    reset_delivery_failure,
+)
 from eventstore.whatsapp_actions import handle_event, handle_inbound, handle_outbound
 from ndoh_hub.utils import TokenAuthQueryString, validate_signature
 from registrations.views import CursorPaginationFactory
@@ -219,31 +223,38 @@ class ResearchOptinSwitchViewSet(GenericViewSet, CreateModelMixin):
     permission_classes = (DjangoModelPermissions,)
 
 
-class PublicRegistrationViewSet(GenericViewSet, CreateModelMixin):
+class BaseRegistrationViewSet(GenericViewSet, CreateModelMixin):
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        reset_delivery_failure.delay(instance.contact_id)
+        return instance
+
+
+class PublicRegistrationViewSet(BaseRegistrationViewSet):
     queryset = PublicRegistration.objects.all()
     serializer_class = PublicRegistrationSerializer
     permission_classes = (DjangoModelPermissions,)
 
 
-class CHWRegistrationViewSet(GenericViewSet, CreateModelMixin):
+class CHWRegistrationViewSet(BaseRegistrationViewSet):
     queryset = CHWRegistration.objects.all()
     serializer_class = CHWRegistrationSerializer
     permission_classes = (DjangoModelPermissions,)
 
 
-class PrebirthRegistrationViewSet(GenericViewSet, CreateModelMixin):
+class PrebirthRegistrationViewSet(BaseRegistrationViewSet):
     queryset = PrebirthRegistration.objects.all()
     serializer_class = PrebirthRegistrationSerializer
     permission_classes = (DjangoModelPermissions,)
 
 
-class PostbirthRegistrationViewSet(GenericViewSet, CreateModelMixin):
+class PostbirthRegistrationViewSet(BaseRegistrationViewSet):
     queryset = PostbirthRegistration.objects.all()
     serializer_class = PostbirthRegistrationSerializer
     permission_classes = (DjangoModelPermissions,)
 
 
-class PMTCTRegistrationViewSet(GenericViewSet, CreateModelMixin):
+class PMTCTRegistrationViewSet(BaseRegistrationViewSet):
     queryset = PMTCTRegistration.objects.all()
     serializer_class = PMTCTRegistrationSerializer
     permission_classes = (DjangoModelPermissions,)
