@@ -18,6 +18,7 @@ from eventstore.models import (
     ChannelSwitch,
     CHWRegistration,
     Covid19Triage,
+    DeliveryFailure,
     EddSwitch,
     Event,
     IdentificationSwitch,
@@ -53,11 +54,7 @@ from eventstore.serializers import (
     TurnOutboundSerializer,
     WhatsAppWebhookSerializer,
 )
-from eventstore.tasks import (
-    forget_contact,
-    mark_turn_contact_healthcheck_complete,
-    reset_delivery_failure,
-)
+from eventstore.tasks import forget_contact, mark_turn_contact_healthcheck_complete
 from eventstore.whatsapp_actions import handle_event, handle_inbound, handle_outbound
 from ndoh_hub.utils import TokenAuthQueryString, validate_signature
 from registrations.views import CursorPaginationFactory
@@ -226,7 +223,9 @@ class ResearchOptinSwitchViewSet(GenericViewSet, CreateModelMixin):
 class BaseRegistrationViewSet(GenericViewSet, CreateModelMixin):
     def perform_create(self, serializer):
         instance = serializer.save()
-        reset_delivery_failure.delay(instance.contact_id)
+        DeliveryFailure.objects.filter(contact_id=instance.contact_id).update(
+            number_of_failures=0
+        )
         return instance
 
 
