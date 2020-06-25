@@ -431,6 +431,9 @@ def handle_expired_helpdesk_contacts():
 )
 def reset_delivery_failure(contact_uuid):
     contact = rapidpro.get_contacts(uuid=contact_uuid).first(retry_on_rate_exceed=True)
+    if not contact:
+        return
+
     wa_id = None
     for urn in contact.urns:
         if "whatsapp" in urn:
