@@ -16,6 +16,7 @@ from eventstore.models import (
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
+    DeliveryFailure,
     EddSwitch,
     Event,
     IdentificationSwitch,
@@ -418,3 +419,22 @@ def handle_expired_helpdesk_contacts():
                             contact.fields["helpdesk_message_id"],
                             f"Auto archived after {delta.days} days",
                         )
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
+    retry_backoff=False,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def reset_delivery_failure(contact_uuid):
+    contact = rapidpro.get_contacts(uuid=contact_uuid).first(retry_on_rate_exceed=True)
+    wa_id = None
+    for urn in contact.urns:
+        if "whatsapp" in urn:
+            wa_id = urn.split(":")[1]
+
+    if wa_id:
+        DeliveryFailure.objects.filter(contact_id=wa_id).update(number_of_failures=0)

@@ -640,25 +640,51 @@ class PrebirthRegistrationViewSetTests(APITestCase, BaseEventTestCase):
 
         self.assertFalse(DeliveryFailure.objects.all().exists())
 
+    @responses.activate
     def test_reset_delivery_failures(self):
         """
         Should create a new PrebirthRegistration object in the database and reset
         the delivery failure record if present
         """
+        contact_uuid = "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
+        wa_id = "27820001001"
+
         user = get_user_model().objects.create_user("test")
         user.user_permissions.add(
             Permission.objects.get(codename="add_prebirthregistration")
         )
         self.client.force_authenticate(user)
 
-        DeliveryFailure.objects.create(
-            contact_id="9e12d04c-af25-40b6-aa4f-57c72e8e3f91", number_of_failures=5
+        DeliveryFailure.objects.create(contact_id=wa_id, number_of_failures=5)
+
+        tasks.rapidpro = TembaClient("textit.in", "test-token")
+
+        responses.add(
+            responses.GET,
+            f"https://textit.in/api/v2/contacts.json?uuid={contact_uuid}",
+            json={
+                "results": [
+                    {
+                        "uuid": contact_uuid,
+                        "name": "",
+                        "language": "zul",
+                        "groups": [],
+                        "fields": {},
+                        "blocked": False,
+                        "stopped": False,
+                        "created_on": "2015-11-11T08:30:24.922024+00:00",
+                        "modified_on": "2015-11-11T08:30:25.525936+00:00",
+                        "urns": [f"whatsapp:{wa_id}"],
+                    }
+                ],
+                "next": None,
+            },
         )
 
         response = self.client.post(
             self.url,
             {
-                "contact_id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+                "contact_id": contact_uuid,
                 "device_contact_id": "d80d51cb-8a95-4588-ac74-250d739edef8",
                 "id_type": "passport",
                 "id_number": "",
@@ -675,9 +701,7 @@ class PrebirthRegistrationViewSetTests(APITestCase, BaseEventTestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         [registration] = PrebirthRegistration.objects.all()
-        self.assertEqual(
-            str(registration.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
-        )
+        self.assertEqual(str(registration.contact_id), contact_uuid)
         self.assertEqual(
             str(registration.device_contact_id), "d80d51cb-8a95-4588-ac74-250d739edef8"
         )
@@ -693,9 +717,7 @@ class PrebirthRegistrationViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(registration.created_by, user.username)
 
         [delivery_failure] = DeliveryFailure.objects.all()
-        self.assertEqual(
-            delivery_failure.contact_id, "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
-        )
+        self.assertEqual(delivery_failure.contact_id, wa_id)
         self.assertEqual(delivery_failure.number_of_failures, 0)
 
     def test_prebirth_other_passport_origin(self):
