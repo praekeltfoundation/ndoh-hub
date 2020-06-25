@@ -18,6 +18,7 @@ from eventstore.models import (
     ChannelSwitch,
     CHWRegistration,
     Covid19Triage,
+    DeliveryFailure,
     EddSwitch,
     Event,
     IdentificationSwitch,
@@ -219,31 +220,40 @@ class ResearchOptinSwitchViewSet(GenericViewSet, CreateModelMixin):
     permission_classes = (DjangoModelPermissions,)
 
 
-class PublicRegistrationViewSet(GenericViewSet, CreateModelMixin):
+class BaseRegistrationViewSet(GenericViewSet, CreateModelMixin):
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        DeliveryFailure.objects.filter(contact_id=instance.contact_id).update(
+            number_of_failures=0
+        )
+        return instance
+
+
+class PublicRegistrationViewSet(BaseRegistrationViewSet):
     queryset = PublicRegistration.objects.all()
     serializer_class = PublicRegistrationSerializer
     permission_classes = (DjangoModelPermissions,)
 
 
-class CHWRegistrationViewSet(GenericViewSet, CreateModelMixin):
+class CHWRegistrationViewSet(BaseRegistrationViewSet):
     queryset = CHWRegistration.objects.all()
     serializer_class = CHWRegistrationSerializer
     permission_classes = (DjangoModelPermissions,)
 
 
-class PrebirthRegistrationViewSet(GenericViewSet, CreateModelMixin):
+class PrebirthRegistrationViewSet(BaseRegistrationViewSet):
     queryset = PrebirthRegistration.objects.all()
     serializer_class = PrebirthRegistrationSerializer
     permission_classes = (DjangoModelPermissions,)
 
 
-class PostbirthRegistrationViewSet(GenericViewSet, CreateModelMixin):
+class PostbirthRegistrationViewSet(BaseRegistrationViewSet):
     queryset = PostbirthRegistration.objects.all()
     serializer_class = PostbirthRegistrationSerializer
     permission_classes = (DjangoModelPermissions,)
 
 
-class PMTCTRegistrationViewSet(GenericViewSet, CreateModelMixin):
+class PMTCTRegistrationViewSet(BaseRegistrationViewSet):
     queryset = PMTCTRegistration.objects.all()
     serializer_class = PMTCTRegistrationSerializer
     permission_classes = (DjangoModelPermissions,)
