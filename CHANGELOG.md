@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.20
+1. Reset delivery failure count on new registrations
+  ([#343](https://github.com/praekeltfoundation/ndoh-hub/pull/343))
+  ([#344](https://github.com/praekeltfoundation/ndoh-hub/pull/344))
+
 ## 0.8.19
 1. Add disable sms failure optouts flag
   ([#342](https://github.com/praekeltfoundation/ndoh-hub/pull/342))
