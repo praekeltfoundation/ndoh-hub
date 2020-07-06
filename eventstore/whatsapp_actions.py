@@ -91,6 +91,10 @@ def handle_fallback_event(event):
         df, created = DeliveryFailure.objects.get_or_create(
             contact_id=event.recipient_id, defaults={"number_of_failures": 0}
         )
+
+        if not created and (event.timestamp - df.timestamp).days <= 0:
+            return
+
         df.number_of_failures += 1
         df.save()
         if df.number_of_failures == 5:
