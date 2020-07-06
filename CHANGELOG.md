@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.21
+1. Limit delivery failures to 1 per day
+  ([#345](https://github.com/praekeltfoundation/ndoh-hub/pull/345))
+
 ## 0.8.20
 1. Reset delivery failure count on new registrations
   ([#343](https://github.com/praekeltfoundation/ndoh-hub/pull/343))
