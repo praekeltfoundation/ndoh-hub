@@ -1,11 +1,13 @@
 import datetime
 import json
+from datetime import timedelta
 from unittest.mock import Mock, patch
 
 import responses
 from django.conf import settings
 from django.test import TestCase as DjangoTestCase
 from django.test import override_settings
+from django.utils import timezone
 from pytz import UTC
 from temba_client.v2 import TembaClient
 
@@ -255,7 +257,7 @@ class HandleEventTests(DjangoTestCase):
         event.fallback_channel = True
         event.status = Event.FAILED
         event.recipient_id = "27820001001"
-        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+        event.timestamp = timezone.now() + timedelta(days=2)
 
         DeliveryFailure.objects.create(number_of_failures=4, contact_id="27820001001")
 
@@ -265,7 +267,7 @@ class HandleEventTests(DjangoTestCase):
         p.create_flow_start.assert_called_once_with(
             extra={
                 "optout_reason": "sms_failure",
-                "timestamp": 1518694700,
+                "timestamp": event.timestamp.timestamp(),
                 "babyloss_subscription": "FALSE",
                 "delete_info_for_babyloss": "FALSE",
                 "delete_info_consent": "FALSE",
@@ -274,6 +276,28 @@ class HandleEventTests(DjangoTestCase):
             flow="test-flow-uuid",
             urns=["whatsapp:27820001001"],
         )
+
+    @override_settings(RAPIDPRO_OPTOUT_FLOW="test-flow-uuid")
+    def test_fallback_channel_delivery_failure_duplicate(self):
+        """
+        If the event is of type Failed, and uses the fallback channel, but there
+        was another failure in the last 24h then it should not trigger the
+        message delivery failed action
+        """
+        event = Event.objects.create()
+        event.fallback_channel = True
+        event.status = Event.FAILED
+        event.recipient_id = "27820001001"
+        event.timestamp = timezone.now()
+
+        DeliveryFailure.objects.create(number_of_failures=4, contact_id="27820001001")
+
+        with patch("eventstore.tasks.rapidpro") as p:
+            handle_fallback_event(event)
+
+        p.create_flow_start.assert_not_called()
+        df = DeliveryFailure.objects.get(contact_id="27820001001")
+        self.assertEqual(df.number_of_failures, 4)
 
     @override_settings(RAPIDPRO_OPTOUT_FLOW="test-flow-uuid")
     def test_fallback_channel_delivery_failure_error_more_than_5(self):
@@ -285,7 +309,7 @@ class HandleEventTests(DjangoTestCase):
         event.fallback_channel = True
         event.status = Event.FAILED
         event.recipient_id = "27820001001"
-        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+        event.timestamp = timezone.now() + timedelta(days=2)
 
         DeliveryFailure.objects.create(number_of_failures=5, contact_id="27820001001")
 
@@ -306,7 +330,7 @@ class HandleEventTests(DjangoTestCase):
         event.fallback_channel = True
         event.status = Event.FAILED
         event.recipient_id = "27820001001"
-        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+        event.timestamp = timezone.now() + timedelta(days=2)
 
         with patch("eventstore.tasks.rapidpro") as p:
             handle_fallback_event(event)
@@ -326,7 +350,7 @@ class HandleEventTests(DjangoTestCase):
         event.fallback_channel = True
         event.status = Event.FAILED
         event.recipient_id = "27820001001"
-        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+        event.timestamp = timezone.now() + timedelta(days=2)
 
         with patch("eventstore.tasks.rapidpro") as p:
             handle_fallback_event(event)
@@ -346,7 +370,7 @@ class HandleEventTests(DjangoTestCase):
         event.fallback_channel = True
         event.status = Event.READ
         event.recipient_id = "27820001001"
-        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+        event.timestamp = timezone.now() + timedelta(days=2)
 
         with patch("eventstore.tasks.rapidpro") as p:
             handle_fallback_event(event)
@@ -365,7 +389,7 @@ class HandleEventTests(DjangoTestCase):
         event.fallback_channel = True
         event.status = Event.SENT
         event.recipient_id = "27820001001"
-        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+        event.timestamp = timezone.now() + timedelta(days=2)
 
         DeliveryFailure.objects.create(number_of_failures=3, contact_id="27820001001")
 
@@ -386,7 +410,7 @@ class HandleEventTests(DjangoTestCase):
         event.fallback_channel = True
         event.status = Event.READ
         event.recipient_id = "27820001001"
-        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+        event.timestamp = timezone.now() + timedelta(days=2)
 
         DeliveryFailure.objects.create(number_of_failures=1, contact_id="27820001001")
 
