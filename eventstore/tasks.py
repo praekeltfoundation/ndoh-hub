@@ -8,6 +8,7 @@ import requests
 from celery.exceptions import SoftTimeLimitExceeded
 from django.conf import settings
 from django.utils import dateparse, translation
+from django_redis import get_redis_connection
 from requests.exceptions import RequestException
 from temba_client.exceptions import TembaHttpError
 
@@ -215,10 +216,17 @@ forget_contact = (
 )
 def get_rapidpro_contact_by_urn(urn):
     if urn:
-        contact = rapidpro.get_contacts(urn=urn).first(retry_on_rate_exceed=True)
+        r = get_redis_connection("redis")
+        key = f"hub_handle_whatsapp_delivery_error_{urn}"
 
-        if contact:
-            return contact.serialize()
+        if r.get(key):
+            return
+
+        with r.lock(key, 3600):
+            contact = rapidpro.get_contacts(urn=urn).first(retry_on_rate_exceed=True)
+
+            if contact:
+                return contact.serialize()
 
 
 @app.task(
