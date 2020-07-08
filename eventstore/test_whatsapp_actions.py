@@ -467,7 +467,7 @@ class HandleWhatsappEventsTests(DjangoTestCase):
             extra={
                 "popi_ussd": settings.POPI_USSD_CODE,
                 "optout_ussd": settings.OPTOUT_USSD_CODE,
-                "timestamp": 1518694700,
+                "timestamp": 1_518_694_700,
             },
             flow="test-flow-uuid",
             urns=["whatsapp:27820001001"],
@@ -496,7 +496,7 @@ class HandleWhatsappEventsTests(DjangoTestCase):
         Sends a SMS and updates the contact if the contact hasn't been sent this
         message in 30 days
         """
-        timestamp = 1543999390.069308
+        timestamp = 1_543_999_390.069_308
         mock_get_utc_now.return_value = datetime.datetime.fromtimestamp(timestamp)
 
         event = Event.objects.create()
@@ -582,7 +582,7 @@ class HandleWhatsappEventsTests(DjangoTestCase):
         Sends a SMS and updates the contact if the contact hasn't been sent this
         message in 30 days
         """
-        timestamp = 1543999390.069308
+        timestamp = 1_543_999_390.069_308
         mock_get_utc_now.return_value = datetime.datetime.fromtimestamp(timestamp)
 
         event = Event.objects.create()
@@ -669,7 +669,7 @@ class HandleWhatsappEventsTests(DjangoTestCase):
         """
         Doesn't send a SMS if contact recieved the message in the last 30 days
         """
-        timestamp = 1543999390.069308
+        timestamp = 1_543_999_390.069_308
         mock_get_utc_now.return_value = datetime.datetime.fromtimestamp(timestamp)
 
         event = Event.objects.create()
@@ -712,7 +712,7 @@ class HandleWhatsappEventsTests(DjangoTestCase):
         """
         Doesn't fail when the language is None
         """
-        timestamp = 1543999390.069308
+        timestamp = 1_543_999_390.069_308
         mock_get_utc_now.return_value = datetime.datetime.fromtimestamp(timestamp)
 
         event = Event.objects.create()
@@ -755,7 +755,7 @@ class HandleWhatsappEventsTests(DjangoTestCase):
         """
         Doesn't fail when there is no contact
         """
-        timestamp = 1543999390.069308
+        timestamp = 1_543_999_390.069_308
         mock_get_utc_now.return_value = datetime.datetime.fromtimestamp(timestamp)
 
         event = Event.objects.create()
