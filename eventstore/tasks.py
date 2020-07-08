@@ -216,17 +216,18 @@ forget_contact = (
 )
 def get_rapidpro_contact_by_urn(urn):
     if urn:
-        r = get_redis_connection("redis")
-        key = f"hub_handle_whatsapp_delivery_error_{urn}"
+        redis = get_redis_connection("redis")
+        _, msisdn = urn.split(":")
+        key = f"hub_handle_whatsapp_delivery_error_{msisdn}"
 
-        if r.get(key):
+        lock = redis.lock(key, 3600)
+        if not lock.acquire(blocking=False):
             return
 
-        with r.lock(key, 3600):
-            contact = rapidpro.get_contacts(urn=urn).first(retry_on_rate_exceed=True)
+        contact = rapidpro.get_contacts(urn=urn).first(retry_on_rate_exceed=True)
 
-            if contact:
-                return contact.serialize()
+        if contact:
+            return contact.serialize()
 
 
 @app.task(
@@ -326,6 +327,10 @@ def update_rapidpro_contact_error_timestamp(context):
         f"whatsapp:{msisdn}",
         fields={"whatsapp_undelivered_timestamp": get_utc_now().isoformat()},
     )
+
+    redis = get_redis_connection("redis")
+    key = f"hub_handle_whatsapp_delivery_error_{msisdn}"
+    redis.delete(key)
 
 
 async_handle_whatsapp_delivery_error = (

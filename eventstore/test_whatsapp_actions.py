@@ -8,6 +8,7 @@ from django.conf import settings
 from django.test import TestCase as DjangoTestCase
 from django.test import override_settings
 from django.utils import timezone
+from django_redis import get_redis_connection
 from pytz import UTC
 from temba_client.v2 import TembaClient
 
@@ -441,6 +442,13 @@ class HandleEventTests(DjangoTestCase):
 
 
 class HandleWhatsappEventsTests(DjangoTestCase):
+    def setUp(self):
+        redis = get_redis_connection("redis")
+        key = f"hub_handle_whatsapp_delivery_error_27820001001"
+        redis.delete(key)
+
+        return super().setUp()
+
     @override_settings(RAPIDPRO_UNSENT_EVENT_FLOW="test-flow-uuid")
     @override_settings(ENABLE_UNSENT_EVENT_ACTION=True)
     def test_handle_whatsapp_hsm_error_successful(self):
