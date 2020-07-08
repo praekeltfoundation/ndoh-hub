@@ -36,6 +36,8 @@ setup(
         "pycountry==19.8.18",
         "attrs",
         "iso6709==0.1.5",
+        "redis==3.5.3",
+        "django-redis==4.12.1",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
