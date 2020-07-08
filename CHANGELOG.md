@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.22
+1. Use cache lock to avoid sending duplicate SMSs on WhatsApp failures
+  ([#346](https://github.com/praekeltfoundation/ndoh-hub/pull/346))
+  ([#347](https://github.com/praekeltfoundation/ndoh-hub/pull/347))
+
 ## 0.8.21
 1. Limit delivery failures to 1 per day
   ([#345](https://github.com/praekeltfoundation/ndoh-hub/pull/345))
