@@ -219,10 +219,11 @@ def get_rapidpro_contact_by_urn(urn):
     if urn:
         redis = get_redis_connection("redis")
         _, msisdn = urn.split(":")
-        context["key"] = f"hub_handle_whatsapp_delivery_error_{msisdn}"
+        key = f"hub_handle_whatsapp_delivery_error_{msisdn}"
 
-        lock = redis.lock(context["key"], 3600)
+        lock = redis.lock(key, 3600)
         if lock.acquire(blocking=False):
+            context["key"] = key
             contact = rapidpro.get_contacts(urn=urn).first(retry_on_rate_exceed=True)
 
             if contact:
