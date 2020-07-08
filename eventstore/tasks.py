@@ -215,19 +215,20 @@ forget_contact = (
     time_limit=15,
 )
 def get_rapidpro_contact_by_urn(urn):
+    context = {}
     if urn:
         redis = get_redis_connection("redis")
         _, msisdn = urn.split(":")
-        key = f"hub_handle_whatsapp_delivery_error_{msisdn}"
+        context["key"] = f"hub_handle_whatsapp_delivery_error_{msisdn}"
 
-        lock = redis.lock(key, 3600)
-        if not lock.acquire(blocking=False):
-            return
+        lock = redis.lock(context["key"], 3600)
+        if lock.acquire(blocking=False):
+            contact = rapidpro.get_contacts(urn=urn).first(retry_on_rate_exceed=True)
 
-        contact = rapidpro.get_contacts(urn=urn).first(retry_on_rate_exceed=True)
+            if contact:
+                context["contact"] = contact.serialize()
 
-        if contact:
-            return contact.serialize()
+    return context
 
 
 @app.task(
@@ -238,9 +239,10 @@ def get_rapidpro_contact_by_urn(urn):
     soft_time_limit=10,
     time_limit=15,
 )
-def check_contact_timestamp(contact):
+def check_contact_timestamp(context):
+    contact = context.get("contact")
     if not contact:
-        return {}
+        return context
 
     timestamp = contact["fields"].get("whatsapp_undelivered_timestamp")
     current_date = get_utc_now()
@@ -277,7 +279,7 @@ def check_contact_timestamp(contact):
 )
 def send_undelivered_sms(context):
     if "msisdn" not in context:
-        return {}
+        return context
 
     headers = {
         "Authorization": "Bearer {}".format(settings.TURN_TOKEN),
@@ -319,18 +321,16 @@ def send_undelivered_sms(context):
     time_limit=15,
 )
 def update_rapidpro_contact_error_timestamp(context):
-    if "msisdn" not in context:
-        return
+    if "msisdn" in context:
+        msisdn = context["msisdn"]
+        rapidpro.update_contact(
+            f"whatsapp:{msisdn}",
+            fields={"whatsapp_undelivered_timestamp": get_utc_now().isoformat()},
+        )
 
-    msisdn = context["msisdn"]
-    rapidpro.update_contact(
-        f"whatsapp:{msisdn}",
-        fields={"whatsapp_undelivered_timestamp": get_utc_now().isoformat()},
-    )
-
-    redis = get_redis_connection("redis")
-    key = f"hub_handle_whatsapp_delivery_error_{msisdn}"
-    redis.delete(key)
+    if "key" in context:
+        redis = get_redis_connection("redis")
+        redis.delete(context["key"])
 
 
 async_handle_whatsapp_delivery_error = (
