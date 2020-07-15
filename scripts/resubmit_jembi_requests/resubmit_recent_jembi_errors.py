@@ -1,4 +1,3 @@
-import json
 import time
 
 import psycopg2
@@ -50,7 +49,7 @@ if __name__ == "__main__":
 
         webhook_calls.append(key)
 
-        body = json.loads(request.split("\n")[-1])
+        body = request.split("\n")[-1]
 
         try:
             r = requests.post(
