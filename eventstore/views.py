@@ -2,11 +2,12 @@ from datetime import datetime
 
 from django.conf import settings
 from django.db import IntegrityError
+from django.http import Http404
 from django_filters import rest_framework as filters
 from pytz import UTC
 from rest_framework import serializers, status
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.mixins import CreateModelMixin, ListModelMixin
+from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin
 from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
@@ -20,6 +21,7 @@ from eventstore.models import (
     Covid19Triage,
     EddSwitch,
     Event,
+    HealthCheckUserProfile,
     IdentificationSwitch,
     LanguageSwitch,
     Message,
@@ -30,7 +32,6 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
-    HealthCheckUserProfile,
 )
 from eventstore.serializers import (
     BabyDobSwitchSerializer,
@@ -41,6 +42,7 @@ from eventstore.serializers import (
     Covid19TriageSerializer,
     Covid19TriageV2Serializer,
     EddSwitchSerializer,
+    HealthCheckUserProfileSerializer,
     IdentificationSwitchSerializer,
     LanguageSwitchSerializer,
     MSISDNSwitchSerializer,
@@ -303,6 +305,19 @@ class Covid19TriageViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
 
 class Covid19TriageV2ViewSet(Covid19TriageViewSet):
     serializer_class = Covid19TriageV2Serializer
+
+
+class HealthCheckUserProfileViewSet(GenericViewSet, RetrieveModelMixin):
+    queryset = HealthCheckUserProfile.objects.all()
+    serializer_class = HealthCheckUserProfileSerializer
+    permission_classes = (DjangoModelPermissions,)
+
+    def get_object(self):
+        obj = HealthCheckUserProfile.objects.get_or_prefill(msisdn=self.kwargs["pk"])
+        if not obj.pk:
+            raise Http404()
+        self.check_object_permissions(self.request, obj)
+        return obj
 
 
 class CDUAddressUpdateViewSet(GenericViewSet, CreateModelMixin):

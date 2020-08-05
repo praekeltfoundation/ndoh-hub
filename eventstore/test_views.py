@@ -29,6 +29,7 @@ from eventstore.models import (
     Covid19Triage,
     EddSwitch,
     Event,
+    HealthCheckUserProfile,
     IdentificationSwitch,
     LanguageSwitch,
     Message,
@@ -39,7 +40,6 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
-    HealthCheckUserProfile,
 )
 from eventstore.serializers import Covid19TriageSerializer, Covid19TriageV2Serializer
 
@@ -1784,6 +1784,63 @@ class Covid19TriageV2ViewSetTests(Covid19TriageViewSetTests):
                 "data": {},
             },
         )
+
+
+class HealthCheckUserProfileViewSetTests(APITestCase, BaseEventTestCase):
+    url = reverse("healthcheckuserprofile-detail", args=("+27820001001",))
+
+    def test_no_data(self):
+        """
+        Should return a 404 if no data
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="view_healthcheckuserprofile")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_existing_healthchecks(self):
+        """
+        If there's no profile, but existing healthchecks, then it should construct the
+        profile from those healthchecks
+        """
+        Covid19Triage.objects.create(
+            msisdn="+27820001001",
+            first_name="testname",
+            fever=False,
+            cough=False,
+            sore_throat=False,
+            tracing=True,
+        )
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="view_healthcheckuserprofile")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["msisdn"], "+27820001001")
+        self.assertEqual(response.data["first_name"], "testname")
+
+    def test_existing_profile(self):
+        """
+        It should return the existing profile
+        """
+        HealthCheckUserProfile.objects.create(
+            msisdn="+27820001001", first_name="testname"
+        )
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="view_healthcheckuserprofile")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.get(self.url)
+        self.maxDiff = None
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["msisdn"], "+27820001001")
+        self.assertEqual(response.data["first_name"], "testname")
 
 
 class CDUAddressUpdateViewSetTests(APITestCase, BaseEventTestCase):
