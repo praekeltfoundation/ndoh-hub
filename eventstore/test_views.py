@@ -39,6 +39,7 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
+    HealthCheckUserProfile,
 )
 from eventstore.serializers import Covid19TriageSerializer, Covid19TriageV2Serializer
 
@@ -1671,6 +1672,35 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
                 "data": {},
             },
         )
+
+    def test_creates_user_profile(self):
+        """
+        The user profile should be created when the triage is saved
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+        self.client.force_authenticate(user)
+        self.client.post(
+            self.url,
+            {
+                "msisdn": "27820001001",
+                "source": "USSD",
+                "province": "ZA-WC",
+                "city": "cape town",
+                "age": Covid19Triage.AGE_18T40,
+                "fever": False,
+                "cough": False,
+                "sore_throat": False,
+                "exposure": Covid19Triage.EXPOSURE_NO,
+                "tracing": True,
+                "risk": Covid19Triage.RISK_LOW,
+            },
+            format="json",
+        )
+        profile = HealthCheckUserProfile.objects.get(msisdn="+27820001001")
+        self.assertEqual(profile.province, "ZA-WC")
+        self.assertEqual(profile.city, "cape town")
+        self.assertEqual(profile.age, Covid19Triage.AGE_18T40)
 
 
 class Covid19TriageV2ViewSetTests(Covid19TriageViewSetTests):

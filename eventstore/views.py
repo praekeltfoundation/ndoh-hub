@@ -30,6 +30,7 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
+    HealthCheckUserProfile,
 )
 from eventstore.serializers import (
     BabyDobSwitchSerializer,
@@ -282,6 +283,15 @@ class Covid19TriageViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
         except IntegrityError:
             # We already have this entry
             return Response(status=status.HTTP_200_OK)
+
+    def perform_create(self, serializer):
+        """
+        Also update the user profile
+        """
+        instance = serializer.save()
+        profile = HealthCheckUserProfile.objects.get_or_prefill(msisdn=instance.msisdn)
+        profile.update_from_healthcheck(instance)
+        profile.save()
 
     def get_throttles(self):
         """
