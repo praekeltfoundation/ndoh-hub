@@ -10,7 +10,7 @@ import registrations.validators
 
 class Migration(migrations.Migration):
 
-    dependencies = [("eventstore", "0031_add_concurrent_covid19triage_msisdn_index")]
+    dependencies = [("eventstore", "0032_deliveryfailure_timestamp")]
 
     operations = [
         migrations.CreateModel(

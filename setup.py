@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="ndoh-hub",
-    version="0.8.15",
+    version="0.8.22",
     url="http://github.com/praekeltfoundation/ndoh-hub",
     license="BSD",
     author="Praekelt Foundation",
@@ -10,7 +10,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
-        "Django==2.2.8",
+        "Django==2.2.13",
         "djangorestframework==3.9.4",
         "coreapi==2.3.3",
         "Markdown==3.1.1",
@@ -36,6 +36,8 @@ setup(
         "pycountry==19.8.18",
         "attrs",
         "iso6709==0.1.5",
+        "redis==3.5.3",
+        "django-redis==4.12.1",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",

@@ -8,6 +8,7 @@ from eventstore.models import (
     BabySwitch,
     CDUAddressUpdate,
     ChannelSwitch,
+    CHWRegistration,
     Covid19Triage,
     DeliveryFailure,
     EddSwitch,
@@ -116,6 +117,12 @@ class PrebirthRegistrationAdmin(BaseEventAdmin):
 class PostbirthRegistrationAdmin(BaseEventAdmin):
     readonly_fields = ("id", "created_by", "timestamp")
     list_display = ("contact_id", "source", "baby_dob", "facility_code", "timestamp")
+
+
+@admin.register(CHWRegistration)
+class CHWRegistrationAdmin(BaseEventAdmin):
+    readonly_fields = ("id", "created_by", "timestamp")
+    list_display = ("contact_id", "source", "timestamp")
 
 
 @admin.register(DeliveryFailure)

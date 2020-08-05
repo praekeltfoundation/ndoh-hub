@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 
 from eventstore.models import (
+    CHWRegistration,
     PostbirthRegistration,
     PrebirthRegistration,
     PublicRegistration,
@@ -18,20 +19,26 @@ class Command(BaseCommand):
     def handle_channel_migration(self):
         for each in PublicRegistration.objects.filter(channel=""):
             contact = rapidpro.get_contacts(uuid=each.contact_id).first()
-            if contact.fields["channel"] != "":
-                each.channel = contact.fields["channel"]
+            if contact.fields["preferred_channel"] != "":
+                each.channel = contact.fields["preferred_channel"]
                 each.save(update_fields=["channel"])
 
         for each in PrebirthRegistration.objects.filter(channel=""):
             contact = rapidpro.get_contacts(uuid=each.contact_id).first()
-            if contact.fields["channel"] != "":
-                each.channel = contact.fields["channel"]
+            if contact.fields["preferred_channel"] != "":
+                each.channel = contact.fields["preferred_channel"]
                 each.save(update_fields=["channel"])
 
         for each in PostbirthRegistration.objects.filter(channel=""):
             contact = rapidpro.get_contacts(uuid=each.contact_id).first()
-            if contact.fields["channel"] != "":
-                each.channel = contact.fields["channel"]
+            if contact.fields["preferred_channel"] != "":
+                each.channel = contact.fields["preferred_channel"]
+                each.save(update_fields=["channel"])
+
+        for each in CHWRegistration.objects.filter(channel=""):
+            contact = rapidpro.get_contacts(uuid=each.contact_id).first()
+            if contact.fields["preferred_channel"] != "":
+                each.channel = contact.fields["preferred_channel"]
                 each.save(update_fields=["channel"])
 
     def handle(self, *args, **options):

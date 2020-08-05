@@ -8,6 +8,7 @@ import requests
 from celery.exceptions import SoftTimeLimitExceeded
 from django.conf import settings
 from django.utils import dateparse, translation
+from django_redis import get_redis_connection
 from requests.exceptions import RequestException
 from temba_client.exceptions import TembaHttpError
 
@@ -16,6 +17,7 @@ from eventstore.models import (
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
+    DeliveryFailure,
     EddSwitch,
     Event,
     IdentificationSwitch,
@@ -30,7 +32,7 @@ from eventstore.models import (
     ResearchOptinSwitch,
 )
 from ndoh_hub.celery import app
-from ndoh_hub.utils import rapidpro
+from ndoh_hub.utils import get_today, rapidpro
 from registrations.tasks import request_to_jembi_api
 
 
@@ -213,11 +215,21 @@ forget_contact = (
     time_limit=15,
 )
 def get_rapidpro_contact_by_urn(urn):
+    context = {}
     if urn:
-        contact = rapidpro.get_contacts(urn=urn).first(retry_on_rate_exceed=True)
+        redis = get_redis_connection("redis")
+        _, msisdn = urn.split(":")
+        key = f"hub_handle_whatsapp_delivery_error_{msisdn}"
 
-        if contact:
-            return contact.serialize()
+        lock = redis.lock(key, 3600)
+        if lock.acquire(blocking=False):
+            context["key"] = key
+            contact = rapidpro.get_contacts(urn=urn).first(retry_on_rate_exceed=True)
+
+            if contact:
+                context["contact"] = contact.serialize()
+
+    return context
 
 
 @app.task(
@@ -228,9 +240,10 @@ def get_rapidpro_contact_by_urn(urn):
     soft_time_limit=10,
     time_limit=15,
 )
-def check_contact_timestamp(contact):
+def check_contact_timestamp(context):
+    contact = context.get("contact")
     if not contact:
-        return {}
+        return context
 
     timestamp = contact["fields"].get("whatsapp_undelivered_timestamp")
     current_date = get_utc_now()
@@ -267,7 +280,7 @@ def check_contact_timestamp(contact):
 )
 def send_undelivered_sms(context):
     if "msisdn" not in context:
-        return {}
+        return context
 
     headers = {
         "Authorization": "Bearer {}".format(settings.TURN_TOKEN),
@@ -309,14 +322,16 @@ def send_undelivered_sms(context):
     time_limit=15,
 )
 def update_rapidpro_contact_error_timestamp(context):
-    if "msisdn" not in context:
-        return
+    if "msisdn" in context:
+        msisdn = context["msisdn"]
+        rapidpro.update_contact(
+            f"whatsapp:{msisdn}",
+            fields={"whatsapp_undelivered_timestamp": get_utc_now().isoformat()},
+        )
 
-    msisdn = context["msisdn"]
-    rapidpro.update_contact(
-        f"whatsapp:{msisdn}",
-        fields={"whatsapp_undelivered_timestamp": get_utc_now().isoformat()},
-    )
+    if "key" in context:
+        redis = get_redis_connection("redis")
+        redis.delete(context["key"])
 
 
 async_handle_whatsapp_delivery_error = (
@@ -325,3 +340,118 @@ async_handle_whatsapp_delivery_error = (
     | send_undelivered_sms.s()
     | update_rapidpro_contact_error_timestamp.s()
 )
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def mark_turn_contact_healthcheck_complete(msisdn):
+    if settings.HC_TURN_URL is None or settings.HC_TURN_TOKEN is None:
+        return
+    contact_id = msisdn.lstrip("+")
+    url = urljoin(settings.HC_TURN_URL, f"v1/contacts/{contact_id}/profile")
+    response = requests.patch(
+        url,
+        json={"healthcheck_completed": True},
+        headers={
+            "Authorization": f"Bearer {settings.HC_TURN_TOKEN}",
+            "Accept": "application/vnd.v1+json",
+        },
+    )
+    response.raise_for_status()
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def archive_turn_conversation(urn, message_id, reason):
+    headers = {
+        "Authorization": "Bearer {}".format(settings.TURN_TOKEN),
+        "Accept": "application/vnd.v1+json",
+        "Content-Type": "application/json",
+    }
+
+    data = json.dumps({"before": message_id, "reason": reason})
+
+    r = requests.post(
+        urljoin(settings.TURN_URL, f"v1/chats/{urn}/archive"),
+        headers=headers,
+        data=data,
+    )
+    r.raise_for_status()
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=600,
+    time_limit=600,
+)
+def handle_expired_helpdesk_contacts():
+    for contact_batch in rapidpro.get_contacts(
+        group="Waiting for helpdesk"
+    ).iterfetches(retry_on_rate_exceed=True):
+        for contact in contact_batch:
+            if contact.fields.get("helpdesk_timeout") and contact.fields.get(
+                "helpdesk_message_id"
+            ):
+                timeout_date = datetime.strptime(
+                    contact.fields["helpdesk_timeout"], "%Y-%m-%d"
+                ).date()
+
+                delta = get_today() - timeout_date
+                if delta.days > settings.HELPDESK_TIMEOUT_DAYS:
+                    update_rapidpro_contact.delay(
+                        contact.uuid,
+                        {
+                            "helpdesk_timeout": None,
+                            "wait_for_helpdesk": None,
+                            "helpdesk_message_id": None,
+                        },
+                    )
+
+                    wa_id = None
+                    for urn in contact.urns:
+                        if "whatsapp" in urn:
+                            wa_id = urn.split(":")[1]
+
+                    if wa_id:
+                        archive_turn_conversation.delay(
+                            wa_id,
+                            contact.fields["helpdesk_message_id"],
+                            f"Auto archived after {delta.days} days",
+                        )
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
+    retry_backoff=False,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def reset_delivery_failure(contact_uuid):
+    contact = rapidpro.get_contacts(uuid=contact_uuid).first(retry_on_rate_exceed=True)
+    if not contact:
+        return
+
+    wa_id = None
+    for urn in contact.urns:
+        if "whatsapp" in urn:
+            wa_id = urn.split(":")[1]
+
+    if wa_id:
+        DeliveryFailure.objects.filter(contact_id=wa_id).update(number_of_failures=0)

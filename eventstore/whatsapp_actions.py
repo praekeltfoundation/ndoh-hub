@@ -85,12 +85,19 @@ def handle_event(event):
 
 def handle_fallback_event(event):
     if event.status == Event.FAILED:
+        if settings.DISABLE_SMS_FAILURE_OPTOUTS:
+            return
+
         df, created = DeliveryFailure.objects.get_or_create(
             contact_id=event.recipient_id, defaults={"number_of_failures": 0}
         )
+
+        if not created and (event.timestamp - df.timestamp).days <= 0:
+            return
+
         df.number_of_failures += 1
         df.save()
-        if df.number_of_failures >= 5:
+        if df.number_of_failures == 5:
             async_create_flow_start.delay(
                 extra={
                     "optout_reason": OptOut.SMS_FAILURE_REASON,

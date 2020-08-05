@@ -45,6 +45,7 @@ from eventstore.serializers import (
     HealthCheckUserProfileSerializer,
     IdentificationSwitchSerializer,
     LanguageSwitchSerializer,
+    MSISDNSerializer,
     MSISDNSwitchSerializer,
     OptOutSerializer,
     PMTCTRegistrationSerializer,
@@ -55,7 +56,11 @@ from eventstore.serializers import (
     TurnOutboundSerializer,
     WhatsAppWebhookSerializer,
 )
-from eventstore.tasks import forget_contact
+from eventstore.tasks import (
+    forget_contact,
+    mark_turn_contact_healthcheck_complete,
+    reset_delivery_failure,
+)
 from eventstore.whatsapp_actions import handle_event, handle_inbound, handle_outbound
 from ndoh_hub.utils import TokenAuthQueryString, validate_signature
 from registrations.views import CursorPaginationFactory
@@ -221,31 +226,38 @@ class ResearchOptinSwitchViewSet(GenericViewSet, CreateModelMixin):
     permission_classes = (DjangoModelPermissions,)
 
 
-class PublicRegistrationViewSet(GenericViewSet, CreateModelMixin):
+class BaseRegistrationViewSet(GenericViewSet, CreateModelMixin):
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        reset_delivery_failure.delay(contact_uuid=instance.contact_id)
+        return instance
+
+
+class PublicRegistrationViewSet(BaseRegistrationViewSet):
     queryset = PublicRegistration.objects.all()
     serializer_class = PublicRegistrationSerializer
     permission_classes = (DjangoModelPermissions,)
 
 
-class CHWRegistrationViewSet(GenericViewSet, CreateModelMixin):
+class CHWRegistrationViewSet(BaseRegistrationViewSet):
     queryset = CHWRegistration.objects.all()
     serializer_class = CHWRegistrationSerializer
     permission_classes = (DjangoModelPermissions,)
 
 
-class PrebirthRegistrationViewSet(GenericViewSet, CreateModelMixin):
+class PrebirthRegistrationViewSet(BaseRegistrationViewSet):
     queryset = PrebirthRegistration.objects.all()
     serializer_class = PrebirthRegistrationSerializer
     permission_classes = (DjangoModelPermissions,)
 
 
-class PostbirthRegistrationViewSet(GenericViewSet, CreateModelMixin):
+class PostbirthRegistrationViewSet(BaseRegistrationViewSet):
     queryset = PostbirthRegistration.objects.all()
     serializer_class = PostbirthRegistrationSerializer
     permission_classes = (DjangoModelPermissions,)
 
 
-class PMTCTRegistrationViewSet(GenericViewSet, CreateModelMixin):
+class PMTCTRegistrationViewSet(BaseRegistrationViewSet):
     queryset = PMTCTRegistration.objects.all()
     serializer_class = PMTCTRegistrationSerializer
     permission_classes = (DjangoModelPermissions,)
@@ -279,21 +291,26 @@ class Covid19TriageViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = Covid19TriageFilter
 
+    def perform_create(self, serializer):
+        """
+        Mark turn healthcheck complete, and update the user profile
+        """
+        instance = serializer.save()
+
+        mark_turn_contact_healthcheck_complete.delay(instance.msisdn)
+
+        profile = HealthCheckUserProfile.objects.get_or_prefill(msisdn=instance.msisdn)
+        profile.update_from_healthcheck(instance)
+        profile.save()
+
+        return instance
+
     def create(self, *args, **kwargs):
         try:
             return super().create(*args, **kwargs)
         except IntegrityError:
             # We already have this entry
             return Response(status=status.HTTP_200_OK)
-
-    def perform_create(self, serializer):
-        """
-        Also update the user profile
-        """
-        instance = serializer.save()
-        profile = HealthCheckUserProfile.objects.get_or_prefill(msisdn=instance.msisdn)
-        profile.update_from_healthcheck(instance)
-        profile.save()
 
     def get_throttles(self):
         """
@@ -305,6 +322,42 @@ class Covid19TriageViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
 
 class Covid19TriageV2ViewSet(Covid19TriageViewSet):
     serializer_class = Covid19TriageV2Serializer
+    returning_user_skipped_fields = {
+        "first_name",
+        "last_name",
+        "province",
+        "city",
+        "date_of_birth",
+        "gender",
+        "location",
+        "city_location",
+        "preexisting_condition",
+        "rooms_in_household",
+        "persons_in_household",
+    }
+
+    def _get_msisdn(self, data):
+        """ Gets the MSISDN from the data, or raises a ValidationError """
+        serializer = MSISDNSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        return serializer.validated_data["msisdn"]
+
+    def _update_data(self, data, triage):
+        """ Updates the data from the values in triage """
+        for field in self.returning_user_skipped_fields:
+            value = getattr(triage, field)
+            if value:
+                data[field] = value
+
+    def create(self, request, *args, **kwargs):
+        # If all of the returning user skipped fields are missing
+        if all(not request.data.get(f) for f in self.returning_user_skipped_fields):
+            # Get those fields from a previous completed HealthCheck
+            msisdn = self._get_msisdn(request.data)
+            triage = Covid19Triage.objects.filter(msisdn=msisdn).earliest("timestamp")
+            if triage:
+                self._update_data(request.data, triage)
+        return super().create(request, *args, **kwargs)
 
 
 class HealthCheckUserProfileViewSet(GenericViewSet, RetrieveModelMixin):

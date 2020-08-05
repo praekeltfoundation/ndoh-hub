@@ -196,6 +196,10 @@ class HealthCheckUserProfileSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class MSISDNSerializer(serializers.Serializer):
+    msisdn = MSISDNField(country="ZA")
+
+
 class CDUAddressUpdateSerializer(BaseEventSerializer):
     class Meta:
         model = CDUAddressUpdate

@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
     atomic = False
 
-    dependencies = [("eventstore", "0032_add_healthcheck_user_profile")]
+    dependencies = [("eventstore", "0033_add_healthcheck_user_profile")]
 
     operations = [
         migrations.RunSQL(

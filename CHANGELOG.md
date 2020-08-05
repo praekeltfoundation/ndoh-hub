@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.8.22
+1. Use cache lock to avoid sending duplicate SMSs on WhatsApp failures
+  ([#346](https://github.com/praekeltfoundation/ndoh-hub/pull/346))
+  ([#347](https://github.com/praekeltfoundation/ndoh-hub/pull/347))
+
+## 0.8.21
+1. Limit delivery failures to 1 per day
+  ([#345](https://github.com/praekeltfoundation/ndoh-hub/pull/345))
+
+## 0.8.20
+1. Reset delivery failure count on new registrations
+  ([#343](https://github.com/praekeltfoundation/ndoh-hub/pull/343))
+  ([#344](https://github.com/praekeltfoundation/ndoh-hub/pull/344))
+
+## 0.8.19
+1. Add disable sms failure optouts flag
+  ([#342](https://github.com/praekeltfoundation/ndoh-hub/pull/342))
+
+## 0.8.18
+1. Changed rapidpro variable for channel preference
+  ([#339](https://github.com/praekeltfoundation/ndoh-hub/pull/339))
+
+## 0.8.17
+1. Added CHWRegistration to django admin
+  ([#336](https://github.com/praekeltfoundation/ndoh-hub/pull/336))
+1. ran registration migration
+  ([#321](https://github.com/praekeltfoundation/ndoh-hub/pull/321))
+
+## 0.8.16
+1. Add functionality to the API for healthcheck returning users
+   ([#326](https://github.com/praekeltfoundation/ndoh-hub/pull/326))
+1. Add task to update Turn Contact on completed healthchecks
+   ([#327](https://github.com/praekeltfoundation/ndoh-hub/pull/327))
+1. Fix duplicate optouts happening
+   ([#332](https://github.com/praekeltfoundation/ndoh-hub/pull/332))
+
 ## 0.8.15
 1. Fix docker image translations
 

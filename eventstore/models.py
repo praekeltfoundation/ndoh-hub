@@ -1,5 +1,5 @@
 import uuid
-from typing import List, Text
+from typing import Text
 
 import pycountry
 from django.conf.locale import LANG_INFO
@@ -113,6 +113,7 @@ class MSISDNSwitch(models.Model):
 
 class DeliveryFailure(models.Model):
     contact_id = models.CharField(primary_key=True, max_length=255, blank=False)
+    timestamp = models.DateTimeField(auto_now=True)
     number_of_failures = models.IntegerField(null=False, default=0)
 
 
@@ -470,10 +471,7 @@ class Covid19Triage(models.Model):
     data = JSONField(default=dict, blank=True, null=True)
 
     class Meta:
-        indexes: List[models.Index] = [
-            # MSISDN index created using RunSQL for concurrent index
-            # models.Index(fields=["msisdn"], name="covid19triage_msisdn")
-        ]
+        indexes = [models.Index(fields=["msisdn", "timestamp"])]
 
 
 class HealthCheckUserProfileManager(models.Manager):
