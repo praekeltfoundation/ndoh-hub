@@ -1,4 +1,5 @@
 import uuid
+from typing import Text
 
 import pycountry
 from django.conf.locale import LANG_INFO
@@ -471,6 +472,92 @@ class Covid19Triage(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=["msisdn", "timestamp"])]
+
+
+class HealthCheckUserProfileManager(models.Manager):
+    def get_or_prefill(self, msisdn: Text) -> "HealthCheckUserProfile":
+        """
+        Either gets the existing user profile, or creates one using data in the
+        historical healthchecks
+        """
+        try:
+            return self.get(msisdn=msisdn)
+        except self.model.DoesNotExist:
+            healthchecks = Covid19Triage.objects.filter(msisdn=msisdn).order_by(
+                "completed_timestamp"
+            )
+            profile = self.model()
+            for healthcheck in healthchecks.iterator():
+                profile.update_from_healthcheck(healthcheck)
+            return profile
+
+
+class HealthCheckUserProfile(models.Model):
+    msisdn = models.CharField(
+        primary_key=True, max_length=255, validators=[za_phone_number]
+    )
+    first_name = models.CharField(max_length=255, blank=True, null=True, default=None)
+    last_name = models.CharField(max_length=255, blank=True, null=True, default=None)
+    province = models.CharField(max_length=6, choices=Covid19Triage.PROVINCE_CHOICES)
+    city = models.CharField(max_length=255)
+    age = models.CharField(max_length=5, choices=Covid19Triage.AGE_CHOICES)
+    date_of_birth = models.DateField(blank=True, null=True, default=None)
+    gender = models.CharField(
+        max_length=7, choices=Covid19Triage.GENDER_CHOICES, blank=True, default=""
+    )
+    location = models.CharField(
+        max_length=255, blank=True, default="", validators=[geographic_coordinate]
+    )
+    city_location = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        default=None,
+        validators=[geographic_coordinate],
+    )
+    preexisting_condition = models.CharField(
+        max_length=9, choices=Covid19Triage.EXPOSURE_CHOICES, blank=True, default=""
+    )
+    rooms_in_household = models.IntegerField(blank=True, null=True, default=None)
+    persons_in_household = models.IntegerField(blank=True, null=True, default=None)
+    data = JSONField(default=dict, blank=True, null=True)
+
+    objects = HealthCheckUserProfileManager()
+
+    def update_from_healthcheck(self, healthcheck: Covid19Triage) -> None:
+        """
+        Updates the profile with the data from the latest healthcheck
+        """
+
+        def has_value(v):
+            """
+            We want values like 0 and False to be considered values, but values like
+            None or blank strings to not be considered values
+            """
+            return v or v == 0 or v is False
+
+        for field in [
+            "msisdn",
+            "first_name",
+            "last_name",
+            "province",
+            "city",
+            "age",
+            "date_of_birth",
+            "gender",
+            "location",
+            "city_location",
+            "preexisting_conditions",
+            "rooms_in_household",
+            "persons_in_household",
+        ]:
+            value = getattr(healthcheck, field, None)
+            if has_value(value):
+                setattr(self, field, value)
+
+        for k, v in healthcheck.data.items():
+            if has_value(v):
+                self.data[k] = v
 
 
 class CDUAddressUpdate(models.Model):

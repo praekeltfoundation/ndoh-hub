@@ -30,6 +30,7 @@ from eventstore.models import (
     DeliveryFailure,
     EddSwitch,
     Event,
+    HealthCheckUserProfile,
     IdentificationSwitch,
     LanguageSwitch,
     Message,
@@ -1757,6 +1758,35 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
             },
         )
 
+    def test_creates_user_profile(self):
+        """
+        The user profile should be created when the triage is saved
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+        self.client.force_authenticate(user)
+        self.client.post(
+            self.url,
+            {
+                "msisdn": "27820001001",
+                "source": "USSD",
+                "province": "ZA-WC",
+                "city": "cape town",
+                "age": Covid19Triage.AGE_18T40,
+                "fever": False,
+                "cough": False,
+                "sore_throat": False,
+                "exposure": Covid19Triage.EXPOSURE_NO,
+                "tracing": True,
+                "risk": Covid19Triage.RISK_LOW,
+            },
+            format="json",
+        )
+        profile = HealthCheckUserProfile.objects.get(msisdn="+27820001001")
+        self.assertEqual(profile.province, "ZA-WC")
+        self.assertEqual(profile.city, "cape town")
+        self.assertEqual(profile.age, Covid19Triage.AGE_18T40)
+
 
 class Covid19TriageV2ViewSetTests(Covid19TriageViewSetTests):
     url = reverse("covid19triagev2-list")
@@ -1887,6 +1917,63 @@ class Covid19TriageV2ViewSetTests(Covid19TriageViewSetTests):
         covid19triage = Covid19Triage.objects.get(id=triage_id)
         self.assertEqual(covid19triage.province, "ZA-WC")
         self.assertEqual(covid19triage.city, "cape town")
+
+
+class HealthCheckUserProfileViewSetTests(APITestCase, BaseEventTestCase):
+    url = reverse("healthcheckuserprofile-detail", args=("+27820001001",))
+
+    def test_no_data(self):
+        """
+        Should return a 404 if no data
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="view_healthcheckuserprofile")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_existing_healthchecks(self):
+        """
+        If there's no profile, but existing healthchecks, then it should construct the
+        profile from those healthchecks
+        """
+        Covid19Triage.objects.create(
+            msisdn="+27820001001",
+            first_name="testname",
+            fever=False,
+            cough=False,
+            sore_throat=False,
+            tracing=True,
+        )
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="view_healthcheckuserprofile")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["msisdn"], "+27820001001")
+        self.assertEqual(response.data["first_name"], "testname")
+
+    def test_existing_profile(self):
+        """
+        It should return the existing profile
+        """
+        HealthCheckUserProfile.objects.create(
+            msisdn="+27820001001", first_name="testname"
+        )
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="view_healthcheckuserprofile")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.get(self.url)
+        self.maxDiff = None
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["msisdn"], "+27820001001")
+        self.assertEqual(response.data["first_name"], "testname")
 
 
 class CDUAddressUpdateViewSetTests(APITestCase, BaseEventTestCase):

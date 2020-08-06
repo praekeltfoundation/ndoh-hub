@@ -10,6 +10,7 @@ from eventstore.models import (
     CHWRegistration,
     Covid19Triage,
     EddSwitch,
+    HealthCheckUserProfile,
     IdentificationSwitch,
     LanguageSwitch,
     MSISDNSwitch,
@@ -187,6 +188,12 @@ class Covid19TriageV2Serializer(BaseEventSerializer):
             "data",
         )
         read_only_fields = ("id", "created_by")
+
+
+class HealthCheckUserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HealthCheckUserProfile
+        fields = "__all__"
 
 
 class MSISDNSerializer(serializers.Serializer):

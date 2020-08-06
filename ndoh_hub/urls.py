@@ -17,6 +17,7 @@ from eventstore.views import (
     Covid19TriageV2ViewSet,
     Covid19TriageViewSet,
     EddSwitchViewSet,
+    HealthCheckUserProfileViewSet,
     IdentificationSwitchViewSet,
     LanguageSwitchViewSet,
     MessagesViewSet,
@@ -51,6 +52,7 @@ v2router.register("messages", MessagesViewSet, basename="messages")
 v2router.register("eddswitches", EddSwitchViewSet)
 v2router.register("babydobswitches", BabyDobSwitchViewSet)
 v2router.register("cduaddressupdate", CDUAddressUpdateViewSet)
+v2router.register("healthcheckuserprofile", HealthCheckUserProfileViewSet)
 
 v3router = routers.DefaultRouter()
 v3router.register("covid19triage", Covid19TriageV2ViewSet, basename="covid19triagev2")
