@@ -17,37 +17,29 @@ class Command(BaseCommand):
     )
 
     def handle_channel_migration(self):
-        for each in PublicRegistration.objects.filter(channel=""):
+        for each in PublicRegistration.objects.filter(channel="").iterator():
             contact = rapidpro.get_contacts(uuid=each.contact_id).first()
-            if contact and contact.fields["preferred_channel"] != "":
+            if contact and contact.fields["preferred_channel"] not in ("", None):
                 each.channel = contact.fields["preferred_channel"]
                 each.save(update_fields=["channel"])
-            else:
-                print(each.contact_id)
 
-        for each in PrebirthRegistration.objects.filter(channel=""):
+        for each in PrebirthRegistration.objects.filter(channel="").iterator():
             contact = rapidpro.get_contacts(uuid=each.contact_id).first()
-            if contact and contact.fields["preferred_channel"] != "":
+            if contact and contact.fields["preferred_channel"] not in ("", None):
                 each.channel = contact.fields["preferred_channel"]
                 each.save(update_fields=["channel"])
-            else:
-                print(each.contact_id)
 
-        for each in PostbirthRegistration.objects.filter(channel=""):
+        for each in PostbirthRegistration.objects.filter(channel="").iterator():
             contact = rapidpro.get_contacts(uuid=each.contact_id).first()
-            if contact and contact.fields["preferred_channel"] != "":
+            if contact and contact.fields["preferred_channel"] not in ("", None):
                 each.channel = contact.fields["preferred_channel"]
                 each.save(update_fields=["channel"])
-            else:
-                print(each.contact_id)
 
-        for each in CHWRegistration.objects.filter(channel=""):
+        for each in CHWRegistration.objects.filter(channel="").iterator():
             contact = rapidpro.get_contacts(uuid=each.contact_id).first()
-            if contact and contact.fields["preferred_channel"] != "":
+            if contact and contact.fields["preferred_channel"] not in ("", None):
                 each.channel = contact.fields["preferred_channel"]
                 each.save(update_fields=["channel"])
-            else:
-                print(each.contact_id)
 
     def handle(self, *args, **options):
         self.handle_channel_migration()
