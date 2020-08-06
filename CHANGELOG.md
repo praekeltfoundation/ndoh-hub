@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.23
+1. Add user profiles for healthchecks
+  ([#349](https://github.com/praekeltfoundation/ndoh-hub/pull/349))
+
 ## 0.8.22
 1. Use cache lock to avoid sending duplicate SMSs on WhatsApp failures
   ([#346](https://github.com/praekeltfoundation/ndoh-hub/pull/346))
