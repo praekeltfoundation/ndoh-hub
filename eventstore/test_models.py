@@ -170,7 +170,9 @@ class HealthCheckUserProfileTests(TestCase):
             cough=False,
             sore_throat=False,
             tracing=True,
+            preexisting_condition="no",
         )
         profile = HealthCheckUserProfile.objects.get_or_prefill("+27820001001")
         self.assertEqual(profile.first_name, "oldfirst")
         self.assertEqual(profile.last_name, "newlast")
+        self.assertEqual(profile.preexisting_condition, "no")

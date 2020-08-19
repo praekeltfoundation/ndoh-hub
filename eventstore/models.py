@@ -547,7 +547,7 @@ class HealthCheckUserProfile(models.Model):
             "gender",
             "location",
             "city_location",
-            "preexisting_conditions",
+            "preexisting_condition",
             "rooms_in_household",
             "persons_in_household",
         ]:
