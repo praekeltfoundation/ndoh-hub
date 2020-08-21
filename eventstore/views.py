@@ -41,6 +41,7 @@ from eventstore.serializers import (
     CHWRegistrationSerializer,
     Covid19TriageSerializer,
     Covid19TriageV2Serializer,
+    Covid19TriageV3Serializer,
     EddSwitchSerializer,
     HealthCheckUserProfileSerializer,
     IdentificationSwitchSerializer,
@@ -357,6 +358,13 @@ class Covid19TriageV2ViewSet(Covid19TriageViewSet):
             triage = Covid19Triage.objects.filter(msisdn=msisdn).earliest("timestamp")
             if triage:
                 self._update_data(request.data, triage)
+        return super().create(request, *args, **kwargs)
+
+
+class Covid19TriageV3ViewSet(Covid19TriageV2ViewSet):
+    serializer_class = Covid19TriageV3Serializer
+
+    def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
 
 

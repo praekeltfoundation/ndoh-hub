@@ -15,6 +15,7 @@ from eventstore.views import (
     ChannelSwitchViewSet,
     CHWRegistrationViewSet,
     Covid19TriageV2ViewSet,
+    Covid19TriageV3ViewSet,
     Covid19TriageViewSet,
     EddSwitchViewSet,
     HealthCheckUserProfileViewSet,
@@ -57,6 +58,9 @@ v2router.register("healthcheckuserprofile", HealthCheckUserProfileViewSet)
 v3router = routers.DefaultRouter()
 v3router.register("covid19triage", Covid19TriageV2ViewSet, basename="covid19triagev2")
 
+v4router = routers.DefaultRouter()
+v4router.register("covid19triage", Covid19TriageV3ViewSet, basename="covid19triagev3")
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     url(r"^api/auth/", include("rest_framework.urls", namespace="rest_framework")),
@@ -72,6 +76,7 @@ urlpatterns = [
     url(r"^", include("changes.urls")),
     path("api/v2/", include(v2router.urls)),
     path("api/v3/", include(v3router.urls)),
+    path("api/v4/", include(v4router.urls)),
     path(
         "metrics", internal_only(django_prometheus.ExportToDjangoView), name="metrics"
     ),
