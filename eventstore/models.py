@@ -310,7 +310,9 @@ class Message(models.Model):
 
         labels = [
             l["value"]
-            for l in self.data.get("_vnd", {}).get("v1", {}).get("labels", [])
+            for l in self.data.get("_vnd", {})  # noqa: E741
+            .get("v1", {})
+            .get("labels", [])
         ]
 
         if label in labels:
@@ -427,6 +429,18 @@ class Covid19Triage(models.Model):
         (GENDER_NOT_SAY, "Rather not say"),
     )
 
+    WORK_HEALTHCARE = "healthcare"
+    WORK_EDUCATION = "education"
+    WORK_PORT = "port_of_entry"
+    WORK_OTHER = "other"
+
+    WORK_CHOICES = (
+        (WORK_HEALTHCARE, "Healthcare"),
+        (WORK_EDUCATION, "Education"),
+        (WORK_PORT, "Port of entry"),
+        (WORK_OTHER, "Other"),
+    )
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     deduplication_id = models.CharField(max_length=255, default=uuid.uuid4, unique=True)
     msisdn = models.CharField(max_length=255, validators=[za_phone_number])
@@ -437,6 +451,9 @@ class Covid19Triage(models.Model):
     city = models.CharField(max_length=255)
     age = models.CharField(max_length=5, choices=AGE_CHOICES)
     date_of_birth = models.DateField(blank=True, null=True, default=None)
+    place_of_work = models.CharField(
+        max_length=13, blank=True, null=True, default=None, choices=WORK_CHOICES
+    )
     fever = models.BooleanField()
     cough = models.BooleanField()
     sore_throat = models.BooleanField()

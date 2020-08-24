@@ -42,7 +42,11 @@ from eventstore.models import (
     PublicRegistration,
     ResearchOptinSwitch,
 )
-from eventstore.serializers import Covid19TriageSerializer, Covid19TriageV2Serializer
+from eventstore.serializers import (
+    Covid19TriageSerializer,
+    Covid19TriageV2Serializer,
+    Covid19TriageV3Serializer,
+)
 
 
 class BaseEventTestCase(object):
@@ -1917,6 +1921,91 @@ class Covid19TriageV2ViewSetTests(Covid19TriageViewSetTests):
         covid19triage = Covid19Triage.objects.get(id=triage_id)
         self.assertEqual(covid19triage.province, "ZA-WC")
         self.assertEqual(covid19triage.city, "cape town")
+
+
+class Covid19TriageV3ViewSetTests(Covid19TriageViewSetTests):
+    url = reverse("covid19triagev3-list")
+
+    def test_get_list(self):
+        """
+        Should return the data, filtered by the querystring
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="view_covid19triage"))
+        self.client.force_authenticate(user)
+
+        triage_old = Covid19Triage.objects.create(
+            msisdn="+27820001001",
+            source="USSD",
+            province="ZA-WC",
+            city="Cape Town",
+            age=Covid19Triage.AGE_18T40,
+            fever=False,
+            cough=False,
+            sore_throat=False,
+            exposure=Covid19Triage.EXPOSURE_NO,
+            tracing=True,
+            risk=Covid19Triage.RISK_LOW,
+        )
+        triage_new = Covid19Triage.objects.create(
+            msisdn="+27820001001",
+            source="USSD",
+            province="ZA-WC",
+            city="Cape Town",
+            age=Covid19Triage.AGE_18T40,
+            fever=False,
+            cough=False,
+            sore_throat=False,
+            exposure=Covid19Triage.EXPOSURE_NO,
+            tracing=True,
+            risk=Covid19Triage.RISK_LOW,
+            place_of_work=Covid19Triage.WORK_HEALTHCARE,
+        )
+        response = self.client.get(
+            f"{self.url}?"
+            f"{urlencode({'timestamp_gt': triage_old.timestamp.isoformat()})}"
+        )
+        self.assertEqual(
+            response.data["results"],
+            [Covid19TriageV3Serializer(instance=triage_new).data],
+        )
+        [r] = response.data["results"]
+        r.pop("id")
+        r.pop("deduplication_id")
+        r.pop("timestamp")
+        r.pop("completed_timestamp")
+        self.assertEqual(
+            r,
+            {
+                "msisdn": "+27820001001",
+                "first_name": None,
+                "last_name": None,
+                "source": "USSD",
+                "province": "ZA-WC",
+                "city": "Cape Town",
+                "age": Covid19Triage.AGE_18T40,
+                "date_of_birth": None,
+                "fever": False,
+                "cough": False,
+                "sore_throat": False,
+                "difficulty_breathing": None,
+                "exposure": Covid19Triage.EXPOSURE_NO,
+                "confirmed_contact": None,
+                "tracing": True,
+                "risk": Covid19Triage.RISK_LOW,
+                "gender": "",
+                "location": "",
+                "city_location": None,
+                "muscle_pain": None,
+                "smell": None,
+                "preexisting_condition": "",
+                "rooms_in_household": None,
+                "persons_in_household": None,
+                "created_by": "",
+                "data": {},
+                "place_of_work": Covid19Triage.WORK_HEALTHCARE,
+            },
+        )
 
 
 class HealthCheckUserProfileViewSetTests(APITestCase, BaseEventTestCase):
