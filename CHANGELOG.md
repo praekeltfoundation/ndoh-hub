@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.24
+1. Fix preexisting_conditions/preexisting_condition for user profile
+  ([#350](https://github.com/praekeltfoundation/ndoh-hub/pull/350))
+1. Add place_of_work and new v4 API for it for covid19triage
+  ([#351](https://github.com/praekeltfoundation/ndoh-hub/pull/351))
+
 ## 0.8.23
 1. Add user profiles for healthchecks
   ([#349](https://github.com/praekeltfoundation/ndoh-hub/pull/349))
