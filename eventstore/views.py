@@ -32,6 +32,7 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
+    TBCheck,
 )
 from eventstore.serializers import (
     BabyDobSwitchSerializer,
@@ -54,6 +55,7 @@ from eventstore.serializers import (
     PrebirthRegistrationSerializer,
     PublicRegistrationSerializer,
     ResearchOptinSwitchSerializer,
+    TBCheckSerializer,
     TurnOutboundSerializer,
     WhatsAppWebhookSerializer,
 )
@@ -384,4 +386,10 @@ class HealthCheckUserProfileViewSet(GenericViewSet, RetrieveModelMixin):
 class CDUAddressUpdateViewSet(GenericViewSet, CreateModelMixin):
     queryset = CDUAddressUpdate.objects.all()
     serializer_class = CDUAddressUpdateSerializer
+    permission_classes = (DjangoModelPermissions,)
+
+
+class TBCheckViewSet(GenericViewSet, CreateModelMixin):
+    queryset = TBCheck.objects.all()
+    serializer_class = TBCheckSerializer
     permission_classes = (DjangoModelPermissions,)

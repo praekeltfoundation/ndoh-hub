@@ -20,6 +20,7 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
+    TBCheck,
 )
 from registrations.serializers import MSISDNField
 from registrations.validators import posix_timestamp
@@ -289,5 +290,12 @@ class EddSwitchSerializer(BaseEventSerializer):
 class BabyDobSwitchSerializer(BaseEventSerializer):
     class Meta:
         model = BabyDobSwitch
+        fields = "__all__"
+        read_only_fields = ("id", "created_by")
+
+
+class TBCheckSerializer(BaseEventSerializer):
+    class Meta:
+        model = TBCheck
         fields = "__all__"
         read_only_fields = ("id", "created_by")
