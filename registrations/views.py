@@ -1092,12 +1092,14 @@ class WhatsAppContactCheckViewSet(mixins.CreateModelMixin, viewsets.GenericViewS
     def get_status(self, blocking, msisdn):
         msisdn = msisdn.raw_input
         try:
-            contact = WhatsAppContact.objects.get(msisdn=msisdn)
+            contact = WhatsAppContact.objects.filter(
+                created__gt=timezone.now() - datetime.timedelta(days=7), msisdn=msisdn
+            ).latest("created")
             return contact.api_format
         except WhatsAppContact.DoesNotExist:
             if blocking == "wait":
-                # Default to the contact not existing
-                return {"input": msisdn, "status": "invalid"}
+                # We'll have to do this request in-process, since we have no choice
+                return get_whatsapp_contact(msisdn=msisdn)
             else:
                 get_whatsapp_contact.delay(msisdn=msisdn)
                 return {"input": msisdn, "status": "processing"}

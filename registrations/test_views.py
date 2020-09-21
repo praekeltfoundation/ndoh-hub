@@ -1234,11 +1234,12 @@ class WhatsAppContactCheckViewTests(AuthenticatedAPITestCase):
     def test_get_statuses(self, task):
         """
         Contacts without whatsapp IDs should return invalid, with IDs valid, and no
-        entry in the database, either "processing" for no_wait or "invalid" for wait
+        entry in the database, either "processing" for no_wait or do the lookup for wait
         """
         url = reverse("whatsappcontact-list")
         WhatsAppContact.objects.create(msisdn="0820001001")
         WhatsAppContact.objects.create(msisdn="0820001002", whatsapp_id="27820001002")
+        task.return_value = {"input": "0820001003", "status": "invalid"}
 
         self.normaluser.user_permissions.add(
             Permission.objects.get(name="Can add WhatsApp Contact")
@@ -1260,7 +1261,9 @@ class WhatsAppContactCheckViewTests(AuthenticatedAPITestCase):
                 ]
             },
         )
+        task.assert_called_once_with(msisdn="0820001003")
 
+        task.reset_mock()
         response = self.normalclient.post(
             url,
             data={
@@ -1279,6 +1282,7 @@ class WhatsAppContactCheckViewTests(AuthenticatedAPITestCase):
             },
         )
 
+        task.assert_not_called()
         task.delay.assert_called_once_with(msisdn="0820001003")
 
     def test_prune_contacts_permission_required(self):
