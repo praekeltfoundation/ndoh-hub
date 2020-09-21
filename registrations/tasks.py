@@ -2,7 +2,7 @@ import json
 import random
 import re
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import partial
 
 import phonenumbers
@@ -14,7 +14,7 @@ from celery.utils.log import get_task_logger
 from demands import HTTPServiceError
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.utils import translation
+from django.utils import timezone, translation
 from requests.exceptions import ConnectionError, HTTPError, RequestException
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.service_rating import ServiceRatingApiClient
@@ -23,7 +23,7 @@ from wabclient.exceptions import AddressException
 
 from ndoh_hub import utils
 from ndoh_hub.celery import app
-from ndoh_hub.utils import rapidpro
+from ndoh_hub.utils import rapidpro, redis
 
 from .models import ClinicCode, JembiSubmission, Registration, Source, WhatsAppContact
 
@@ -1315,13 +1315,27 @@ def get_whatsapp_contact(msisdn):
     Args:
         msisdn (str): The MSISDN to perform the lookup for.
     """
-    try:
-        whatsapp_id = utils.wab_client.get_address(msisdn)
-    except AddressException:
-        whatsapp_id = ""
-    WhatsAppContact.objects.update_or_create(
-        msisdn=msisdn, defaults={"whatsapp_id": whatsapp_id}
-    )
+    with redis.lock(f"wacontact:{msisdn}", timeout=10):
+        # Try to get existing
+        try:
+            contact = (
+                WhatsAppContact.objects.filter(
+                    created__gt=timezone.now() - timedelta(days=7)
+                )
+                .filter(msisdn=msisdn)
+                .latest("created")
+            )
+            return contact.api_format
+        except WhatsAppContact.DoesNotExist:
+            pass
+
+        # If no existing, fetch status from API and create
+        try:
+            whatsapp_id = utils.wab_client.get_address(msisdn)
+        except AddressException:
+            whatsapp_id = ""
+        contact = WhatsAppContact.objects.create(msisdn=msisdn, whatsapp_id=whatsapp_id)
+        return contact.api_format
 
 
 @app.task(

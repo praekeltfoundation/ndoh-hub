@@ -1127,18 +1127,9 @@ class GetWhatsAppContactTests(TestCase):
     @responses.activate
     def test_contact_exists_in_database(self):
         """
-        If the contact already exists in the database, it should be updated
+        If the contact already exists in the database, it should be returned
         """
-        WhatsAppContact.objects.create(msisdn="+27820001001", whatsapp_id="wrong")
-        responses.add(
-            responses.POST,
-            "http://engage/v1/contacts",
-            json={
-                "contacts": [
-                    {"input": "+27820001001", "status": "valid", "wa_id": "27820001001"}
-                ]
-            },
-        )
+        WhatsAppContact.objects.create(msisdn="+27820001001", whatsapp_id="27820001001")
         get_whatsapp_contact("+27820001001")
 
         [contact] = WhatsAppContact.objects.all()

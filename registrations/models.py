@@ -225,9 +225,7 @@ class WhatsAppContact(models.Model):
     Caches the results of the WhatsApp contact check
     """
 
-    msisdn = models.CharField(
-        max_length=100, primary_key=True, help_text="The MSISDN of the contact"
-    )
+    msisdn = models.CharField(max_length=100, help_text="The MSISDN of the contact")
     whatsapp_id = models.CharField(
         max_length=100, blank=True, help_text="The WhatsApp ID of the contact"
     )
@@ -242,6 +240,7 @@ class WhatsAppContact(models.Model):
     class Meta:
         permissions = (("can_prune_whatsappcontact", "Can prune WhatsApp contact"),)
         verbose_name = "WhatsApp Contact"
+        indexes = [models.Index(fields=["msisdn"])]
 
 
 class ClinicCode(models.Model):
