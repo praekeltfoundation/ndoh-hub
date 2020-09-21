@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.25
+1. Add bulk archive script
+  ([#337](https://github.com/praekeltfoundation/ndoh-hub/pull/337))
+1. Modify WhatsApp contact lookup to more closely mirror actual API
+  ([#353](https://github.com/praekeltfoundation/ndoh-hub/pull/353))
+
 ## 0.8.24
 1. Fix preexisting_conditions/preexisting_condition for user profile
   ([#350](https://github.com/praekeltfoundation/ndoh-hub/pull/350))
