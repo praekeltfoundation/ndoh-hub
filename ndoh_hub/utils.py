@@ -10,6 +10,7 @@ import phonenumbers
 import pkg_resources
 import six
 from django.conf import settings
+from django_redis import get_redis_connection
 from rest_framework.exceptions import AuthenticationFailed
 from seed_services_client.identity_store import IdentityStoreApiClient
 from seed_services_client.message_sender import MessageSenderApiClient
@@ -48,6 +49,8 @@ if settings.EXTERNAL_REGISTRATIONS_V2:
     rapidpro = TembaClient(settings.RAPIDPRO_URL, settings.RAPIDPRO_TOKEN)
 
 VERSION = pkg_resources.require("ndoh-hub")[0].version
+
+redis = get_redis_connection("redis")
 
 
 def get_identity_msisdn(registrant_id):
