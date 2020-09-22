@@ -250,7 +250,7 @@ class ClinicCode(models.Model):
     name = models.CharField(max_length=255)
 
     class Meta:
-        indexes = [models.Index(fields=["code"])]
+        indexes = [models.Index(fields=["value"])]
 
 
 class JembiSubmission(models.Model):
