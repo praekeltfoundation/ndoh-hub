@@ -249,6 +249,9 @@ class ClinicCode(models.Model):
     uid = models.CharField(max_length=255, primary_key=True)
     name = models.CharField(max_length=255)
 
+    class Meta:
+        indexes = [models.Index(fields=["code"])]
+
 
 class JembiSubmission(models.Model):
     path = models.CharField(max_length=255)
