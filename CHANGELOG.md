@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.26
+1. Add index for clinic code lookups
+  ([#354](https://github.com/praekeltfoundation/ndoh-hub/pull/337))
+
 ## 0.8.25
 1. Add bulk archive script
   ([#337](https://github.com/praekeltfoundation/ndoh-hub/pull/337))
