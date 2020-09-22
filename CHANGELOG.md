@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.8.27
+1. Change clinic code lookup index to be on the correct field
+
 ## 0.8.26
 1. Add index for clinic code lookups
   ([#354](https://github.com/praekeltfoundation/ndoh-hub/pull/337))
