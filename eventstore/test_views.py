@@ -27,6 +27,7 @@ from eventstore.models import (
     ChannelSwitch,
     CHWRegistration,
     Covid19Triage,
+    DBEOnBehalfOfProfile,
     DeliveryFailure,
     EddSwitch,
     Event,
@@ -2122,3 +2123,72 @@ class CDUAddressUpdateViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(cduAddressUpdate.street_name, "High Level Road")
         self.assertEqual(cduAddressUpdate.street_number, "197")
         self.assertEqual(cduAddressUpdate.msisdn, "+278564546")
+
+
+class DBEOnBehalfOfProfileTests(APITestCase):
+    url = reverse("dbeonbehalfofprofile-list")
+
+    def create_profile(self, **kwargs):
+        default = {
+            "msisdn": "+27820001001",
+            "age": 12,
+            "gender": Covid19Triage.GENDER_MALE,
+            "province": "ZA-WC",
+            "city": "Cape Town",
+            "school": "Bergvliet High School",
+            "school_emis": "105310201",
+            "preexisting_condition": Covid19Triage.EXPOSURE_NO,
+        }
+        default.update(kwargs)
+        return DBEOnBehalfOfProfile.objects.create(**default)
+
+    def test_authentication_required(self):
+        """
+        There must be an authenticated user to make the request
+        """
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_permission_required(self):
+        """
+        The authenticated user must have permission to access the endpoint
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_get_no_filter(self):
+        """
+        Should return all profiles
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="view_dbeonbehalfofprofile")
+        )
+        self.client.force_authenticate(user)
+
+        self.create_profile(msisdn="+27820001001")
+        self.create_profile(msisdn="+27820001002")
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.json()["results"]), 2)
+
+    def test_get_msisdn_filter(self):
+        """
+        Should only return the profiles associated with that MSISDN
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="view_dbeonbehalfofprofile")
+        )
+        self.client.force_authenticate(user)
+
+        self.create_profile(msisdn="+27820001001")
+        self.create_profile(msisdn="+27820001001")
+        self.create_profile(msisdn="+27820001002")
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.json()["results"]), 2)

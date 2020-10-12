@@ -594,3 +594,30 @@ class CDUAddressUpdate(models.Model):
     suburb = models.CharField(max_length=255)
     street_name = models.CharField(max_length=255)
     street_number = models.CharField(max_length=255)
+
+
+class DBEOnBehalfOfProfile(models.Model):
+    msisdn = models.CharField(max_length=255, validators=[za_phone_number])
+    name = models.CharField(max_length=255)
+    age = models.IntegerField()
+    gender = models.CharField(max_length=7, choices=Covid19Triage.GENDER_CHOICES)
+    province = models.CharField(max_length=6, choices=Covid19Triage.PROVINCE_CHOICES)
+    city = models.CharField(max_length=255)
+    city_location = models.CharField(
+        max_length=255, blank=True, default="", validators=[geographic_coordinate]
+    )
+    location = models.CharField(
+        max_length=255, blank=True, default="", validators=[geographic_coordinate]
+    )
+    school = models.CharField(max_length=255)
+    school_emis = models.CharField(max_length=255)
+    preexisting_condition = models.CharField(
+        max_length=9, choices=Covid19Triage.EXPOSURE_CHOICES
+    )
+    obesity = models.BooleanField(null=True, default=None)
+    diabetes = models.BooleanField(null=True, default=None)
+    hypertension = models.BooleanField(null=True, default=None)
+    cardio = models.BooleanField(null=True, default=None)
+
+    class Meta:
+        indexes = [models.Index(fields=["msisdn"])]
