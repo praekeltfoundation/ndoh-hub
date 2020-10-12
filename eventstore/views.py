@@ -319,12 +319,18 @@ class Covid19TriageViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
         profile.update_from_healthcheck(instance)
         profile.save()
 
+        if (
+            instance.created_by == "whatsapp_dbe_healthcheck"
+            and instance.data.get("profile") == "parent"
+        ):
+            DBEOnBehalfOfProfile.objects.update_or_create_from_healthcheck(instance)
+
         return instance
 
     def create(self, *args, **kwargs):
         try:
             return super().create(*args, **kwargs)
-        except IntegrityError:
+        except IntegrityError as e:
             # We already have this entry
             return Response(status=status.HTTP_200_OK)
 

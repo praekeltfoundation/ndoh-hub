@@ -1792,6 +1792,63 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(profile.city, "cape town")
         self.assertEqual(profile.age, Covid19Triage.AGE_18T40)
 
+    def test_creates_dbe_user_profile(self):
+        """
+        If this is a DBE healthcheck from a parent profile, then a DBE user profile
+        should be created
+        """
+        user = get_user_model().objects.create_user("whatsapp_dbe_healthcheck")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+        self.client.force_authenticate(user)
+        result = self.client.post(
+            self.url,
+            {
+                "msisdn": "27820001001",
+                "source": "WhatsApp",
+                "gender": Covid19Triage.GENDER_NOT_SAY,
+                "province": "ZA-WC",
+                "city": "cape town",
+                "city_location": "",
+                "location": "",
+                "age": Covid19Triage.AGE_18T40,
+                "fever": False,
+                "cough": False,
+                "sore_throat": False,
+                "exposure": Covid19Triage.EXPOSURE_NO,
+                "tracing": True,
+                "risk": Covid19Triage.RISK_LOW,
+                "preexisting_condition": Covid19Triage.EXPOSURE_NOT_SURE,
+                "data": {
+                    "profile": "parent",
+                    "age": 23,
+                    "name": "test name",
+                    "school_name": "BERGVLIET HIGH SCHOOL",
+                    "school_emis": "12345",
+                    "obesity": False,
+                    "diabetes": None,
+                    "hypertension": True,
+                    "cardio": False,
+                },
+            },
+            format="json",
+        )
+        self.assertEqual(result.status_code, status.HTTP_201_CREATED)
+        [profile] = DBEOnBehalfOfProfile.objects.filter(msisdn="+27820001001")
+        self.assertEqual(profile.name, "test name")
+        self.assertEqual(profile.age, 23)
+        self.assertEqual(profile.gender, Covid19Triage.GENDER_NOT_SAY)
+        self.assertEqual(profile.province, "ZA-WC")
+        self.assertEqual(profile.city, "cape town")
+        self.assertEqual(profile.city_location, "")
+        self.assertEqual(profile.location, "")
+        self.assertEqual(profile.school, "BERGVLIET HIGH SCHOOL")
+        self.assertEqual(profile.school_emis, "12345")
+        self.assertEqual(profile.preexisting_condition, Covid19Triage.EXPOSURE_NOT_SURE)
+        self.assertEqual(profile.obesity, False)
+        self.assertEqual(profile.diabetes, None)
+        self.assertEqual(profile.hypertension, True)
+        self.assertEqual(profile.cardio, False)
+
 
 class Covid19TriageV2ViewSetTests(Covid19TriageViewSetTests):
     url = reverse("covid19triagev2-list")
