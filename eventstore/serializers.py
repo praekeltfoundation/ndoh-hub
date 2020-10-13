@@ -9,6 +9,7 @@ from eventstore.models import (
     ChannelSwitch,
     CHWRegistration,
     Covid19Triage,
+    DBEOnBehalfOfProfile,
     EddSwitch,
     HealthCheckUserProfile,
     IdentificationSwitch,
@@ -291,3 +292,9 @@ class BabyDobSwitchSerializer(BaseEventSerializer):
         model = BabyDobSwitch
         fields = "__all__"
         read_only_fields = ("id", "created_by")
+
+
+class DBEOnBehalfOfProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DBEOnBehalfOfProfile
+        fields = "__all__"

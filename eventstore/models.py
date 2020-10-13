@@ -594,3 +594,60 @@ class CDUAddressUpdate(models.Model):
     suburb = models.CharField(max_length=255)
     street_name = models.CharField(max_length=255)
     street_number = models.CharField(max_length=255)
+
+
+class DBEOnBehalfOfProfileManager(models.Manager):
+    def update_or_create_from_healthcheck(
+        self, healthcheck: Covid19Triage
+    ) -> "DBEOnBehalfOfProfile":
+        """
+        Either updates an existing profile, or creates a new one.
+        """
+        return self.update_or_create(
+            msisdn=healthcheck.msisdn,
+            name=healthcheck.data.get("name"),
+            defaults={
+                "age": healthcheck.data.get("age"),
+                "gender": healthcheck.gender,
+                "province": healthcheck.province,
+                "city": healthcheck.city,
+                "city_location": healthcheck.city_location or "",
+                "location": healthcheck.location,
+                "school": healthcheck.data.get("school_name"),
+                "school_emis": healthcheck.data.get("school_emis"),
+                "preexisting_condition": healthcheck.preexisting_condition,
+                "obesity": healthcheck.data.get("obesity"),
+                "diabetes": healthcheck.data.get("diabetes"),
+                "hypertension": healthcheck.data.get("hypertension"),
+                "cardio": healthcheck.data.get("cardio"),
+            },
+        )
+
+
+class DBEOnBehalfOfProfile(models.Model):
+    msisdn = models.CharField(max_length=255, validators=[za_phone_number])
+    name = models.CharField(max_length=255)
+    age = models.IntegerField()
+    gender = models.CharField(max_length=7, choices=Covid19Triage.GENDER_CHOICES)
+    province = models.CharField(max_length=6, choices=Covid19Triage.PROVINCE_CHOICES)
+    city = models.CharField(max_length=255)
+    city_location = models.CharField(
+        max_length=255, blank=True, default="", validators=[geographic_coordinate]
+    )
+    location = models.CharField(
+        max_length=255, blank=True, default="", validators=[geographic_coordinate]
+    )
+    school = models.CharField(max_length=255)
+    school_emis = models.CharField(max_length=255)
+    preexisting_condition = models.CharField(
+        max_length=9, choices=Covid19Triage.EXPOSURE_CHOICES
+    )
+    obesity = models.BooleanField(null=True, default=None)
+    diabetes = models.BooleanField(null=True, default=None)
+    hypertension = models.BooleanField(null=True, default=None)
+    cardio = models.BooleanField(null=True, default=None)
+
+    objects = DBEOnBehalfOfProfileManager()
+
+    class Meta:
+        indexes = [models.Index(fields=["msisdn"])]

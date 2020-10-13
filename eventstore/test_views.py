@@ -27,6 +27,7 @@ from eventstore.models import (
     ChannelSwitch,
     CHWRegistration,
     Covid19Triage,
+    DBEOnBehalfOfProfile,
     DeliveryFailure,
     EddSwitch,
     Event,
@@ -1791,6 +1792,63 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(profile.city, "cape town")
         self.assertEqual(profile.age, Covid19Triage.AGE_18T40)
 
+    def test_creates_dbe_user_profile(self):
+        """
+        If this is a DBE healthcheck from a parent profile, then a DBE user profile
+        should be created
+        """
+        user = get_user_model().objects.create_user("whatsapp_dbe_healthcheck")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+        self.client.force_authenticate(user)
+        result = self.client.post(
+            self.url,
+            {
+                "msisdn": "27820001001",
+                "source": "WhatsApp",
+                "gender": Covid19Triage.GENDER_NOT_SAY,
+                "province": "ZA-WC",
+                "city": "cape town",
+                "city_location": "",
+                "location": "",
+                "age": Covid19Triage.AGE_18T40,
+                "fever": False,
+                "cough": False,
+                "sore_throat": False,
+                "exposure": Covid19Triage.EXPOSURE_NO,
+                "tracing": True,
+                "risk": Covid19Triage.RISK_LOW,
+                "preexisting_condition": Covid19Triage.EXPOSURE_NOT_SURE,
+                "data": {
+                    "profile": "parent",
+                    "age": 23,
+                    "name": "test name",
+                    "school_name": "BERGVLIET HIGH SCHOOL",
+                    "school_emis": "12345",
+                    "obesity": False,
+                    "diabetes": None,
+                    "hypertension": True,
+                    "cardio": False,
+                },
+            },
+            format="json",
+        )
+        self.assertEqual(result.status_code, status.HTTP_201_CREATED)
+        [profile] = DBEOnBehalfOfProfile.objects.filter(msisdn="+27820001001")
+        self.assertEqual(profile.name, "test name")
+        self.assertEqual(profile.age, 23)
+        self.assertEqual(profile.gender, Covid19Triage.GENDER_NOT_SAY)
+        self.assertEqual(profile.province, "ZA-WC")
+        self.assertEqual(profile.city, "cape town")
+        self.assertEqual(profile.city_location, "")
+        self.assertEqual(profile.location, "")
+        self.assertEqual(profile.school, "BERGVLIET HIGH SCHOOL")
+        self.assertEqual(profile.school_emis, "12345")
+        self.assertEqual(profile.preexisting_condition, Covid19Triage.EXPOSURE_NOT_SURE)
+        self.assertEqual(profile.obesity, False)
+        self.assertEqual(profile.diabetes, None)
+        self.assertEqual(profile.hypertension, True)
+        self.assertEqual(profile.cardio, False)
+
 
 class Covid19TriageV2ViewSetTests(Covid19TriageViewSetTests):
     url = reverse("covid19triagev2-list")
@@ -2122,3 +2180,72 @@ class CDUAddressUpdateViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(cduAddressUpdate.street_name, "High Level Road")
         self.assertEqual(cduAddressUpdate.street_number, "197")
         self.assertEqual(cduAddressUpdate.msisdn, "+278564546")
+
+
+class DBEOnBehalfOfProfileTests(APITestCase):
+    url = reverse("dbeonbehalfofprofile-list")
+
+    def create_profile(self, **kwargs):
+        default = {
+            "msisdn": "+27820001001",
+            "age": 12,
+            "gender": Covid19Triage.GENDER_MALE,
+            "province": "ZA-WC",
+            "city": "Cape Town",
+            "school": "Bergvliet High School",
+            "school_emis": "105310201",
+            "preexisting_condition": Covid19Triage.EXPOSURE_NO,
+        }
+        default.update(kwargs)
+        return DBEOnBehalfOfProfile.objects.create(**default)
+
+    def test_authentication_required(self):
+        """
+        There must be an authenticated user to make the request
+        """
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_permission_required(self):
+        """
+        The authenticated user must have permission to access the endpoint
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_get_no_filter(self):
+        """
+        Should return all profiles
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="view_dbeonbehalfofprofile")
+        )
+        self.client.force_authenticate(user)
+
+        self.create_profile(msisdn="+27820001001")
+        self.create_profile(msisdn="+27820001002")
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.json()["results"]), 2)
+
+    def test_get_msisdn_filter(self):
+        """
+        Should only return the profiles associated with that MSISDN
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="view_dbeonbehalfofprofile")
+        )
+        self.client.force_authenticate(user)
+
+        self.create_profile(msisdn="+27820001001")
+        self.create_profile(msisdn="+27820001001")
+        self.create_profile(msisdn="+27820001002")
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.json()["results"]), 2)

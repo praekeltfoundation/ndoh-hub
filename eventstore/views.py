@@ -19,6 +19,7 @@ from eventstore.models import (
     ChannelSwitch,
     CHWRegistration,
     Covid19Triage,
+    DBEOnBehalfOfProfile,
     EddSwitch,
     Event,
     HealthCheckUserProfile,
@@ -42,6 +43,7 @@ from eventstore.serializers import (
     Covid19TriageSerializer,
     Covid19TriageV2Serializer,
     Covid19TriageV3Serializer,
+    DBEOnBehalfOfProfileSerializer,
     EddSwitchSerializer,
     HealthCheckUserProfileSerializer,
     IdentificationSwitchSerializer,
@@ -67,6 +69,19 @@ from ndoh_hub.utils import TokenAuthQueryString, validate_signature
 from registrations.views import CursorPaginationFactory
 
 
+class DjangoViewModelPermissions(DjangoModelPermissions):
+    # DjangoModelPermissions, but also with a restriction on viewing data
+    perms_map = {
+        "GET": ["%(app_label)s.view_%(model_name)s"],
+        "OPTIONS": ["%(app_label)s.view_%(model_name)s"],
+        "HEAD": ["%(app_label)s.view_%(model_name)s"],
+        "POST": ["%(app_label)s.add_%(model_name)s"],
+        "PUT": ["%(app_label)s.change_%(model_name)s"],
+        "PATCH": ["%(app_label)s.change_%(model_name)s"],
+        "DELETE": ["%(app_label)s.delete_%(model_name)s"],
+    }
+
+
 class MessagesViewSet(GenericViewSet):
     """
     Receives webhooks in the [format specified by Turn][format] and stores them.
@@ -80,7 +95,7 @@ class MessagesViewSet(GenericViewSet):
     """
 
     queryset = Message.objects.all()
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (DjangoViewModelPermissions,)
     authentication_classes = (TokenAuthQueryString, TokenAuthentication)
     serializer_class = serializers.Serializer
 
@@ -183,7 +198,7 @@ class MessagesViewSet(GenericViewSet):
 class OptOutViewSet(GenericViewSet, CreateModelMixin):
     queryset = OptOut.objects.all()
     serializer_class = OptOutSerializer
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (DjangoViewModelPermissions,)
 
     def perform_create(self, serializer):
         optout = serializer.save()
@@ -194,37 +209,37 @@ class OptOutViewSet(GenericViewSet, CreateModelMixin):
 class BabySwitchViewSet(GenericViewSet, CreateModelMixin):
     queryset = BabySwitch.objects.all()
     serializer_class = BabySwitchSerializer
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (DjangoViewModelPermissions,)
 
 
 class ChannelSwitchViewSet(GenericViewSet, CreateModelMixin):
     queryset = ChannelSwitch.objects.all()
     serializer_class = ChannelSwitchSerializer
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (DjangoViewModelPermissions,)
 
 
 class MSISDNSwitchViewSet(GenericViewSet, CreateModelMixin):
     queryset = MSISDNSwitch.objects.all()
     serializer_class = MSISDNSwitchSerializer
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (DjangoViewModelPermissions,)
 
 
 class LanguageSwitchViewSet(GenericViewSet, CreateModelMixin):
     queryset = LanguageSwitch.objects.all()
     serializer_class = LanguageSwitchSerializer
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (DjangoViewModelPermissions,)
 
 
 class IdentificationSwitchViewSet(GenericViewSet, CreateModelMixin):
     queryset = IdentificationSwitch.objects.all()
     serializer_class = IdentificationSwitchSerializer
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (DjangoViewModelPermissions,)
 
 
 class ResearchOptinSwitchViewSet(GenericViewSet, CreateModelMixin):
     queryset = ResearchOptinSwitch.objects.all()
     serializer_class = ResearchOptinSwitchSerializer
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (DjangoViewModelPermissions,)
 
 
 class BaseRegistrationViewSet(GenericViewSet, CreateModelMixin):
@@ -237,43 +252,43 @@ class BaseRegistrationViewSet(GenericViewSet, CreateModelMixin):
 class PublicRegistrationViewSet(BaseRegistrationViewSet):
     queryset = PublicRegistration.objects.all()
     serializer_class = PublicRegistrationSerializer
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (DjangoViewModelPermissions,)
 
 
 class CHWRegistrationViewSet(BaseRegistrationViewSet):
     queryset = CHWRegistration.objects.all()
     serializer_class = CHWRegistrationSerializer
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (DjangoViewModelPermissions,)
 
 
 class PrebirthRegistrationViewSet(BaseRegistrationViewSet):
     queryset = PrebirthRegistration.objects.all()
     serializer_class = PrebirthRegistrationSerializer
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (DjangoViewModelPermissions,)
 
 
 class PostbirthRegistrationViewSet(BaseRegistrationViewSet):
     queryset = PostbirthRegistration.objects.all()
     serializer_class = PostbirthRegistrationSerializer
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (DjangoViewModelPermissions,)
 
 
 class PMTCTRegistrationViewSet(BaseRegistrationViewSet):
     queryset = PMTCTRegistration.objects.all()
     serializer_class = PMTCTRegistrationSerializer
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (DjangoViewModelPermissions,)
 
 
 class EddSwitchViewSet(GenericViewSet, CreateModelMixin):
     queryset = EddSwitch.objects.all()
     serializer_class = EddSwitchSerializer
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (DjangoViewModelPermissions,)
 
 
 class BabyDobSwitchViewSet(GenericViewSet, CreateModelMixin):
     queryset = BabyDobSwitch.objects.all()
     serializer_class = BabyDobSwitchSerializer
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (DjangoViewModelPermissions,)
 
 
 class Covid19TriageFilter(filters.FilterSet):
@@ -287,7 +302,7 @@ class Covid19TriageFilter(filters.FilterSet):
 class Covid19TriageViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
     queryset = Covid19Triage.objects.all()
     serializer_class = Covid19TriageSerializer
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (DjangoViewModelPermissions,)
     pagination_class = CursorPaginationFactory("timestamp")
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = Covid19TriageFilter
@@ -304,12 +319,18 @@ class Covid19TriageViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
         profile.update_from_healthcheck(instance)
         profile.save()
 
+        if (
+            instance.created_by == "whatsapp_dbe_healthcheck"
+            and instance.data.get("profile") == "parent"
+        ):
+            DBEOnBehalfOfProfile.objects.update_or_create_from_healthcheck(instance)
+
         return instance
 
     def create(self, *args, **kwargs):
         try:
             return super().create(*args, **kwargs)
-        except IntegrityError:
+        except IntegrityError as e:
             # We already have this entry
             return Response(status=status.HTTP_200_OK)
 
@@ -371,7 +392,7 @@ class Covid19TriageV3ViewSet(Covid19TriageV2ViewSet):
 class HealthCheckUserProfileViewSet(GenericViewSet, RetrieveModelMixin):
     queryset = HealthCheckUserProfile.objects.all()
     serializer_class = HealthCheckUserProfileSerializer
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (DjangoViewModelPermissions,)
 
     def get_object(self):
         obj = HealthCheckUserProfile.objects.get_or_prefill(msisdn=self.kwargs["pk"])
@@ -384,4 +405,18 @@ class HealthCheckUserProfileViewSet(GenericViewSet, RetrieveModelMixin):
 class CDUAddressUpdateViewSet(GenericViewSet, CreateModelMixin):
     queryset = CDUAddressUpdate.objects.all()
     serializer_class = CDUAddressUpdateSerializer
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (DjangoViewModelPermissions,)
+
+
+class DBEOnBehalfOfProfileViewSet(GenericViewSet, ListModelMixin):
+    queryset = DBEOnBehalfOfProfile.objects.all()
+    serializer_class = DBEOnBehalfOfProfileSerializer
+    permission_classes = (DjangoViewModelPermissions,)
+    pagination_class = CursorPaginationFactory("id")
+
+    def get_queryset(self):
+        queryset = self.queryset
+        msisdn = self.request.query_params.get("msisdn", None)
+        if msisdn is not None:
+            queryset = queryset.filter(msisdn=msisdn)
+        return queryset
