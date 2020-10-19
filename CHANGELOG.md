@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.28
+1. DBE multiple child profiles
+  ([#355](https://github.com/praekeltfoundation/ndoh-hub/pull/355))
+
 ## 0.8.27
 1. Change clinic code lookup index to be on the correct field
 
