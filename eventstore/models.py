@@ -620,6 +620,12 @@ class DBEOnBehalfOfProfileManager(models.Manager):
                 "diabetes": healthcheck.data.get("diabetes"),
                 "hypertension": healthcheck.data.get("hypertension"),
                 "cardio": healthcheck.data.get("cardio"),
+                "asthma": healthcheck.data.get("asthma"),
+                "tb": healthcheck.data.get("tb"),
+                "pregnant": healthcheck.data.get("pregnant"),
+                "respiratory": healthcheck.data.get("respiratory"),
+                "cardiac": healthcheck.data.get("cardiac"),
+                "immuno": healthcheck.data.get("immuno"),
             },
         )
 
@@ -646,6 +652,12 @@ class DBEOnBehalfOfProfile(models.Model):
     diabetes = models.BooleanField(null=True, default=None)
     hypertension = models.BooleanField(null=True, default=None)
     cardio = models.BooleanField(null=True, default=None)
+    asthma = models.BooleanField(null=True, default=None)
+    tb = models.BooleanField(null=True, default=None)
+    pregnant = models.BooleanField(null=True, default=None)
+    respiratory = models.BooleanField(null=True, default=None)
+    cardiac = models.BooleanField(null=True, default=None)
+    immuno = models.BooleanField(null=True, default=None)
 
     objects = DBEOnBehalfOfProfileManager()
 
