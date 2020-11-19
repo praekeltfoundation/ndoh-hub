@@ -10,8 +10,12 @@ jobs:
         image: postgres:9.6-alpine
         env:
           POSTGRES_DB: ndoh_hub
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
+    env:
+      HUB_DATABASE: postgres://postgres:postgres@localhost:5432/ndoh_hub
     steps:
       - uses: actions/checkout@v2
       - name: Install gettext
