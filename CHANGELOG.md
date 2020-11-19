@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.29
+1. DBE expanded comorbidities
+  ([#356](https://github.com/praekeltfoundation/ndoh-hub/pull/356))
+
 ## 0.8.28
 1. DBE multiple child profiles
   ([#355](https://github.com/praekeltfoundation/ndoh-hub/pull/355))
