@@ -7,13 +7,17 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:9.6-alpine
+        image: postgres:9.6
         env:
           POSTGRES_DB: ndoh_hub
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
+      redis:
+        image: redis:6.0
+        ports:
+          - 6379:6379
     env:
       HUB_DATABASE: postgres://postgres:postgres@localhost:5432/ndoh_hub
     steps:
