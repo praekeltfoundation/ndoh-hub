@@ -32,7 +32,6 @@ jobs:
         run: |
           flake8
           mypy .
-          createdb ndoh_hub
           python manage.py makemigrations registrations changes --dry-run | grep 'No changes detected' || (echo 'There are changes which require migrations.' && exit 1)
           black --check .
           isort -c -rc .
