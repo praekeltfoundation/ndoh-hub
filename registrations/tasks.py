@@ -1315,6 +1315,8 @@ def get_whatsapp_contact(msisdn):
     Args:
         msisdn (str): The MSISDN to perform the lookup for.
     """
+    if redis.get(f"wacontact:{msisdn}"):
+        return
     with redis.lock(f"wacontact:{msisdn}", timeout=10):
         # Try to get existing
         try:
