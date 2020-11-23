@@ -1301,7 +1301,7 @@ http_request_with_retries = HTTPRequestWithRetries()
 
 
 @app.task(
-    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, HTTPError),
     retry_backoff=True,
     max_retries=15,
     acks_late=True,
@@ -1315,6 +1315,8 @@ def get_whatsapp_contact(msisdn):
     Args:
         msisdn (str): The MSISDN to perform the lookup for.
     """
+    if redis.get(f"wacontact:{msisdn}"):
+        return
     with redis.lock(f"wacontact:{msisdn}", timeout=10):
         # Try to get existing
         try:
