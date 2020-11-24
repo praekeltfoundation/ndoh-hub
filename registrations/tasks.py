@@ -1317,7 +1317,7 @@ def get_whatsapp_contact(msisdn):
     """
     if redis.get(f"wacontact:{msisdn}"):
         return
-    with redis.lock(f"wacontact:{msisdn}", timeout=10):
+    with redis.lock(f"wacontact:{msisdn}", timeout=15):
         # Try to get existing
         try:
             contact = (
