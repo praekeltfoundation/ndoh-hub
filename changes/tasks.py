@@ -1393,12 +1393,12 @@ class PushOptoutToIdentityStore(Task):
                     raise self.retry(exc=e)
                 else:
                     self.log.error(
-                        "Error when posting to IdentityStore. Payload: %r" % (payload)
+                        "Error when posting to IdentityStore. Payload: %r" % payload
                     )
                     raise e
-            except (Exception,) as e:
+            except (Exception,):
                 self.log.error(
-                    "Problem posting Optout %s JSON to IdentityStore" % (change_id),
+                    "Problem posting Optout %s JSON to IdentityStore" % change_id,
                     exc_info=True,
                 )
 
@@ -1765,7 +1765,7 @@ def get_text_or_caption_from_turn_message(message: dict) -> str:
         return message["text"]["body"]
     except KeyError:
         pass
-    for message_type in ("image", "document", "audio", "video", "voice"):
+    for message_type in ("image", "document", "audio", "video", "voice", "sticker"):
         try:
             return message[message_type].get("caption", "<{}>".format(message_type))
         except KeyError:
