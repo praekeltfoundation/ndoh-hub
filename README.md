@@ -256,7 +256,7 @@ NDOH Registration and Change service for MomConnect and NurseConnect
 ## Releasing
 
 Releasing is done by building a new docker image. This is done automatically as
-part of the travis build.
+part of the github actions build.
 
 For every merge into develop, a new versioned develop release is created, with
 the tag of the commit has.
