@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.31
+1. Handle sticker message type from turn
+2. Remove travis.yml
+  ([#359](https://github.com/praekeltfoundation/ndoh-hub/pull/359))
+
 ## 0.8.30
 1. Retry task on HTTPError from turn
   ([#358](https://github.com/praekeltfoundation/ndoh-hub/pull/358))
