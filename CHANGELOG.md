@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.32
+1. Fix LockNotOwnedError on get_whatsapp_contact
+  ([#360](https://github.com/praekeltfoundation/ndoh-hub/pull/360))
+
 ## 0.8.31
 1. Handle sticker message type from turn
 2. Remove travis.yml
