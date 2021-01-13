@@ -75,3 +75,5 @@ local_settings.py
 .DS_Store
 
 scripts/exports/
+
+celerybeat-schedule
