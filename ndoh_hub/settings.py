@@ -251,8 +251,8 @@ HANDLE_EXPIRED_HELPDESK_CONTACTS_HOUR = env.str(
     "HANDLE_EXPIRED_HELPDESK_CONTACTS_HOUR", "3"
 )
 
-CELERYBEAT_SCHEDULE = {
-    "handle_expired_helpdesk_contacts": {
+CELERY_BEAT_SCHEDULE = {
+    "handle-expired-helpdesk-contacts": {
         "task": "eventstore.tasks.handle_expired_helpdesk_contacts",
         "schedule": crontab(minute="0", hour=HANDLE_EXPIRED_HELPDESK_CONTACTS_HOUR),
     }
