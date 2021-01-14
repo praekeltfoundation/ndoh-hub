@@ -3,6 +3,7 @@ from django.core.paginator import Paginator
 from django.db import OperationalError, connection, transaction
 from django.utils.functional import cached_property
 
+from eventstore.forms import MomConnectImportForm
 from eventstore.models import (
     BabyDobSwitch,
     BabySwitch,
@@ -21,6 +22,9 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
+    MomConnectImport,
+    ImportError,
+    ImportRow,
 )
 
 
@@ -159,3 +163,53 @@ class Covid19TriageAdmin(BaseEventAdmin):
 class CDUAddressUpdateAdmin(BaseEventAdmin):
     readonly_fields = ("id", "created_by", "timestamp")
     list_display = ("last_name", "folder_number", "timestamp")
+
+
+class ImportErrorInline(admin.TabularInline):
+    model = ImportError
+    fields = ("row_number", "error")
+    readonly_fields = ("row_number", "error")
+
+    # Don't allow any changes
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+class ImportRowInline(admin.TabularInline):
+    model = ImportRow
+
+    # Don't allow any changes
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(MomConnectImport)
+class MomConnectImportAdmin(admin.ModelAdmin):
+    readonly_fields = ("timestamp", "status")
+    list_display = ("timestamp", "status")
+    inlines = (ImportErrorInline, ImportRowInline)
+    form = MomConnectImportForm
+
+    def get_inline_instances(self, request, obj=None):
+        # Hide inline for creating new import
+        if obj is None:
+            return ()
+        return super().get_inline_instances(request, obj)
+
+    def get_readonly_fields(self, request, obj=None):
+        # Hide readonly fields when creating new import
+        if obj is None:
+            return ()
+        return super().get_readonly_fields(request, obj)

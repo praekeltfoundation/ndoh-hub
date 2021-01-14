@@ -700,7 +700,11 @@ class ImportError(models.Model):
     )
     row_number = models.IntegerField()
     error_type = models.IntegerField(choices=ErrorType.choices)
-    error_args = JSONField()
+    error_args = JSONField(blank=True)
+
+    @property
+    def error(self):
+        return self.get_error_type_display().format(*self.error_args)
 
 
 class ImportRow(models.Model):
@@ -767,10 +771,10 @@ class ImportRow(models.Model):
     edd_month = models.IntegerField()
     edd_day = models.IntegerField()
     id_type = models.IntegerField(choices=IDType.choices)
-    id_number = models.CharField(max_length=13)
-    passport_country = models.IntegerField()
-    passport_number = models.CharField(max_length=255)
-    dob_year = models.IntegerField(null=True)
-    dob_month = models.IntegerField(null=True)
-    dob_day = models.IntegerField(null=True)
+    id_number = models.CharField(max_length=13, blank=True)
+    passport_country = models.IntegerField(null=True, blank=True)
+    passport_number = models.CharField(max_length=255, blank=True)
+    dob_year = models.IntegerField(null=True, blank=True)
+    dob_month = models.IntegerField(null=True, blank=True)
+    dob_day = models.IntegerField(null=True, blank=True)
     language = models.IntegerField(choices=Language.choices, default=Language.ENG)
