@@ -1,6 +1,12 @@
 # Changelog
 
 ## 0.8.32
+1. Fix Celery Beat Schedule settings
+  ([#361](https://github.com/praekeltfoundation/ndoh-hub/pull/361))
+2. Update bulk archive and sync script
+  ([#362](https://github.com/praekeltfoundation/ndoh-hub/pull/362))
+
+## 0.8.32
 1. Fix LockNotOwnedError on get_whatsapp_contact
   ([#360](https://github.com/praekeltfoundation/ndoh-hub/pull/360))
 
