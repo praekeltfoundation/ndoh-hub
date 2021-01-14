@@ -76,57 +76,76 @@ total = 0
 archived = 0
 start, d_print = time.time(), time.time()
 
+urns = []
+for contact_batch in client.get_contacts(group="Waiting for helpdesk").iterfetches(
+    retry_on_rate_exceed=True
+):
+    for contact in contact_batch:
+        wa_id = None
+        for urn in contact.urns:
+            if "whatsapp" in urn:
+                wa_id = urn.split(":")[1]
+
+        if wa_id:
+            urns.append(wa_id)
+
 with open(filename, newline="") as csvfile:
     reader = csv.reader(csvfile, delimiter=",", quotechar='"')
     for row in reader:
         urn = row[0].replace("+", "")
-        rapidpro_urn = f"whatsapp:{urn}"
+        urns.append(urn)
 
-        msgs = get_whatsapp_messages(urn)
 
-        inbounds = []
-        for msg in msgs["messages"]:
-            delta = today - datetime.fromtimestamp(int(msg["timestamp"]), tz=pytz.utc)
-            if delta.days > 14:
-                break
+urns = list(set(urns))
+for urn in urns:
+    rapidpro_urn = f"whatsapp:{urn}"
+    msgs = get_whatsapp_messages(urn)
+    state = msgs.get("chat", {}).get("state", "CLOSED")
 
-            if msg["from"] == urn:
-                inbounds.append(msg)
+    inbounds = []
+    for msg in msgs.get("messages", []):
+        delta = today - datetime.fromtimestamp(int(msg["timestamp"]), tz=pytz.utc)
+        if delta.days > 30:
+            break
 
-        archive = True
-        for inbound in inbounds:
-            if not can_archive_msg(inbound):
-                archive = False
-                break
+        if msg["from"] == urn:
+            inbounds.append(msg)
 
+    archive = True
+    for inbound in inbounds:
+        if not can_archive_msg(inbound):
+            archive = False
+            break
+
+    if archive:
+        # Archive in turn and update Rapidpro
+        if state == "OPEN" and inbounds:
+            last_msg_id = inbounds[0]["id"]
+            archive_turn_conversation(urn, last_msg_id, "Bulk archived")
+        client.update_contact(
+            rapidpro_urn,
+            fields={
+                "wait_for_helpdesk": "",
+                "helpdesk_message_id": "",
+                "helpdesk_timeout": "",
+            },
+        )
+        archived += 1
+    elif inbounds:
+        # Don't archive but update fields in Rapidpro
         last_msg_id = inbounds[0]["id"]
         last_msg_timestamp = datetime.fromtimestamp(
             int(inbounds[0]["timestamp"])
         ).strftime("%Y-%m-%d")
 
-        if archive:
-            # Archive in turn and update Rapidpro
-            if msgs["chat"]["state"] == "OPEN":
-                archive_turn_conversation(urn, last_msg_id, "Bulk archived")
-            client.update_contact(
-                rapidpro_urn,
-                fields={
-                    "wait_for_helpdesk": "",
-                    "helpdesk_message_id": "",
-                    "helpdesk_timeout": "",
-                },
-            )
-            archived += 1
-        else:
-            # Don't archive but update fields in Rapidpro
-            client.update_contact(
-                rapidpro_urn,
-                fields={
-                    "wait_for_helpdesk": "TRUE",
-                    "helpdesk_message_id": last_msg_id,
-                    "helpdesk_timeout": last_msg_timestamp,
-                },
-            )
+        client.update_contact(
+            rapidpro_urn,
+            fields={
+                "wait_for_helpdesk": "TRUE",
+                "helpdesk_message_id": last_msg_id,
+                "helpdesk_timeout": last_msg_timestamp,
+            },
+        )
 
     if time.time() - d_print > 1:
         print(  # noqa
@@ -136,7 +155,7 @@ with open(filename, newline="") as csvfile:
         )
         d_print = time.time()
 
-        total += 1
+    total += 1
 
 print(  # noqa
     f"\rProcessed {archived}/{total} contacts at "
