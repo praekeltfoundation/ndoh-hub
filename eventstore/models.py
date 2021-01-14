@@ -663,3 +663,114 @@ class DBEOnBehalfOfProfile(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=["msisdn"])]
+
+
+class MomConnectImport(models.Model):
+    class Status:
+        VALIDATING = 0
+        VALIDATED = 1
+        UPLOADING = 2
+        COMPLETE = 3
+        ERROR = 4
+        choices = (
+            (VALIDATING, "Validating"),
+            (VALIDATED, "Validated"),
+            (UPLOADING, "Uploading"),
+            (COMPLETE, "Complete"),
+            (ERROR, "Error"),
+        )
+
+    timestamp = models.DateTimeField(auto_now=True)
+    status = models.IntegerField(choices=Status.choices, default=Status.VALIDATING)
+
+
+class ImportError(models.Model):
+    class ErrorType:
+        INVALID_FILETYPE = 0
+        INVALID_HEADER = 1
+        VALIDATION_ERROR = 2
+        choices = (
+            (INVALID_FILETYPE, "File is not a CSV"),
+            (INVALID_HEADER, "Field {} not found in header"),
+            (VALIDATION_ERROR, "Field {} failed validation: {}"),
+        )
+
+    mcimport = models.ForeignKey(
+        to=MomConnectImport, on_delete=models.CASCADE, related_name="errors"
+    )
+    row_number = models.IntegerField()
+    error_type = models.IntegerField(choices=ErrorType.choices)
+    error_args = JSONField()
+
+
+class ImportRow(models.Model):
+    class IDType:
+        SAID = 0
+        PASSPORT = 1
+        NONE = 2
+        choices = ((SAID, "SA ID"), (PASSPORT, "Passport"), (NONE, "None"))
+
+    class PassportCountry:
+        ZW = 0
+        MZ = 1
+        MW = 2
+        NG = 3
+        CD = 4
+        SO = 5
+        OTHER = 6
+        choices = (
+            (ZW, "Zimbabwe"),
+            (MZ, "Mozambique"),
+            (MW, "Malawi"),
+            (NG, "Nigeria"),
+            (CD, "DRC"),
+            (SO, "Somalia"),
+            (OTHER, "Other"),
+        )
+
+    class Language:
+        ZUL = 0
+        XHO = 1
+        AFR = 2
+        ENG = 3
+        NSO = 4
+        TSN = 5
+        SOT = 6
+        TSO = 7
+        SSW = 8
+        VEN = 9
+        NBL = 10
+        choices = (
+            (ZUL, "isiZulu"),
+            (XHO, "isiXhosa"),
+            (AFR, "Afrikaans"),
+            (ENG, "English"),
+            (NSO, "Sesotho sa Leboa"),
+            (TSN, "Setswana"),
+            (SOT, "Sesotho"),
+            (TSO, "Xitsonga"),
+            (SSW, "SiSwati"),
+            (VEN, "Tshivenda"),
+            (NBL, "isiNdebele"),
+        )
+
+    mcimport = models.ForeignKey(
+        to=MomConnectImport, on_delete=models.CASCADE, related_name="rows"
+    )
+    row_number = models.IntegerField()
+    msisdn = models.CharField(max_length=255, validators=[za_phone_number])
+    messaging_consent = models.BooleanField()
+    research_consent = models.BooleanField(default=False)
+    previous_optout = models.BooleanField(default=False)
+    facility_code = models.CharField(max_length=6)
+    edd_year = models.IntegerField()
+    edd_month = models.IntegerField()
+    edd_day = models.IntegerField()
+    id_type = models.IntegerField(choices=IDType.choices)
+    id_number = models.CharField(max_length=13)
+    passport_country = models.IntegerField()
+    passport_number = models.CharField(max_length=255)
+    dob_year = models.IntegerField(null=True)
+    dob_month = models.IntegerField(null=True)
+    dob_day = models.IntegerField(null=True)
+    language = models.IntegerField(choices=Language.choices, default=Language.ENG)
