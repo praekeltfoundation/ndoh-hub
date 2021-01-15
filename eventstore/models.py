@@ -691,7 +691,7 @@ class ImportError(models.Model):
         VALIDATION_ERROR = 2
         choices = (
             (INVALID_FILETYPE, "File is not a CSV"),
-            (INVALID_HEADER, "Field {} not found in header"),
+            (INVALID_HEADER, "Fields {} not found in header"),
             (VALIDATION_ERROR, "Field {} failed validation: {}"),
         )
 

@@ -14,7 +14,10 @@ from eventstore.models import (
     DeliveryFailure,
     EddSwitch,
     IdentificationSwitch,
+    ImportError,
+    ImportRow,
     LanguageSwitch,
+    MomConnectImport,
     MSISDNSwitch,
     OptOut,
     PMTCTRegistration,
@@ -22,9 +25,6 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
-    MomConnectImport,
-    ImportError,
-    ImportRow,
 )
 
 

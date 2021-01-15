@@ -6,44 +6,42 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('eventstore', '0038_importerror_importrow_momconnectimport'),
-    ]
+    dependencies = [("eventstore", "0038_importerror_importrow_momconnectimport")]
 
     operations = [
         migrations.AlterField(
-            model_name='importerror',
-            name='error_args',
+            model_name="importerror",
+            name="error_args",
             field=django.contrib.postgres.fields.jsonb.JSONField(blank=True),
         ),
         migrations.AlterField(
-            model_name='importrow',
-            name='dob_day',
+            model_name="importrow",
+            name="dob_day",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='importrow',
-            name='dob_month',
+            model_name="importrow",
+            name="dob_month",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='importrow',
-            name='dob_year',
+            model_name="importrow",
+            name="dob_year",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='importrow',
-            name='id_number',
+            model_name="importrow",
+            name="id_number",
             field=models.CharField(blank=True, max_length=13),
         ),
         migrations.AlterField(
-            model_name='importrow',
-            name='passport_country',
+            model_name="importrow",
+            name="passport_country",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='importrow',
-            name='passport_number',
+            model_name="importrow",
+            name="passport_number",
             field=models.CharField(blank=True, max_length=255),
         ),
     ]
