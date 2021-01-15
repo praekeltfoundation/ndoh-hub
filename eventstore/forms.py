@@ -97,6 +97,8 @@ class MomConnectImportForm(forms.ModelForm):
 class TextBooleanField(forms.CharField):
     def to_python(self, value):
         value = super().to_python(value)
+        if not isinstance(value, str):
+            return value
         if value.strip().lower() in {"t", "true", "yes"}:
             return True
         if value.strip().lower() in {"f", "false", "no"}:
@@ -106,6 +108,8 @@ class TextBooleanField(forms.CharField):
 
 class ImportRowForm(forms.ModelForm):
     messaging_consent = TextBooleanField()
+    research_consent = TextBooleanField(required=False, empty_value=False)
+    previous_optout = TextBooleanField(required=False, empty_value=False)
 
     class Meta:
         model = ImportRow
