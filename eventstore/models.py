@@ -8,6 +8,7 @@ from django.db import models
 from django.utils import timezone
 
 from registrations.validators import geographic_coordinate, za_phone_number
+from eventstore.validators import validate_true
 
 LANGUAGE_TYPES = ((v["code"].rstrip("-za"), v["name"]) for v in LANG_INFO.values())
 
@@ -763,7 +764,7 @@ class ImportRow(models.Model):
     )
     row_number = models.IntegerField()
     msisdn = models.CharField(max_length=255, validators=[za_phone_number])
-    messaging_consent = models.BooleanField()
+    messaging_consent = models.BooleanField(validators=[validate_true])
     research_consent = models.BooleanField(default=False)
     previous_optout = models.BooleanField(default=False)
     facility_code = models.CharField(max_length=6)

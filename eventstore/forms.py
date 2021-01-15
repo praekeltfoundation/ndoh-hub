@@ -2,7 +2,6 @@ import codecs
 import csv
 
 from django import forms
-from django.forms.models import ModelForm
 from django.utils.text import slugify
 
 from eventstore.models import ImportError, ImportRow, MomConnectImport
@@ -95,7 +94,19 @@ class MomConnectImportForm(forms.ModelForm):
         fields = ("file",)
 
 
+class TextBooleanField(forms.CharField):
+    def to_python(self, value):
+        value = super().to_python(value)
+        if value.strip().lower() in {"t", "true", "yes"}:
+            return True
+        if value.strip().lower() in {"f", "false", "no"}:
+            return False
+        return value
+
+
 class ImportRowForm(forms.ModelForm):
+    messaging_consent = TextBooleanField()
+
     class Meta:
         model = ImportRow
         fields = "__all__"

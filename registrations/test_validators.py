@@ -1,8 +1,8 @@
 import datetime
 from unittest import mock
 
-from django.test import TestCase
 from django.core.exceptions import ValidationError
+from django.test import TestCase
 
 from registrations import validators
 
