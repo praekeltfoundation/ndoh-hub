@@ -772,9 +772,13 @@ class ImportRow(models.Model):
     edd_day = models.IntegerField()
     id_type = models.IntegerField(choices=IDType.choices)
     id_number = models.CharField(max_length=13, blank=True)
-    passport_country = models.IntegerField(null=True, blank=True)
+    passport_country = models.IntegerField(
+        null=True, blank=True, choices=PassportCountry.choices
+    )
     passport_number = models.CharField(max_length=255, blank=True)
     dob_year = models.IntegerField(null=True, blank=True)
     dob_month = models.IntegerField(null=True, blank=True)
     dob_day = models.IntegerField(null=True, blank=True)
-    language = models.IntegerField(choices=Language.choices, default=Language.ENG)
+    language = models.IntegerField(
+        choices=Language.choices, default=Language.ENG, blank=True
+    )

@@ -3,7 +3,7 @@ from datetime import datetime
 
 import phonenumbers
 from iso6709 import Location
-from rest_framework.serializers import ValidationError
+from django.core.exceptions import ValidationError
 
 from ndoh_hub import utils
 

@@ -2,7 +2,7 @@ import datetime
 from unittest import mock
 
 from django.test import TestCase
-from rest_framework.validators import ValidationError
+from django.core.exceptions import ValidationError
 
 from registrations import validators
 
