@@ -1,15 +1,18 @@
 import uuid
+from datetime import date
 from typing import Text
-from django.core.validators import RegexValidator
 
 import pycountry
 from django.conf.locale import LANG_INFO
 from django.contrib.postgres.fields import JSONField
+from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 
-from registrations.validators import geographic_coordinate, za_phone_number
 from eventstore.validators import validate_true
+from ndoh_hub.utils import is_valid_edd_date
+from registrations.validators import geographic_coordinate, za_phone_number
 
 LANGUAGE_TYPES = ((v["code"].rstrip("-za"), v["name"]) for v in LANG_INFO.values())
 
@@ -690,11 +693,13 @@ class ImportError(models.Model):
     class ErrorType:
         INVALID_FILETYPE = 0
         INVALID_HEADER = 1
-        VALIDATION_ERROR = 2
+        FIELD_VALIDATION_ERROR = 2
+        ROW_VALIDATION_ERROR = 3
         choices = (
             (INVALID_FILETYPE, "File is not a CSV"),
             (INVALID_HEADER, "Fields {} not found in header"),
-            (VALIDATION_ERROR, "Field {} failed validation: {}"),
+            (FIELD_VALIDATION_ERROR, "Field {} failed validation: {}"),
+            (ROW_VALIDATION_ERROR, "Failed validation: {}"),
         )
 
     mcimport = models.ForeignKey(
@@ -786,3 +791,11 @@ class ImportRow(models.Model):
     language = models.IntegerField(
         choices=Language.choices, default=Language.ENG, blank=True
     )
+
+    def clean(self):
+        try:
+            edd = date(self.edd_year, self.edd_month, self.edd_day)
+            if not is_valid_edd_date(edd):
+                raise ValidationError("EDD must be between now and 9 months")
+        except ValueError as e:
+            raise ValidationError(f"Invalid EDD date, {str(e)}")

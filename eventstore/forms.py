@@ -50,11 +50,18 @@ class MomConnectImportForm(forms.ModelForm):
             mcimport.save()
             for field, errors in form.errors.items():
                 for error in errors:
-                    mcimport.errors.create(
-                        row_number=row_number + 2,
-                        error_type=ImportError.ErrorType.VALIDATION_ERROR,
-                        error_args=[field, error],
-                    )
+                    if field == "__all__":
+                        mcimport.errors.create(
+                            row_number=row_number + 2,
+                            error_type=ImportError.ErrorType.ROW_VALIDATION_ERROR,
+                            error_args=[error],
+                        )
+                    else:
+                        mcimport.errors.create(
+                            row_number=row_number + 2,
+                            error_type=ImportError.ErrorType.FIELD_VALIDATION_ERROR,
+                            error_args=[field, error],
+                        )
             return
         form.save()
 

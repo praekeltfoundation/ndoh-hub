@@ -1,3 +1,5 @@
+from unittest import mock
+
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
@@ -6,6 +8,14 @@ from eventstore.models import ImportRow, MomConnectImport
 
 
 class MomConnectImportFormTests(TestCase):
+    def setUp(self):
+        patcher = mock.patch("eventstore.models.is_valid_edd_date")
+        self.is_valid_edd_date = patcher.start()
+        self.is_valid_edd_date.return_value = True
+
+    def tearDown(self):
+        self.is_valid_edd_date.stop()
+
     def test_missing_columns(self):
         """
         Should mark the import as error, and write an error for the missing columns
@@ -271,4 +281,38 @@ class MomConnectImportFormTests(TestCase):
             error.error,
             "Field facility_code failed validation: Ensure this value has at most 6 "
             "characters (it has 7).",
+        )
+
+    def test_invalid_edd(self):
+        """
+        edd fields should form a valid date, that is between now and 9 months from now
+        """
+        file = SimpleUploadedFile(
+            "test.csv",
+            b"msisdn,facility code,id type,id number,messaging consent,"
+            b"edd year,edd month,edd day\n"
+            b"+27820001001,123456,said,9001010001088,true,2021,2,29\n",
+        )
+        form = MomConnectImportForm(data={}, files={"file": file})
+        instance = form.save()
+        self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
+        [error] = instance.errors.all()
+        self.assertEqual(
+            error.error,
+            "Failed validation: Invalid EDD date, day is out of range for month",
+        )
+
+        self.is_valid_edd_date.return_value = False
+        file = SimpleUploadedFile(
+            "test.csv",
+            b"msisdn,facility code,id type,id number,messaging consent,"
+            b"edd year,edd month,edd day\n"
+            b"+27820001001,123456,said,9001010001088,true,2121,2,4\n",
+        )
+        form = MomConnectImportForm(data={}, files={"file": file})
+        instance = form.save()
+        self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
+        [error] = instance.errors.all()
+        self.assertEqual(
+            error.error, "Failed validation: EDD must be between now and 9 months"
         )
