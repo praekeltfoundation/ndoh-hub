@@ -209,3 +209,66 @@ class MomConnectImportFormTests(TestCase):
         self.assertEqual(instance.errors.count(), 0)
         [row] = instance.rows.all()
         self.assertFalse(row.previous_optout)
+
+    def test_facility_code_invalid(self):
+        """
+        facility_code must be 6 digits
+        """
+        file = SimpleUploadedFile(
+            "test.csv",
+            b"msisdn,facility code,id type,id number,messaging consent,"
+            b"edd year,edd month,edd day\n"
+            b"+27820001001,,said,9001010001088,true,2021,12,1\n",
+        )
+        form = MomConnectImportForm(data={}, files={"file": file})
+        instance = form.save()
+        self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
+        [error] = instance.errors.all()
+        self.assertEqual(
+            error.error,
+            "Field facility_code failed validation: This field is required.",
+        )
+
+        file = SimpleUploadedFile(
+            "test.csv",
+            b"msisdn,facility code,id type,id number,messaging consent,"
+            b"edd year,edd month,edd day\n"
+            b"+27820001001,abc123,said,9001010001088,true,2021,12,1\n",
+        )
+        form = MomConnectImportForm(data={}, files={"file": file})
+        instance = form.save()
+        self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
+        [error] = instance.errors.all()
+        self.assertEqual(
+            error.error, "Field facility_code failed validation: Must be 6 digits"
+        )
+
+        file = SimpleUploadedFile(
+            "test.csv",
+            b"msisdn,facility code,id type,id number,messaging consent,"
+            b"edd year,edd month,edd day\n"
+            b"+27820001001,123,said,9001010001088,true,2021,12,1\n",
+        )
+        form = MomConnectImportForm(data={}, files={"file": file})
+        instance = form.save()
+        self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
+        [error] = instance.errors.all()
+        self.assertEqual(
+            error.error, "Field facility_code failed validation: Must be 6 digits"
+        )
+
+        file = SimpleUploadedFile(
+            "test.csv",
+            b"msisdn,facility code,id type,id number,messaging consent,"
+            b"edd year,edd month,edd day\n"
+            b"+27820001001,1234567,said,9001010001088,true,2021,12,1\n",
+        )
+        form = MomConnectImportForm(data={}, files={"file": file})
+        instance = form.save()
+        self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
+        [error] = instance.errors.all()
+        self.assertEqual(
+            error.error,
+            "Field facility_code failed validation: Ensure this value has at most 6 "
+            "characters (it has 7).",
+        )

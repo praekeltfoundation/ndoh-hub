@@ -1,5 +1,6 @@
 import uuid
 from typing import Text
+from django.core.validators import RegexValidator
 
 import pycountry
 from django.conf.locale import LANG_INFO
@@ -767,7 +768,9 @@ class ImportRow(models.Model):
     messaging_consent = models.BooleanField(validators=[validate_true])
     research_consent = models.BooleanField(default=False)
     previous_optout = models.BooleanField(default=False)
-    facility_code = models.CharField(max_length=6)
+    facility_code = models.CharField(
+        max_length=6, validators=[RegexValidator(r"\d{6}", "Must be 6 digits")]
+    )
     edd_year = models.IntegerField()
     edd_month = models.IntegerField()
     edd_day = models.IntegerField()
