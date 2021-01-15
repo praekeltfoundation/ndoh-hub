@@ -55,6 +55,26 @@ class MomConnectImportForm(forms.ModelForm):
                 return value
         return text
 
+    def get_language(self, text):
+        types = (
+            ({"isizulu", "zul"}, ImportRow.Language.ZUL),
+            ({"isixhosa", "xho"}, ImportRow.Language.XHO),
+            ({"afrikaans", "afr"}, ImportRow.Language.AFR),
+            ({"english", "eng"}, ImportRow.Language.ENG),
+            ({"sesotho_sa_leboa", "nso"}, ImportRow.Language.NSO),
+            ({"setswana", "tsn"}, ImportRow.Language.TSN),
+            ({"sesotho", "sot"}, ImportRow.Language.SOT),
+            ({"xitsonga", "tso"}, ImportRow.Language.TSO),
+            ({"siswati", "ssw"}, ImportRow.Language.SSW),
+            ({"tshivenda", "ven"}, ImportRow.Language.VEN),
+            ({"isindebele", "nbl"}, ImportRow.Language.NBL),
+        )
+        t = self.normalise_key(text)
+        for keys, value in types:
+            if t in keys:
+                return value
+        return text
+
     def create_row(self, mcimport, row_number, row_data):
         row_data = {self.normalise_key(k): v for k, v in row_data.items()}
         row_data["mcimport"] = mcimport.pk
@@ -64,6 +84,8 @@ class MomConnectImportForm(forms.ModelForm):
             row_data["passport_country"] = self.get_passport_country(
                 row_data["passport_country"]
             )
+        if row_data.get("language"):
+            row_data["language"] = self.get_language(row_data["language"])
         form = ImportRowForm(data=row_data)
         if form.errors:
             mcimport.status = MomConnectImport.Status.ERROR
