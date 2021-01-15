@@ -51,8 +51,8 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,id number,messaging consent,edd year,"
-            b"edd month,edd day\n"
-            b"+27820001001,123456,said,9001010001088,true,2021,12,1\n",
+            b"edd month,edd day,language\n"
+            b"+27820001001,123456,said,9001010001088,true,2021,12,1,afr\n",
         )
         form = MomConnectImportForm(data={}, files={"file": file})
         self.assertTrue(form.is_valid())
@@ -71,6 +71,7 @@ class MomConnectImportFormTests(TestCase):
         self.assertEqual(row.edd_year, 2021)
         self.assertEqual(row.edd_month, 12)
         self.assertEqual(row.edd_day, 1)
+        self.assertEqual(row.language, ImportRow.Language.AFR)
 
     def test_invalid_msisdn(self):
         """
@@ -315,4 +316,114 @@ class MomConnectImportFormTests(TestCase):
         [error] = instance.errors.all()
         self.assertEqual(
             error.error, "Failed validation: EDD must be between now and 9 months"
+        )
+
+    def test_idtype_said(self):
+        """
+        id_number is required for sa_id
+        """
+        file = SimpleUploadedFile(
+            "test.csv",
+            b"msisdn,facility code,id type,messaging consent,edd year,edd month,"
+            b"edd day\n"
+            b"+27820001001,123456,said,true,2021,2,3\n",
+        )
+        form = MomConnectImportForm(data={}, files={"file": file})
+        instance = form.save()
+        self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
+        [error] = instance.errors.all()
+        self.assertEqual(
+            error.error, "Failed validation: ID number required for SA ID ID type"
+        )
+
+    def test_invalid_id_number(self):
+        """
+        id number must be valid
+        """
+        file = SimpleUploadedFile(
+            "test.csv",
+            b"msisdn,facility code,id type,id number,messaging consent,edd year,"
+            b"edd month,edd day\n"
+            b"+27820001001,123456,said,9001010001089,true,2021,2,3\n",
+        )
+        form = MomConnectImportForm(data={}, files={"file": file})
+        instance = form.save()
+        self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
+        [error] = instance.errors.all()
+        self.assertEqual(
+            error.error,
+            "Field id_number failed validation: Invalid ID number: "
+            "Failed Luhn checksum",
+        )
+
+    def test_idtype_passport(self):
+        """
+        passport country and passport number are required for passport
+        """
+        file = SimpleUploadedFile(
+            "test.csv",
+            b"msisdn,facility code,id type,passport number,passport country,"
+            b"messaging consent,edd year,edd month,edd day\n"
+            b"+27820001001,123456,passport,A1234,,true,2021,2,3\n",
+        )
+        form = MomConnectImportForm(data={}, files={"file": file})
+        instance = form.save()
+        self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
+        [error] = instance.errors.all()
+        self.assertEqual(
+            error.error,
+            "Failed validation: Passport country required for passport ID type",
+        )
+
+        file = SimpleUploadedFile(
+            "test.csv",
+            b"msisdn,facility code,id type,passport number,passport country,"
+            b"messaging consent,edd year,edd month,edd day\n"
+            b"+27820001001,123456,passport,,zimbabwe,true,2021,2,3\n",
+        )
+        form = MomConnectImportForm(data={}, files={"file": file})
+        instance = form.save()
+        self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
+        [error] = instance.errors.all()
+        self.assertEqual(
+            error.error,
+            "Failed validation: Passport number required for passport ID type",
+        )
+
+    def test_idtype_dob(self):
+        """
+        dob is required for none id type
+        """
+        file = SimpleUploadedFile(
+            "test.csv",
+            b"msisdn,facility code,id type,messaging consent,edd year,edd month,"
+            b"edd day\n"
+            b"+27820001001,123456,none,true,2021,2,3\n",
+        )
+        form = MomConnectImportForm(data={}, files={"file": file})
+        instance = form.save()
+        self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
+        [error] = instance.errors.all()
+        self.assertEqual(
+            error.error, "Failed validation: Date of birth required for none ID type"
+        )
+
+    def test_invalid_dob(self):
+        """
+        dob should be a valid date
+        """
+        file = SimpleUploadedFile(
+            "test.csv",
+            b"msisdn,facility code,id type,messaging consent,edd year,edd month,"
+            b"edd day,dob year,dob month,dob day\n"
+            b"+27820001001,123456,none,true,2021,2,3,1990,2,29\n",
+        )
+        form = MomConnectImportForm(data={}, files={"file": file})
+        instance = form.save()
+        self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
+        [error] = instance.errors.all()
+        self.assertEqual(
+            error.error,
+            "Failed validation: Invalid date of birth date, day is out of range for "
+            "month",
         )

@@ -39,11 +39,31 @@ class MomConnectImportForm(forms.ModelForm):
                 return value
         return text
 
+    def get_passport_country(self, text):
+        types = (
+            ({"zimbabwe", "zw"}, ImportRow.PassportCountry.ZW),
+            ({"mozambique", "mz"}, ImportRow.PassportCountry.MZ),
+            ({"malawi", "mw"}, ImportRow.PassportCountry.MW),
+            ({"nigeria", "ng"}, ImportRow.PassportCountry.NG),
+            ({"drc", "cd"}, ImportRow.PassportCountry.CD),
+            ({"somalia", "so"}, ImportRow.PassportCountry.SO),
+            ({"other"}, ImportRow.PassportCountry.OTHER),
+        )
+        t = self.normalise_key(text)
+        for keys, value in types:
+            if t in keys:
+                return value
+        return text
+
     def create_row(self, mcimport, row_number, row_data):
         row_data = {self.normalise_key(k): v for k, v in row_data.items()}
         row_data["mcimport"] = mcimport.pk
         row_data["row_number"] = row_number + 2  # First row is header
         row_data["id_type"] = self.get_id_type(row_data["id_type"])
+        if row_data.get("passport_country"):
+            row_data["passport_country"] = self.get_passport_country(
+                row_data["passport_country"]
+            )
         form = ImportRowForm(data=row_data)
         if form.errors:
             mcimport.status = MomConnectImport.Status.ERROR

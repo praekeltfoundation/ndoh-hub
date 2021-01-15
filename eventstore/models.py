@@ -10,7 +10,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 
-from eventstore.validators import validate_true
+from eventstore.validators import validate_sa_id_number, validate_true
 from ndoh_hub.utils import is_valid_edd_date
 from registrations.validators import geographic_coordinate, za_phone_number
 
@@ -780,7 +780,9 @@ class ImportRow(models.Model):
     edd_month = models.IntegerField()
     edd_day = models.IntegerField()
     id_type = models.IntegerField(choices=IDType.choices)
-    id_number = models.CharField(max_length=13, blank=True)
+    id_number = models.CharField(
+        max_length=13, blank=True, validators=[validate_sa_id_number]
+    )
     passport_country = models.IntegerField(
         null=True, blank=True, choices=PassportCountry.choices
     )
@@ -799,3 +801,23 @@ class ImportRow(models.Model):
                 raise ValidationError("EDD must be between now and 9 months")
         except ValueError as e:
             raise ValidationError(f"Invalid EDD date, {str(e)}")
+
+        if self.id_type == self.IDType.SAID and not self.id_number:
+            raise ValidationError("ID number required for SA ID ID type")
+        if self.id_type == self.IDType.PASSPORT and self.passport_country is None:
+            raise ValidationError("Passport country required for passport ID type")
+        if self.id_type == self.IDType.PASSPORT and not self.passport_number:
+            raise ValidationError("Passport number required for passport ID type")
+        if self.id_type == self.IDType.NONE:
+            if self.dob_year is None or self.dob_month is None or self.dob_year is None:
+                raise ValidationError("Date of birth required for none ID type")
+
+        if (
+            self.dob_year is not None
+            and self.dob_month is not None
+            and self.dob_day is not None
+        ):
+            try:
+                date(self.dob_year, self.dob_month, self.dob_day)
+            except ValueError as e:
+                raise ValidationError(f"Invalid date of birth date, {str(e)}")
