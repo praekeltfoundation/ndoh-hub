@@ -686,7 +686,9 @@ class MomConnectImport(models.Model):
         )
 
     timestamp = models.DateTimeField(auto_now=True)
-    status = models.IntegerField(choices=Status.choices, default=Status.VALIDATING)
+    status = models.PositiveSmallIntegerField(
+        choices=Status.choices, default=Status.VALIDATING
+    )
 
 
 class ImportError(models.Model):
@@ -705,8 +707,8 @@ class ImportError(models.Model):
     mcimport = models.ForeignKey(
         to=MomConnectImport, on_delete=models.CASCADE, related_name="errors"
     )
-    row_number = models.IntegerField()
-    error_type = models.IntegerField(choices=ErrorType.choices)
+    row_number = models.PositiveSmallIntegerField()
+    error_type = models.PositiveSmallIntegerField(choices=ErrorType.choices)
     error_args = JSONField(blank=True)
 
     @property
@@ -768,7 +770,7 @@ class ImportRow(models.Model):
     mcimport = models.ForeignKey(
         to=MomConnectImport, on_delete=models.CASCADE, related_name="rows"
     )
-    row_number = models.IntegerField()
+    row_number = models.PositiveSmallIntegerField()
     msisdn = models.CharField(max_length=255, validators=[za_phone_number])
     messaging_consent = models.BooleanField(validators=[validate_true])
     research_consent = models.BooleanField(default=False)
@@ -776,21 +778,21 @@ class ImportRow(models.Model):
     facility_code = models.CharField(
         max_length=6, validators=[RegexValidator(r"\d{6}", "Must be 6 digits")]
     )
-    edd_year = models.IntegerField()
-    edd_month = models.IntegerField()
-    edd_day = models.IntegerField()
-    id_type = models.IntegerField(choices=IDType.choices)
+    edd_year = models.PositiveSmallIntegerField()
+    edd_month = models.PositiveSmallIntegerField()
+    edd_day = models.PositiveSmallIntegerField()
+    id_type = models.PositiveSmallIntegerField(choices=IDType.choices)
     id_number = models.CharField(
         max_length=13, blank=True, validators=[validate_sa_id_number]
     )
-    passport_country = models.IntegerField(
+    passport_country = models.PositiveSmallIntegerField(
         null=True, blank=True, choices=PassportCountry.choices
     )
     passport_number = models.CharField(max_length=255, blank=True)
-    dob_year = models.IntegerField(null=True, blank=True)
-    dob_month = models.IntegerField(null=True, blank=True)
-    dob_day = models.IntegerField(null=True, blank=True)
-    language = models.IntegerField(
+    dob_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    dob_month = models.PositiveSmallIntegerField(null=True, blank=True)
+    dob_day = models.PositiveSmallIntegerField(null=True, blank=True)
+    language = models.PositiveSmallIntegerField(
         choices=Language.choices, default=Language.ENG, blank=True
     )
 
