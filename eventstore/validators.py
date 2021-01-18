@@ -3,6 +3,8 @@ from datetime import date
 
 from django.core.exceptions import ValidationError
 
+from registrations.models import ClinicCode
+
 
 def validate_true(value):
     if value is not True:
@@ -41,3 +43,8 @@ def validate_sa_id_number(value):
         raise ValidationError("Invalid ID number: for male")
     if not luhn_verify(value):
         raise ValidationError("Invalid ID number: Failed Luhn checksum")
+
+
+def validate_facility_code(value):
+    if not ClinicCode.objects.filter(value=value).exists():
+        raise ValidationError("Invalid Facility Code")

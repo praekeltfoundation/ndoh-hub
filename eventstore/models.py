@@ -10,7 +10,11 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 
-from eventstore.validators import validate_sa_id_number, validate_true
+from eventstore.validators import (
+    validate_facility_code,
+    validate_sa_id_number,
+    validate_true,
+)
 from ndoh_hub.utils import is_valid_edd_date
 from registrations.validators import geographic_coordinate, za_phone_number
 
@@ -776,7 +780,11 @@ class ImportRow(models.Model):
     research_consent = models.BooleanField(default=False)
     previous_optout = models.BooleanField(default=False)
     facility_code = models.CharField(
-        max_length=6, validators=[RegexValidator(r"\d{6}", "Must be 6 digits")]
+        max_length=6,
+        validators=[
+            RegexValidator(r"\d{6}", "Must be 6 digits"),
+            validate_facility_code,
+        ],
     )
     edd_year = models.PositiveSmallIntegerField()
     edd_month = models.PositiveSmallIntegerField()
