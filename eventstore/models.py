@@ -1,12 +1,17 @@
 import uuid
+from datetime import date
 from typing import Text
 
 import pycountry
 from django.conf.locale import LANG_INFO
 from django.contrib.postgres.fields import JSONField
+from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 
+from eventstore.validators import validate_sa_id_number, validate_true
+from ndoh_hub.utils import is_valid_edd_date
 from registrations.validators import geographic_coordinate, za_phone_number
 
 LANGUAGE_TYPES = ((v["code"].rstrip("-za"), v["name"]) for v in LANG_INFO.values())
@@ -663,3 +668,158 @@ class DBEOnBehalfOfProfile(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=["msisdn"])]
+
+
+class MomConnectImport(models.Model):
+    class Status:
+        VALIDATING = 0
+        VALIDATED = 1
+        UPLOADING = 2
+        COMPLETE = 3
+        ERROR = 4
+        choices = (
+            (VALIDATING, "Validating"),
+            (VALIDATED, "Validated"),
+            (UPLOADING, "Uploading"),
+            (COMPLETE, "Complete"),
+            (ERROR, "Error"),
+        )
+
+    timestamp = models.DateTimeField(auto_now=True)
+    status = models.PositiveSmallIntegerField(
+        choices=Status.choices, default=Status.VALIDATING
+    )
+
+
+class ImportError(models.Model):
+    class ErrorType:
+        INVALID_FILETYPE = 0
+        INVALID_HEADER = 1
+        FIELD_VALIDATION_ERROR = 2
+        ROW_VALIDATION_ERROR = 3
+        choices = (
+            (INVALID_FILETYPE, "File is not a CSV"),
+            (INVALID_HEADER, "Fields {} not found in header"),
+            (FIELD_VALIDATION_ERROR, "Field {} failed validation: {}"),
+            (ROW_VALIDATION_ERROR, "Failed validation: {}"),
+        )
+
+    mcimport = models.ForeignKey(
+        to=MomConnectImport, on_delete=models.CASCADE, related_name="errors"
+    )
+    row_number = models.PositiveSmallIntegerField()
+    error_type = models.PositiveSmallIntegerField(choices=ErrorType.choices)
+    error_args = JSONField(blank=True)
+
+    @property
+    def error(self):
+        return self.get_error_type_display().format(*self.error_args)
+
+
+class ImportRow(models.Model):
+    class IDType:
+        SAID = 0
+        PASSPORT = 1
+        NONE = 2
+        choices = ((SAID, "SA ID"), (PASSPORT, "Passport"), (NONE, "None"))
+
+    class PassportCountry:
+        ZW = 0
+        MZ = 1
+        MW = 2
+        NG = 3
+        CD = 4
+        SO = 5
+        OTHER = 6
+        choices = (
+            (ZW, "Zimbabwe"),
+            (MZ, "Mozambique"),
+            (MW, "Malawi"),
+            (NG, "Nigeria"),
+            (CD, "DRC"),
+            (SO, "Somalia"),
+            (OTHER, "Other"),
+        )
+
+    class Language:
+        ZUL = 0
+        XHO = 1
+        AFR = 2
+        ENG = 3
+        NSO = 4
+        TSN = 5
+        SOT = 6
+        TSO = 7
+        SSW = 8
+        VEN = 9
+        NBL = 10
+        choices = (
+            (ZUL, "isiZulu"),
+            (XHO, "isiXhosa"),
+            (AFR, "Afrikaans"),
+            (ENG, "English"),
+            (NSO, "Sesotho sa Leboa"),
+            (TSN, "Setswana"),
+            (SOT, "Sesotho"),
+            (TSO, "Xitsonga"),
+            (SSW, "SiSwati"),
+            (VEN, "Tshivenda"),
+            (NBL, "isiNdebele"),
+        )
+
+    mcimport = models.ForeignKey(
+        to=MomConnectImport, on_delete=models.CASCADE, related_name="rows"
+    )
+    row_number = models.PositiveSmallIntegerField()
+    msisdn = models.CharField(max_length=255, validators=[za_phone_number])
+    messaging_consent = models.BooleanField(validators=[validate_true])
+    research_consent = models.BooleanField(default=False)
+    previous_optout = models.BooleanField(default=False)
+    facility_code = models.CharField(
+        max_length=6, validators=[RegexValidator(r"\d{6}", "Must be 6 digits")]
+    )
+    edd_year = models.PositiveSmallIntegerField()
+    edd_month = models.PositiveSmallIntegerField()
+    edd_day = models.PositiveSmallIntegerField()
+    id_type = models.PositiveSmallIntegerField(choices=IDType.choices)
+    id_number = models.CharField(
+        max_length=13, blank=True, validators=[validate_sa_id_number]
+    )
+    passport_country = models.PositiveSmallIntegerField(
+        null=True, blank=True, choices=PassportCountry.choices
+    )
+    passport_number = models.CharField(max_length=255, blank=True)
+    dob_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    dob_month = models.PositiveSmallIntegerField(null=True, blank=True)
+    dob_day = models.PositiveSmallIntegerField(null=True, blank=True)
+    language = models.PositiveSmallIntegerField(
+        choices=Language.choices, default=Language.ENG, blank=True
+    )
+
+    def clean(self):
+        try:
+            edd = date(self.edd_year, self.edd_month, self.edd_day)
+            if not is_valid_edd_date(edd):
+                raise ValidationError("EDD must be between now and 9 months")
+        except ValueError as e:
+            raise ValidationError(f"Invalid EDD date, {str(e)}")
+
+        if self.id_type == self.IDType.SAID and not self.id_number:
+            raise ValidationError("ID number required for SA ID ID type")
+        if self.id_type == self.IDType.PASSPORT and self.passport_country is None:
+            raise ValidationError("Passport country required for passport ID type")
+        if self.id_type == self.IDType.PASSPORT and not self.passport_number:
+            raise ValidationError("Passport number required for passport ID type")
+        if self.id_type == self.IDType.NONE:
+            if self.dob_year is None or self.dob_month is None or self.dob_year is None:
+                raise ValidationError("Date of birth required for none ID type")
+
+        if (
+            self.dob_year is not None
+            and self.dob_month is not None
+            and self.dob_day is not None
+        ):
+            try:
+                date(self.dob_year, self.dob_month, self.dob_day)
+            except ValueError as e:
+                raise ValidationError(f"Invalid date of birth date, {str(e)}")

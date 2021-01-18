@@ -2,8 +2,8 @@ import functools
 from datetime import datetime
 
 import phonenumbers
+from django.core.exceptions import ValidationError
 from iso6709 import Location
-from rest_framework.serializers import ValidationError
 
 from ndoh_hub import utils
 
