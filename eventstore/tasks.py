@@ -486,7 +486,8 @@ def validate_momconnect_import(mcimport_id):
 
         # validate previously opted out
         if (
-            contact.fields.get("opted_out", "").strip().lower() == "true"
+            contact.fields.get("opted_out")
+            and contact.fields["opted_out"].strip().lower() == "true"
             and not row.previous_optout
         ):
             mcimport.status = MomConnectImport.Status.ERROR
