@@ -5,6 +5,7 @@ from django import forms
 from django.utils.text import slugify
 
 from eventstore.models import ImportError, ImportRow, MomConnectImport
+from eventstore.tasks import validate_momconnect_import
 
 
 class MomConnectImportForm(forms.ModelForm):
@@ -136,6 +137,8 @@ class MomConnectImportForm(forms.ModelForm):
             )
             return mcimport
 
+        if mcimport.status == MomConnectImport.Status.VALIDATING:
+            validate_momconnect_import.delay(mcimport.id)
         return mcimport
 
     class Meta:
