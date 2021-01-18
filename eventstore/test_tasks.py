@@ -1,5 +1,6 @@
 import datetime
 import json
+from unittest import mock
 
 import responses
 from django.test import TestCase, override_settings
@@ -206,8 +207,9 @@ class HandleOldWaitingForHelpdeskContactsTests(TestCase):
 
 
 class ValidateMomConnectImportTests(TestCase):
+    @mock.patch("eventstore.tasks.upload_momconnect_import")
     @responses.activate
-    def test_success(self):
+    def test_success(self, upload_momconnect_import):
         """
         If the validation passes, then should be updated to validation complete
         """
@@ -232,6 +234,8 @@ class ValidateMomConnectImportTests(TestCase):
 
         mcimport.refresh_from_db()
         self.assertEqual(mcimport.status, MomConnectImport.Status.VALIDATED)
+
+        upload_momconnect_import.delay.assert_called_once_with(mcimport.id)
 
     @responses.activate
     def test_fail_previously_opted_out(self):
@@ -326,3 +330,170 @@ class ValidateMomConnectImportTests(TestCase):
 
         [error] = mcimport.errors.all()
         self.assertEqual(error.error_type, ImportError.ErrorType.ALREADY_REGISTERED)
+
+
+@override_settings(RAPIDPRO_PREBIRTH_CLINIC_FLOW="prebirth-clinic-flow-uuid")
+@responses.activate
+class UploadMomConnectImportTests(TestCase):
+    def setUp(self):
+        responses.add(
+            responses.POST,
+            "https://textit.in/api/v2/flow_starts.json",
+            json={
+                "uuid": "flow-start-uuid",
+                "flow": {
+                    "uuid": "prebirth-clinic-flow-uuid",
+                    "name": "prebirth clinic",
+                },
+                "groups": [],
+                "contacts": [],
+                "extra": {},
+                "restart_participants": True,
+                "status": "complete",
+                "created_on": datetime.datetime.now().isoformat(),
+                "modified_on": datetime.datetime.now().isoformat(),
+            },
+        )
+
+    def test_success_sa_id(self):
+        """
+        If the validation passes, then should be updated to validation complete
+        """
+
+        mcimport = MomConnectImport.objects.create(
+            status=MomConnectImport.Status.VALIDATED
+        )
+        mcimport.rows.create(
+            row_number=2,
+            msisdn="+27820001001",
+            messaging_consent=True,
+            facility_code="123456",
+            edd_year=2021,
+            edd_month=12,
+            edd_day=13,
+            id_type=ImportRow.IDType.SAID,
+            id_number="9001010001088",
+        )
+        tasks.upload_momconnect_import(mcimport.id)
+
+        mcimport.refresh_from_db()
+        self.assertEqual(mcimport.status, MomConnectImport.Status.COMPLETE)
+
+        request = json.loads(responses.calls[0].request.body)
+        request["extra"].pop("timestamp")
+        self.assertEqual(
+            request,
+            {
+                "flow": "prebirth-clinic-flow-uuid",
+                "urns": ["whatsapp:27820001001"],
+                "extra": {
+                    "clinic_code": "123456",
+                    "edd": "2021-12-13",
+                    "id_type": "sa_id",
+                    "sa_id_number": "9001010001088",
+                    "language": "eng",
+                    "source": "MomConnect Import",
+                    "swt": "7",
+                    "registered_by": "+27820001001",
+                    "passport_number": "",
+                    "research_consent": "FALSE",
+                },
+            },
+        )
+
+    def test_success_passport(self):
+        """
+        If the validation passes, then should be updated to validation complete
+        """
+
+        mcimport = MomConnectImport.objects.create(
+            status=MomConnectImport.Status.VALIDATED
+        )
+        mcimport.rows.create(
+            row_number=2,
+            msisdn="+27820001001",
+            messaging_consent=True,
+            facility_code="123456",
+            edd_year=2021,
+            edd_month=12,
+            edd_day=13,
+            id_type=ImportRow.IDType.PASSPORT,
+            passport_country=ImportRow.PassportCountry.ZW,
+            passport_number="A123456",
+        )
+        tasks.upload_momconnect_import(mcimport.id)
+
+        mcimport.refresh_from_db()
+        self.assertEqual(mcimport.status, MomConnectImport.Status.COMPLETE)
+
+        request = json.loads(responses.calls[0].request.body)
+        request["extra"].pop("timestamp")
+        self.assertEqual(
+            request,
+            {
+                "flow": "prebirth-clinic-flow-uuid",
+                "urns": ["whatsapp:27820001001"],
+                "extra": {
+                    "clinic_code": "123456",
+                    "edd": "2021-12-13",
+                    "id_type": "passport",
+                    "passport_number": "A123456",
+                    "passport_country": "zw",
+                    "language": "eng",
+                    "source": "MomConnect Import",
+                    "swt": "7",
+                    "sa_id_number": "",
+                    "registered_by": "+27820001001",
+                    "research_consent": "FALSE",
+                },
+            },
+        )
+
+    def test_success_dob(self):
+        """
+        If the validation passes, then should be updated to validation complete
+        """
+
+        mcimport = MomConnectImport.objects.create(
+            status=MomConnectImport.Status.VALIDATED
+        )
+        mcimport.rows.create(
+            row_number=2,
+            msisdn="+27820001001",
+            messaging_consent=True,
+            facility_code="123456",
+            edd_year=2021,
+            edd_month=12,
+            edd_day=13,
+            id_type=ImportRow.IDType.NONE,
+            dob_year=1990,
+            dob_month=2,
+            dob_day=3,
+        )
+        tasks.upload_momconnect_import(mcimport.id)
+
+        mcimport.refresh_from_db()
+        self.assertEqual(mcimport.status, MomConnectImport.Status.COMPLETE)
+
+        request = json.loads(responses.calls[0].request.body)
+        request["extra"].pop("timestamp")
+        self.assertEqual(
+            request,
+            {
+                "flow": "prebirth-clinic-flow-uuid",
+                "urns": ["whatsapp:27820001001"],
+                "extra": {
+                    "clinic_code": "123456",
+                    "edd": "2021-12-13",
+                    "id_type": "dob",
+                    "dob": "1990-02-03",
+                    "language": "eng",
+                    "source": "MomConnect Import",
+                    "swt": "7",
+                    "sa_id_number": "",
+                    "passport_number": "",
+                    "registered_by": "+27820001001",
+                    "research_consent": "FALSE",
+                },
+            },
+        )
