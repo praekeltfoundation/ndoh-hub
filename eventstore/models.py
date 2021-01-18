@@ -692,6 +692,7 @@ class MomConnectImport(models.Model):
     status = models.PositiveSmallIntegerField(
         choices=Status.choices, default=Status.VALIDATING
     )
+    last_uploaded_row = models.PositiveSmallIntegerField(default=0)
 
 
 class ImportError(models.Model):

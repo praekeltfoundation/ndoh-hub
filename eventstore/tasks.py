@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import date, datetime
 from urllib.parse import urljoin
 
 import phonenumbers
@@ -22,6 +22,7 @@ from eventstore.models import (
     Event,
     IdentificationSwitch,
     ImportError,
+    ImportRow,
     LanguageSwitch,
     Message,
     MomConnectImport,
@@ -515,3 +516,81 @@ def validate_momconnect_import(mcimport_id):
     if mcimport.status == MomConnectImport.Status.VALIDATING:
         mcimport.status = MomConnectImport.Status.VALIDATED
         mcimport.save()
+        upload_momconnect_import.delay(mcimport.id)
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
+    retry_backoff=True,
+    max_retries=5,
+    acks_late=True,
+    soft_time_limit=600,
+    time_limit=700,
+)
+def upload_momconnect_import(mcimport_id):
+    mcimport = MomConnectImport.objects.get(id=mcimport_id)
+
+    if mcimport.status != MomConnectImport.Status.VALIDATED:
+        return
+
+    mcimport.status = MomConnectImport.Status.UPLOADING
+    mcimport.save()
+
+    for row in (
+        mcimport.rows.order_by("row_number")
+        .filter(row_number__gt=mcimport.last_uploaded_row)
+        .iterator()
+    ):
+        msisdn = phonenumbers.parse(row.msisdn, "ZA")
+        msisdn = phonenumbers.format_number(msisdn, phonenumbers.PhoneNumberFormat.E164)
+        urn = f"whatsapp:{msisdn.lstrip('+')}"
+        data = {
+            "research_consent": "TRUE" if row.research_consent else "FALSE",
+            "registered_by": msisdn,
+            "edd": date(row.edd_year, row.edd_month, row.edd_day).isoformat(),
+            "language": {
+                ImportRow.Language.ZUL: "zul",
+                ImportRow.Language.XHO: "xho",
+                ImportRow.Language.AFR: "afr",
+                ImportRow.Language.ENG: "eng",
+                ImportRow.Language.NSO: "nso",
+                ImportRow.Language.TSN: "tsn",
+                ImportRow.Language.SOT: "sot",
+                ImportRow.Language.TSO: "tso",
+                ImportRow.Language.SSW: "ssw",
+                ImportRow.Language.VEN: "ven",
+                ImportRow.Language.NBL: "nbl",
+            }[row.language],
+            "timestamp": datetime.now().isoformat(),
+            "source": "MomConnect Import",
+            "id_type": {
+                ImportRow.IDType.SAID: "sa_id",
+                ImportRow.IDType.PASSPORT: "passport",
+                ImportRow.IDType.NONE: "dob",
+            }[row.id_type],
+            "clinic_code": row.facility_code,
+            "sa_id_number": row.id_number,
+            "passport_number": row.passport_number,
+            "swt": "7",
+        }
+        if row.passport_country:
+            data["passport_origin"] = {
+                ImportRow.PassportCountry.ZW: "zw",
+                ImportRow.PassportCountry.MZ: "mz",
+                ImportRow.PassportCountry.MW: "mw",
+                ImportRow.PassportCountry.NG: "ng",
+                ImportRow.PassportCountry.CD: "cd",
+                ImportRow.PassportCountry.SO: "so",
+                ImportRow.PassportCountry.OTHER: "other",
+            }[row.passport_country]
+        if row.dob_year and row.dob_month and row.dob_day:
+            row["dob"] = date(row.dob_year, row.dob_month, row.dob_day).isoformat()
+
+        rapidpro.create_flow_start(
+            flow=settings.RAPIDPRO_PREBIRTH_CLINIC_FLOW, urns=[urn], extra=data
+        )
+        mcimport.last_uploaded_row = row.row_number
+        mcimport.save()
+
+    mcimport.status = MomConnectImport.Status.COMPLETE
+    mcimport.save()
