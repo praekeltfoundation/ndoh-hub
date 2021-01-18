@@ -110,6 +110,7 @@ class MomConnectImportForm(forms.ModelForm):
 
     def save(self, commit=True):
         mcimport = super().save(commit=commit)
+        mcimport.save()
         try:
             f = codecs.iterdecode(self.cleaned_data["file"].file, "utf-8")
             reader = csv.DictReader(f)
