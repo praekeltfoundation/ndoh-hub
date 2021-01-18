@@ -5,16 +5,21 @@ from django.test import TestCase
 
 from eventstore.forms import MomConnectImportForm
 from eventstore.models import ImportRow, MomConnectImport
+from registrations.models import ClinicCode
 
 
 class MomConnectImportFormTests(TestCase):
     def setUp(self):
+        ClinicCode.objects.create(value="123456")
         patcher = mock.patch("eventstore.models.is_valid_edd_date")
         self.is_valid_edd_date = patcher.start()
         self.is_valid_edd_date.return_value = True
+        patcher = mock.patch("eventstore.forms.validate_momconnect_import")
+        self.validate_momconnect_import = patcher.start()
 
     def tearDown(self):
         self.is_valid_edd_date.stop()
+        self.validate_momconnect_import.stop()
 
     def test_missing_columns(self):
         """
@@ -72,6 +77,8 @@ class MomConnectImportFormTests(TestCase):
         self.assertEqual(row.edd_month, 12)
         self.assertEqual(row.edd_day, 1)
         self.assertEqual(row.language, ImportRow.Language.AFR)
+
+        self.validate_momconnect_import.delay.assert_called_once_with(instance.id)
 
     def test_invalid_msisdn(self):
         """
@@ -223,7 +230,7 @@ class MomConnectImportFormTests(TestCase):
 
     def test_facility_code_invalid(self):
         """
-        facility_code must be 6 digits
+        facility_code must be in the database
         """
         file = SimpleUploadedFile(
             "test.csv",
@@ -251,21 +258,7 @@ class MomConnectImportFormTests(TestCase):
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
         [error] = instance.errors.all()
         self.assertEqual(
-            error.error, "Field facility_code failed validation: Must be 6 digits"
-        )
-
-        file = SimpleUploadedFile(
-            "test.csv",
-            b"msisdn,facility code,id type,id number,messaging consent,"
-            b"edd year,edd month,edd day\n"
-            b"+27820001001,123,said,9001010001088,true,2021,12,1\n",
-        )
-        form = MomConnectImportForm(data={}, files={"file": file})
-        instance = form.save()
-        self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
-        [error] = instance.errors.all()
-        self.assertEqual(
-            error.error, "Field facility_code failed validation: Must be 6 digits"
+            error.error, "Field facility_code failed validation: Invalid Facility Code"
         )
 
         file = SimpleUploadedFile(

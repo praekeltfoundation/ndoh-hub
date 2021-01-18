@@ -6,11 +6,14 @@ import pycountry
 from django.conf.locale import LANG_INFO
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 
-from eventstore.validators import validate_sa_id_number, validate_true
+from eventstore.validators import (
+    validate_facility_code,
+    validate_sa_id_number,
+    validate_true,
+)
 from ndoh_hub.utils import is_valid_edd_date
 from registrations.validators import geographic_coordinate, za_phone_number
 
@@ -697,11 +700,15 @@ class ImportError(models.Model):
         INVALID_HEADER = 1
         FIELD_VALIDATION_ERROR = 2
         ROW_VALIDATION_ERROR = 3
+        OPTED_OUT_ERROR = 4
+        ALREADY_REGISTERED = 5
         choices = (
             (INVALID_FILETYPE, "File is not a CSV"),
             (INVALID_HEADER, "Fields {} not found in header"),
             (FIELD_VALIDATION_ERROR, "Field {} failed validation: {}"),
             (ROW_VALIDATION_ERROR, "Failed validation: {}"),
+            (OPTED_OUT_ERROR, "Mother is opted out and has not chosen to opt in again"),
+            (ALREADY_REGISTERED, "Mother is already receiving prebirth messages"),
         )
 
     mcimport = models.ForeignKey(
@@ -775,9 +782,7 @@ class ImportRow(models.Model):
     messaging_consent = models.BooleanField(validators=[validate_true])
     research_consent = models.BooleanField(default=False)
     previous_optout = models.BooleanField(default=False)
-    facility_code = models.CharField(
-        max_length=6, validators=[RegexValidator(r"\d{6}", "Must be 6 digits")]
-    )
+    facility_code = models.CharField(max_length=6, validators=[validate_facility_code])
     edd_year = models.PositiveSmallIntegerField()
     edd_month = models.PositiveSmallIntegerField()
     edd_day = models.PositiveSmallIntegerField()

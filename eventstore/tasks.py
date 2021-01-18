@@ -21,8 +21,10 @@ from eventstore.models import (
     EddSwitch,
     Event,
     IdentificationSwitch,
+    ImportError,
     LanguageSwitch,
     Message,
+    MomConnectImport,
     MSISDNSwitch,
     OptOut,
     PMTCTRegistration,
@@ -455,3 +457,61 @@ def reset_delivery_failure(contact_uuid):
 
     if wa_id:
         DeliveryFailure.objects.filter(contact_id=wa_id).update(number_of_failures=0)
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
+    retry_backoff=True,
+    max_retries=5,
+    acks_late=True,
+    soft_time_limit=600,
+    time_limit=700,
+)
+def validate_momconnect_import(mcimport_id):
+    mcimport = MomConnectImport.objects.get(id=mcimport_id)
+
+    if mcimport.status != MomConnectImport.Status.VALIDATING:
+        return
+
+    for row in mcimport.rows.iterator():
+        msisdn = phonenumbers.parse(row.msisdn, "ZA")
+        msisdn = phonenumbers.format_number(msisdn, phonenumbers.PhoneNumberFormat.E164)
+        urn = f"whatsapp:{msisdn.lstrip('+')}"
+        contact = rapidpro.get_contacts(urn=urn).first(retry_on_rate_exceed=True)
+
+        if contact is None:
+            # No existing contact, so nothing to validate
+            continue
+
+        # validate previously opted out
+        if (
+            contact.fields.get("opted_out", "").strip().lower() == "true"
+            and not row.previous_optout
+        ):
+            mcimport.status = MomConnectImport.Status.ERROR
+            mcimport.save()
+            mcimport.errors.create(
+                row_number=row.row_number,
+                error_type=ImportError.ErrorType.OPTED_OUT_ERROR,
+                error_args=[],
+            )
+            continue
+
+        # validate already receiving prebirth messaging
+        try:
+            prebirth_messaging = int(contact.fields.get("prebirth_messaging"))
+        except (TypeError, ValueError):
+            prebirth_messaging = -1
+        if prebirth_messaging >= 1 and prebirth_messaging <= 6:
+            mcimport.status = MomConnectImport.Status.ERROR
+            mcimport.save()
+            mcimport.errors.create(
+                row_number=row.row_number,
+                error_type=ImportError.ErrorType.ALREADY_REGISTERED,
+                error_args=[],
+            )
+            continue
+
+    if mcimport.status == MomConnectImport.Status.VALIDATING:
+        mcimport.status = MomConnectImport.Status.VALIDATED
+        mcimport.save()

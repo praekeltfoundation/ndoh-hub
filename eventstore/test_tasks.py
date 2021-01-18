@@ -6,6 +6,7 @@ from django.test import TestCase, override_settings
 from temba_client.v2 import TembaClient
 
 from eventstore import tasks
+from eventstore.models import ImportError, ImportRow, MomConnectImport
 
 
 def override_get_today():
@@ -202,3 +203,126 @@ class HandleOldWaitingForHelpdeskContactsTests(TestCase):
                 }
             },
         )
+
+
+class ValidateMomConnectImportTests(TestCase):
+    @responses.activate
+    def test_success(self):
+        """
+        If the validation passes, then should be updated to validation complete
+        """
+        responses.add(
+            responses.GET,
+            "https://textit.in/api/v2/contacts.json?urn=whatsapp%3A27820001001",
+            json={"results": [], "next": None},
+        )
+
+        mcimport = MomConnectImport.objects.create()
+        mcimport.rows.create(
+            row_number=2,
+            msisdn="+27820001001",
+            messaging_consent=True,
+            facility_code="123456",
+            edd_year=2021,
+            edd_month=12,
+            edd_day=13,
+            id_type=ImportRow.IDType.SAID,
+        )
+        tasks.validate_momconnect_import(mcimport.id)
+
+        mcimport.refresh_from_db()
+        self.assertEqual(mcimport.status, MomConnectImport.Status.VALIDATED)
+
+    @responses.activate
+    def test_fail_previously_opted_out(self):
+        """
+        If the mother has previously opted out, and hasn't chosen to opt in again,
+        then validation should fail
+        """
+        responses.add(
+            responses.GET,
+            "https://textit.in/api/v2/contacts.json?urn=whatsapp%3A27820001001",
+            json={
+                "results": [
+                    {
+                        "uuid": "contact-uuid",
+                        "name": "",
+                        "language": "zul",
+                        "groups": [],
+                        "fields": {"opted_out": "TRUE"},
+                        "blocked": False,
+                        "stopped": False,
+                        "created_on": "2015-11-11T08:30:24.922024+00:00",
+                        "modified_on": "2015-11-11T08:30:25.525936+00:00",
+                        "urns": ["whatsapp:27820001001"],
+                    }
+                ],
+                "next": None,
+            },
+        )
+
+        mcimport = MomConnectImport.objects.create()
+        mcimport.rows.create(
+            row_number=2,
+            msisdn="+27820001001",
+            messaging_consent=True,
+            facility_code="123456",
+            edd_year=2021,
+            edd_month=12,
+            edd_day=13,
+            id_type=ImportRow.IDType.SAID,
+        )
+        tasks.validate_momconnect_import(mcimport.id)
+
+        mcimport.refresh_from_db()
+        self.assertEqual(mcimport.status, MomConnectImport.Status.ERROR)
+
+        [error] = mcimport.errors.all()
+        self.assertEqual(error.error_type, ImportError.ErrorType.OPTED_OUT_ERROR)
+
+    @responses.activate
+    def test_fail_already_registered(self):
+        """
+        If the mother is already receiving prebirth messages, then validation should
+        fail
+        """
+        responses.add(
+            responses.GET,
+            "https://textit.in/api/v2/contacts.json?urn=whatsapp%3A27820001001",
+            json={
+                "results": [
+                    {
+                        "uuid": "contact-uuid",
+                        "name": "",
+                        "language": "zul",
+                        "groups": [],
+                        "fields": {"prebirth_messaging": "2"},
+                        "blocked": False,
+                        "stopped": False,
+                        "created_on": "2015-11-11T08:30:24.922024+00:00",
+                        "modified_on": "2015-11-11T08:30:25.525936+00:00",
+                        "urns": ["whatsapp:27820001001"],
+                    }
+                ],
+                "next": None,
+            },
+        )
+
+        mcimport = MomConnectImport.objects.create()
+        mcimport.rows.create(
+            row_number=2,
+            msisdn="+27820001001",
+            messaging_consent=True,
+            facility_code="123456",
+            edd_year=2021,
+            edd_month=12,
+            edd_day=13,
+            id_type=ImportRow.IDType.SAID,
+        )
+        tasks.validate_momconnect_import(mcimport.id)
+
+        mcimport.refresh_from_db()
+        self.assertEqual(mcimport.status, MomConnectImport.Status.ERROR)
+
+        [error] = mcimport.errors.all()
+        self.assertEqual(error.error_type, ImportError.ErrorType.ALREADY_REGISTERED)
