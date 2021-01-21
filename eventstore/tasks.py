@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import date, datetime
 from urllib.parse import urljoin
 
@@ -17,6 +18,7 @@ from eventstore.models import (
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
+    Covid19Triage,
     DeliveryFailure,
     EddSwitch,
     Event,
@@ -35,8 +37,10 @@ from eventstore.models import (
     ResearchOptinSwitch,
 )
 from ndoh_hub.celery import app
-from ndoh_hub.utils import get_today, rapidpro
+from ndoh_hub.utils import get_mom_age, get_today, rapidpro
 from registrations.tasks import request_to_jembi_api
+
+logger = logging.getLogger(__name__)
 
 
 def get_utc_now():
@@ -574,7 +578,7 @@ def upload_momconnect_import(mcimport_id):
             "passport_number": row.passport_number,
             "swt": "7",
         }
-        if row.passport_country:
+        if row.passport_country is not None:
             data["passport_origin"] = {
                 ImportRow.PassportCountry.ZW: "zw",
                 ImportRow.PassportCountry.MZ: "mz",
@@ -585,7 +589,7 @@ def upload_momconnect_import(mcimport_id):
                 ImportRow.PassportCountry.OTHER: "other",
             }[row.passport_country]
         if row.dob_year and row.dob_month and row.dob_day:
-            row["dob"] = date(row.dob_year, row.dob_month, row.dob_day).isoformat()
+            data["dob"] = date(row.dob_year, row.dob_month, row.dob_day).isoformat()
 
         rapidpro.create_flow_start(
             flow=settings.RAPIDPRO_PREBIRTH_CLINIC_FLOW, urns=[urn], extra=data
@@ -595,3 +599,71 @@ def upload_momconnect_import(mcimport_id):
 
     mcimport.status = MomConnectImport.Status.COMPLETE
     mcimport.save()
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
+    retry_backoff=True,
+    max_retries=20,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def process_ada_assessment_notification(
+    username, id, patient_id, patient_dob, observations, timestamp
+):
+    contact = rapidpro.get_contacts(uuid=patient_id).first(retry_on_rate_exceed=True)
+    if not contact or not contact.urns or not contact.fields.get("clinic_code"):
+        # Contact doesn't exist, or we don't have a full clinic registration, so ignore
+        # the notification
+        logger.info(f"Cannot find contact with UUID {patient_id}, skipping processing")
+        return
+
+    rapidpro.update_contact(contact, fields={"date_of_birth": patient_dob})
+
+    _, msisdn = contact.urns[0].split(":")
+    msisdn = f"+{msisdn.lstrip('+')}"
+
+    age_years = get_mom_age(get_today(), patient_dob)
+    if age_years < 18:
+        age = Covid19Triage.AGE_U18
+    elif age_years < 40:
+        age = Covid19Triage.AGE_18T40
+    elif age_years <= 65:
+        age = Covid19Triage.AGE_40T65
+    else:
+        age = Covid19Triage.AGE_O65
+
+    triage = Covid19Triage(
+        deduplication_id=id,
+        msisdn=msisdn,
+        source="Ada",
+        age=age,
+        date_of_birth=patient_dob,
+        # TODO: Get province, city, and location from clinic code
+        province="ZA-WC",
+        city="Cape Town",
+        city_location="",
+        # TODO: Replace this with the actual observations
+        fever=observations["fever"],
+        cough=observations["cough"],
+        sore_throat=observations["sore throat"],
+        difficulty_breathing=observations["difficulty breathing"],
+        muscle_pain=observations["muscle pain"],
+        smell=observations["smell"],
+        # TODO: replace this if we get this information from Ada
+        exposure=Covid19Triage.EXPOSURE_NOT_SURE,
+        tracing=False,
+        # TODO: calculate risk
+        risk=Covid19Triage.RISK_LOW,
+        gender=Covid19Triage.GENDER_FEMALE,
+        completed_timestamp=timestamp,
+        created_by=username,
+        data={
+            "clinic_code": contact.fields["clinic_code"],
+            "age": age_years,
+            "pregnant": bool(contact.fields.get("prebirth_messaging")),
+        },
+    )
+    triage.full_clean()
+    triage.save()

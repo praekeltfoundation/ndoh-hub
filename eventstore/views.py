@@ -66,6 +66,7 @@ from eventstore.serializers import (
 from eventstore.tasks import (
     forget_contact,
     mark_turn_contact_healthcheck_complete,
+    process_ada_assessment_notification,
     reset_delivery_failure,
 )
 from eventstore.whatsapp_actions import handle_event, handle_inbound, handle_outbound
@@ -467,13 +468,13 @@ class AdaAssessmentNotificationViewSet(ViewSet):
         if not patient_id:
             raise ValidationError({"entry": ["No patient entry found"]})
         # TODO: Ensure that the observations we received are the ones we require
-        # TODO: run task with collected data
-        return Response(
-            {
-                "patient_id": patient_id,
-                "patient_dob": patient_dob,
-                "observations": observations,
-                "timestamp": serializer.validated_data["timestamp"],
-            },
-            status=status.HTTP_202_ACCEPTED,
-        )
+        data = {
+            "username": request.user.username,
+            "id": serializer.validated_data["id"],
+            "patient_id": patient_id,
+            "patient_dob": patient_dob,
+            "observations": observations,
+            "timestamp": serializer.validated_data["timestamp"],
+        }
+        process_ada_assessment_notification.delay(**data)
+        return Response(data, status=status.HTTP_202_ACCEPTED)

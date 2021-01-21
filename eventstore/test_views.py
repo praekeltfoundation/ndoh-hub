@@ -2283,6 +2283,7 @@ class AdaAssessmentNotificationViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(
             response.json(),
             {
+                "id": ["This field is required."],
                 "entry": ["This field is required."],
                 "timestamp": ["This field is required."],
             },
@@ -2299,6 +2300,7 @@ class AdaAssessmentNotificationViewSetTests(APITestCase, BaseEventTestCase):
         response = self.client.post(
             self.url,
             {
+                "id": "abc123",
                 "entry": [{"resource": {"resourceType": "Patient"}}],
                 "timestamp": timezone.now().isoformat(),
             },
@@ -2330,6 +2332,7 @@ class AdaAssessmentNotificationViewSetTests(APITestCase, BaseEventTestCase):
         response = self.client.post(
             self.url,
             {
+                "id": "abc123",
                 "entry": [
                     {"resource": {"resourceType": "Observation", "valueBoolean": "a"}}
                 ],
@@ -2362,7 +2365,7 @@ class AdaAssessmentNotificationViewSetTests(APITestCase, BaseEventTestCase):
 
         response = self.client.post(
             self.url,
-            {"entry": [], "timestamp": timezone.now().isoformat()},
+            {"id": "abc123", "entry": [], "timestamp": timezone.now().isoformat()},
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -2379,6 +2382,7 @@ class AdaAssessmentNotificationViewSetTests(APITestCase, BaseEventTestCase):
         response = self.client.post(
             self.url,
             {
+                "id": "abc123",
                 "entry": [
                     {
                         "resource": {
@@ -2404,6 +2408,8 @@ class AdaAssessmentNotificationViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(
             response.json(),
             {
+                "id": "abc123",
+                "username": "test",
                 "patient_id": "abc123",
                 "patient_dob": "1990-01-02",
                 "observations": {"cough": True},

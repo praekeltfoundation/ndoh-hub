@@ -310,6 +310,7 @@ class AdaAssessmentNotificationSerializer(serializers.Serializer):
 
         resource = Resource()
 
+    id = serializers.CharField()
     entry = serializers.ListField(child=Entry())
     timestamp = serializers.DateTimeField(default_timezone=timezone.utc)
 
