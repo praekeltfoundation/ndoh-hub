@@ -11,6 +11,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.test import override_settings
 from django.urls import reverse
+from django.utils import timezone
 from pytz import UTC
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -2249,3 +2250,163 @@ class DBEOnBehalfOfProfileTests(APITestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.json()["results"]), 2)
+
+
+class AdaAssessmentNotificationViewSetTests(APITestCase, BaseEventTestCase):
+    url = reverse("adaassessmentnotification-list")
+
+    def test_querystring_token_auth(self):
+        """
+        Auth should be done through a token in the querystring
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        token = Token.objects.create(user=user)
+        response = self.client.post(f"{self.url}?token={token.key}")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_validates_request_data(self):
+        """
+        Should return errors for invalid request data
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+        self.client.force_authenticate(user)
+
+        response = self.client.post(self.url, {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {
+                "entry": ["This field is required."],
+                "timestamp": ["This field is required."],
+            },
+        )
+
+    def test_validates_patient_data(self):
+        """
+        Should return errors for invalid patient entry
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+        self.client.force_authenticate(user)
+
+        response = self.client.post(
+            self.url,
+            {
+                "entry": [{"resource": {"resourceType": "Patient"}}],
+                "timestamp": timezone.now().isoformat(),
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {
+                "entry": {
+                    "0": {
+                        "resource": {
+                            "id": ["This field is required."],
+                            "birthDate": ["This field is required."],
+                        }
+                    }
+                }
+            },
+        )
+
+    def test_validates_observation_data(self):
+        """
+        Should return errors for invalid observation entry
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+        self.client.force_authenticate(user)
+
+        response = self.client.post(
+            self.url,
+            {
+                "entry": [
+                    {"resource": {"resourceType": "Observation", "valueBoolean": "a"}}
+                ],
+                "timestamp": timezone.now().isoformat(),
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {
+                "entry": {
+                    "0": {
+                        "resource": {
+                            "code": ["This field is required."],
+                            "valueBoolean": ["Must be a valid boolean."],
+                        }
+                    }
+                }
+            },
+        )
+
+    def test_missing_patient_data(self):
+        """
+        Should return errors if there's no patient data in the entries
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+        self.client.force_authenticate(user)
+
+        response = self.client.post(
+            self.url,
+            {"entry": [], "timestamp": timezone.now().isoformat()},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.json(), {"entry": ["No patient entry found"]})
+
+    def test_valid_data(self):
+        """
+        Should return errors if there's no patient data in the entries
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+        self.client.force_authenticate(user)
+
+        response = self.client.post(
+            self.url,
+            {
+                "entry": [
+                    {
+                        "resource": {
+                            "resourceType": "Observation",
+                            "code": {"text": "cough"},
+                            "valueBoolean": True,
+                        }
+                    },
+                    {
+                        "resource": {
+                            "resourceType": "Patient",
+                            "id": "abc123",
+                            "birthDate": "1990-01-02",
+                        }
+                    },
+                    {"resource": {"resourceType": "Condition"}},
+                ],
+                "timestamp": "2021-01-02T03:04:05Z",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertEqual(
+            response.json(),
+            {
+                "patient_id": "abc123",
+                "patient_dob": "1990-01-02",
+                "observations": {"cough": True},
+                "timestamp": "2021-01-02T03:04:05Z",
+            },
+        )

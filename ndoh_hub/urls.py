@@ -9,6 +9,7 @@ from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.documentation import include_docs_urls
 
 from eventstore.views import (
+    AdaAssessmentNotificationViewSet,
     BabyDobSwitchViewSet,
     BabySwitchViewSet,
     CDUAddressUpdateViewSet,
@@ -56,6 +57,11 @@ v2router.register("babydobswitches", BabyDobSwitchViewSet)
 v2router.register("cduaddressupdate", CDUAddressUpdateViewSet)
 v2router.register("healthcheckuserprofile", HealthCheckUserProfileViewSet)
 v2router.register("dbeonbehalfofprofile", DBEOnBehalfOfProfileViewSet)
+v2router.register(
+    "adaassessmentnotification",
+    AdaAssessmentNotificationViewSet,
+    basename="adaassessmentnotification",
+)
 
 v3router = routers.DefaultRouter()
 v3router.register("covid19triage", Covid19TriageV2ViewSet, basename="covid19triagev2")

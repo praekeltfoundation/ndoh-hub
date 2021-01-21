@@ -7,10 +7,11 @@ from django_filters import rest_framework as filters
 from pytz import UTC
 from rest_framework import serializers, status
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.exceptions import ValidationError
 from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin
 from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet
+from rest_framework.viewsets import GenericViewSet, ViewSet
 
 from eventstore.models import (
     BabyDobSwitch,
@@ -35,6 +36,9 @@ from eventstore.models import (
     ResearchOptinSwitch,
 )
 from eventstore.serializers import (
+    AdaAssessmentNotificationSerializer,
+    AdaObservationSerializer,
+    AdaPatientSerializer,
     BabyDobSwitchSerializer,
     BabySwitchSerializer,
     CDUAddressUpdateSerializer,
@@ -420,3 +424,56 @@ class DBEOnBehalfOfProfileViewSet(GenericViewSet, ListModelMixin):
         if msisdn is not None:
             queryset = queryset.filter(msisdn=msisdn)
         return queryset
+
+
+class AdaAssessmentNotificationViewSet(ViewSet):
+    # This ultimately creates a Covid19Triage (through the task), so relate permissions
+    queryset = Covid19Triage.objects.none()
+    permission_classes = (DjangoViewModelPermissions,)
+    authentication_classes = (TokenAuthQueryString,)
+
+    def create(self, request):
+        serializer = AdaAssessmentNotificationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        patient_id = None
+        patient_dob = None
+        observations = {}
+        errors = {}
+        # Use request.data here, because the serializer doesn't have all the data that
+        # we need for each of the entries
+        for i, entry in enumerate(request.data["entry"]):
+            resource = entry["resource"]
+            resource_type = resource["resourceType"]
+            # Because the kind of validation depends on the resource type, we need to
+            # do validation manually here, choosing the correct serializer according
+            # to the type
+            if resource_type == "Patient":
+                patient_serializer = AdaPatientSerializer(data=resource)
+                if not patient_serializer.is_valid():
+                    errors[i] = {"resource": patient_serializer.errors}
+                    continue
+                patient_id = patient_serializer.validated_data["id"]
+                patient_dob = patient_serializer.validated_data["birthDate"]
+            elif resource_type == "Observation":
+                observation_serializer = AdaObservationSerializer(data=resource)
+                if not observation_serializer.is_valid():
+                    errors[i] = {"resource": observation_serializer.errors}
+                    continue
+                observation = observation_serializer.validated_data
+                observations[observation["code"]["text"]] = observation["valueBoolean"]
+        if errors:
+            raise ValidationError({"entry": errors})
+        # Ensure that we extracted all the data that we need
+        if not patient_id:
+            raise ValidationError({"entry": ["No patient entry found"]})
+        # TODO: Ensure that the observations we received are the ones we require
+        # TODO: run task with collected data
+        return Response(
+            {
+                "patient_id": patient_id,
+                "patient_dob": patient_dob,
+                "observations": observations,
+                "timestamp": serializer.validated_data["timestamp"],
+            },
+            status=status.HTTP_202_ACCEPTED,
+        )
