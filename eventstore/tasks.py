@@ -38,6 +38,7 @@ from eventstore.models import (
 )
 from ndoh_hub.celery import app
 from ndoh_hub.utils import get_mom_age, get_today, rapidpro
+from registrations.models import ClinicCode
 from registrations.tasks import request_to_jembi_api
 
 logger = logging.getLogger(__name__)
@@ -619,6 +620,12 @@ def process_ada_assessment_notification(
         logger.info(f"Cannot find contact with UUID {patient_id}, skipping processing")
         return
 
+    try:
+        cliniccode = ClinicCode.objects.get(value=contact.fields["clinic_code"])
+    except ClinicCode.DoesNotExist:
+        # We don't recognise this contact's clinic code, so ignore notification
+        return
+
     rapidpro.update_contact(contact, fields={"date_of_birth": patient_dob})
 
     _, msisdn = contact.urns[0].split(":")
@@ -640,10 +647,9 @@ def process_ada_assessment_notification(
         source="Ada",
         age=age,
         date_of_birth=patient_dob,
-        # TODO: Get province, city, and location from clinic code
-        province="ZA-WC",
-        city="Cape Town",
-        city_location="",
+        province=cliniccode.province,
+        city=cliniccode.name,
+        city_location=cliniccode.location,
         # TODO: Replace this with the actual observations
         fever=observations["fever"],
         cough=observations["cough"],
@@ -660,7 +666,6 @@ def process_ada_assessment_notification(
         completed_timestamp=timestamp,
         created_by=username,
         data={
-            "clinic_code": contact.fields["clinic_code"],
             "age": age_years,
             "pregnant": bool(contact.fields.get("prebirth_messaging")),
         },

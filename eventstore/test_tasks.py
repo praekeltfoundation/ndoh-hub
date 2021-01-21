@@ -8,6 +8,7 @@ from temba_client.v2 import TembaClient
 
 from eventstore import tasks
 from eventstore.models import Covid19Triage, ImportError, ImportRow, MomConnectImport
+from registrations.models import ClinicCode
 
 
 def override_get_today():
@@ -531,6 +532,14 @@ class ProcessAdaAssessmentNotificationTests(TestCase):
         """
         Creates a Covid19Triage with the information
         """
+        ClinicCode.objects.create(
+            code="123456",
+            value="123456",
+            uid="abc123",
+            name="Test clinic",
+            province="ZA-WC",
+            location="-12.34+043.21/",
+        )
         rpcontact = {
             "uuid": "contact-uuid",
             "name": "",
@@ -575,8 +584,8 @@ class ProcessAdaAssessmentNotificationTests(TestCase):
         self.assertEqual(triage.age, Covid19Triage.AGE_18T40),
         self.assertEqual(triage.date_of_birth, datetime.date(1990, 1, 2)),
         self.assertEqual(triage.province, "ZA-WC"),
-        self.assertEqual(triage.city, "Cape Town"),
-        self.assertEqual(triage.city_location, ""),
+        self.assertEqual(triage.city, "Test clinic"),
+        self.assertEqual(triage.city_location, "-12.34+043.21/"),
         self.assertEqual(triage.fever, False),
         self.assertEqual(triage.cough, False),
         self.assertEqual(triage.sore_throat, False),
@@ -592,6 +601,4 @@ class ProcessAdaAssessmentNotificationTests(TestCase):
             datetime.datetime(2021, 1, 2, 3, 4, 5, tzinfo=datetime.timezone.utc),
         )
         self.assertEqual(triage.created_by, "test"),
-        self.assertEqual(
-            triage.data, {"clinic_code": "123456", "age": 30, "pregnant": False}
-        ),
+        self.assertEqual(triage.data, {"age": 30, "pregnant": False}),
