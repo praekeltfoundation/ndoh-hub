@@ -248,6 +248,8 @@ class ClinicCode(models.Model):
     value = models.CharField(max_length=255)
     uid = models.CharField(max_length=255, primary_key=True)
     name = models.CharField(max_length=255)
+    province = models.CharField(max_length=6, blank=True, null=True, default=None)
+    location = models.CharField(max_length=255, blank=True, null=True, default=None)
 
     class Meta:
         indexes = [models.Index(fields=["value"])]
