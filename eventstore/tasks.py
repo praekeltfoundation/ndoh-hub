@@ -660,8 +660,6 @@ def process_ada_assessment_notification(
         # TODO: replace this if we get this information from Ada
         exposure=Covid19Triage.EXPOSURE_NOT_SURE,
         tracing=False,
-        # TODO: calculate risk
-        risk=Covid19Triage.RISK_LOW,
         gender=Covid19Triage.GENDER_FEMALE,
         completed_timestamp=timestamp,
         created_by=username,
@@ -670,5 +668,6 @@ def process_ada_assessment_notification(
             "pregnant": bool(contact.fields.get("prebirth_messaging")),
         },
     )
+    triage.risk = triage.calculate_risk()
     triage.full_clean()
     triage.save()
