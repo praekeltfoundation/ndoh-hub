@@ -498,6 +498,36 @@ class Covid19Triage(models.Model):
     class Meta:
         indexes = [models.Index(fields=["msisdn", "timestamp"])]
 
+    def calculate_risk(self):
+        symptoms = sum(
+            [
+                self.fever,
+                self.cough,
+                self.sore_throat,
+                self.difficulty_breathing,
+                bool(self.muscle_pain),
+                bool(self.smell),
+            ]
+        )
+
+        if symptoms >= 3:
+            return self.RISK_HIGH
+        elif symptoms == 2:
+            if self.exposure == self.EXPOSURE_YES or self.age == self.AGE_O65:
+                return self.RISK_HIGH
+            else:
+                return self.RISK_MODERATE
+        elif symptoms == 1:
+            if self.exposure == self.EXPOSURE_YES:
+                return self.RISK_HIGH
+            else:
+                return self.RISK_MODERATE
+        else:
+            if self.exposure == self.EXPOSURE_YES:
+                return self.RISK_MODERATE
+            else:
+                return self.RISK_LOW
+
 
 class HealthCheckUserProfileManager(models.Manager):
     def get_or_prefill(self, msisdn: Text) -> "HealthCheckUserProfile":

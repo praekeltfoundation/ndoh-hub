@@ -1,4 +1,5 @@
 import uuid
+from datetime import timezone
 
 from rest_framework import serializers
 
@@ -298,3 +299,30 @@ class DBEOnBehalfOfProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = DBEOnBehalfOfProfile
         fields = "__all__"
+
+
+class AdaAssessmentNotificationSerializer(serializers.Serializer):
+    class Entry(serializers.Serializer):
+        class Resource(serializers.Serializer):
+            resourceType = serializers.ChoiceField(
+                choices=("Composition", "Observation", "Condition", "Patient")
+            )
+
+        resource = Resource()
+
+    id = serializers.CharField()
+    entry = serializers.ListField(child=Entry())
+    timestamp = serializers.DateTimeField(default_timezone=timezone.utc)
+
+
+class AdaPatientSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    birthDate = serializers.DateField()
+
+
+class AdaObservationSerializer(serializers.Serializer):
+    class Code(serializers.Serializer):
+        text = serializers.CharField()
+
+    code = Code()
+    valueBoolean = serializers.BooleanField()

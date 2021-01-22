@@ -7,7 +7,8 @@ from django.test import TestCase, override_settings
 from temba_client.v2 import TembaClient
 
 from eventstore import tasks
-from eventstore.models import ImportError, ImportRow, MomConnectImport
+from eventstore.models import Covid19Triage, ImportError, ImportRow, MomConnectImport
+from registrations.models import ClinicCode
 
 
 def override_get_today():
@@ -333,7 +334,6 @@ class ValidateMomConnectImportTests(TestCase):
 
 
 @override_settings(RAPIDPRO_PREBIRTH_CLINIC_FLOW="prebirth-clinic-flow-uuid")
-@responses.activate
 class UploadMomConnectImportTests(TestCase):
     def setUp(self):
         responses.add(
@@ -355,6 +355,7 @@ class UploadMomConnectImportTests(TestCase):
             },
         )
 
+    @responses.activate
     def test_success_sa_id(self):
         """
         If the validation passes, then should be updated to validation complete
@@ -401,6 +402,7 @@ class UploadMomConnectImportTests(TestCase):
             },
         )
 
+    @responses.activate
     def test_success_passport(self):
         """
         If the validation passes, then should be updated to validation complete
@@ -438,7 +440,7 @@ class UploadMomConnectImportTests(TestCase):
                     "edd": "2021-12-13",
                     "id_type": "passport",
                     "passport_number": "A123456",
-                    "passport_country": "zw",
+                    "passport_origin": "zw",
                     "language": "eng",
                     "source": "MomConnect Import",
                     "swt": "7",
@@ -449,6 +451,7 @@ class UploadMomConnectImportTests(TestCase):
             },
         )
 
+    @responses.activate
     def test_success_dob(self):
         """
         If the validation passes, then should be updated to validation complete
@@ -497,3 +500,137 @@ class UploadMomConnectImportTests(TestCase):
                 },
             },
         )
+
+
+class ProcessAdaAssessmentNotificationTests(TestCase):
+    def setUp(self):
+        tasks.get_today = override_get_today
+        tasks.rapidpro = TembaClient("textit.in", "test-token")
+
+    @responses.activate
+    def test_no_contact(self):
+        """
+        If there's no rapidpro contact with the specified ID, then ignore notification
+        """
+        responses.add(
+            responses.GET,
+            "https://textit.in/api/v2/contacts.json?uuid=does-not-exist",
+            json={"results": [], "next": None},
+        )
+        tasks.process_ada_assessment_notification(
+            username="test",
+            id="abc123",
+            patient_id="does-not-exist",
+            patient_dob="1990-01-02",
+            observations={},
+            timestamp="2021-01-02T03:04:05Z",
+        )
+        self.assertEqual(Covid19Triage.objects.count(), 0)
+
+    @responses.activate
+    def test_no_facility(self):
+        """
+        If there's no facility for the contact's facility code, then ignore notification
+        """
+        rpcontact = {
+            "uuid": "contact-uuid",
+            "name": "",
+            "language": "zul",
+            "groups": [],
+            "fields": {"clinic_code": "123456"},
+            "blocked": False,
+            "stopped": False,
+            "created_on": "2015-11-11T08:30:24.922024+00:00",
+            "modified_on": "2015-11-11T08:30:25.525936+00:00",
+            "urns": ["whatsapp:27820001001"],
+        }
+        responses.add(
+            responses.GET,
+            "https://textit.in/api/v2/contacts.json?uuid=does-not-exist",
+            json={"results": [rpcontact], "next": None},
+        )
+        tasks.process_ada_assessment_notification(
+            username="test",
+            id="abc123",
+            patient_id="does-not-exist",
+            patient_dob="1990-01-02",
+            observations={},
+            timestamp="2021-01-02T03:04:05Z",
+        )
+        self.assertEqual(Covid19Triage.objects.count(), 0)
+
+    @responses.activate
+    def test_valid(self):
+        """
+        Creates a Covid19Triage with the information
+        """
+        ClinicCode.objects.create(
+            code="123456",
+            value="123456",
+            uid="abc123",
+            name="Test clinic",
+            province="ZA-WC",
+            location="-12.34+043.21/",
+        )
+        rpcontact = {
+            "uuid": "contact-uuid",
+            "name": "",
+            "language": "zul",
+            "groups": [],
+            "fields": {"clinic_code": "123456"},
+            "blocked": False,
+            "stopped": False,
+            "created_on": "2015-11-11T08:30:24.922024+00:00",
+            "modified_on": "2015-11-11T08:30:25.525936+00:00",
+            "urns": ["whatsapp:27820001001"],
+        }
+        responses.add(
+            responses.GET,
+            "https://textit.in/api/v2/contacts.json?uuid=contact-uuid",
+            json={"results": [rpcontact], "next": None},
+        )
+        responses.add(
+            responses.POST,
+            "https://textit.in/api/v2/contacts.json?uuid=contact-uuid",
+            json=rpcontact,
+        )
+        tasks.process_ada_assessment_notification(
+            username="test",
+            id="abc123",
+            patient_id="contact-uuid",
+            patient_dob="1990-01-02",
+            observations={
+                "fever": False,
+                "cough": False,
+                "sore throat": False,
+                "difficulty breathing": False,
+                "muscle pain": False,
+                "smell": False,
+            },
+            timestamp="2021-01-02T03:04:05Z",
+        )
+        [triage] = Covid19Triage.objects.all()
+        self.assertEqual(triage.deduplication_id, "abc123")
+        self.assertEqual(triage.msisdn, "+27820001001")
+        self.assertEqual(triage.source, "Ada")
+        self.assertEqual(triage.age, Covid19Triage.AGE_18T40),
+        self.assertEqual(triage.date_of_birth, datetime.date(1990, 1, 2)),
+        self.assertEqual(triage.province, "ZA-WC"),
+        self.assertEqual(triage.city, "Test clinic"),
+        self.assertEqual(triage.city_location, "-12.34+043.21/"),
+        self.assertEqual(triage.fever, False),
+        self.assertEqual(triage.cough, False),
+        self.assertEqual(triage.sore_throat, False),
+        self.assertEqual(triage.difficulty_breathing, False),
+        self.assertEqual(triage.muscle_pain, False),
+        self.assertEqual(triage.smell, False),
+        self.assertEqual(triage.exposure, Covid19Triage.EXPOSURE_NOT_SURE),
+        self.assertEqual(triage.tracing, False),
+        self.assertEqual(triage.risk, Covid19Triage.RISK_LOW),
+        self.assertEqual(triage.gender, Covid19Triage.GENDER_FEMALE),
+        self.assertEqual(
+            triage.completed_timestamp,
+            datetime.datetime(2021, 1, 2, 3, 4, 5, tzinfo=datetime.timezone.utc),
+        )
+        self.assertEqual(triage.created_by, "test"),
+        self.assertEqual(triage.data, {"age": 30, "pregnant": False}),
