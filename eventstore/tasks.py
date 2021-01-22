@@ -624,6 +624,10 @@ def process_ada_assessment_notification(
         cliniccode = ClinicCode.objects.get(value=contact.fields["clinic_code"])
     except ClinicCode.DoesNotExist:
         # We don't recognise this contact's clinic code, so ignore notification
+        logger.info(
+            f"Cannot find clinic code {contact.fields['clinic_code']}, skipping "
+            "processing"
+        )
         return
 
     rapidpro.update_contact(contact, fields={"date_of_birth": patient_dob})

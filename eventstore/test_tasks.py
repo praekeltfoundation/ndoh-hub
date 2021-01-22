@@ -528,6 +528,38 @@ class ProcessAdaAssessmentNotificationTests(TestCase):
         self.assertEqual(Covid19Triage.objects.count(), 0)
 
     @responses.activate
+    def test_no_facility(self):
+        """
+        If there's no facility for the contact's facility code, then ignore notification
+        """
+        rpcontact = {
+            "uuid": "contact-uuid",
+            "name": "",
+            "language": "zul",
+            "groups": [],
+            "fields": {"clinic_code": "123456"},
+            "blocked": False,
+            "stopped": False,
+            "created_on": "2015-11-11T08:30:24.922024+00:00",
+            "modified_on": "2015-11-11T08:30:25.525936+00:00",
+            "urns": ["whatsapp:27820001001"],
+        }
+        responses.add(
+            responses.GET,
+            "https://textit.in/api/v2/contacts.json?uuid=does-not-exist",
+            json={"results": [rpcontact], "next": None},
+        )
+        tasks.process_ada_assessment_notification(
+            username="test",
+            id="abc123",
+            patient_id="does-not-exist",
+            patient_dob="1990-01-02",
+            observations={},
+            timestamp="2021-01-02T03:04:05Z",
+        )
+        self.assertEqual(Covid19Triage.objects.count(), 0)
+
+    @responses.activate
     def test_valid(self):
         """
         Creates a Covid19Triage with the information
