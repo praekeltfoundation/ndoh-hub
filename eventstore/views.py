@@ -5,7 +5,7 @@ from django.db import IntegrityError
 from django.http import Http404
 from django_filters import rest_framework as filters
 from pytz import UTC
-from rest_framework import serializers, status
+from rest_framework import generics, permissions, serializers, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.exceptions import ValidationError
 from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin
@@ -49,6 +49,7 @@ from eventstore.serializers import (
     Covid19TriageV3Serializer,
     DBEOnBehalfOfProfileSerializer,
     EddSwitchSerializer,
+    ForgetContactSerializer,
     HealthCheckUserProfileSerializer,
     IdentificationSwitchSerializer,
     LanguageSwitchSerializer,
@@ -211,6 +212,20 @@ class OptOutViewSet(GenericViewSet, CreateModelMixin):
             forget_contact.delay(str(optout.contact_id))
 
 
+class ForgetContactView(generics.GenericAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        serializer = ForgetContactSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        contact_id = serializer.validated_data.get("contact_id")
+
+        forget_contact.delay(str(contact_id))
+
+        return Response({}, status=status.HTTP_200_OK)
+
+
 class BabySwitchViewSet(GenericViewSet, CreateModelMixin):
     queryset = BabySwitch.objects.all()
     serializer_class = BabySwitchSerializer
@@ -335,7 +350,7 @@ class Covid19TriageViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
     def create(self, *args, **kwargs):
         try:
             return super().create(*args, **kwargs)
-        except IntegrityError as e:
+        except IntegrityError:
             # We already have this entry
             return Response(status=status.HTTP_200_OK)
 
