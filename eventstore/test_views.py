@@ -224,6 +224,40 @@ class OptOutViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(len(responses.calls), 2)
 
 
+class ForgetContactViewTests(APITestCase):
+    url = reverse("forgetcontact")
+
+    @mock.patch("eventstore.views.forget_contact")
+    def test_unauthenticated(self, mock_forget_contact):
+        contact_id = "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
+
+        response = self.client.post(self.url, {"contact_id": contact_id})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        mock_forget_contact.delay.assert_not_called()
+
+    @mock.patch("eventstore.views.forget_contact")
+    def test_invalid_data(self, mock_forget_contact):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url, {"contact": "123"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.json(), {"contact_id": ["This field is required."]})
+
+        mock_forget_contact.delay.assert_not_called()
+
+    @mock.patch("eventstore.views.forget_contact")
+    def test_successful_forget(self, mock_forget_contact):
+        contact_id = "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
+
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url, {"contact_id": contact_id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        mock_forget_contact.delay.assert_called_once_with(contact_id)
+
+
 class BabySwitchViewSetTests(APITestCase, BaseEventTestCase):
     url = reverse("babyswitch-list")
 

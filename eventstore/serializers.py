@@ -326,3 +326,7 @@ class AdaObservationSerializer(serializers.Serializer):
 
     code = Code()
     valueBoolean = serializers.BooleanField()
+
+
+class ForgetContactSerializer(serializers.Serializer):
+    contact_id = serializers.UUIDField(required=True)
