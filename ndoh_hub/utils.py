@@ -179,6 +179,7 @@ def get_mom_age(today, mom_dob):
     born = datetime.datetime.strptime(mom_dob, "%Y-%m-%d")
     return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
 
+
 def get_available_metrics():
     available_metrics = []
     available_metrics.extend(settings.METRICS_REALTIME)
