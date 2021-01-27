@@ -1458,9 +1458,10 @@ class ProcessWhatsAppUnsentEvent(Task):
         language = identity["details"]["lang_code"].lower().replace("_", "-")
         with translation.override(language):
             text = translation.ugettext(
-                "Sorry but we can't send WhatsApp msgs to this phone. We'll "
-                "send your MomConnect msgs on SMS. To stop dial "
-                "%(optout_ussd)s, for more dial %(popi_ussd)s (Free)."
+                "Sorry we can't send WhatsApp msgs to this phone. We'll send your "
+                "MomConnect msgs on SMS. To stop dial *134*550*1#, for more dial "
+                "*134*550*7#"
+                
             ) % {
                 "popi_ussd": settings.POPI_USSD_CODE,
                 "optout_ussd": settings.OPTOUT_USSD_CODE,

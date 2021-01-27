@@ -49,9 +49,9 @@ msgstr ""
 #: changes/tasks.py:1463
 #, python-format
 msgid ""
-"Sorry but we can't send WhatsApp msgs to this phone. We'll send your "
+"Sorry we can't send WhatsApp msgs to this phone. We'll send your "
 "MomConnect msgs on SMS. To stop dial %(optout_ussd)s, for more dial "
-"%(popi_ussd)s (Free)."
+"%(popi_ussd)s"
 msgstr ""
 "Tshwarelo ga re romele melaetša yaWhatsApp founung ye. Re romela melaetša ya "
 "MomConnect ka SMS. Emiša ka %(optout_ussd)s, hwetša tše ntši taela"

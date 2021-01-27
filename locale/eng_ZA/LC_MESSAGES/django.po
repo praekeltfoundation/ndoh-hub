@@ -44,11 +44,11 @@ msgstr ""
 #: changes/tasks.py:1463
 #, python-format
 msgid ""
-"Sorry but we can't send WhatsApp msgs to this phone. We'll send your "
+"Sorry we can't send WhatsApp msgs to this phone. We'll send your "
 "MomConnect msgs on SMS. To stop dial %(optout_ussd)s, for more dial "
-"%(popi_ussd)s (Free)."
+"%(popi_ussd)s"
 msgstr ""
-"Sorry, we can't send WhatsApp msgs to this phone. We'll send your MomConnect "
+"Sorry we can't send WhatsApp msgs to this phone. We'll send your MomConnect "
 "msgs on SMS. To stop dial %(optout_ussd)s, for more dial %(popi_ussd)s."
 
 #: changes/tasks.py:1522 changes/tasks.py:1687
