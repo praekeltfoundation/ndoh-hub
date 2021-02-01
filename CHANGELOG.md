@@ -1,6 +1,18 @@
 # Changelog
 
-## 0.8.32
+## 0.8.34
+1. Add async bulk archive scripts
+  ([#363](https://github.com/praekeltfoundation/ndoh-hub/pull/363))
+1. Add momconnect CSV import
+  ([#364](https://github.com/praekeltfoundation/ndoh-hub/pull/364))
+  ([#365](https://github.com/praekeltfoundation/ndoh-hub/pull/365))
+  ([#366](https://github.com/praekeltfoundation/ndoh-hub/pull/366))
+1. Add ada assessment notification webhook endpoint
+  ([#367](https://github.com/praekeltfoundation/ndoh-hub/pull/367))
+1. Add forget contact endpoint
+  ([#368](https://github.com/praekeltfoundation/ndoh-hub/pull/368))
+
+## 0.8.33
 1. Fix Celery Beat Schedule settings
   ([#361](https://github.com/praekeltfoundation/ndoh-hub/pull/361))
 2. Update bulk archive and sync script
