@@ -480,30 +480,6 @@ class ProcessWhatsAppContactLookupFailTaskTests(WhatsAppBaseTestCase):
             }
         )
 
-    @mock.patch("changes.tasks.utils.ms_client.create_outbound")
-    @responses.activate
-    def test_sms_language(self, mock_create_outbound):
-        """
-        The outbound SMS should be translated into the user's language
-        """
-        user = User.objects.create_user("test")
-        Source.objects.create(user=user)
-        self.create_identity_lookup_by_msisdn(address="+27820001001", lang="xho_ZA")
-
-        process_whatsapp_contact_check_fail(user.pk, "+27820001001")
-
-        mock_create_outbound.assert_called_once_with(
-            {
-                "to_identity": "test-identity-uuid",
-                "content": (
-                    "Oh no! You can't get MomConnect messages on WhatsApp. "
-                    "We'll keep sending your MomConnect messages on SMS."
-                ),
-                "channel": "JUNE_TEXT",
-                "metadata": {},
-            }
-        )
-
     @responses.activate
     def test_no_identity_found(self):
         """
