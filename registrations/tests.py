@@ -19,12 +19,7 @@ from rest_hooks.models import model_saved
 
 from ndoh_hub import utils, utils_tests
 
-from .models import (
-    JembiSubmission,
-    Registration,
-    Source,
-    SubscriptionRequest,
-)
+from .models import JembiSubmission, Registration, Source, SubscriptionRequest
 from .signals import psh_validate_subscribe
 from .tasks import (
     PushRegistrationToJembi,
