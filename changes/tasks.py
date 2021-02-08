@@ -227,59 +227,6 @@ class ValidateImplement(Task):
                 self.log.info("Deactivating subscription")
                 sbm_client.update_subscription(active_sub["id"], {"active": False})
 
-        if has_active_momconnect_prebirth_sub:
-            self.log.info("Starting postbirth momconnect subscriptionrequest")
-
-            self.log.info("Determining messageset shortname")
-            # . determine messageset shortname
-            short_name = utils.get_messageset_short_name(
-                "momconnect_postbirth", "hw_full", 0
-            )
-            if has_active_whatsapp_momconnect_prebirth_sub:
-                short_name = "whatsapp_{}".format(short_name)
-
-            # . determine sbm details
-            self.log.info("Determining SBM details")
-            r = utils.get_messageset_schedule_sequence(short_name, 0)
-            msgset_id, msgset_schedule, next_sequence_number = r
-
-            subscription = {
-                "identity": change.registrant_id,
-                "messageset": msgset_id,
-                "next_sequence_number": next_sequence_number,
-                "lang": lang,
-                "schedule": msgset_schedule,
-            }
-            self.log.info("Creating MomConnect postbirth SubscriptionRequest")
-            SubscriptionRequest.objects.create(**subscription)
-            self.log.info("Created MomConnect postbirth SubscriptionRequest")
-
-        if has_active_pmtct_prebirth_sub:
-            self.log.info("Starting postbirth pmtct subscriptionrequest")
-
-            self.log.info("Determining messageset shortname")
-            # . determine messageset shortname
-            set_name = "pmtct_postbirth"
-            if has_active_whatsapp_pmtct_prebirth_sub:
-                set_name = "whatsapp_{}".format(set_name)
-            short_name = utils.get_messageset_short_name(set_name, "patient", 0)
-
-            # . determine sbm details
-            self.log.info("Determining SBM details")
-            r = utils.get_messageset_schedule_sequence(short_name, 0)
-            msgset_id, msgset_schedule, next_sequence_number = r
-
-            subscription = {
-                "identity": change.registrant_id,
-                "messageset": msgset_id,
-                "next_sequence_number": next_sequence_number,
-                "lang": lang,
-                "schedule": msgset_schedule,
-            }
-            self.log.info("Creating PMTCT postbirth SubscriptionRequest")
-            SubscriptionRequest.objects.create(**subscription)
-            self.log.info("Created PMTCT postbirth SubscriptionRequest")
-
         self.log.info("Saving the date of birth to the identity")
         identity = is_client.get_identity(change.registrant_id)
         details = identity["details"]
@@ -446,21 +393,6 @@ class ValidateImplement(Task):
             addresses["msisdn"] = {}
         msisdns = addresses["msisdn"]
 
-        if not any(details.get("default") for _, details in msisdns.items()):
-            for address, addr_details in msisdns.items():
-                utils.append_or_create(addr_details, "changes_from", change.id)
-
-        for address, addr_details in msisdns.items():
-            if "default" in addr_details and addr_details["default"]:
-                addr_details["default"] = False
-                utils.append_or_create(addr_details, "changes_from", change.id)
-
-        if new_msisdn not in msisdns:
-            msisdns[new_msisdn] = {"default": True}
-        else:
-            msisdns[new_msisdn]["default"] = True
-        utils.append_or_create(msisdns[new_msisdn], "changes_to", change.id)
-
         is_client.update_identity(identity["id"], {"details": details})
 
         self.log.info("Updating Change object")
@@ -477,10 +409,6 @@ class ValidateImplement(Task):
         identity = is_client.get_identity(change.registrant_id)
         details = identity["details"]
         old_identification = {"change": change.id}
-        for field in ("sa_id_no", "passport_no", "passport_origin"):
-            if field in details:
-                old_identification[field] = details.pop(field)
-        utils.append_or_create(details, "identification_history", old_identification)
 
         id_type = change.data.pop("id_type")
         if id_type == "sa_id":
