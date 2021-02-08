@@ -488,10 +488,9 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
                 "to_addr": "+27820001000",
                 "to_identity": "identity-uuid",
                 "channel": "JUNE_TEXT",
-                "content":
-                    "Congratulations on your pregnancy! MomConnect will send you "
-                    "helpful SMS msgs. To stop dial *134*550*1#, for more dial "
-                    "*134*550*7# (Free).",
+                "content": "Congratulations on your pregnancy! MomConnect will send you "
+                "helpful SMS msgs. To stop dial *134*550*1#, for more dial "
+                "*134*550*7# (Free).",
                 "metadata": {},
             },
         )

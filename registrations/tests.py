@@ -1695,7 +1695,7 @@ class TestRegistrationValidation(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(v, True)
 
- 
+
 class TestRegistrationCreation(AuthenticatedAPITestCase):
     def test_get_software_type_from_reg(self):
         # Setup

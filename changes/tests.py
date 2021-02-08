@@ -1609,7 +1609,6 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         self.assertFalse(change.validated)
         self.assertEqual(change.data["invalid_fields"], ["SA ID number invalid"])
 
-
     def test_momconnect_change_identification_passport_details_invalid(self):
         """
         If the id type is passport, but the passport details are invalid, the
