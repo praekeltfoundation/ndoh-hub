@@ -558,9 +558,9 @@ class HandleWhatsappEventsTests(DjangoTestCase):
                 "to": "27820001001",
                 "type": "text",
                 "text": {
-                    "body": "We see that your MomConnect WhatsApp messages are not being "
-                    "delivered. If you would like to receive your messages over "
-                    "SMS, reply ‘SMS’."
+                    "body": "We see that your MomConnect WhatsApp "
+                    "messages are not being delivered. If you would "
+                    "like to receive your messages over SMS, reply ‘SMS’."
                 },
             },
         )
@@ -646,9 +646,9 @@ class HandleWhatsappEventsTests(DjangoTestCase):
                 "to": "27820001001",
                 "type": "text",
                 "text": {
-                    "body": "We see that your MomConnect WhatsApp messages are not being "
-                    "delivered. If you would like to receive your messages over "
-                    "SMS, reply ‘SMS’."
+                    "body": "We see that your MomConnect WhatsApp "
+                    "messages are not being delivered. If you would "
+                    "like to receive your messages over SMS, reply ‘SMS’."
                 },
             },
         )

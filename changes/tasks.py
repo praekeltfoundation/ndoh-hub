@@ -198,34 +198,10 @@ class ValidateImplement(Task):
         self.log.info("Starting switch to baby")
 
         self.log.info("Retrieving active subscriptions")
-        active_subs = sbm_client.get_subscriptions(
-            {"identity": change.registrant_id, "active": True}
-        )["results"]
 
         # Determine if the mother has an active pmtct subscription and
         # deactivate active subscriptions
         self.log.info("Evaluating active subscriptions")
-        has_active_pmtct_prebirth_sub = False
-        has_active_whatsapp_pmtct_prebirth_sub = False
-        has_active_momconnect_prebirth_sub = False
-        has_active_whatsapp_momconnect_prebirth_sub = False
-
-        for active_sub in active_subs:
-            self.log.info("Retrieving messageset")
-            messageset = sbm_client.get_messageset(active_sub["messageset"])
-            if "pmtct_prebirth" in messageset["short_name"]:
-                if "whatsapp" in messageset["short_name"]:
-                    has_active_whatsapp_pmtct_prebirth_sub = True
-                has_active_pmtct_prebirth_sub = True
-                lang = active_sub["lang"]
-            if "momconnect_prebirth" in messageset["short_name"]:
-                has_active_momconnect_prebirth_sub = True
-                if "whatsapp" in messageset["short_name"]:
-                    has_active_whatsapp_momconnect_prebirth_sub = True
-                lang = active_sub["lang"]
-            if "prebirth" in messageset["short_name"]:
-                self.log.info("Deactivating subscription")
-                sbm_client.update_subscription(active_sub["id"], {"active": False})
 
         self.log.info("Saving the date of birth to the identity")
         identity = is_client.get_identity(change.registrant_id)
@@ -379,8 +355,6 @@ class ValidateImplement(Task):
         """
         self.log.info("Starting MomConnect MSISDN change")
 
-        new_msisdn = change.data.pop("msisdn")
-
         self.log.info("Fetching identity")
         identity = is_client.get_identity(change.registrant_id)
 
@@ -391,7 +365,6 @@ class ValidateImplement(Task):
         addresses = details["addresses"]
         if "msisdn" not in addresses:
             addresses["msisdn"] = {}
-        msisdns = addresses["msisdn"]
 
         is_client.update_identity(identity["id"], {"details": details})
 
@@ -408,7 +381,6 @@ class ValidateImplement(Task):
         self.log.info("Fetching Identity")
         identity = is_client.get_identity(change.registrant_id)
         details = identity["details"]
-        old_identification = {"change": change.id}
 
         id_type = change.data.pop("id_type")
         if id_type == "sa_id":

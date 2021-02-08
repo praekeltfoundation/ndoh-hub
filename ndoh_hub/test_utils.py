@@ -1,9 +1,6 @@
 from unittest import TestCase
 
-import responses
-
 from ndoh_hub.utils import normalise_msisdn
-from ndoh_hub.utils_tests import mock_get_messageset_by_shortname, mock_get_schedule
 
 
 class TestNormaliseMsisdn(TestCase):

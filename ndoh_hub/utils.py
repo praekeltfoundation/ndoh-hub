@@ -26,7 +26,6 @@ from ndoh_hub.constants import (  # noqa:F401
     PASSPORT_ORIGINS,
     WHATSAPP_LANGUAGE_MAP,
 )
-from registrations.models import PositionTracker
 
 sbm_client = StageBasedMessagingApiClient(
     api_url=settings.STAGE_BASED_MESSAGING_URL,

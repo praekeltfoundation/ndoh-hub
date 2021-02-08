@@ -21,7 +21,6 @@ from ndoh_hub import utils, utils_tests
 
 from .models import (
     JembiSubmission,
-    PositionTracker,
     Registration,
     Source,
     SubscriptionRequest,
@@ -30,7 +29,6 @@ from .signals import psh_validate_subscribe
 from .tasks import (
     PushRegistrationToJembi,
     add_personally_identifiable_fields,
-    get_risk_status,
     push_nurse_registration_to_jembi,
     remove_personally_identifiable_fields,
     validate_subscribe,

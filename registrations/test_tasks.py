@@ -7,8 +7,6 @@ import responses
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.test import TestCase
-
-from ndoh_hub import utils_tests
 from registrations.models import (
     ClinicCode,
     Registration,
@@ -33,7 +31,7 @@ from registrations.tasks import (
 )
 from registrations.tasks import validate_subscribe_jembi_app_registration as task
 
-from .tests import AuthenticatedAPITestCase, override_get_today
+from .tests import AuthenticatedAPITestCase
 
 
 class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
@@ -488,9 +486,9 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
                 "to_addr": "+27820001000",
                 "to_identity": "identity-uuid",
                 "channel": "JUNE_TEXT",
-                "content": "Congratulations on your pregnancy! MomConnect will send you "
-                "helpful SMS msgs. To stop dial *134*550*1#, for more dial "
-                "*134*550*7# (Free).",
+                "content": "Congratulations on your pregnancy! MomConnect "
+                "will send you helpful SMS msgs. To stop dial *134*550*1#, "
+                "for more dial *134*550*7# (Free).",
                 "metadata": {},
             },
         )
