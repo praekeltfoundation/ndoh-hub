@@ -488,10 +488,10 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
                 "to_addr": "+27820001000",
                 "to_identity": "identity-uuid",
                 "channel": "JUNE_TEXT",
-                "content": (
-                    "O amogetšwe. Momconnect e tla go romela melaetša ka SMS. Emiša ka "
-                    "*134*550*1#, go hwetša tše ntši taela *134*550*7# (Mahala)"
-                ),
+                "content":
+                    "Congratulations on your pregnancy! MomConnect will send you "
+                    "helpful SMS msgs. To stop dial *134*550*1#, for more dial "
+                    "*134*550*7# (Free).",
                 "metadata": {},
             },
         )
@@ -1057,32 +1057,6 @@ class ServiceInfoSubscriptionRequestTestCase(AuthenticatedAPITestCase):
         )
         validate_subscribe.create_service_info_subscriptionrequest(registration)
         self.assertEqual(SubscriptionRequest.objects.count(), 0)
-
-    @responses.activate
-    def test_creates_subscriptionrequest(self):
-        """
-        Should create a subscription request at the correct place in the
-        service info messages
-        """
-        registration = Registration(
-            source=self.make_source_adminuser(),
-            reg_type="whatsapp_prebirth",
-            registrant_id=str(uuid4()),
-            data={"edd": "2016-05-01", "language": "zul_ZA"},  # in week 23 of pregnancy
-        )
-        schedule_id = utils_tests.mock_get_messageset_by_shortname(
-            "whatsapp_service_info.hw_full.1"
-        )
-        utils_tests.mock_get_schedule(schedule_id)
-
-        validate_subscribe.create_service_info_subscriptionrequest(registration)
-
-        [subreq] = SubscriptionRequest.objects.all()
-        self.assertEqual(subreq.identity, registration.registrant_id)
-        self.assertEqual(subreq.messageset, 96)
-        self.assertEqual(subreq.next_sequence_number, 5)
-        self.assertEqual(subreq.lang, "zul_ZA")
-        self.assertEqual(subreq.schedule, schedule_id)
 
 
 class GetWhatsAppContactTests(TestCase):

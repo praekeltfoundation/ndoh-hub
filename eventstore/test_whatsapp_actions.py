@@ -513,7 +513,7 @@ class HandleWhatsappEventsTests(DjangoTestCase):
                     {
                         "uuid": "contact-id",
                         "name": "",
-                        "language": "zul",
+                        "language": "eng",
                         "groups": [],
                         "fields": {},
                         "blocked": False,
@@ -535,7 +535,7 @@ class HandleWhatsappEventsTests(DjangoTestCase):
             json={
                 "uuid": "contact-id",
                 "name": "",
-                "language": "zul",
+                "language": "eng",
                 "groups": [],
                 "fields": {},
                 "blocked": False,
@@ -558,9 +558,9 @@ class HandleWhatsappEventsTests(DjangoTestCase):
                 "to": "27820001001",
                 "type": "text",
                 "text": {
-                    "body": "Sibona ukuthi imiyalezo yeWhatsApp yakho yeMomConnect "
-                    "ayifikanga. Ukuthola imiyalezo nge-SMS, phendula uthi "
-                    "\u201cSMS\u201d (kusebenza izindleko ezijwayelekile)."
+                    "body": "We see that your MomConnect WhatsApp messages are not being "
+                    "delivered. If you would like to receive your messages over "
+                    "SMS, reply ‘SMS’."
                 },
             },
         )
@@ -599,7 +599,7 @@ class HandleWhatsappEventsTests(DjangoTestCase):
                     {
                         "uuid": "contact-id",
                         "name": "",
-                        "language": "zul",
+                        "language": "eng",
                         "groups": [],
                         "fields": {
                             "whatsapp_undelivered_timestamp": "2018-11-05 08:43:10"
@@ -646,9 +646,9 @@ class HandleWhatsappEventsTests(DjangoTestCase):
                 "to": "27820001001",
                 "type": "text",
                 "text": {
-                    "body": "Sibona ukuthi imiyalezo yeWhatsApp yakho yeMomConnect "
-                    "ayifikanga. Ukuthola imiyalezo nge-SMS, phendula uthi "
-                    "\u201cSMS\u201d (kusebenza izindleko ezijwayelekile)."
+                    "body": "We see that your MomConnect WhatsApp messages are not being "
+                    "delivered. If you would like to receive your messages over "
+                    "SMS, reply ‘SMS’."
                 },
             },
         )

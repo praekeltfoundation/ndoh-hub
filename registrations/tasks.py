@@ -123,8 +123,6 @@ class ValidateSubscribe(Task):
             return ["Baby Date of Birth missing"]
         elif not utils.is_valid_date(registration.data["baby_dob"]):
             return ["Baby Date of Birth invalid"]
-        elif utils.get_baby_age(utils.get_today(), registration.data["baby_dob"]) < 0:
-            return ["Baby Date of Birth cannot be in the future"]
         else:
             return []
 
