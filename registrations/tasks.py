@@ -312,10 +312,7 @@ class ValidateSubscribe(Task):
             return "POPI Subscription request not created"
 
         self.log.info("Fetching messageset")
-        msgset_short_name = utils.get_messageset_short_name(
-            "popi", registration.source.authority, None
-        )
-        r = utils.get_messageset_schedule_sequence(msgset_short_name, None)
+        r = ""
         msgset_id, msgset_schedule, next_sequence_number = r
 
         self.log.info("Creating subscription request")
