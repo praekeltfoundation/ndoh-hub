@@ -667,6 +667,8 @@ def process_ada_assessment_notification(
         sore_throat=observations["sore throat"],
         smell=observations.get("diminished sense of taste")
         or observations.get("reduced sense of smell"),
+        muscle_pain=observations.get("generalized muscle pain"),
+        difficulty_breathing=observations.get("difficulty breathing"),
         exposure=exposure,
         tracing=False,
         gender=Covid19Triage.GENDER_FEMALE,
