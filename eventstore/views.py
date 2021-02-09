@@ -476,13 +476,21 @@ class AdaAssessmentNotificationViewSet(ViewSet):
                     errors[i] = {"resource": observation_serializer.errors}
                     continue
                 observation = observation_serializer.validated_data
-                observations[observation["code"]["text"]] = observation["valueBoolean"]
+                observations[observation["code"]["text"].strip().lower()] = observation[
+                    "valueBoolean"
+                ]
         if errors:
             raise ValidationError({"entry": errors})
         # Ensure that we extracted all the data that we need
         if not patient_id:
             raise ValidationError({"entry": ["No patient entry found"]})
-        # TODO: Ensure that the observations we received are the ones we require
+        missing_observations = {"fever", "cough", "sore throat"} - set(
+            observations.keys()
+        )
+        if missing_observations:
+            raise ValidationError(
+                {"entry": [f"Missing observation {o}" for o in missing_observations]}
+            )
         data = {
             "username": request.user.username,
             "id": serializer.validated_data["id"],

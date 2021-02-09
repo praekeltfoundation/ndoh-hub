@@ -504,7 +504,7 @@ class Covid19Triage(models.Model):
                 self.fever,
                 self.cough,
                 self.sore_throat,
-                self.difficulty_breathing,
+                bool(self.difficulty_breathing),
                 bool(self.muscle_pain),
                 bool(self.smell),
             ]
