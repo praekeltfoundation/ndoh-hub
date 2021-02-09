@@ -2405,6 +2405,42 @@ class AdaAssessmentNotificationViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.json(), {"entry": ["No patient entry found"]})
 
+    def test_missing_observations(self):
+        """
+        Should return errors if required observations are missing
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_covid19triage"))
+        self.client.force_authenticate(user)
+
+        response = self.client.post(
+            self.url,
+            {
+                "id": "abc123",
+                "entry": [
+                    {
+                        "resource": {
+                            "resourceType": "Patient",
+                            "id": "abc123",
+                            "birthDate": "1990-01-02",
+                        }
+                    },
+                    {"resource": {"resourceType": "Condition"}},
+                ],
+                "timestamp": "2021-01-02T03:04:05Z",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            sorted(response.json()["entry"]),
+            [
+                "Missing observation cough",
+                "Missing observation fever",
+                "Missing observation sore throat",
+            ],
+        )
+
     def test_valid_data(self):
         """
         Should return errors if there's no patient data in the entries
@@ -2423,6 +2459,20 @@ class AdaAssessmentNotificationViewSetTests(APITestCase, BaseEventTestCase):
                             "resourceType": "Observation",
                             "code": {"text": "cough"},
                             "valueBoolean": True,
+                        }
+                    },
+                    {
+                        "resource": {
+                            "resourceType": "Observation",
+                            "code": {"text": "fever"},
+                            "valueBoolean": False,
+                        }
+                    },
+                    {
+                        "resource": {
+                            "resourceType": "Observation",
+                            "code": {"text": " Sore throat"},
+                            "valueBoolean": False,
                         }
                     },
                     {
@@ -2446,7 +2496,7 @@ class AdaAssessmentNotificationViewSetTests(APITestCase, BaseEventTestCase):
                 "username": "test",
                 "patient_id": "abc123",
                 "patient_dob": "1990-01-02",
-                "observations": {"cough": True},
+                "observations": {"cough": True, "fever": False, "sore throat": False},
                 "timestamp": "2021-01-02T03:04:05Z",
             },
         )

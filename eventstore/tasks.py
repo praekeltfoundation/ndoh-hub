@@ -645,6 +645,14 @@ def process_ada_assessment_notification(
     else:
         age = Covid19Triage.AGE_O65
 
+    exposure = observations.get("possible contact with 2019 novel coronavirus")
+    if exposure is True:
+        exposure = Covid19Triage.EXPOSURE_YES
+    elif exposure is False:
+        exposure = Covid19Triage.EXPOSURE_NO
+    else:
+        exposure = Covid19Triage.EXPOSURE_NOT_SURE
+
     triage = Covid19Triage(
         deduplication_id=id,
         msisdn=msisdn,
@@ -654,15 +662,12 @@ def process_ada_assessment_notification(
         province=cliniccode.province,
         city=cliniccode.name,
         city_location=cliniccode.location,
-        # TODO: Replace this with the actual observations
         fever=observations["fever"],
         cough=observations["cough"],
         sore_throat=observations["sore throat"],
-        difficulty_breathing=observations["difficulty breathing"],
-        muscle_pain=observations["muscle pain"],
-        smell=observations["smell"],
-        # TODO: replace this if we get this information from Ada
-        exposure=Covid19Triage.EXPOSURE_NOT_SURE,
+        smell=observations.get("diminished sense of taste")
+        or observations.get("reduced sense of smell"),
+        exposure=exposure,
         tracing=False,
         gender=Covid19Triage.GENDER_FEMALE,
         completed_timestamp=timestamp,
