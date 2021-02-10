@@ -176,8 +176,8 @@ class ProcessWhatsAppUnsentEventTaskTests(WhatsAppBaseTestCase):
                 "to_identity": "test-identity-uuid",
                 "content": (
                     "Sorry we can't send WhatsApp msgs to this phone. "
-                    "We'll send your MomConnect msgs on SMS. "
-                    "To stop dial *134*550*1#, for more dial *134*550*7#"
+                    "We'll send your MomConnect msgs on SMS. To stop dial *134*550*1#, "
+                    "for more dial *134*550*7#."
                 ),
                 "channel": "JUNE_TEXT",
                 "metadata": {},
@@ -219,7 +219,7 @@ class ProcessWhatsAppUnsentEventTaskTests(WhatsAppBaseTestCase):
                 "content": (
                     "Sorry we can't send WhatsApp msgs to this phone. "
                     "We'll send your MomConnect msgs on SMS. To stop dial *134*550*1#, "
-                    "for more dial *134*550*7#"
+                    "for more dial *134*550*7#."
                 ),
                 "channel": "JUNE_TEXT",
                 "metadata": {},
