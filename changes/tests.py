@@ -1,6 +1,5 @@
 import datetime
 import json
-from unittest import mock
 
 import responses
 from django.contrib.auth.models import User
@@ -950,6 +949,7 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         self.assertEqual(c, False)
         self.assertEqual(change.validated, False)
         self.assertEqual(change.data["invalid_fields"], ["Invalid UUID registrant_id"])
+
 
 class TestChangeActions(AuthenticatedAPITestCase):
     @responses.activate

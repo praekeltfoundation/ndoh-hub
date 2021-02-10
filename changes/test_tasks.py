@@ -217,9 +217,9 @@ class ProcessWhatsAppUnsentEventTaskTests(WhatsAppBaseTestCase):
             {
                 "to_identity": "test-identity-uuid",
                 "content": (
-                    "Sorry we can't send WhatsApp msgs to this phone. "
-                    "We'll send your MomConnect msgs on SMS. To stop dial *134*550*1#, "
-                    "for more dial *134*550*7#."
+                    "Siyaxolisa asikwazi ukusenda uWhatsApp kule foni. "
+                    "Sizokusendela imiyalezo yeMomConnect ngeSMS. Ukuphuma "
+                    "dayela *134*550*1# Ukuthola okunye dayela *134*550*7#."
                 ),
                 "channel": "JUNE_TEXT",
                 "metadata": {},

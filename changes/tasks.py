@@ -1,4 +1,3 @@
-import re
 from datetime import datetime
 from itertools import chain as ichain
 from itertools import dropwhile, takewhile
@@ -7,7 +6,6 @@ from uuid import UUID
 import phonenumbers
 import pytz
 import requests
-from celery import chain
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.task import Task
 from celery.utils.log import get_task_logger
@@ -726,6 +724,7 @@ class ValidateImplement(Task):
         """
         self.log = self.get_logger(**kwargs)
         self.log.info("Looking up the change")
+
 
 validate_implement = ValidateImplement()
 

@@ -12,8 +12,6 @@ from rest_framework.test import APITestCase
 
 from registrations.models import Source
 
-from .models import Change
-
 
 @mock.patch("changes.views.ReceiveWhatsAppBase.validate_signature")
 @mock.patch("changes.views.tasks.process_whatsapp_unsent_event")
