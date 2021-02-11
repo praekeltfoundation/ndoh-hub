@@ -8,7 +8,6 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.test import TestCase
 
-from ndoh_hub import utils_tests
 from registrations.models import (
     ClinicCode,
     Registration,
@@ -26,14 +25,13 @@ from registrations.tasks import (
     get_or_create_identity_from_msisdn,
     get_whatsapp_contact,
     opt_in_identity,
-    send_welcome_message,
     update_identity_from_rapidpro_clinic_registration,
     update_identity_from_rapidpro_public_registration,
     validate_subscribe,
 )
 from registrations.tasks import validate_subscribe_jembi_app_registration as task
 
-from .tests import AuthenticatedAPITestCase, override_get_today
+from .tests import AuthenticatedAPITestCase
 
 
 class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
@@ -451,52 +449,6 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
         self.assertFalse(task.is_valid_clinic_code("123456"))
 
     @responses.activate
-    def test_send_welcome_message_whatsapp(self):
-        """
-        Should escape formatting for the USSD codes, and send using the correct
-        channel
-        """
-        responses.add(responses.POST, "http://ms/api/v1/outbound/")
-        send_welcome_message("eng_ZA", "WHATSAPP", "+27820001000", "identity-uuid")
-        request = responses.calls[-1].request
-        self.assertEqual(
-            json.loads(request.body),
-            {
-                "to_addr": "+27820001000",
-                "to_identity": "identity-uuid",
-                "channel": "JUNE_TEXT",
-                "content": (
-                    "Welcome! MomConnect will send helpful WhatsApp msgs. To stop dial "
-                    '*134*550*1# (Free). To get msgs via SMS instead, reply "SMS" '
-                    "(std rates apply)."
-                ),
-                "metadata": {},
-            },
-        )
-
-    @responses.activate
-    def test_send_welcome_message_sms(self):
-        """
-        Should send the SMS text using the correct channel and language
-        """
-        responses.add(responses.POST, "http://ms/api/v1/outbound/")
-        send_welcome_message("nso_ZA", "JUNE_TEXT", "+27820001000", "identity-uuid")
-        request = responses.calls[-1].request
-        self.assertEqual(
-            json.loads(request.body),
-            {
-                "to_addr": "+27820001000",
-                "to_identity": "identity-uuid",
-                "channel": "JUNE_TEXT",
-                "content": (
-                    "O amogetšwe. Momconnect e tla go romela melaetša ka SMS. Emiša ka "
-                    "*134*550*1#, go hwetša tše ntši taela *134*550*7# (Mahala)"
-                ),
-                "metadata": {},
-            },
-        )
-
-    @responses.activate
     def test_on_failure(self):
         """
         If there is a failure in processing the registration, then a webhook
@@ -865,177 +817,6 @@ class ValidateSubscribeJembiAppRegistrationsTests(TestCase):
             },
         )
 
-    @mock.patch("registrations.tasks.send_welcome_message")
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration."
-        "create_subscriptionrequests"
-    )
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration."
-        "create_popi_subscriptionrequest"
-    )
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration."
-        "is_valid_clinic_code"
-    )
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration."
-        "is_registered_on_whatsapp"
-    )
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration." "is_opted_out"
-    )
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration."
-        "is_identity_subscribed"
-    )
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration."
-        "get_or_update_identity_by_address"
-    )
-    @responses.activate
-    def test_registration_complete_no_pmtct(
-        self,
-        get_identity,
-        is_subscribed,
-        opted_out,
-        whatsapp,
-        clinic,
-        subreq,
-        popi_subreq,
-        welcome_msg,
-    ):
-        """
-        Valid parameters should result in a successful registration and a
-        success webhook being sent
-        """
-        user = User.objects.create_user("test", "test@example.org", "test")
-        source = Source.objects.create(
-            name="testsource", user=user, authority="hw_full"
-        )
-        reg = Registration.objects.create(
-            reg_type="jembi_momconnect",
-            source=source,
-            data={
-                "msisdn_registrant": "+27820000000",
-                "msisdn_device": "+27821111111",
-                "mom_whatsapp": True,
-                "callback_url": "http://testcallback",
-                "callback_auth_token": "test-auth-token",
-                "faccode": "123456",
-                "mom_pmtct": False,
-                "language": "eng_ZA",
-            },
-        )
-
-        responses.add(responses.POST, "http://testcallback/")
-        get_identity.return_value = {"id": "mother-id"}
-        is_subscribed.return_value = False
-        opted_out.return_value = False
-        whatsapp.return_value = False
-        clinic.return_value = True
-
-        task(str(reg.pk))
-
-        reg.refresh_from_db()
-        self.assertEqual(
-            json.loads(responses.calls[-1].request.body),
-            {
-                "registration_id": str(reg.pk),
-                "registration_data": RegistrationSerializer(reg).data,
-                "status": "succeeded",
-            },
-        )
-        self.assertEqual(Registration.objects.count(), 1)
-
-    @mock.patch("registrations.tasks.send_welcome_message")
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration."
-        "create_pmtct_registration"
-    )
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration."
-        "create_subscriptionrequests"
-    )
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration."
-        "create_popi_subscriptionrequest"
-    )
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration."
-        "is_valid_clinic_code"
-    )
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration."
-        "is_registered_on_whatsapp"
-    )
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration." "is_opted_out"
-    )
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration."
-        "is_identity_subscribed"
-    )
-    @mock.patch(
-        "registrations.tasks.validate_subscribe_jembi_app_registration."
-        "get_or_update_identity_by_address"
-    )
-    @responses.activate
-    def test_registration_complete_with_pmtct(
-        self,
-        get_identity,
-        is_subscribed,
-        opted_out,
-        whatsapp,
-        clinic,
-        subreq,
-        popi_subreq,
-        pmtct,
-        welcome_msg,
-    ):
-        """
-        Valid parameters should result in a successful registration and a
-        success webhook being sent.
-        """
-        user = User.objects.create_user("test", "test@example.org", "test")
-        source = Source.objects.create(
-            name="testsource", user=user, authority="hw_full"
-        )
-        reg = Registration.objects.create(
-            reg_type="jembi_momconnect",
-            source=source,
-            data={
-                "msisdn_registrant": "+27820000000",
-                "msisdn_device": "+27821111111",
-                "mom_whatsapp": True,
-                "callback_url": "http://testcallback",
-                "callback_auth_token": "test-auth-token",
-                "faccode": "123456",
-                "mom_pmtct": True,
-                "language": "eng_ZA",
-            },
-        )
-
-        responses.add(responses.POST, "http://testcallback/")
-        get_identity.return_value = {"id": "mother-id"}
-        is_subscribed.return_value = False
-        opted_out.return_value = False
-        whatsapp.return_value = False
-        clinic.return_value = True
-
-        task(str(reg.pk))
-
-        reg.refresh_from_db()
-        self.assertEqual(
-            json.loads(responses.calls[-1].request.body),
-            {
-                "registration_id": str(reg.pk),
-                "registration_data": RegistrationSerializer(reg).data,
-                "status": "succeeded",
-            },
-        )
-        pmtct.assert_called_with(reg, {"id": "mother-id"})
-
 
 class ServiceInfoSubscriptionRequestTestCase(AuthenticatedAPITestCase):
     def test_skips_other_registration_types(self):
@@ -1057,32 +838,6 @@ class ServiceInfoSubscriptionRequestTestCase(AuthenticatedAPITestCase):
         )
         validate_subscribe.create_service_info_subscriptionrequest(registration)
         self.assertEqual(SubscriptionRequest.objects.count(), 0)
-
-    @responses.activate
-    def test_creates_subscriptionrequest(self):
-        """
-        Should create a subscription request at the correct place in the
-        service info messages
-        """
-        registration = Registration(
-            source=self.make_source_adminuser(),
-            reg_type="whatsapp_prebirth",
-            registrant_id=str(uuid4()),
-            data={"edd": "2016-05-01", "language": "zul_ZA"},  # in week 23 of pregnancy
-        )
-        schedule_id = utils_tests.mock_get_messageset_by_shortname(
-            "whatsapp_service_info.hw_full.1"
-        )
-        utils_tests.mock_get_schedule(schedule_id)
-
-        validate_subscribe.create_service_info_subscriptionrequest(registration)
-
-        [subreq] = SubscriptionRequest.objects.all()
-        self.assertEqual(subreq.identity, registration.registrant_id)
-        self.assertEqual(subreq.messageset, 96)
-        self.assertEqual(subreq.next_sequence_number, 5)
-        self.assertEqual(subreq.lang, "zul_ZA")
-        self.assertEqual(subreq.schedule, schedule_id)
 
 
 class GetWhatsAppContactTests(TestCase):
@@ -1714,113 +1469,6 @@ class ValidateSubscribePostbirthTests(AuthenticatedAPITestCase):
         )
         result = validate_subscribe.validate(registration)
         self.assertTrue(result)
-
-
-class CreatePOPISubscriptionRequestPostbirthTests(AuthenticatedAPITestCase):
-    @responses.activate
-    def test_creates_popi_subscriptionrequest_sms(self):
-        """
-        Should create a subscription request for POPI messages on SMS postbirth
-        registrations
-        """
-        utils_tests.mock_get_messageset_by_shortname("popi.hw_full.1")
-        registration = Registration.objects.create(
-            reg_type="momconnect_postbirth",
-            source=self.make_source_adminuser(),
-            registrant_id=str(uuid4()),
-            data={"language": "eng_ZA"},
-        )
-        result = validate_subscribe.create_popi_subscriptionrequest(registration)
-        self.assertEqual(result, "POPI Subscription Request created")
-        [subreq] = SubscriptionRequest.objects.all()
-        self.assertEqual(subreq.messageset, 71)
-        self.assertEqual(subreq.lang, "eng_ZA")
-
-    @responses.activate
-    def test_creates_popi_subscriptionrequest_whatsapp(self):
-        """
-        Should create a subscription request for POPI messages on WhatsApp postbirth
-        registrations
-        """
-        utils_tests.mock_get_messageset_by_shortname("popi.hw_full.1")
-        registration = Registration.objects.create(
-            reg_type="whatsapp_postbirth",
-            source=self.make_source_adminuser(),
-            registrant_id=str(uuid4()),
-            data={"language": "eng_ZA"},
-        )
-        result = validate_subscribe.create_popi_subscriptionrequest(registration)
-        self.assertEqual(result, "POPI Subscription Request created")
-        [subreq] = SubscriptionRequest.objects.all()
-        self.assertEqual(subreq.messageset, 71)
-        self.assertEqual(subreq.lang, "eng_ZA")
-
-
-class CreateServiceInfoSubscriptionrequestPostbirthTests(AuthenticatedAPITestCase):
-    @responses.activate
-    def test_creates_service_info_subscriptionrequest(self):
-        """
-        Should create a subscription request for whatsapp postbirth registrations
-        """
-        utils_tests.mock_get_messageset_by_shortname("whatsapp_service_info.hw_full.1")
-        registration = Registration.objects.create(
-            reg_type="whatsapp_postbirth",
-            source=self.make_source_adminuser(),
-            registrant_id=str(uuid4()),
-            data={"language": "eng_ZA", "baby_dob": "2015-12-01"},
-        )
-        with mock.patch("ndoh_hub.utils.get_today", override_get_today):
-            validate_subscribe.create_service_info_subscriptionrequest(registration)
-        [subreq] = SubscriptionRequest.objects.all()
-        self.assertEqual(subreq.messageset, 96)
-        self.assertEqual(subreq.lang, "eng_ZA")
-        self.assertEqual(subreq.next_sequence_number, 11)
-
-
-class CreateSubscriptionrequestsPostbirthTests(AuthenticatedAPITestCase):
-    @responses.activate
-    def test_creates_postbirth_subscriptionrequest_sms(self):
-        """
-        Should create the correct subscription request for the postbirth messageset
-        """
-        schedule = utils_tests.mock_get_messageset_by_shortname(
-            "momconnect_postbirth.hw_full.1"
-        )
-        utils_tests.mock_get_schedule(schedule)
-        registration = Registration.objects.create(
-            reg_type="momconnect_postbirth",
-            source=self.make_source_adminuser(),
-            registrant_id=str(uuid4()),
-            data={"language": "eng_ZA", "baby_dob": "2015-12-01"},
-        )
-        with mock.patch("ndoh_hub.utils.get_today", override_get_today):
-            validate_subscribe.create_subscriptionrequests(registration)
-        [subreq] = SubscriptionRequest.objects.all()
-        self.assertEqual(subreq.messageset, 31)
-        self.assertEqual(subreq.lang, "eng_ZA")
-        self.assertEqual(subreq.next_sequence_number, 9)
-
-    @responses.activate
-    def test_creates_postbirth_subscriptionrequest_whatsapp(self):
-        """
-        Should create the correct subscription request for the postbirth messageset
-        """
-        schedule = utils_tests.mock_get_messageset_by_shortname(
-            "whatsapp_momconnect_postbirth.hw_full.1"
-        )
-        utils_tests.mock_get_schedule(schedule)
-        registration = Registration.objects.create(
-            reg_type="whatsapp_postbirth",
-            source=self.make_source_adminuser(),
-            registrant_id=str(uuid4()),
-            data={"language": "eng_ZA", "baby_dob": "2015-12-01"},
-        )
-        with mock.patch("ndoh_hub.utils.get_today", override_get_today):
-            validate_subscribe.create_subscriptionrequests(registration)
-        [subreq] = SubscriptionRequest.objects.all()
-        self.assertEqual(subreq.messageset, 94)
-        self.assertEqual(subreq.lang, "eng_ZA")
-        self.assertEqual(subreq.next_sequence_number, 9)
 
 
 class OptInIdentityTestCase(TestCase):

@@ -175,7 +175,7 @@ class ProcessWhatsAppUnsentEventTaskTests(WhatsAppBaseTestCase):
             {
                 "to_identity": "test-identity-uuid",
                 "content": (
-                    "Sorry, we can't send WhatsApp msgs to this phone. "
+                    "Sorry we can't send WhatsApp msgs to this phone. "
                     "We'll send your MomConnect msgs on SMS. To stop dial *134*550*1#, "
                     "for more dial *134*550*7#."
                 ),
@@ -218,8 +218,8 @@ class ProcessWhatsAppUnsentEventTaskTests(WhatsAppBaseTestCase):
                 "to_identity": "test-identity-uuid",
                 "content": (
                     "Siyaxolisa asikwazi ukusenda uWhatsApp kule foni. "
-                    "Sizokusendela imiyalezo yeMomConnect ngeSMS. Ukuphuma dayela "
-                    "*134*550*1# Ukuthola okunye dayela *134*550*7#."
+                    "Sizokusendela imiyalezo yeMomConnect ngeSMS. Ukuphuma "
+                    "dayela *134*550*1# Ukuthola okunye dayela *134*550*7#."
                 ),
                 "channel": "JUNE_TEXT",
                 "metadata": {},
@@ -474,30 +474,6 @@ class ProcessWhatsAppContactLookupFailTaskTests(WhatsAppBaseTestCase):
                 "content": (
                     "Oh no! You can't get MomConnect messages on WhatsApp. "
                     "We'll keep sending your MomConnect messages on SMS."
-                ),
-                "channel": "JUNE_TEXT",
-                "metadata": {},
-            }
-        )
-
-    @mock.patch("changes.tasks.utils.ms_client.create_outbound")
-    @responses.activate
-    def test_sms_language(self, mock_create_outbound):
-        """
-        The outbound SMS should be translated into the user's language
-        """
-        user = User.objects.create_user("test")
-        Source.objects.create(user=user)
-        self.create_identity_lookup_by_msisdn(address="+27820001001", lang="xho_ZA")
-
-        process_whatsapp_contact_check_fail(user.pk, "+27820001001")
-
-        mock_create_outbound.assert_called_once_with(
-            {
-                "to_identity": "test-identity-uuid",
-                "content": (
-                    "Owu yhini! Awukwazi kufumana imiyalezo ka-MomConnect ku-WhatsApp. "
-                    "Siya kuthumelela rhoqo imiyalezo ka-MomConnect nge-SMS."
                 ),
                 "channel": "JUNE_TEXT",
                 "metadata": {},

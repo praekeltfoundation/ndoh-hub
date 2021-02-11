@@ -1,4 +1,3 @@
-import re
 from datetime import datetime
 from itertools import chain as ichain
 from itertools import dropwhile, takewhile
@@ -7,7 +6,6 @@ from uuid import UUID
 import phonenumbers
 import pytz
 import requests
-from celery import chain
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.task import Task
 from celery.utils.log import get_task_logger
@@ -198,87 +196,10 @@ class ValidateImplement(Task):
         self.log.info("Starting switch to baby")
 
         self.log.info("Retrieving active subscriptions")
-        active_subs = sbm_client.get_subscriptions(
-            {"identity": change.registrant_id, "active": True}
-        )["results"]
 
         # Determine if the mother has an active pmtct subscription and
         # deactivate active subscriptions
         self.log.info("Evaluating active subscriptions")
-        has_active_pmtct_prebirth_sub = False
-        has_active_whatsapp_pmtct_prebirth_sub = False
-        has_active_momconnect_prebirth_sub = False
-        has_active_whatsapp_momconnect_prebirth_sub = False
-
-        for active_sub in active_subs:
-            self.log.info("Retrieving messageset")
-            messageset = sbm_client.get_messageset(active_sub["messageset"])
-            if "pmtct_prebirth" in messageset["short_name"]:
-                if "whatsapp" in messageset["short_name"]:
-                    has_active_whatsapp_pmtct_prebirth_sub = True
-                has_active_pmtct_prebirth_sub = True
-                lang = active_sub["lang"]
-            if "momconnect_prebirth" in messageset["short_name"]:
-                has_active_momconnect_prebirth_sub = True
-                if "whatsapp" in messageset["short_name"]:
-                    has_active_whatsapp_momconnect_prebirth_sub = True
-                lang = active_sub["lang"]
-            if "prebirth" in messageset["short_name"]:
-                self.log.info("Deactivating subscription")
-                sbm_client.update_subscription(active_sub["id"], {"active": False})
-
-        if has_active_momconnect_prebirth_sub:
-            self.log.info("Starting postbirth momconnect subscriptionrequest")
-
-            self.log.info("Determining messageset shortname")
-            # . determine messageset shortname
-            short_name = utils.get_messageset_short_name(
-                "momconnect_postbirth", "hw_full", 0
-            )
-            if has_active_whatsapp_momconnect_prebirth_sub:
-                short_name = "whatsapp_{}".format(short_name)
-
-            # . determine sbm details
-            self.log.info("Determining SBM details")
-            r = utils.get_messageset_schedule_sequence(short_name, 0)
-            msgset_id, msgset_schedule, next_sequence_number = r
-
-            subscription = {
-                "identity": change.registrant_id,
-                "messageset": msgset_id,
-                "next_sequence_number": next_sequence_number,
-                "lang": lang,
-                "schedule": msgset_schedule,
-            }
-            self.log.info("Creating MomConnect postbirth SubscriptionRequest")
-            SubscriptionRequest.objects.create(**subscription)
-            self.log.info("Created MomConnect postbirth SubscriptionRequest")
-
-        if has_active_pmtct_prebirth_sub:
-            self.log.info("Starting postbirth pmtct subscriptionrequest")
-
-            self.log.info("Determining messageset shortname")
-            # . determine messageset shortname
-            set_name = "pmtct_postbirth"
-            if has_active_whatsapp_pmtct_prebirth_sub:
-                set_name = "whatsapp_{}".format(set_name)
-            short_name = utils.get_messageset_short_name(set_name, "patient", 0)
-
-            # . determine sbm details
-            self.log.info("Determining SBM details")
-            r = utils.get_messageset_schedule_sequence(short_name, 0)
-            msgset_id, msgset_schedule, next_sequence_number = r
-
-            subscription = {
-                "identity": change.registrant_id,
-                "messageset": msgset_id,
-                "next_sequence_number": next_sequence_number,
-                "lang": lang,
-                "schedule": msgset_schedule,
-            }
-            self.log.info("Creating PMTCT postbirth SubscriptionRequest")
-            SubscriptionRequest.objects.create(**subscription)
-            self.log.info("Created PMTCT postbirth SubscriptionRequest")
 
         self.log.info("Saving the date of birth to the identity")
         identity = is_client.get_identity(change.registrant_id)
@@ -432,8 +353,6 @@ class ValidateImplement(Task):
         """
         self.log.info("Starting MomConnect MSISDN change")
 
-        new_msisdn = change.data.pop("msisdn")
-
         self.log.info("Fetching identity")
         identity = is_client.get_identity(change.registrant_id)
 
@@ -444,22 +363,6 @@ class ValidateImplement(Task):
         addresses = details["addresses"]
         if "msisdn" not in addresses:
             addresses["msisdn"] = {}
-        msisdns = addresses["msisdn"]
-
-        if not any(details.get("default") for _, details in msisdns.items()):
-            for address, addr_details in msisdns.items():
-                utils.append_or_create(addr_details, "changes_from", change.id)
-
-        for address, addr_details in msisdns.items():
-            if "default" in addr_details and addr_details["default"]:
-                addr_details["default"] = False
-                utils.append_or_create(addr_details, "changes_from", change.id)
-
-        if new_msisdn not in msisdns:
-            msisdns[new_msisdn] = {"default": True}
-        else:
-            msisdns[new_msisdn]["default"] = True
-        utils.append_or_create(msisdns[new_msisdn], "changes_to", change.id)
 
         is_client.update_identity(identity["id"], {"details": details})
 
@@ -476,11 +379,6 @@ class ValidateImplement(Task):
         self.log.info("Fetching Identity")
         identity = is_client.get_identity(change.registrant_id)
         details = identity["details"]
-        old_identification = {"change": change.id}
-        for field in ("sa_id_no", "passport_no", "passport_origin"):
-            if field in details:
-                old_identification[field] = details.pop(field)
-        utils.append_or_create(details, "identification_history", old_identification)
 
         id_type = change.data.pop("id_type")
         if id_type == "sa_id":
@@ -527,161 +425,6 @@ class ValidateImplement(Task):
             sbm_client.update_subscription(
                 change.data["subscription"], {"lang": change.data["language"]}
             )
-
-    def switch_channel(self, change):
-        """
-        Switch all active subscriptions to the desired channel
-        """
-        messagesets = {
-            ms["id"]: ms["short_name"] for ms in sbm_client.get_messagesets()["results"]
-        }
-        messagesets_rev = {v: k for k, v in messagesets.items()}
-        params = {"identity": change.registrant_id, "active": True}
-        subscriptions = list(sbm_client.get_subscriptions(params)["results"])
-
-        # Check if they're in 1-2 messaging, in which case they cannot switch
-        short_names = [messagesets[sub["messageset"]] for sub in subscriptions]
-        if "whatsapp_momconnect_postbirth.hw_full.3" in short_names:
-
-            reason = change.data and change.data.get("reason")
-
-            if reason == "whatsapp_unsent_event":
-                change.data["reason"] = "postbirth_whatsapp_unsent_event"
-            elif reason == "whatsapp_contact_check_fail":
-                change.data["reason"] = "postbirth_whatsapp_contact_check_fail"
-            else:
-                change.data[
-                    "error"
-                ] = "WhatsApp-only messagesets cannot be switched to SMS"
-            change.save()
-
-            translation_lang = subscriptions[0]["lang"].lower().replace("_", "-")
-            with translation.override(translation_lang):
-                text = translation.ugettext(
-                    "We notice that you have been receiving MomConnect msgs on "
-                    "WhatsApp for children between 1 - 2. Messages for children "
-                    "between 1 - 2 are only available on WhatsApp - switching to "
-                    "SMS means you will not receive any messages. You can stop "
-                    "your MomConnect messages completely by replying 'STOP'"
-                )
-                fail_contact_check_text = translation.ugettext(
-                    "It seems you don't have an active Whatsapp account. "
-                    "MomConnect msgs for kids aged 1-2 are only on WA. "
-                    "To stop msgs, reply 'STOP' (std rates apply)"
-                )
-                unsent_event_text = translation.ugettext(
-                    "Sorry - we can't send WhatsApp msgs to this phone. "
-                    "MomConnect msgs for kids aged 1-2 are only on WA. "
-                    "To stop msgs, reply 'STOP' (std rates apply)"
-                )
-
-            if reason == "whatsapp_contact_check_fail":
-                utils.ms_client.create_outbound(
-                    {
-                        "to_identity": change.registrant_id,
-                        "content": fail_contact_check_text,
-                        "channel": "JUNE_TEXT",
-                        "metadata": {},
-                    }
-                )
-            elif reason == "whatsapp_unsent_event":
-                utils.ms_client.create_outbound(
-                    {
-                        "to_identity": change.registrant_id,
-                        "content": unsent_event_text,
-                        "channel": "JUNE_TEXT",
-                        "metadata": {},
-                    }
-                )
-
-            else:
-                utils.ms_client.create_outbound(
-                    {
-                        "to_identity": change.registrant_id,
-                        "content": text,
-                        "channel": "WHATSAPP",
-                        "metadata": {
-                            "template": {
-                                "name": "mc_important_info",
-                                "language": utils.WHATSAPP_LANGUAGE_MAP[
-                                    subscriptions[0]["lang"]
-                                ],
-                                "variables": [text],
-                            }
-                        },
-                    }
-                )
-            return
-
-        for sub in subscriptions:
-            if not sub["active"]:
-                continue
-            short_name = messagesets[sub["messageset"]]
-            if change.data["channel"] == "whatsapp" and "whatsapp" not in short_name:
-                # Change any SMS subscriptions to WhatsApp
-                sbm_client.update_subscription(sub["id"], {"active": False})
-                messageset = messagesets_rev["whatsapp_" + short_name]
-                SubscriptionRequest.objects.create(
-                    identity=sub["identity"],
-                    messageset=messageset,
-                    next_sequence_number=sub["next_sequence_number"],
-                    lang=sub["lang"],
-                    schedule=sub["schedule"],
-                )
-
-                # only create service info subscription for momconnect subs
-                if "momconnect" not in short_name:
-                    continue
-
-                reg = (
-                    Registration.objects.filter(registrant_id=change.registrant_id)
-                    .order_by("-created_at")
-                    .first()
-                )
-
-                if reg.source.authority in ["hw_partial", "patient"]:
-                    continue
-
-                weeks = utils.get_pregnancy_week(utils.get_today(), reg.data["edd"])
-                msgset_short_name = utils.get_messageset_short_name(
-                    "whatsapp_service_info", reg.source.authority, weeks
-                )
-                r = utils.get_messageset_schedule_sequence(msgset_short_name, weeks)
-                msgset_id, msgset_schedule, next_sequence_number = r
-
-                SubscriptionRequest.objects.create(
-                    identity=reg.registrant_id,
-                    messageset=msgset_id,
-                    next_sequence_number=next_sequence_number,
-                    lang=sub["lang"],
-                    schedule=msgset_schedule,
-                )
-
-            elif change.data["channel"] == "sms" and "whatsapp" in short_name:
-                # Change any WhatsApp subscriptions to SMS
-                sbm_client.update_subscription(sub["id"], {"active": False})
-
-                # There's no service info for SMS
-                if "service_info" in short_name:
-                    continue
-
-                messageset = messagesets_rev[re.sub("^whatsapp_", "", short_name)]
-
-                SubscriptionRequest.objects.create(
-                    identity=sub["identity"],
-                    messageset=messageset,
-                    next_sequence_number=sub["next_sequence_number"],
-                    lang=sub["lang"],
-                    schedule=sub["schedule"],
-                )
-
-        change.data["old_channel"] = "sms"
-        if change.data["channel"] == "sms":
-            change.data["old_channel"] = "whatsapp"
-
-        change.save()
-
-        return push_channel_switch_to_jembi.si(str(change.pk))
 
     # Validation checks
     def check_pmtct_loss_optout_reason(self, data_fields, change):
@@ -981,45 +724,6 @@ class ValidateImplement(Task):
         """
         self.log = self.get_logger(**kwargs)
         self.log.info("Looking up the change")
-        change = Change.objects.get(id=change_id)
-        change_validates = self.validate(change)
-
-        if change_validates:
-            submit_task = {
-                "baby_switch": self.baby_switch,
-                "pmtct_loss_switch": self.pmtct_loss_switch,
-                "pmtct_loss_optout": self.pmtct_loss_optout,
-                "pmtct_nonloss_optout": self.pmtct_nonloss_optout,
-                "nurse_update_detail": self.nurse_update_detail,
-                "nurse_change_msisdn": self.nurse_change_msisdn,
-                "nurse_optout": self.nurse_optout,
-                "momconnect_loss_switch": self.momconnect_loss_switch,
-                "momconnect_loss_optout": self.momconnect_loss_optout,
-                "momconnect_nonloss_optout": self.momconnect_nonloss_optout,
-                "momconnect_change_language": self.momconnect_change_language,
-                "momconnect_change_msisdn": self.momconnect_change_msisdn,
-                "momconnect_change_identification": (
-                    self.momconnect_change_identification
-                ),
-                "admin_change_subscription": self.admin_change_subscription,
-                "switch_channel": self.switch_channel,
-            }.get(change.action, None)(change)
-
-            if submit_task is not None:
-                task = chain(
-                    submit_task,
-                    remove_personally_identifiable_fields.si(str(change.pk)),
-                )
-                task.delay()
-            self.log.info("Task executed successfully")
-
-            if change.is_engage_action:
-                change.async_refresh_engage_context()
-
-            return True
-        else:
-            self.log.info("Task terminated due to validation issues")
-            return False
 
 
 validate_implement = ValidateImplement()
@@ -1458,9 +1162,9 @@ class ProcessWhatsAppUnsentEvent(Task):
         language = identity["details"]["lang_code"].lower().replace("_", "-")
         with translation.override(language):
             text = translation.ugettext(
-                "Sorry but we can't send WhatsApp msgs to this phone. We'll "
+                "Sorry we can't send WhatsApp msgs to this phone. We'll "
                 "send your MomConnect msgs on SMS. To stop dial "
-                "%(optout_ussd)s, for more dial %(popi_ussd)s (Free)."
+                "%(optout_ussd)s, for more dial %(popi_ussd)s."
             ) % {
                 "popi_ussd": settings.POPI_USSD_CODE,
                 "optout_ussd": settings.OPTOUT_USSD_CODE,
