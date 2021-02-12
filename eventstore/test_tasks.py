@@ -577,7 +577,7 @@ class ProcessAdaAssessmentNotificationTests(TestCase):
             "name": "",
             "language": "zul",
             "groups": [],
-            "fields": {"clinic_code": "123456"},
+            "fields": {"facility_code": "123456"},
             "blocked": False,
             "stopped": False,
             "created_on": "2015-11-11T08:30:24.922024+00:00",
