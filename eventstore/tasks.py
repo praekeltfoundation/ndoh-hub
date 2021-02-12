@@ -614,18 +614,18 @@ def process_ada_assessment_notification(
     username, id, patient_id, patient_dob, observations, timestamp
 ):
     contact = rapidpro.get_contacts(uuid=patient_id).first(retry_on_rate_exceed=True)
-    if not contact or not contact.urns or not contact.fields.get("clinic_code"):
+    if not contact or not contact.urns or not contact.fields.get("facility_code"):
         # Contact doesn't exist, or we don't have a full clinic registration, so ignore
         # the notification
         logger.info(f"Cannot find contact with UUID {patient_id}, skipping processing")
         return
 
     try:
-        cliniccode = ClinicCode.objects.get(value=contact.fields["clinic_code"])
+        cliniccode = ClinicCode.objects.get(value=contact.fields["facility_code"])
     except ClinicCode.DoesNotExist:
         # We don't recognise this contact's clinic code, so ignore notification
         logger.info(
-            f"Cannot find clinic code {contact.fields['clinic_code']}, skipping "
+            f"Cannot find clinic code {contact.fields['facility_code']}, skipping "
             "processing"
         )
         return
