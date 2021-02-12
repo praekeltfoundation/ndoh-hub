@@ -495,7 +495,7 @@ class AdaAssessmentNotificationViewSet(ViewSet):
             "username": request.user.username,
             "id": serializer.validated_data["id"],
             "patient_id": patient_id,
-            "patient_dob": patient_dob,
+            "patient_dob": patient_dob.isoformat(),
             "observations": observations,
             "timestamp": serializer.validated_data["timestamp"],
         }
