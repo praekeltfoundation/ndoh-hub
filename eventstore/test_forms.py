@@ -88,7 +88,7 @@ class MomConnectImportFormTests(TestCase):
             "test.csv",
             b"msisdn,facility code,id type,id number,messaging consent,edd year,"
             b"edd month,edd day\n"
-            b"+1234,123456,said,9001010001088,true,2021,12,1\n",
+            b"+1234,123456,said,9001010001088,1,2021,12,1\n",
         )
         form = MomConnectImportForm(data={}, files={"file": file})
         self.assertTrue(form.is_valid())
@@ -213,7 +213,7 @@ class MomConnectImportFormTests(TestCase):
 
     def test_previous_optout_default(self):
         """
-        previous_optout should default to False
+        previous_optout should default to True
         """
         file = SimpleUploadedFile(
             "test.csv",
@@ -226,7 +226,7 @@ class MomConnectImportFormTests(TestCase):
         self.assertEqual(instance.status, MomConnectImport.Status.VALIDATING)
         self.assertEqual(instance.errors.count(), 0)
         [row] = instance.rows.all()
-        self.assertFalse(row.previous_optout)
+        self.assertTrue(row.previous_optout)
 
     def test_facility_code_invalid(self):
         """
