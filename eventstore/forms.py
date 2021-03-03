@@ -30,9 +30,9 @@ class MomConnectImportForm(forms.ModelForm):
 
     def get_id_type(self, text):
         types = (
-            ({"sa_id", "said"}, ImportRow.IDType.SAID),
-            ({"passport"}, ImportRow.IDType.PASSPORT),
-            ({"none", "dob", "date of birth"}, ImportRow.IDType.NONE),
+            ({"sa_id", "said", "1"}, ImportRow.IDType.SAID),
+            ({"passport", "2"}, ImportRow.IDType.PASSPORT),
+            ({"none", "dob", "date of birth", "3"}, ImportRow.IDType.NONE),
         )
         t = self.normalise_key(text)
         for keys, value in types:
@@ -42,13 +42,13 @@ class MomConnectImportForm(forms.ModelForm):
 
     def get_passport_country(self, text):
         types = (
-            ({"zimbabwe", "zw"}, ImportRow.PassportCountry.ZW),
-            ({"mozambique", "mz"}, ImportRow.PassportCountry.MZ),
-            ({"malawi", "mw"}, ImportRow.PassportCountry.MW),
-            ({"nigeria", "ng"}, ImportRow.PassportCountry.NG),
-            ({"drc", "cd"}, ImportRow.PassportCountry.CD),
-            ({"somalia", "so"}, ImportRow.PassportCountry.SO),
-            ({"other"}, ImportRow.PassportCountry.OTHER),
+            ({"zimbabwe", "zw", "1"}, ImportRow.PassportCountry.ZW),
+            ({"mozambique", "mz", "2"}, ImportRow.PassportCountry.MZ),
+            ({"malawi", "mw", "3"}, ImportRow.PassportCountry.MW),
+            ({"nigeria", "ng", "4"}, ImportRow.PassportCountry.NG),
+            ({"drc", "cd", "5"}, ImportRow.PassportCountry.CD),
+            ({"somalia", "so", "6"}, ImportRow.PassportCountry.SO),
+            ({"other", "7"}, ImportRow.PassportCountry.OTHER),
         )
         t = self.normalise_key(text)
         for keys, value in types:
@@ -58,12 +58,12 @@ class MomConnectImportForm(forms.ModelForm):
 
     def get_language(self, text):
         types = (
-            ({"isizulu", "zul"}, ImportRow.Language.ZUL),
+            ({"isizulu", "zul", "1"}, ImportRow.Language.ZUL),
             ({"isixhosa", "xho"}, ImportRow.Language.XHO),
             ({"afrikaans", "afr"}, ImportRow.Language.AFR),
-            ({"english", "eng"}, ImportRow.Language.ENG),
+            ({"english", "eng", "2"}, ImportRow.Language.ENG),
             ({"sesotho_sa_leboa", "nso"}, ImportRow.Language.NSO),
-            ({"setswana", "tsn"}, ImportRow.Language.TSN),
+            ({"setswana", "tsn", "3"}, ImportRow.Language.TSN),
             ({"sesotho", "sot"}, ImportRow.Language.SOT),
             ({"xitsonga", "tso"}, ImportRow.Language.TSO),
             ({"siswati", "ssw"}, ImportRow.Language.SSW),
@@ -152,9 +152,9 @@ class TextBooleanField(forms.CharField):
         value = super().to_python(value)
         if not isinstance(value, str):
             return value
-        if value.strip().lower() in {"t", "true", "yes"}:
+        if value.strip().lower() in {"t", "true", "yes", "1"}:
             return True
-        if value.strip().lower() in {"f", "false", "no"}:
+        if value.strip().lower() in {"f", "false", "no", "0"}:
             return False
         return value
 
@@ -162,7 +162,7 @@ class TextBooleanField(forms.CharField):
 class ImportRowForm(forms.ModelForm):
     messaging_consent = TextBooleanField()
     research_consent = TextBooleanField(required=False, empty_value=False)
-    previous_optout = TextBooleanField(required=False, empty_value=False)
+    previous_optout = TextBooleanField(required=False, empty_value=True)
 
     class Meta:
         model = ImportRow
