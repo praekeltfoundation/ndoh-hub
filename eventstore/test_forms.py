@@ -296,6 +296,20 @@ class MomConnectImportFormTests(TestCase):
             "Failed validation: Invalid EDD date, day is out of range for month",
         )
 
+        file = SimpleUploadedFile(
+            "test.csv",
+            b"msisdn,facility code,id type,id number,messaging consent,"
+            b"edd year,edd month,edd day\n"
+            b"+27820001001,123456,said,9001010001088,true,2021,Feb,20\n",
+        )
+        form = MomConnectImportForm(data={}, files={"file": file})
+        instance = form.save()
+        self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
+        [error] = instance.errors.all()
+        self.assertEqual(
+            error.error, "Field edd_month failed validation: Enter a whole number."
+        )
+
         self.is_valid_edd_date.return_value = False
         file = SimpleUploadedFile(
             "test.csv",
