@@ -839,6 +839,9 @@ class ImportRow(models.Model):
                 raise ValidationError("EDD must be between now and 9 months")
         except ValueError as e:
             raise ValidationError(f"Invalid EDD date, {str(e)}")
+        except TypeError:
+            # Should be handled by the individual field validator
+            pass
 
         if self.id_type == self.IDType.SAID and not self.id_number:
             raise ValidationError("ID number required for SA ID ID type")
