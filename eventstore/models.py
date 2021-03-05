@@ -529,6 +529,14 @@ class Covid19Triage(models.Model):
                 return self.RISK_LOW
 
 
+class Covid19TriageStart(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    msisdn = models.CharField(max_length=255, validators=[za_phone_number])
+    source = models.CharField(max_length=255)
+    timestamp = models.DateTimeField(default=timezone.now, db_index=True)
+    created_by = models.CharField(max_length=255, blank=True, default="")
+
+
 class HealthCheckUserProfileManager(models.Manager):
     def get_or_prefill(self, msisdn: Text) -> "HealthCheckUserProfile":
         """

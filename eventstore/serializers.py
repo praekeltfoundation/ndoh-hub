@@ -10,6 +10,7 @@ from eventstore.models import (
     ChannelSwitch,
     CHWRegistration,
     Covid19Triage,
+    Covid19TriageStart,
     DBEOnBehalfOfProfile,
     EddSwitch,
     HealthCheckUserProfile,
@@ -232,6 +233,15 @@ class Covid19TriageV3Serializer(BaseEventSerializer):
             "data",
             "place_of_work",
         )
+        read_only_fields = ("id", "created_by")
+
+
+class Covid19TriageStartSerializer(BaseEventSerializer):
+    msisdn = MSISDNField(country="ZA")
+
+    class Meta:
+        model = Covid19TriageStart
+        fields = ("id", "msisdn", "source", "timestamp", "created_by")
         read_only_fields = ("id", "created_by")
 
 
