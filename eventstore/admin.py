@@ -11,6 +11,7 @@ from eventstore.models import (
     ChannelSwitch,
     CHWRegistration,
     Covid19Triage,
+    Covid19TriageStart,
     DeliveryFailure,
     EddSwitch,
     IdentificationSwitch,
@@ -157,6 +158,12 @@ class BabyDobSwitchAdmin(BaseEventAdmin):
 class Covid19TriageAdmin(BaseEventAdmin):
     readonly_fields = ("id", "created_by", "timestamp")
     list_display = ("msisdn", "risk", "source", "timestamp")
+
+
+@admin.register(Covid19TriageStart)
+class Covid19TriageStartAdmin(BaseEventAdmin):
+    readonly_fields = ("id", "created_by", "timestamp")
+    list_display = ("msisdn", "source", "timestamp")
 
 
 @admin.register(CDUAddressUpdate)
