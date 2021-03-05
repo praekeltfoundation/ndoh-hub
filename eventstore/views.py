@@ -20,6 +20,7 @@ from eventstore.models import (
     ChannelSwitch,
     CHWRegistration,
     Covid19Triage,
+    Covid19TriageStart,
     DBEOnBehalfOfProfile,
     EddSwitch,
     Event,
@@ -45,6 +46,7 @@ from eventstore.serializers import (
     ChannelSwitchSerializer,
     CHWRegistrationSerializer,
     Covid19TriageSerializer,
+    Covid19TriageStartSerializer,
     Covid19TriageV2Serializer,
     Covid19TriageV3Serializer,
     DBEOnBehalfOfProfileSerializer,
@@ -319,6 +321,14 @@ class Covid19TriageFilter(filters.FilterSet):
         fields: list = []
 
 
+class Covid19TriageStartFilter(filters.FilterSet):
+    timestamp_gt = filters.IsoDateTimeFilter(field_name="timestamp", lookup_expr="gt")
+
+    class Meta:
+        model = Covid19TriageStart
+        fields: list = []
+
+
 class Covid19TriageViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
     queryset = Covid19Triage.objects.all()
     serializer_class = Covid19TriageSerializer
@@ -407,6 +417,15 @@ class Covid19TriageV3ViewSet(Covid19TriageV2ViewSet):
 
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
+
+
+class Covid19TriageStartViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
+    queryset = Covid19TriageStart.objects.all()
+    serializer_class = Covid19TriageStartSerializer
+    permission_classes = (DjangoViewModelPermissions,)
+    pagination_class = CursorPaginationFactory("timestamp")
+    filter_backends = [filters.DjangoFilterBackend]
+    filterset_class = Covid19TriageStartFilter
 
 
 class HealthCheckUserProfileViewSet(GenericViewSet, RetrieveModelMixin):

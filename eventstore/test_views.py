@@ -28,6 +28,7 @@ from eventstore.models import (
     ChannelSwitch,
     CHWRegistration,
     Covid19Triage,
+    Covid19TriageStart,
     DBEOnBehalfOfProfile,
     DeliveryFailure,
     EddSwitch,
@@ -46,6 +47,7 @@ from eventstore.models import (
 )
 from eventstore.serializers import (
     Covid19TriageSerializer,
+    Covid19TriageStartSerializer,
     Covid19TriageV2Serializer,
     Covid19TriageV3Serializer,
 )
@@ -2098,6 +2100,67 @@ class Covid19TriageV3ViewSetTests(Covid19TriageViewSetTests):
                 "data": {},
                 "place_of_work": Covid19Triage.WORK_HEALTHCARE,
             },
+        )
+
+
+class Covid19TriageStartViewSetTests(APITestCase, BaseEventTestCase):
+    url = reverse("covid19triagestart-list")
+    add_codename = "add_covid19triagestart"
+    view_codename = "view_covid19triagestart"
+
+    def test_data_validation(self):
+        """
+        The supplied data must be validated, and any errors returned
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename=self.add_codename))
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_successful_request(self):
+        """
+        Should create a new Covid19TriageStart object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename=self.add_codename))
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url, {"msisdn": "27820001001", "source": "USSD *123#"}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [start] = Covid19TriageStart.objects.all()
+        self.assertEqual(start.msisdn, "+27820001001")
+        self.assertEqual(start.source, "USSD *123#")
+        self.assertEqual(start.created_by, user.username)
+
+    def test_get_list(self):
+        """
+        Should return the data, filtered by the querystring
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename=self.view_codename))
+        self.client.force_authenticate(user)
+
+        start_old = Covid19TriageStart.objects.create(
+            msisdn="+27820001001", source="USSD"
+        )
+        start_new = Covid19TriageStart.objects.create(
+            msisdn="+27820001001", source="USSD"
+        )
+        response = self.client.get(
+            f"{self.url}?"
+            f"{urlencode({'timestamp_gt': start_old.timestamp.isoformat()})}"
+        )
+        self.assertEqual(
+            response.data["results"],
+            [Covid19TriageStartSerializer(instance=start_new).data],
+        )
+        [r] = response.data["results"]
+        r.pop("id")
+        r.pop("timestamp")
+        self.assertEqual(
+            r, {"msisdn": "+27820001001", "source": "USSD", "created_by": ""}
         )
 
 
