@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.35
+1. Unused code cleanup
+  ([#369](https://github.com/praekeltfoundation/ndoh-hub/pull/369))
+1. Complete implementation of ada assessment notification webhook endpoint
+  ([#370](https://github.com/praekeltfoundation/ndoh-hub/pull/370))
+  ([#371](https://github.com/praekeltfoundation/ndoh-hub/pull/371))
+1. Add additional field options for momconnect import
+  ([#372](https://github.com/praekeltfoundation/ndoh-hub/pull/372))
+1. Show proper error on invalid date format during momconnect import
+  ([#373](https://github.com/praekeltfoundation/ndoh-hub/pull/373))
+1. Add tracking for start of healthcheck
+  ([#374](https://github.com/praekeltfoundation/ndoh-hub/pull/374))
+  ([#375](https://github.com/praekeltfoundation/ndoh-hub/pull/375))
+
 ## 0.8.34
 1. Add async bulk archive scripts
   ([#363](https://github.com/praekeltfoundation/ndoh-hub/pull/363))
