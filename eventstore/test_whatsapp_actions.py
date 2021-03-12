@@ -19,7 +19,6 @@ from eventstore.whatsapp_actions import (
     handle_inbound,
     handle_operator_message,
     handle_outbound,
-    handle_whatsapp_hsm_error,
     update_rapidpro_preferred_channel,
 )
 from registrations.models import JembiSubmission
@@ -382,63 +381,3 @@ class HandleEventTests(DjangoTestCase):
         p.create_flow_start.assert_not_called()
         df = DeliveryFailure.objects.get(contact_id="27820001001")
         self.assertEqual(df.number_of_failures, 0)
-
-    def test_hsm_error(self):
-        """
-        If the event is an HSM error, then it should trigger the HSM error
-        action
-        """
-        event = Mock()
-        event.is_message_expired_error = False
-        event.is_whatsapp_failed_delivery_event = False
-
-        with patch("eventstore.whatsapp_actions.handle_whatsapp_hsm_error") as h:
-            event.is_hsm_error = False
-            handle_event(event)
-            h.assert_not_called()
-
-            event.is_hsm_error = True
-            handle_event(event)
-            h.assert_called_once_with(event)
-
-
-class HandleWhatsappEventsTests(DjangoTestCase):
-    @override_settings(RAPIDPRO_UNSENT_EVENT_FLOW="test-flow-uuid")
-    @override_settings(ENABLE_UNSENT_EVENT_ACTION=True)
-    def test_handle_whatsapp_hsm_error_successful(self):
-        """
-        Triggers the correct flow with the correct details
-        """
-        event = Mock()
-        event.recipient_id = "27820001001"
-        event.timestamp = datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
-        event.is_message_expired_error.return_value = False
-
-        with patch("eventstore.tasks.rapidpro") as p:
-            handle_whatsapp_hsm_error(event)
-
-        p.create_flow_start.assert_called_once_with(
-            extra={
-                "popi_ussd": settings.POPI_USSD_CODE,
-                "optout_ussd": settings.OPTOUT_USSD_CODE,
-                "timestamp": 1_518_694_700,
-            },
-            flow="test-flow-uuid",
-            urns=["whatsapp:27820001001"],
-        )
-
-    @override_settings(RAPIDPRO_UNSENT_EVENT_FLOW="test-flow-uuid")
-    @override_settings(ENABLE_UNSENT_EVENT_ACTION=False)
-    def test_handle_whatsapp_hsm_error_unsent_disabled(self):
-        """
-        Does nothing if ENABLE_UNSENT_EVENT_ACTION is False
-        """
-        event = Mock()
-        event.recipient_id = "27820001001"
-        event.data = {"errors": [{"title": "structure unavailable", "code": 123}]}
-        event.is_message_expired_error.return_value = False
-
-        with patch("eventstore.tasks.rapidpro") as p:
-            handle_whatsapp_hsm_error(event)
-
-        p.create_flow_start.assert_not_called()
