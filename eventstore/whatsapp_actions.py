@@ -5,7 +5,6 @@ from changes.tasks import get_engage_inbound_and_reply
 from eventstore.models import DeliveryFailure, Event, OptOut
 from eventstore.tasks import (
     async_create_flow_start,
-    async_handle_whatsapp_delivery_error,
     get_rapidpro_contact_by_msisdn,
     send_helpdesk_response_to_dhis2,
     update_rapidpro_contact,
@@ -73,12 +72,6 @@ def handle_event(event):
     """
     Triggers all the actions that are required for this event
     """
-    if event.is_message_expired_error or event.is_whatsapp_failed_delivery_event:
-        handle_whatsapp_delivery_error(event)
-
-    if event.is_hsm_error:
-        handle_whatsapp_hsm_error(event)
-
     if event.fallback_channel is True:
         handle_fallback_event(event)
 
@@ -113,21 +106,4 @@ def handle_fallback_event(event):
     elif event.status == Event.READ or event.status == Event.DELIVERED:
         df = DeliveryFailure.objects.update_or_create(
             contact_id=event.recipient_id, defaults={"number_of_failures": 0}
-        )
-
-
-def handle_whatsapp_delivery_error(event):
-    async_handle_whatsapp_delivery_error.delay(f"whatsapp:{event.recipient_id}")
-
-
-def handle_whatsapp_hsm_error(event):
-    if settings.ENABLE_UNSENT_EVENT_ACTION:
-        async_create_flow_start.delay(
-            extra={
-                "popi_ussd": settings.POPI_USSD_CODE,
-                "optout_ussd": settings.OPTOUT_USSD_CODE,
-                "timestamp": event.timestamp.timestamp(),
-            },
-            flow=settings.RAPIDPRO_UNSENT_EVENT_FLOW,
-            urns=[f"whatsapp:{event.recipient_id}"],
         )
