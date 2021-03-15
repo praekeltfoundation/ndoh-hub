@@ -1,20 +1,16 @@
-import datetime
 from datetime import timedelta
 from unittest.mock import Mock, patch
 
 import responses
-from django.conf import settings
 from django.test import TestCase as DjangoTestCase
 from django.test import override_settings
 from django.utils import timezone
-from pytz import UTC
 from temba_client.v2 import TembaClient
 
 from eventstore import tasks
 from eventstore.models import DeliveryFailure, Event
 from eventstore.whatsapp_actions import (
     handle_edd_message,
-    handle_event,
     handle_fallback_event,
     handle_inbound,
     handle_operator_message,
