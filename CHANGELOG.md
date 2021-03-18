@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.36
+1. Stop sending SMSes on whatsapp send errors
+  ([#376](https://github.com/praekeltfoundation/ndoh-hub/pull/376))
+
 ## 0.8.35
 1. Unused code cleanup
   ([#369](https://github.com/praekeltfoundation/ndoh-hub/pull/369))
