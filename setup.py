@@ -11,7 +11,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "Django==2.2.18",
-        "djangorestframework==3.9.4",
+        "djangorestframework==3.11.2",
         "coreapi==2.3.3",
         "Markdown==3.1.1",
         "dj-database-url==0.5.0",
