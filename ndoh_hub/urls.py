@@ -85,6 +85,7 @@ urlpatterns = [
     url(r"^docs/", include_docs_urls(title="NDOH Hub")),
     url(r"^", include("registrations.urls")),
     url(r"^", include("changes.urls")),
+    path("", include("ada.urls")),
     url(r"^api/v1/forgetcontact/", ForgetContactView.as_view(), name="forgetcontact"),
     path("api/v2/", include(v2router.urls)),
     path("api/v3/", include(v3router.urls)),
