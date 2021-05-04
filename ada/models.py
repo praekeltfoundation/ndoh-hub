@@ -11,7 +11,7 @@ class RedirectUrl(models.Model):
     )
     content = models.TextField(default="This entry has no copy")
     refresh_url = models.CharField(
-        max_length=200, null=False, blank=False, default="http://127.0.0.1:8000"
+        max_length=200, null=False, blank=False, default="https://hub.momconnect.za"
     )
     symptom_check_url = models.CharField(
         max_length=200, null=False, blank=False, default="http://symptomcheck.co.za"
