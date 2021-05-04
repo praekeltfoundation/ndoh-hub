@@ -25,8 +25,10 @@ class RedirectUrl(models.Model):
 
     def __str__(self):
         if self.url:
-            return (f"{self.parameter}: {self.url}/{self.id} \n"
-                    f"| Clicked {self.my_counter()} times | Content: {self.content}")
+            return (
+                f"{self.parameter}: {self.url}/{self.id} \n"
+                f"| Clicked {self.my_counter()} times | Content: {self.content}"
+            )
 
 
 class RedirectUrlsEntry(models.Model):
@@ -37,5 +39,7 @@ class RedirectUrlsEntry(models.Model):
 
     def __str__(self):
         if self.url:
-            return (f"{self.url.url} with ID {self.url.id} \n"
-                    f"was visited at {self.time_stamp}")
+            return (
+                f"{self.url.url} with ID {self.url.id} \n"
+                f"was visited at {self.time_stamp}"
+            )
