@@ -25,7 +25,7 @@ mimetypes.add_type("image/svg+xml", ".svgz", True)
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-TEMPLATES_DIR = os.path.join(BASE_DIR, 'template')
+TEMPLATES_DIR = os.path.join(BASE_DIR, "template")
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.9/howto/deployment/checklist/
 
@@ -121,7 +121,6 @@ DATABASES = {
             "HUB_DATABASE", "postgres://postgres@localhost/ndoh_hub"
         ),
         engine="django_prometheus.db.backends.postgresql",
-
     )
 }
 
