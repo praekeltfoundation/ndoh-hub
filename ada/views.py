@@ -1,10 +1,10 @@
 from django.shortcuts import HttpResponseRedirect, render
+from django.http import HttpResponse, HttpRequest
 
 from .models import RedirectUrl, RedirectUrlsEntry
 
 
-def clickActivity(request, pk):
-
+def clickActivity(request: HttpRequest, pk: int) -> HttpResponse:
     try:
         redirect_url = RedirectUrl.objects.get(id=pk)
         store_url_entry = RedirectUrlsEntry(url=redirect_url)
@@ -18,7 +18,7 @@ def clickActivity(request, pk):
         return render(request, "index.html", {"error": e})
 
 
-def default_page(request, pk):
+def default_page(request: HttpRequest, pk: int) -> HttpResponse:
     try:
         whatsappid = request.GET.get("whatsappid")
         return render(
