@@ -9,11 +9,11 @@ class RedirectUrl(models.Model):
         null=True,
         default="https://hub.momconnect.za/confirmredirect",
     )
-    content = models.TextField(default="This entry has no copy")
-    refresh_url = models.CharField(
-        max_length=200, null=False, blank=False, default="https://hub.momconnect.za"
+    content = models.TextField(
+        default="This entry has no copy",
+        help_text="The content of the mesage that this link was sent in",
     )
-    symptom_check_url = models.CharField(
+    symptom_check_url = models.URLField(
         max_length=200, null=False, blank=False, default="http://symptomcheck.co.za"
     )
     parameter = models.IntegerField(null=True, blank=True)

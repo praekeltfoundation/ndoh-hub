@@ -33,7 +33,7 @@ TEMPLATES_DIR = os.path.join(BASE_DIR, "template")
 SECRET_KEY = os.environ.get("SECRET_KEY", "REPLACEME")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG", True)
+DEBUG = os.environ.get("DEBUG", False)
 
 ALLOWED_HOSTS = ["*"]
 
