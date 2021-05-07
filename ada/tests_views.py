@@ -14,11 +14,18 @@ class TestViews(TestCase):
 
     def test_name_error(self):
         """
-        Should check that the right template formisspelt whatsappid
+        Should check that the right template is used for mis-spelt whatsappid
         """
         response = self.client.get(
             "https://hub.momconnect.za/redirect/52?whatsappi=12345"
         )
+        self.assertTemplateUsed(response, "index.html")
+
+    def test_no_whatsapp_value(self):
+        """
+        Should check that the right template is used if there's no whatsapp value
+        """
+        response = self.client.get("https://hub.momconnect.za/redirect/52?whatsapp=")
         self.assertTemplateUsed(response, "index.html")
 
     def test_name_success(self):
