@@ -29,9 +29,7 @@ class RedirectUrl(models.Model):
 
 
 class RedirectUrlsEntry(models.Model):
-    url = models.ForeignKey(
-        RedirectUrl, on_delete=models.CASCADE, blank=True, null=True
-    )
+    url = models.ForeignKey(RedirectUrl, on_delete=models.CASCADE, null=True)
     time_stamp = models.DateTimeField(auto_now=True)
 
     def __str__(self):

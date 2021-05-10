@@ -4,7 +4,12 @@ from . import views
 
 urlpatterns = [
     path(
-        "confirmredirect/<int:pk>/<int:whatsappid>",
+        "confirmredirect/<int:pk>/<str:whatsappid>",
+        views.clickActivity,
+        name="ada_hook_redirect",
+    ),
+    path(
+        "confirmredirect/<str:pk>/<str:whatsappid>",
         views.clickActivity,
         name="ada_hook_redirect",
     ),

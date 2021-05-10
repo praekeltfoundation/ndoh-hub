@@ -1,3 +1,5 @@
+from urllib.parse import urljoin
+
 from django.test import TestCase
 from django.urls import reverse
 
@@ -9,32 +11,34 @@ class TestViews(TestCase):
         """
         Should check that the right template is used for no whatsapp string in url
         """
-        response = self.client.get("https://hub.momconnect.za/redirect/52?")
+        response = self.client.get(reverse("ada_hook", args=["1"]))
         self.assertTemplateUsed(response, "index.html")
 
     def test_name_error(self):
         """
         Should check that the right template is used for mis-spelt whatsappid
         """
-        response = self.client.get(
-            "https://hub.momconnect.za/redirect/52?whatsappi=12345"
-        )
+        qs = "?whatsappi=12345"
+        url = urljoin(reverse("ada_hook", args=["1"]), qs)
+        response = self.client.get(url)
         self.assertTemplateUsed(response, "index.html")
 
     def test_no_whatsapp_value(self):
         """
         Should check that the right template is used if there's no whatsapp value
         """
-        response = self.client.get("https://hub.momconnect.za/redirect/52?whatsapp=")
+        qs = "?whatsapp="
+        url = urljoin(reverse("ada_hook", args=["1"]), qs)
+        response = self.client.get(url)
         self.assertTemplateUsed(response, "index.html")
 
     def test_name_success(self):
         """
         Should use the meta refresh template if url is correct
         """
-        response = self.client.get(
-            "https://hub.momconnect.za/redirect/52?whatsappid=12345"
-        )
+        qs = "?whatsappid=12345"
+        url = urljoin(reverse("ada_hook", args=["1"]), qs)
+        response = self.client.get(url)
         self.assertTemplateUsed(response, "meta_refresh.html")
 
 
@@ -55,10 +59,20 @@ class AdaHookViewTests(TestCase):
 
     def test_ada_hook_redirect_success(self):
         response = self.client.get(
-            reverse("ada_hook_redirect", args=(self.post.id, self.post.id))
+            reverse("ada_hook_redirect", args=(self.post.id, "1235"))
         )
         self.assertEqual(response.status_code, 302)
 
+    # Raise HTTp404 if RedirectUrl does not exist
     def test_ada_hook_redirect_404(self):
-        response = self.client.get(reverse("ada_hook_redirect", args=("1", "1")))
+        response = self.client.get(
+            reverse("ada_hook_redirect", args=("1", "27789049372"))
+        )
+        self.assertEqual(response.status_code, 404)
+
+    # Raise HTTp404 if ValueError
+    def test_ada_hook_redirect_404_nameError(self):
+        response = self.client.get(
+            reverse("ada_hook_redirect", args=("invalidurlid", "invalidwhatsappid"))
+        )
         self.assertEqual(response.status_code, 404)
