@@ -1,3 +1,4 @@
+import re
 from urllib.parse import urljoin, urlparse
 
 from django.http import Http404, HttpRequest, HttpResponse
@@ -12,7 +13,7 @@ def clickActivity(request: HttpRequest, pk: int, whatsappid: str) -> HttpRespons
     except (ValueError, RedirectUrl.DoesNotExist):
         raise Http404()
     else:
-        store_url_entry = RedirectUrlsEntry(url=redirect_url)
+        store_url_entry = RedirectUrlsEntry(symptom_check_url=redirect_url)
         store_url_entry.save()
         url = f"{redirect_url.symptom_check_url}"
         qs = f"?whatsappid={whatsappid}"
@@ -22,14 +23,16 @@ def clickActivity(request: HttpRequest, pk: int, whatsappid: str) -> HttpRespons
 
 
 def default_page(request: HttpRequest, pk: int) -> HttpResponse:
-    try:
-        whatsappid = request.GET.get("whatsappid")
-        if whatsappid is None:
-            return render(
-                request, "index.html", {"error": "404 Bad Request: Whatsappid is none"}
-            )
-    except RuntimeError as exc:
-        raise RuntimeError("Runtime error in application") from exc
+    regex = re.compile("[@_!#$%^&*()<>?/\|}{~:]")
+    whatsappid = request.GET.get("whatsappid")
+    if regex.search(str(whatsappid)) is not None:
+        return render(
+            request, "index.html", {"error": "404 Bad Request: special character in ID"}
+        )
+    if whatsappid is None:
+        return render(
+            request, "index.html", {"error": "404 Bad Request: Whatsappid is none"}
+        )
     else:
         context = {"pk": pk, "whatsappid": whatsappid}
         return render(request, "meta_refresh.html", context)

@@ -32,6 +32,15 @@ class TestViews(TestCase):
         response = self.client.get(url)
         self.assertTemplateUsed(response, "index.html")
 
+    def test_no_query_string(self):
+        """
+        Should check that the right template is used if there's no whatsapp value
+        """
+        qs = "?"
+        url = urljoin(reverse("ada_hook", args=["1"]), qs)
+        response = self.client.get(url)
+        self.assertTemplateUsed(response, "index.html")
+
     def test_name_success(self):
         """
         Should use the meta refresh template if url is correct
@@ -41,12 +50,20 @@ class TestViews(TestCase):
         response = self.client.get(url)
         self.assertTemplateUsed(response, "meta_refresh.html")
 
+    def test_special_character(self):
+        """
+        Should use the meta refresh template if url is correct
+        """
+        qs = "?whatsappid=12@45"
+        url = urljoin(reverse("ada_hook", args=["1"]), qs)
+        response = self.client.get(url)
+        self.assertTemplateUsed(response, "index.html")
+
 
 class AdaHookViewTests(TestCase):
     def setUp(self):
         super(AdaHookViewTests, self).setUp()
         self.post = RedirectUrl.objects.create(
-            url="https://hub.momconnect.za/confirmredirect",
             content="Entry has no copy",
             symptom_check_url="http://symptomcheck.co.za",
             parameter="1",
