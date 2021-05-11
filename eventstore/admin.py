@@ -14,6 +14,7 @@ from eventstore.models import (
     Covid19TriageStart,
     DeliveryFailure,
     EddSwitch,
+    HealthCheckUserProfile,
     IdentificationSwitch,
     ImportError,
     ImportRow,
@@ -164,6 +165,11 @@ class Covid19TriageAdmin(BaseEventAdmin):
 class Covid19TriageStartAdmin(BaseEventAdmin):
     readonly_fields = ("id", "created_by", "timestamp")
     list_display = ("msisdn", "source", "timestamp")
+
+
+@admin.register(HealthCheckUserProfile)
+class HealthCheckUserProfileAdmin(BaseEventAdmin):
+    list_display = ("msisdn", "first_name", "gender")
 
 
 @admin.register(CDUAddressUpdate)
