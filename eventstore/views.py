@@ -347,7 +347,7 @@ class Covid19TriageViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
 
         profile = HealthCheckUserProfile.objects.get_or_prefill(msisdn=instance.msisdn)
         profile.update_from_healthcheck(instance)
-        profile.update_post_screening_study_arms()
+        profile.update_post_screening_study_arms(instance.risk)
         profile.save()
 
         if (

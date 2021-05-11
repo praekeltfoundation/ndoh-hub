@@ -573,6 +573,13 @@ class HealthCheckUserProfile(models.Model):
         (ARM_TREATMENT_4, "Treatment 4"),
     )
 
+    STUDY_ARM_QUARANTINE_CHOICES = (
+        (ARM_CONTROL, "Control"),
+        (ARM_TREATMENT_1, "Treatment 1"),
+        (ARM_TREATMENT_2, "Treatment 2"),
+        (ARM_TREATMENT_3, "Treatment 3"),
+    )
+
     msisdn = models.CharField(
         primary_key=True, max_length=255, validators=[za_phone_number]
     )
@@ -603,8 +610,11 @@ class HealthCheckUserProfile(models.Model):
     hcs_study_a_arm = models.CharField(
         max_length=3, choices=STUDY_ARM_CHOICES, null=True, default=None
     )
-    hcs_study_c_arm = models.CharField(
+    hcs_study_c_testing_arm = models.CharField(
         max_length=3, choices=STUDY_ARM_CHOICES, null=True, default=None
+    )
+    hcs_study_c_quarantine_arm = models.CharField(
+        max_length=3, choices=STUDY_ARM_QUARANTINE_CHOICES, null=True, default=None
     )
     data = JSONField(default=dict, blank=True, null=True)
 
@@ -645,7 +655,9 @@ class HealthCheckUserProfile(models.Model):
             if has_value(v):
                 self.data[k] = v
 
-    def update_post_screening_study_arms(self):
+    def update_post_screening_study_arms(self, risk):
+        if self.age == Covid19Triage.AGE_U18:
+            return
 
         if not self.hcs_study_a_arm and settings.HCS_STUDY_A_ACTIVE:
             self.hcs_study_a_arm = self.get_random_study_arm()
@@ -653,14 +665,30 @@ class HealthCheckUserProfile(models.Model):
                 self.msisdn, "hcs_study_a_arm", self.hcs_study_a_arm
             )
 
-        if not self.hcs_study_c_arm and settings.HCS_STUDY_C_ACTIVE:
-            self.hcs_study_c_arm = self.get_random_study_arm()
-            update_turn_contact.delay(
-                self.msisdn, "hcs_study_c_arm", self.hcs_study_c_arm
-            )
+        if (
+            not self.hcs_study_c_testing_arm
+            and not self.hcs_study_c_quarantine_arm
+            and settings.HCS_STUDY_C_ACTIVE
+        ):
+            if risk == Covid19Triage.RISK_HIGH:
+                self.hcs_study_c_testing_arm = self.get_random_study_arm()
+                update_turn_contact.delay(
+                    self.msisdn, "hcs_study_c_arm", self.hcs_study_c_testing_arm
+                )
+
+            if risk == Covid19Triage.RISK_MODERATE:
+                self.hcs_study_c_quarantine_arm = self.get_random_study_quarantine_arm()
+                update_turn_contact.delay(
+                    self.msisdn,
+                    "hcs_study_c_quarantine_arm",
+                    self.hcs_study_c_quarantine_arm,
+                )
 
     def get_random_study_arm(self):
         return random.choice(self.STUDY_ARM_CHOICES)[0]
+
+    def get_random_study_quarantine_arm(self):
+        return random.choice(self.STUDY_ARM_QUARANTINE_CHOICES)[0]
 
 
 class CDUAddressUpdate(models.Model):
