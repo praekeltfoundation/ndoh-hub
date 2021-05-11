@@ -1675,10 +1675,7 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
 
         profile = HealthCheckUserProfile.objects.get(msisdn="+27820001001")
         mock_update_turn_contact.delay.assert_has_calls(
-            [
-                mock.call("+27820001001", "hcs_study_a_arm", profile.hcs_study_a_arm),
-                mock.call("+27820001001", "hcs_study_c_arm", profile.hcs_study_c_arm),
-            ]
+            [mock.call("+27820001001", "hcs_study_a_arm", profile.hcs_study_a_arm)]
         )
 
     @mock.patch("eventstore.models.update_turn_contact")
@@ -1841,10 +1838,7 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(profile.age, Covid19Triage.AGE_18T40)
 
         mock_update_turn_contact.delay.assert_has_calls(
-            [
-                mock.call("+27820001001", "hcs_study_a_arm", profile.hcs_study_a_arm),
-                mock.call("+27820001001", "hcs_study_c_arm", profile.hcs_study_c_arm),
-            ]
+            [mock.call("+27820001001", "hcs_study_a_arm", profile.hcs_study_a_arm)]
         )
 
     def test_creates_dbe_user_profile(self):
@@ -2038,10 +2032,7 @@ class Covid19TriageV2ViewSetTests(Covid19TriageViewSetTests):
 
         profile = HealthCheckUserProfile.objects.get(msisdn="+27820001001")
         mock_update_turn_contact.delay.assert_has_calls(
-            [
-                mock.call("+27820001001", "hcs_study_a_arm", profile.hcs_study_a_arm),
-                mock.call("+27820001001", "hcs_study_c_arm", profile.hcs_study_c_arm),
-            ]
+            [mock.call("+27820001001", "hcs_study_a_arm", profile.hcs_study_a_arm)]
         )
 
 
