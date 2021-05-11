@@ -309,6 +309,31 @@ class HealthCheckUserProfileTests(TestCase):
         mock_update_turn_contact.delay.assert_not_called()
 
     @patch("eventstore.models.update_turn_contact")
+    def test_update_post_screening_study_arms_under_age(
+        self, mock_update_turn_contact
+    ):
+        profile = HealthCheckUserProfile(
+            msisdn="+27820001001",
+            first_name="oldfirst",
+            last_name="old_last",
+            age=Covid19Triage.AGE_U18,
+            data={
+                "donotreplace": "value",
+                "replaceint": 1,
+                "replacebool": True,
+                "existing": "value",
+            },
+        )
+
+        profile.update_post_screening_study_arms(Covid19Triage.RISK_MODERATE)
+
+        self.assertIsNone(profile.hcs_study_a_arm)
+        self.assertIsNone(profile.hcs_study_c_testing_arm)
+        self.assertIsNone(profile.hcs_study_c_quarantine_arm)
+
+        mock_update_turn_contact.delay.assert_not_called()
+
+    @patch("eventstore.models.update_turn_contact")
     @override_settings(HCS_STUDY_A_ACTIVE=False, HCS_STUDY_C_ACTIVE=False)
     def test_update_post_screening_study_arms_deactivated(
         self, mock_update_turn_contact
