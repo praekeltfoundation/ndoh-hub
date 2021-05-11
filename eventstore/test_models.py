@@ -1,4 +1,6 @@
-from django.test import TestCase
+from unittest.mock import call, patch
+
+from django.test import TestCase, override_settings
 
 from eventstore.models import Covid19Triage, Event, HealthCheckUserProfile, Message
 
@@ -176,3 +178,73 @@ class HealthCheckUserProfileTests(TestCase):
         self.assertEqual(profile.first_name, "oldfirst")
         self.assertEqual(profile.last_name, "newlast")
         self.assertEqual(profile.preexisting_condition, "no")
+
+    @patch("eventstore.models.update_turn_contact")
+    def test_update_post_screening_study_arms(self, mock_update_turn_contact):
+        profile = HealthCheckUserProfile(
+            msisdn="+27820001001",
+            first_name="oldfirst",
+            last_name="old_last",
+            data={
+                "donotreplace": "value",
+                "replaceint": 1,
+                "replacebool": True,
+                "existing": "value",
+            },
+        )
+
+        profile.update_post_screening_study_arms()
+
+        self.assertIsNotNone(profile.hcs_study_a_arm)
+        self.assertIsNotNone(profile.hcs_study_c_arm)
+
+        mock_update_turn_contact.delay.assert_has_calls(
+            [
+                call("+27820001001", "hcs_study_a_arm", profile.hcs_study_a_arm),
+                call("+27820001001", "hcs_study_c_arm", profile.hcs_study_c_arm),
+            ]
+        )
+
+    @patch("eventstore.models.update_turn_contact")
+    def test_update_post_screening_study_arms_populated(self, mock_update_turn_contact):
+        profile = HealthCheckUserProfile(
+            msisdn="+27820001001",
+            first_name="oldfirst",
+            last_name="old_last",
+            hcs_study_a_arm=HealthCheckUserProfile.ARM_CONTROL,
+            hcs_study_c_arm=HealthCheckUserProfile.ARM_CONTROL,
+            data={
+                "donotreplace": "value",
+                "replaceint": 1,
+                "replacebool": True,
+                "existing": "value",
+            },
+        )
+
+        profile.update_post_screening_study_arms()
+
+        mock_update_turn_contact.delay.assert_not_called()
+
+    @patch("eventstore.models.update_turn_contact")
+    @override_settings(HCS_STUDY_A_ACTIVE=False, HCS_STUDY_C_ACTIVE=False)
+    def test_update_post_screening_study_arms_deactivated(
+        self, mock_update_turn_contact
+    ):
+        profile = HealthCheckUserProfile(
+            msisdn="+27820001001",
+            first_name="oldfirst",
+            last_name="old_last",
+            data={
+                "donotreplace": "value",
+                "replaceint": 1,
+                "replacebool": True,
+                "existing": "value",
+            },
+        )
+
+        profile.update_post_screening_study_arms()
+
+        self.assertIsNone(profile.hcs_study_a_arm)
+        self.assertIsNone(profile.hcs_study_c_arm)
+
+        mock_update_turn_contact.delay.assert_not_called()

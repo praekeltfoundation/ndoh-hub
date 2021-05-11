@@ -339,3 +339,6 @@ HELPDESK_TIMEOUT_DAYS = env.int("HELPDESK_TIMEOUT_DAYS", 10)
 # HealthCheck
 HC_TURN_URL = env.str("HC_TURN_URL", None)
 HC_TURN_TOKEN = env.str("HC_TURN_TOKEN", None)
+
+HCS_STUDY_A_ACTIVE = env.bool("HCS_STUDY_A_ACTIVE", False)
+HCS_STUDY_C_ACTIVE = env.bool("HCS_STUDY_C_ACTIVE", False)

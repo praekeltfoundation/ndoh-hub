@@ -1,14 +1,17 @@
+import random
 import uuid
 from datetime import date
 from typing import Text
 
 import pycountry
+from django.conf import settings
 from django.conf.locale import LANG_INFO
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
+from eventstore.turn_tasks import update_turn_contact
 from eventstore.validators import (
     validate_facility_code,
     validate_sa_id_number,
@@ -556,6 +559,20 @@ class HealthCheckUserProfileManager(models.Manager):
 
 
 class HealthCheckUserProfile(models.Model):
+    ARM_CONTROL = "C"
+    ARM_TREATMENT_1 = "T1"
+    ARM_TREATMENT_2 = "T2"
+    ARM_TREATMENT_3 = "T3"
+    ARM_TREATMENT_4 = "T4"
+
+    STUDY_ARM_CHOICES = (
+        (ARM_CONTROL, "Control"),
+        (ARM_TREATMENT_1, "Treatment 1"),
+        (ARM_TREATMENT_2, "Treatment 2"),
+        (ARM_TREATMENT_3, "Treatment 3"),
+        (ARM_TREATMENT_4, "Treatment 4"),
+    )
+
     msisdn = models.CharField(
         primary_key=True, max_length=255, validators=[za_phone_number]
     )
@@ -583,6 +600,12 @@ class HealthCheckUserProfile(models.Model):
     )
     rooms_in_household = models.IntegerField(blank=True, null=True, default=None)
     persons_in_household = models.IntegerField(blank=True, null=True, default=None)
+    hcs_study_a_arm = models.CharField(
+        max_length=3, choices=STUDY_ARM_CHOICES, null=True, default=None
+    )
+    hcs_study_c_arm = models.CharField(
+        max_length=3, choices=STUDY_ARM_CHOICES, null=True, default=None
+    )
     data = JSONField(default=dict, blank=True, null=True)
 
     objects = HealthCheckUserProfileManager()
@@ -621,6 +644,23 @@ class HealthCheckUserProfile(models.Model):
         for k, v in healthcheck.data.items():
             if has_value(v):
                 self.data[k] = v
+
+    def update_post_screening_study_arms(self):
+
+        if not self.hcs_study_a_arm and settings.HCS_STUDY_A_ACTIVE:
+            self.hcs_study_a_arm = self.get_random_study_arm()
+            update_turn_contact.delay(
+                self.msisdn, "hcs_study_a_arm", self.hcs_study_a_arm
+            )
+
+        if not self.hcs_study_c_arm and settings.HCS_STUDY_C_ACTIVE:
+            self.hcs_study_c_arm = self.get_random_study_arm()
+            update_turn_contact.delay(
+                self.msisdn, "hcs_study_c_arm", self.hcs_study_c_arm
+            )
+
+    def get_random_study_arm(self):
+        return random.choice(self.STUDY_ARM_CHOICES)[0]
 
 
 class CDUAddressUpdate(models.Model):
