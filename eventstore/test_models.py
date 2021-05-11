@@ -257,9 +257,7 @@ class HealthCheckUserProfileTests(TestCase):
         )
 
     @patch("eventstore.models.update_turn_contact")
-    def test_update_post_screening_study_arms_c_high(
-        self, mock_update_turn_contact
-    ):
+    def test_update_post_screening_study_arms_c_high(self, mock_update_turn_contact):
         profile = HealthCheckUserProfile(
             msisdn="+27820001001",
             first_name="oldfirst",
@@ -279,13 +277,7 @@ class HealthCheckUserProfileTests(TestCase):
         self.assertIsNone(profile.hcs_study_c_quarantine_arm)
 
         mock_update_turn_contact.delay.assert_has_calls(
-            [
-                call(
-                    "+27820001001",
-                    "hcs_study_c_arm",
-                    profile.hcs_study_c_testing_arm,
-                )
-            ]
+            [call("+27820001001", "hcs_study_c_arm", profile.hcs_study_c_testing_arm)]
         )
 
     @patch("eventstore.models.update_turn_contact")
@@ -309,9 +301,7 @@ class HealthCheckUserProfileTests(TestCase):
         mock_update_turn_contact.delay.assert_not_called()
 
     @patch("eventstore.models.update_turn_contact")
-    def test_update_post_screening_study_arms_under_age(
-        self, mock_update_turn_contact
-    ):
+    def test_update_post_screening_study_arms_under_age(self, mock_update_turn_contact):
         profile = HealthCheckUserProfile(
             msisdn="+27820001001",
             first_name="oldfirst",
