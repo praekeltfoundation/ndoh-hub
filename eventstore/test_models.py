@@ -194,7 +194,7 @@ class HealthCheckUserProfileTests(TestCase):
             },
         )
 
-        profile.update_post_screening_study_arms(Covid19Triage.RISK_LOW)
+        profile.update_post_screening_study_arms(Covid19Triage.RISK_LOW, "WhatsApp")
 
         self.assertIsNotNone(profile.hcs_study_a_arm)
 
@@ -217,16 +217,18 @@ class HealthCheckUserProfileTests(TestCase):
             },
         )
 
-        profile.update_post_screening_study_arms(Covid19Triage.RISK_LOW)
+        profile.update_post_screening_study_arms(Covid19Triage.RISK_LOW, "WhatsApp")
 
         self.assertIsNone(profile.hcs_study_c_testing_arm)
         self.assertIsNone(profile.hcs_study_c_quarantine_arm)
 
         mock_update_turn_contact.delay.assert_not_called()
 
+    @patch("eventstore.models.start_study_c_registration_flow")
     @patch("eventstore.models.update_turn_contact")
+    @override_settings(HCS_STUDY_C_REGISTRATION_FLOW_ID="123")
     def test_update_post_screening_study_arms_c_moderate(
-        self, mock_update_turn_contact
+        self, mock_update_turn_contact, mock_start_study_c_registration_flow
     ):
         profile = HealthCheckUserProfile(
             msisdn="+27820001001",
@@ -241,7 +243,9 @@ class HealthCheckUserProfileTests(TestCase):
             },
         )
 
-        profile.update_post_screening_study_arms(Covid19Triage.RISK_MODERATE)
+        profile.update_post_screening_study_arms(
+            Covid19Triage.RISK_MODERATE, "WhatsApp"
+        )
 
         self.assertIsNone(profile.hcs_study_c_testing_arm)
         self.assertIsNotNone(profile.hcs_study_c_quarantine_arm)
@@ -256,8 +260,20 @@ class HealthCheckUserProfileTests(TestCase):
             ]
         )
 
+        mock_start_study_c_registration_flow.delay.assert_called_with(
+            "+27820001001",
+            profile.hcs_study_c_testing_arm,
+            profile.hcs_study_c_quarantine_arm,
+            Covid19Triage.RISK_MODERATE,
+            "WhatsApp",
+        )
+
+    @patch("eventstore.models.start_study_c_registration_flow")
     @patch("eventstore.models.update_turn_contact")
-    def test_update_post_screening_study_arms_c_high(self, mock_update_turn_contact):
+    @override_settings(HCS_STUDY_C_REGISTRATION_FLOW_ID="123")
+    def test_update_post_screening_study_arms_c_high(
+        self, mock_update_turn_contact, mock_start_study_c_registration_flow
+    ):
         profile = HealthCheckUserProfile(
             msisdn="+27820001001",
             first_name="oldfirst",
@@ -271,13 +287,21 @@ class HealthCheckUserProfileTests(TestCase):
             },
         )
 
-        profile.update_post_screening_study_arms(Covid19Triage.RISK_HIGH)
+        profile.update_post_screening_study_arms(Covid19Triage.RISK_HIGH, "WhatsApp")
 
         self.assertIsNotNone(profile.hcs_study_c_testing_arm)
         self.assertIsNone(profile.hcs_study_c_quarantine_arm)
 
         mock_update_turn_contact.delay.assert_has_calls(
             [call("+27820001001", "hcs_study_c_arm", profile.hcs_study_c_testing_arm)]
+        )
+
+        mock_start_study_c_registration_flow.delay.assert_called_with(
+            "+27820001001",
+            profile.hcs_study_c_testing_arm,
+            profile.hcs_study_c_quarantine_arm,
+            Covid19Triage.RISK_HIGH,
+            "WhatsApp",
         )
 
     @patch("eventstore.models.update_turn_contact")
@@ -296,7 +320,7 @@ class HealthCheckUserProfileTests(TestCase):
             },
         )
 
-        profile.update_post_screening_study_arms(Covid19Triage.RISK_HIGH)
+        profile.update_post_screening_study_arms(Covid19Triage.RISK_HIGH, "WhatsApp")
 
         mock_update_turn_contact.delay.assert_not_called()
 
@@ -315,7 +339,9 @@ class HealthCheckUserProfileTests(TestCase):
             },
         )
 
-        profile.update_post_screening_study_arms(Covid19Triage.RISK_MODERATE)
+        profile.update_post_screening_study_arms(
+            Covid19Triage.RISK_MODERATE, "WhatsApp"
+        )
 
         self.assertIsNone(profile.hcs_study_a_arm)
         self.assertIsNone(profile.hcs_study_c_testing_arm)
@@ -340,7 +366,9 @@ class HealthCheckUserProfileTests(TestCase):
             },
         )
 
-        profile.update_post_screening_study_arms(Covid19Triage.RISK_MODERATE)
+        profile.update_post_screening_study_arms(
+            Covid19Triage.RISK_MODERATE, "WhatsApp"
+        )
 
         self.assertIsNone(profile.hcs_study_a_arm)
         self.assertIsNone(profile.hcs_study_c_testing_arm)
