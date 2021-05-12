@@ -9,8 +9,7 @@ class TestAppModels(TestCase):
         parameter = RedirectUrl.objects.create(parameter=1)
         self.assertEqual(
             str(parameter),
-            "1: https://hub.momconnect.co.za/redirect/1 \n"
-            "| Clicked 0 times | Content: This entry has no copy",
+            "1: /redirect/1 \n" "| Clicked 0 times | Content: This entry has no copy",
         )
 
     @freeze_time("2021-05-06 07:24:14.014990+00:00")
@@ -19,6 +18,6 @@ class TestAppModels(TestCase):
         url = RedirectUrlsEntry.objects.create(symptom_check_url=urls)
         self.assertEqual(
             str(url),
-            "https://hub.momconnect.co.za/redirect with parameter \n"
+            "Url with parameter \n"
             "None \nwas visited at 2021-05-06 07:24:14.014990+00:00",
         )

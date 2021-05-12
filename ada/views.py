@@ -1,5 +1,4 @@
-import re
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlencode
 
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import HttpResponseRedirect, render
@@ -16,19 +15,13 @@ def clickActivity(request: HttpRequest, pk: int, whatsappid: str) -> HttpRespons
         store_url_entry = RedirectUrlsEntry(symptom_check_url=redirect_url)
         store_url_entry.save()
         url = f"{redirect_url.symptom_check_url}"
-        qs = f"?whatsappid={whatsappid}"
-        parsed_url = urlparse(qs)
-        destination_url = urljoin(url, parsed_url.geturl())
+        qs = urlencode({"whatsappid": whatsappid})
+        destination_url = f"{url}?{qs}"
         return HttpResponseRedirect(destination_url)
 
 
 def default_page(request: HttpRequest, pk: int) -> HttpResponse:
-    regex = re.compile("[@_!#$%^&*()<>?/\|}{~:]")
     whatsappid = request.GET.get("whatsappid")
-    if regex.search(str(whatsappid)) is not None:
-        return render(
-            request, "index.html", {"error": "404 Bad Request: special character in ID"}
-        )
     if whatsappid is None:
         return render(
             request, "index.html", {"error": "404 Bad Request: Whatsappid is none"}
