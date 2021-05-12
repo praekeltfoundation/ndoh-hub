@@ -3,7 +3,7 @@ import json
 import responses
 from django.test import TestCase, override_settings
 
-from eventstore.turn_tasks import update_turn_contact
+from eventstore.hcs_tasks import update_turn_contact
 
 
 class UpdateTurnContactTaskTest(TestCase):

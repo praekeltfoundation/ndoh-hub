@@ -11,7 +11,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
-from eventstore.turn_tasks import update_turn_contact
+from eventstore.hcs_tasks import update_turn_contact, start_study_c_registration_flow
 from eventstore.validators import (
     validate_facility_code,
     validate_sa_id_number,
@@ -655,7 +655,7 @@ class HealthCheckUserProfile(models.Model):
             if has_value(v):
                 self.data[k] = v
 
-    def update_post_screening_study_arms(self, risk):
+    def update_post_screening_study_arms(self, risk, source):
         if self.age == Covid19Triage.AGE_U18:
             return
 
@@ -682,6 +682,15 @@ class HealthCheckUserProfile(models.Model):
                     self.msisdn,
                     "hcs_study_c_quarantine_arm",
                     self.hcs_study_c_quarantine_arm,
+                )
+
+            if risk == Covid19Triage.RISK_HIGH or risk == Covid19Triage.RISK_MODERATE:
+                start_study_c_registration_flow.delay(
+                    self.msisdn,
+                    self.hcs_study_c_testing_arm,
+                    self.hcs_study_c_quarantine_arm,
+                    risk,
+                    source,
                 )
 
     def get_random_study_arm(self):
