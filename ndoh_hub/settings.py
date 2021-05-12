@@ -25,7 +25,7 @@ mimetypes.add_type("image/svg+xml", ".svgz", True)
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-
+TEMPLATES_DIR = os.path.join(BASE_DIR, "template")
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.9/howto/deployment/checklist/
 
@@ -61,6 +61,7 @@ INSTALLED_APPS = (
     "registrations",
     "changes",
     "eventstore",
+    "ada",
 )
 
 MIDDLEWARE = (
@@ -117,7 +118,7 @@ LOGGING = {
 DATABASES = {
     "default": dj_database_url.config(
         default=os.environ.get(
-            "HUB_DATABASE", "postgres://postgres:@localhost/ndoh_hub"
+            "HUB_DATABASE", "postgres://postgres@localhost/ndoh_hub"
         ),
         engine="django_prometheus.db.backends.postgresql",
     )
@@ -177,7 +178,7 @@ STATIC_URL = "/static/"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [TEMPLATES_DIR],
         "APP_DIRS": True,
         "OPTIONS": {
             "debug": DEBUG,
