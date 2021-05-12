@@ -11,7 +11,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
-from eventstore.hcs_tasks import update_turn_contact, start_study_c_registration_flow
+from eventstore.hcs_tasks import start_study_c_registration_flow, update_turn_contact
 from eventstore.validators import (
     validate_facility_code,
     validate_sa_id_number,
