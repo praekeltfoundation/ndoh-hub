@@ -1769,9 +1769,22 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
             tracing=True,
             risk=Covid19Triage.RISK_LOW,
         )
+        triage_new_diff_number = Covid19Triage.objects.create(
+            msisdn="+27820001002",
+            source="USSD",
+            province="ZA-WC",
+            city="Cape Town",
+            age=Covid19Triage.AGE_18T40,
+            fever=False,
+            cough=False,
+            sore_throat=False,
+            exposure=Covid19Triage.EXPOSURE_NO,
+            tracing=True,
+            risk=Covid19Triage.RISK_LOW,
+        )
         response = self.client.get(
             f"{self.url}?"
-            f"{urlencode({'timestamp_gt': triage_old.timestamp.isoformat()})}"
+            f"{urlencode({'timestamp_gt': triage_old.timestamp.isoformat(),'msisdn': '+27820001001'})}"
         )
         self.assertEqual(
             response.data["results"],

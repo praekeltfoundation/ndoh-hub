@@ -318,7 +318,7 @@ class Covid19TriageFilter(filters.FilterSet):
 
     class Meta:
         model = Covid19Triage
-        fields: list = []
+        fields: list = ['msisdn']
 
 
 class Covid19TriageStartFilter(filters.FilterSet):
