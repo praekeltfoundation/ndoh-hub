@@ -2041,7 +2041,6 @@ class Covid19TriageV2ViewSetTests(Covid19TriageViewSetTests):
         self.assertEqual(covid19triage.province, "ZA-WC")
         self.assertEqual(covid19triage.city, "cape town")
 
-        profile = HealthCheckUserProfile.objects.get(msisdn="+27820001001")
         mock_update_post_screening_study_arms.assert_called_with(
             Covid19Triage.RISK_LOW, "USSD"
         )
