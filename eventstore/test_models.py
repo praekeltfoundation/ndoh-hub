@@ -180,7 +180,9 @@ class HealthCheckUserProfileTests(TestCase):
         self.assertEqual(profile.preexisting_condition, "no")
 
     @patch("eventstore.models.update_turn_contact")
-    def test_update_post_screening_study_arms_a(self, mock_update_turn_contact):
+    def test_update_post_screening_study_arms_a_whatsapp(
+        self, mock_update_turn_contact
+    ):
         profile = HealthCheckUserProfile(
             msisdn="+27820001001",
             first_name="oldfirst",
@@ -201,6 +203,27 @@ class HealthCheckUserProfileTests(TestCase):
         mock_update_turn_contact.delay.assert_has_calls(
             [call("+27820001001", "hcs_study_a_arm", profile.hcs_study_a_arm)]
         )
+
+    @patch("eventstore.models.update_turn_contact")
+    def test_update_post_screening_study_arms_a_ussd(self, mock_update_turn_contact):
+        profile = HealthCheckUserProfile(
+            msisdn="+27820001001",
+            first_name="oldfirst",
+            last_name="old_last",
+            hcs_study_c_testing_arm=HealthCheckUserProfile.ARM_CONTROL,
+            data={
+                "donotreplace": "value",
+                "replaceint": 1,
+                "replacebool": True,
+                "existing": "value",
+            },
+        )
+
+        profile.update_post_screening_study_arms(Covid19Triage.RISK_LOW, "USSD")
+
+        self.assertIsNone(profile.hcs_study_a_arm)
+
+        mock_update_turn_contact.delay.assert_not_called()
 
     @patch("eventstore.models.update_turn_contact")
     def test_update_post_screening_study_arms_c_low(self, mock_update_turn_contact):

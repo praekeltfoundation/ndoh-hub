@@ -659,7 +659,11 @@ class HealthCheckUserProfile(models.Model):
         if self.age == Covid19Triage.AGE_U18:
             return
 
-        if not self.hcs_study_a_arm and settings.HCS_STUDY_A_ACTIVE:
+        if (
+            source == "WhatsApp"
+            and not self.hcs_study_a_arm
+            and settings.HCS_STUDY_A_ACTIVE
+        ):
             self.hcs_study_a_arm = self.get_random_study_arm()
             update_turn_contact.delay(
                 self.msisdn, "hcs_study_a_arm", self.hcs_study_a_arm
