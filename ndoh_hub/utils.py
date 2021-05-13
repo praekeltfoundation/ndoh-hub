@@ -130,42 +130,42 @@ def is_valid_lang(lang):
 
 # TODO 15: Improve validation functions
 def is_valid_msisdn(msisdn):
-    """ A very basic msisdn validation check """
+    """A very basic msisdn validation check"""
     return msisdn[0] == "+" and len(msisdn) == 12
 
 
 def is_valid_faccode(faccode):
-    """ A very basic faccode validation check """
+    """A very basic faccode validation check"""
     return len(faccode) >= 1
 
 
 def is_valid_sanc_no(sanc_no):
-    """ A very basic sanc_no validation check """
+    """A very basic sanc_no validation check"""
     return len(sanc_no) >= 1
 
 
 def is_valid_persal_no(persal_no):
-    """ A very basic persal_no validation check """
+    """A very basic persal_no validation check"""
     return len(persal_no) >= 1
 
 
 def is_valid_sa_id_no(sa_id_no):
-    """ A very basic sa_id_no validation check """
+    """A very basic sa_id_no validation check"""
     return len(sa_id_no) == 13
 
 
 def is_valid_passport_no(passport_no):
-    """ A very basic passport_no validation check """
+    """A very basic passport_no validation check"""
     return len(passport_no) >= 1
 
 
 def is_valid_passport_origin(passport_origin):
-    """ A passport_origin validation check """
+    """A passport_origin validation check"""
     return passport_origin in PASSPORT_ORIGINS
 
 
 def is_valid_id_type(id_type):
-    """ A ID type check """
+    """A ID type check"""
     return id_type in ID_TYPES
 
 
@@ -174,7 +174,7 @@ def get_today():
 
 
 def get_mom_age(today, mom_dob):
-    """ Calculate the mother's age in years """
+    """Calculate the mother's age in years"""
     born = datetime.datetime.strptime(mom_dob, "%Y-%m-%d")
     return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
 

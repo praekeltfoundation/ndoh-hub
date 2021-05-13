@@ -318,7 +318,7 @@ class Covid19TriageFilter(filters.FilterSet):
 
     class Meta:
         model = Covid19Triage
-        fields: list = []
+        fields: list = ["msisdn"]
 
 
 class Covid19TriageStartFilter(filters.FilterSet):
@@ -390,13 +390,13 @@ class Covid19TriageV2ViewSet(Covid19TriageViewSet):
     }
 
     def _get_msisdn(self, data):
-        """ Gets the MSISDN from the data, or raises a ValidationError """
+        """Gets the MSISDN from the data, or raises a ValidationError"""
         serializer = MSISDNSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         return serializer.validated_data["msisdn"]
 
     def _update_data(self, data, triage):
-        """ Updates the data from the values in triage """
+        """Updates the data from the values in triage"""
         for field in self.returning_user_skipped_fields:
             value = getattr(triage, field)
             if value:
