@@ -1623,9 +1623,11 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    @mock.patch("eventstore.models.update_turn_contact")
+    @mock.patch(
+        "eventstore.models.HealthCheckUserProfile.update_post_screening_study_arms"
+    )
     @mock.patch("eventstore.views.mark_turn_contact_healthcheck_complete")
-    def test_successful_request(self, task, mock_update_turn_contact):
+    def test_successful_request(self, task, mock_update_post_screening_study_arms):
         """
         Should create a new Covid19Triage object in the database
         """
@@ -1673,13 +1675,14 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(covid19triage.created_by, user.username)
         task.delay.assert_called_once_with("+27820001001")
 
-        profile = HealthCheckUserProfile.objects.get(msisdn="+27820001001")
-        mock_update_turn_contact.delay.assert_has_calls(
-            [mock.call("+27820001001", "hcs_study_a_arm", profile.hcs_study_a_arm)]
+        mock_update_post_screening_study_arms.assert_called_with(
+            Covid19Triage.RISK_LOW, "USSD"
         )
 
-    @mock.patch("eventstore.models.update_turn_contact")
-    def test_duplicate_request(self, mock_update_turn_contact):
+    @mock.patch(
+        "eventstore.models.HealthCheckUserProfile.update_post_screening_study_arms"
+    )
+    def test_duplicate_request(self, mock_update_post_screening_study_arms):
         """
         Should create on the first request, and just return 200 on subsequent requests
         """
@@ -1704,6 +1707,10 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self.client.post(self.url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        mock_update_post_screening_study_arms.assert_called_with(
+            Covid19Triage.RISK_LOW, "USSD"
+        )
 
     def test_invalid_location_request(self):
         """
@@ -1807,8 +1814,10 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
             },
         )
 
-    @mock.patch("eventstore.models.update_turn_contact")
-    def test_creates_user_profile(self, mock_update_turn_contact):
+    @mock.patch(
+        "eventstore.models.HealthCheckUserProfile.update_post_screening_study_arms"
+    )
+    def test_creates_user_profile(self, mock_update_post_screening_study_arms):
         """
         The user profile should be created when the triage is saved
         """
@@ -1837,8 +1846,8 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(profile.city, "cape town")
         self.assertEqual(profile.age, Covid19Triage.AGE_18T40)
 
-        mock_update_turn_contact.delay.assert_has_calls(
-            [mock.call("+27820001001", "hcs_study_a_arm", profile.hcs_study_a_arm)]
+        mock_update_post_screening_study_arms.assert_called_with(
+            Covid19Triage.RISK_LOW, "USSD"
         )
 
     def test_creates_dbe_user_profile(self):
@@ -1981,8 +1990,10 @@ class Covid19TriageV2ViewSetTests(Covid19TriageViewSetTests):
             },
         )
 
-    @mock.patch("eventstore.models.update_turn_contact")
-    def test_returning_user(self, mock_update_turn_contact):
+    @mock.patch(
+        "eventstore.models.HealthCheckUserProfile.update_post_screening_study_arms"
+    )
+    def test_returning_user(self, mock_update_post_screening_study_arms):
         """
         Should create a new Covid19Triage object in the database using information
         from the first entry in the database
@@ -2031,8 +2042,8 @@ class Covid19TriageV2ViewSetTests(Covid19TriageViewSetTests):
         self.assertEqual(covid19triage.city, "cape town")
 
         profile = HealthCheckUserProfile.objects.get(msisdn="+27820001001")
-        mock_update_turn_contact.delay.assert_has_calls(
-            [mock.call("+27820001001", "hcs_study_a_arm", profile.hcs_study_a_arm)]
+        mock_update_post_screening_study_arms.assert_called_with(
+            Covid19Triage.RISK_LOW, "USSD"
         )
 
 
@@ -2197,8 +2208,10 @@ class HealthCheckUserProfileViewSetTests(APITestCase, BaseEventTestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    @mock.patch("eventstore.models.update_turn_contact")
-    def test_existing_healthchecks(self, mock_update_turn_contact):
+    @mock.patch(
+        "eventstore.models.HealthCheckUserProfile.update_post_screening_study_arms"
+    )
+    def test_existing_healthchecks(self, mock_update_post_screening_study_arms):
         """
         If there's no profile, but existing healthchecks, then it should construct the
         profile from those healthchecks
@@ -2221,7 +2234,7 @@ class HealthCheckUserProfileViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(response.data["msisdn"], "+27820001001")
         self.assertEqual(response.data["first_name"], "testname")
 
-        mock_update_turn_contact.delay.assert_not_called()
+        mock_update_post_screening_study_arms.assert_not_called()
 
     def test_existing_profile(self):
         """
