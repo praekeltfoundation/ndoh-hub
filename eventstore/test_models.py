@@ -287,6 +287,7 @@ class HealthCheckUserProfileTests(TestCase):
             "+27820001001",
             profile.hcs_study_c_testing_arm,
             profile.hcs_study_c_quarantine_arm,
+            None,
             Covid19Triage.RISK_MODERATE,
             "WhatsApp",
         )
@@ -323,6 +324,7 @@ class HealthCheckUserProfileTests(TestCase):
             "+27820001001",
             profile.hcs_study_c_testing_arm,
             profile.hcs_study_c_quarantine_arm,
+            None,
             Covid19Triage.RISK_HIGH,
             "WhatsApp",
         )
@@ -371,6 +373,53 @@ class HealthCheckUserProfileTests(TestCase):
         self.assertIsNone(profile.hcs_study_c_quarantine_arm)
 
         mock_update_turn_contact.delay.assert_not_called()
+
+    @patch("eventstore.models.start_study_c_registration_flow")
+    @patch("eventstore.models.update_turn_contact")
+    @override_settings(
+        HCS_STUDY_C_REGISTRATION_FLOW_ID="123",
+        HCS_STUDY_C_PILOT_ACTIVE=True,
+        HCS_STUDY_C_ACTIVE=False,
+    )
+    def test_update_post_screening_study_arms_c_pilot(
+        self, mock_update_turn_contact, mock_start_study_c_registration_flow
+    ):
+        profile = HealthCheckUserProfile(
+            msisdn="+27820001001",
+            first_name="oldfirst",
+            last_name="old_last",
+            hcs_study_a_arm=HealthCheckUserProfile.ARM_CONTROL,
+            hcs_study_c_testing_arm=HealthCheckUserProfile.ARM_CONTROL,
+            data={
+                "donotreplace": "value",
+                "replaceint": 1,
+                "replacebool": True,
+                "existing": "value",
+            },
+        )
+
+        profile.update_post_screening_study_arms(Covid19Triage.RISK_HIGH, "WhatsApp")
+
+        self.assertIsNotNone(profile.hcs_study_c_pilot_arm)
+
+        mock_update_turn_contact.delay.assert_has_calls(
+            [
+                call(
+                    "+27820001001",
+                    "hcs_study_c_pilot_arm",
+                    profile.hcs_study_c_pilot_arm,
+                )
+            ]
+        )
+
+        mock_start_study_c_registration_flow.delay.assert_called_with(
+            "+27820001001",
+            None,
+            None,
+            profile.hcs_study_c_pilot_arm,
+            Covid19Triage.RISK_HIGH,
+            "WhatsApp",
+        )
 
     @patch("eventstore.models.update_turn_contact")
     @override_settings(HCS_STUDY_A_ACTIVE=False, HCS_STUDY_C_ACTIVE=False)
