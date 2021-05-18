@@ -53,13 +53,16 @@ def update_turn_contact(msisdn, field, value):
     soft_time_limit=10,
     time_limit=15,
 )
-def start_study_c_registration_flow(msisdn, test_arm, quaratine_arm, risk, source):
+def start_study_c_registration_flow(
+    msisdn, test_arm, quaratine_arm, pilot_arm, risk, source
+):
     if rapidpro and settings.HCS_STUDY_C_REGISTRATION_FLOW_ID:
         return rapidpro.create_flow_start(
             extra={
                 "hcs_risk": risk,
                 "hcs_study_c_testing_arm": test_arm,
                 "hcs_study_c_quarantine_arm": quaratine_arm,
+                "hcs_study_c_pilot_arm": pilot_arm,
                 "hcs_source": source,
             },
             flow=settings.HCS_STUDY_C_REGISTRATION_FLOW_ID,
