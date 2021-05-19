@@ -196,7 +196,9 @@ class HealthCheckUserProfileTests(TestCase):
             },
         )
 
-        profile.update_post_screening_study_arms(Covid19Triage.RISK_LOW, "WhatsApp")
+        profile.update_post_screening_study_arms(
+            Covid19Triage.RISK_LOW, "WhatsApp", "whatsapp_healthcheck"
+        )
 
         self.assertIsNotNone(profile.hcs_study_a_arm)
 
@@ -219,10 +221,31 @@ class HealthCheckUserProfileTests(TestCase):
             },
         )
 
-        profile.update_post_screening_study_arms(Covid19Triage.RISK_LOW, "USSD")
+        profile.update_post_screening_study_arms(
+            Covid19Triage.RISK_LOW, "USSD", "whatsapp_healthcheck"
+        )
 
         self.assertIsNone(profile.hcs_study_a_arm)
 
+        mock_update_turn_contact.delay.assert_not_called()
+
+    @patch("eventstore.models.update_turn_contact")
+    def test_update_post_screening_study_arms_a_different_user(
+        self, mock_update_turn_contact
+    ):
+        profile = HealthCheckUserProfile(
+            msisdn="+27820001001",
+            first_name="oldfirst",
+            last_name="old_last",
+            hcs_study_c_testing_arm=HealthCheckUserProfile.ARM_CONTROL,
+            data={},
+        )
+
+        profile.update_post_screening_study_arms(
+            Covid19Triage.RISK_LOW, "WhatsApp", "whatsapp_dbe_healthcheck"
+        )
+
+        self.assertIsNone(profile.hcs_study_a_arm)
         mock_update_turn_contact.delay.assert_not_called()
 
     @patch("eventstore.models.update_turn_contact")
@@ -240,7 +263,9 @@ class HealthCheckUserProfileTests(TestCase):
             },
         )
 
-        profile.update_post_screening_study_arms(Covid19Triage.RISK_LOW, "WhatsApp")
+        profile.update_post_screening_study_arms(
+            Covid19Triage.RISK_LOW, "WhatsApp", "whatsapp_healthcheck"
+        )
 
         self.assertIsNone(profile.hcs_study_c_testing_arm)
         self.assertIsNone(profile.hcs_study_c_quarantine_arm)
@@ -267,7 +292,7 @@ class HealthCheckUserProfileTests(TestCase):
         )
 
         profile.update_post_screening_study_arms(
-            Covid19Triage.RISK_MODERATE, "WhatsApp"
+            Covid19Triage.RISK_MODERATE, "WhatsApp", "whatsapp_healthcheck"
         )
 
         self.assertIsNone(profile.hcs_study_c_testing_arm)
@@ -311,7 +336,9 @@ class HealthCheckUserProfileTests(TestCase):
             },
         )
 
-        profile.update_post_screening_study_arms(Covid19Triage.RISK_HIGH, "WhatsApp")
+        profile.update_post_screening_study_arms(
+            Covid19Triage.RISK_HIGH, "WhatsApp", "whatsapp_healthcheck"
+        )
 
         self.assertIsNotNone(profile.hcs_study_c_testing_arm)
         self.assertIsNone(profile.hcs_study_c_quarantine_arm)
@@ -345,7 +372,9 @@ class HealthCheckUserProfileTests(TestCase):
             },
         )
 
-        profile.update_post_screening_study_arms(Covid19Triage.RISK_HIGH, "WhatsApp")
+        profile.update_post_screening_study_arms(
+            Covid19Triage.RISK_HIGH, "WhatsApp", "whatsapp_healthcheck"
+        )
 
         mock_update_turn_contact.delay.assert_not_called()
 
@@ -365,7 +394,7 @@ class HealthCheckUserProfileTests(TestCase):
         )
 
         profile.update_post_screening_study_arms(
-            Covid19Triage.RISK_MODERATE, "WhatsApp"
+            Covid19Triage.RISK_MODERATE, "WhatsApp", "whatsapp_healthcheck"
         )
 
         self.assertIsNone(profile.hcs_study_a_arm)
@@ -398,7 +427,9 @@ class HealthCheckUserProfileTests(TestCase):
             },
         )
 
-        profile.update_post_screening_study_arms(Covid19Triage.RISK_HIGH, "WhatsApp")
+        profile.update_post_screening_study_arms(
+            Covid19Triage.RISK_HIGH, "WhatsApp", "whatsapp_healthcheck"
+        )
 
         self.assertIsNotNone(profile.hcs_study_c_pilot_arm)
 
@@ -439,7 +470,7 @@ class HealthCheckUserProfileTests(TestCase):
         )
 
         profile.update_post_screening_study_arms(
-            Covid19Triage.RISK_MODERATE, "WhatsApp"
+            Covid19Triage.RISK_MODERATE, "WhatsApp", "whatsapp_healthcheck"
         )
 
         self.assertIsNone(profile.hcs_study_a_arm)

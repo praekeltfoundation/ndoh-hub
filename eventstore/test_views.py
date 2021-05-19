@@ -1677,7 +1677,7 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         task.delay.assert_called_once_with("+27820001001")
 
         mock_update_post_screening_study_arms.assert_called_with(
-            Covid19Triage.RISK_LOW, "USSD"
+            Covid19Triage.RISK_LOW, "USSD", "test"
         )
 
     @mock.patch(
@@ -1710,7 +1710,7 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         mock_update_post_screening_study_arms.assert_called_with(
-            Covid19Triage.RISK_LOW, "USSD"
+            Covid19Triage.RISK_LOW, "USSD", "test"
         )
 
     def test_invalid_location_request(self):
@@ -1848,7 +1848,7 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(profile.age, Covid19Triage.AGE_18T40)
 
         mock_update_post_screening_study_arms.assert_called_with(
-            Covid19Triage.RISK_LOW, "USSD"
+            Covid19Triage.RISK_LOW, "USSD", "test"
         )
 
     def test_creates_dbe_user_profile(self):
@@ -2043,7 +2043,7 @@ class Covid19TriageV2ViewSetTests(Covid19TriageViewSetTests):
         self.assertEqual(covid19triage.city, "cape town")
 
         mock_update_post_screening_study_arms.assert_called_with(
-            Covid19Triage.RISK_LOW, "USSD"
+            Covid19Triage.RISK_LOW, "USSD", "test"
         )
 
 
@@ -2270,7 +2270,7 @@ class Covid19TriageV4ViewSetTests(Covid19TriageViewSetTests):
         task.delay.assert_called_once_with("+27820001001")
 
         mock_update_post_screening_study_arms.assert_called_with(
-            Covid19Triage.RISK_LOW, "USSD"
+            Covid19Triage.RISK_LOW, "USSD", "test"
         )
 
         profile = response.json().get("profile", {})

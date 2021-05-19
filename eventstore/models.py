@@ -667,8 +667,11 @@ class HealthCheckUserProfile(models.Model):
             if has_value(v):
                 self.data[k] = v
 
-    def update_post_screening_study_arms(self, risk, source):
+    def update_post_screening_study_arms(self, risk, source, created_by):
         if self.age == Covid19Triage.AGE_U18:
+            return
+
+        if created_by != "whatsapp_healthcheck":
             return
 
         self.process_study_a(source)
