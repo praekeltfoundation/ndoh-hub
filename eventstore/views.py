@@ -49,6 +49,7 @@ from eventstore.serializers import (
     Covid19TriageStartSerializer,
     Covid19TriageV2Serializer,
     Covid19TriageV3Serializer,
+    Covid19TriageV4Serializer,
     DBEOnBehalfOfProfileSerializer,
     EddSwitchSerializer,
     ForgetContactSerializer,
@@ -415,6 +416,13 @@ class Covid19TriageV2ViewSet(Covid19TriageViewSet):
 
 class Covid19TriageV3ViewSet(Covid19TriageV2ViewSet):
     serializer_class = Covid19TriageV3Serializer
+
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+
+class Covid19TriageV4ViewSet(Covid19TriageV3ViewSet):
+    serializer_class = Covid19TriageV4Serializer
 
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
