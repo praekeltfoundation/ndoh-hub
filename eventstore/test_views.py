@@ -1679,6 +1679,9 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
             Covid19Triage.RISK_LOW, "USSD"
         )
 
+        profile = response.json().get("profile", {})
+        self.assertEqual(profile.get("msisdn"), "+27820001001")
+
     @mock.patch(
         "eventstore.models.HealthCheckUserProfile.update_post_screening_study_arms"
     )

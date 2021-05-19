@@ -121,6 +121,7 @@ class PMTCTRegistrationSerializer(BaseEventSerializer):
 class Covid19TriageSerializer(BaseEventSerializer):
     msisdn = MSISDNField(country="ZA")
     deduplication_id = serializers.CharField(default=uuid.uuid4, max_length=255)
+    profile = serializers.SerializerMethodField()
 
     class Meta:
         model = Covid19Triage
@@ -148,13 +149,19 @@ class Covid19TriageSerializer(BaseEventSerializer):
             "timestamp",
             "created_by",
             "data",
+            "profile",
         )
         read_only_fields = ("id", "created_by")
+
+    def get_profile(self, obj):
+        qs = HealthCheckUserProfile.objects.get(msisdn=obj.msisdn)
+        return HealthCheckUserProfileSerializer(qs, many=False).data
 
 
 class Covid19TriageV2Serializer(BaseEventSerializer):
     msisdn = MSISDNField(country="ZA")
     deduplication_id = serializers.CharField(default=uuid.uuid4, max_length=255)
+    profile = serializers.SerializerMethodField()
 
     class Meta:
         model = Covid19Triage
@@ -189,14 +196,20 @@ class Covid19TriageV2Serializer(BaseEventSerializer):
             "timestamp",
             "created_by",
             "data",
+            "profile",
         )
         read_only_fields = ("id", "created_by")
+
+    def get_profile(self, obj):
+        qs = HealthCheckUserProfile.objects.get(msisdn=obj.msisdn)
+        return HealthCheckUserProfileSerializer(qs, many=False).data
 
 
 class Covid19TriageV3Serializer(BaseEventSerializer):
     msisdn = MSISDNField(country="ZA")
     deduplication_id = serializers.CharField(default=uuid.uuid4, max_length=255)
     place_of_work = serializers.CharField(required=False)
+    profile = serializers.SerializerMethodField()
 
     class Meta:
         model = Covid19Triage
@@ -232,8 +245,13 @@ class Covid19TriageV3Serializer(BaseEventSerializer):
             "created_by",
             "data",
             "place_of_work",
+            "profile",
         )
-        read_only_fields = ("id", "created_by")
+        read_only_fields = ("id", "created_by", "profile")
+
+    def get_profile(self, obj):
+        qs = HealthCheckUserProfile.objects.get(msisdn=obj.msisdn)
+        return HealthCheckUserProfileSerializer(qs, many=False).data
 
 
 class Covid19TriageStartSerializer(BaseEventSerializer):
