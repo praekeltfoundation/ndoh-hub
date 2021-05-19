@@ -281,11 +281,8 @@ class Covid19TriageV4Serializer(BaseEventSerializer):
         read_only_fields = ("id", "created_by", "profile")
 
     def get_profile(self, obj):
-        try:
-            qs = HealthCheckUserProfile.objects.get(msisdn=obj.msisdn)
-        except HealthCheckUserProfile.DoesNotExist:
-            return {}
-        return HealthCheckUserProfileSerializer(qs, many=False).data
+        profile = HealthCheckUserProfile.objects.get_or_prefill(msisdn=obj.msisdn)
+        return HealthCheckUserProfileSerializer(profile, many=False).data
 
 
 class Covid19TriageStartSerializer(BaseEventSerializer):
