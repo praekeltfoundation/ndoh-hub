@@ -1792,6 +1792,7 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         r.pop("deduplication_id")
         r.pop("timestamp")
         r.pop("completed_timestamp")
+        r.pop("profile")
         self.assertEqual(
             r,
             {
@@ -1961,6 +1962,7 @@ class Covid19TriageV2ViewSetTests(Covid19TriageViewSetTests):
         r.pop("deduplication_id")
         r.pop("timestamp")
         r.pop("completed_timestamp")
+        r.pop("profile")
         self.assertEqual(
             r,
             {
@@ -2100,6 +2102,7 @@ class Covid19TriageV3ViewSetTests(Covid19TriageViewSetTests):
         r.pop("deduplication_id")
         r.pop("timestamp")
         r.pop("completed_timestamp")
+        r.pop("profile")
         self.assertEqual(
             r,
             {
