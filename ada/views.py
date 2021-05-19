@@ -2,8 +2,23 @@ from urllib.parse import urlencode
 
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import HttpResponseRedirect, render
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 
 from .models import RedirectUrl, RedirectUrlsEntry
+from .tasks import submit_whatsappid_to_rapidpro
+
+
+class RapidProStartFlowView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request: HttpRequest) -> HttpResponse:
+        whatsappid = request.query_params["whatsappid"]
+        submit_whatsappid_to_rapidpro(whatsappid)
+        return Response(whatsappid, status.HTTP_202_ACCEPTED)
 
 
 def clickActivity(request: HttpRequest, pk: int, whatsappid: str) -> HttpResponse:
