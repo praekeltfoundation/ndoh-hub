@@ -2273,6 +2273,9 @@ class Covid19TriageV4ViewSetTests(Covid19TriageViewSetTests):
             Covid19Triage.RISK_LOW, "USSD"
         )
 
+        profile = response.json().get("profile", {})
+        self.assertEqual(profile.get("msisdn"), "+27820001001")
+
 
 class Covid19TriageStartViewSetTests(APITestCase, BaseEventTestCase):
     url = reverse("covid19triagestart-list")
