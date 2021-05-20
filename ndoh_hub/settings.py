@@ -52,12 +52,12 @@ INSTALLED_APPS = (
     # 3rd party
     "raven.contrib.django.raven_compat",
     "rest_framework.authtoken",
-    "rest_auth",
     "rest_framework",
-    "django.contrib.sites",
-    "allauth",
-    "allauth.account",
-    "rest_auth.registration",
+    # "django.contrib.sites",
+    # "rest_auth",
+    # "allauth",
+    # "allauth.account",
+    # "rest_auth.registration",
     "django_filters",
     "rest_hooks",
     "simple_history",
@@ -68,6 +68,8 @@ INSTALLED_APPS = (
     "eventstore",
     "ada",
 )
+
+# SITE_ID = 1
 
 MIDDLEWARE = (
     "django_prometheus.middleware.PrometheusBeforeMiddleware",

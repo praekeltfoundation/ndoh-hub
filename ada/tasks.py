@@ -2,14 +2,10 @@ from celery.exceptions import SoftTimeLimitExceeded
 from django.conf import settings
 from requests.exceptions import RequestException
 from temba_client.exceptions import TembaHttpError
-from temba_client.v2 import TembaClient
 
 from ndoh_hub.celery import app
 
-
 rapidpro = None
-if settings.ADA_RAPIDPRO_URL and settings.ADA_RAPIDPRO_TOKEN:
-    rapidpro = TembaClient(settings.ADA_RAPIDPRO_URL, settings.ADA_RAPIDPRO_TOKEN)
 
 
 @app.task(
@@ -22,7 +18,7 @@ if settings.ADA_RAPIDPRO_URL and settings.ADA_RAPIDPRO_TOKEN:
 )
 def submit_whatsappid_to_rapidpro(whatsappid):
     if rapidpro and settings.ADA_PROTOTYPE_SURVEY_FLOW_ID:
-        return rapidpro.create_flow_start(
+        return rapidpro.create_flow_start.delay(
             extra={},
             flow=settings.ADA_PROTOTYPE_SURVEY_FLOW_ID,
             urns=[f"whatsapp:{whatsappid.lstrip('+')}"],
