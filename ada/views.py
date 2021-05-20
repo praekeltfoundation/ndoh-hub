@@ -2,8 +2,27 @@ from urllib.parse import urlencode
 
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import HttpResponseRedirect, render
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+
+from ada.serializers import SymptomCheckSerializer
 
 from .models import RedirectUrl, RedirectUrlsEntry
+from .tasks import submit_whatsappid_to_rapidpro
+
+
+class RapidProStartFlowView(generics.GenericAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        serializer = SymptomCheckSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        whatsappid = serializer.validated_data.get("whatsappid")
+
+        submit_whatsappid_to_rapidpro.delay(str(whatsappid))
+
+        return Response({}, status=status.HTTP_200_OK)
 
 
 def clickActivity(request: HttpRequest, pk: int, whatsappid: str) -> HttpResponse:

@@ -51,8 +51,8 @@ INSTALLED_APPS = (
     "django.contrib.staticfiles",
     # 3rd party
     "raven.contrib.django.raven_compat",
-    "rest_framework",
     "rest_framework.authtoken",
+    "rest_framework",
     "django_filters",
     "rest_hooks",
     "simple_history",
@@ -63,6 +63,7 @@ INSTALLED_APPS = (
     "eventstore",
     "ada",
 )
+
 
 MIDDLEWARE = (
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
@@ -347,3 +348,9 @@ HCS_STUDY_A_ACTIVE = env.bool("HCS_STUDY_A_ACTIVE", False)
 HCS_STUDY_C_ACTIVE = env.bool("HCS_STUDY_C_ACTIVE", False)
 HCS_STUDY_C_PILOT_ACTIVE = env.bool("HCS_STUDY_C_PILOT_ACTIVE", False)
 HCS_STUDY_C_REGISTRATION_FLOW_ID = env.str("HCS_STUDY_C_REGISTRATION_FLOW_ID", None)
+
+# ADA
+ADA_RAPIDPRO_URL = env.str("ADA_RAPIDPRO_URL", None)
+ADA_RAPIDPRO_TOKEN = env.str("ADA_RAPIDPRO_TOKEN", None)
+
+ADA_PROTOTYPE_SURVEY_FLOW_ID = env.str("ADA_PROTOTYPE_SURVEY_FLOW_ID", None)
