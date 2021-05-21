@@ -3,9 +3,8 @@ from django.conf import settings
 from requests.exceptions import RequestException
 from temba_client.exceptions import TembaHttpError
 
+from ada.utils import rapidpro
 from ndoh_hub.celery import app
-
-rapidpro = None
 
 
 @app.task(
@@ -17,7 +16,7 @@ rapidpro = None
     time_limit=15,
 )
 def submit_whatsappid_to_rapidpro(whatsappid):
-    if settings.ADA_PROTOTYPE_SURVEY_FLOW_ID:
+    if rapidpro and settings.ADA_PROTOTYPE_SURVEY_FLOW_ID:
         return rapidpro.create_flow_start.delay(
             extra={},
             flow=settings.ADA_PROTOTYPE_SURVEY_FLOW_ID,
