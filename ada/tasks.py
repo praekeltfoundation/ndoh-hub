@@ -17,7 +17,7 @@ rapidpro = None
     time_limit=15,
 )
 def submit_whatsappid_to_rapidpro(whatsappid):
-    if rapidpro and settings.ADA_PROTOTYPE_SURVEY_FLOW_ID:
+    if settings.ADA_PROTOTYPE_SURVEY_FLOW_ID:
         return rapidpro.create_flow_start.delay(
             extra={},
             flow=settings.ADA_PROTOTYPE_SURVEY_FLOW_ID,
