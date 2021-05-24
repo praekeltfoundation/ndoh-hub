@@ -51,8 +51,8 @@ INSTALLED_APPS = (
     "django.contrib.staticfiles",
     # 3rd party
     "raven.contrib.django.raven_compat",
-    "rest_framework.authtoken",
     "rest_framework",
+    "rest_framework.authtoken",
     "django_filters",
     "rest_hooks",
     "simple_history",

@@ -3,9 +3,8 @@ from django.conf import settings
 from requests.exceptions import RequestException
 from temba_client.exceptions import TembaHttpError
 
+from ada.utils import rapidpro
 from ndoh_hub.celery import app
-
-rapidpro = None
 
 
 @app.task(
