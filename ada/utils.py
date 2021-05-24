@@ -4,5 +4,5 @@ from django.conf import settings
 from temba_client.v2 import TembaClient
 
 rapidpro = None
-if settings.ADA_RAPIDPRO_URL and settings.ADA_RAPIDPRO_TOKEN:
-    rapidpro = TembaClient(settings.ADA_RAPIDPRO_URL, settings.ADA_RAPIDPRO_TOKEN)
+if settings.RAPIDPRO_URL and settings.RAPIDPRO_TOKEN:
+    rapidpro = TembaClient(settings.RAPIDPRO_URL, settings.RAPIDPRO_TOKEN)
