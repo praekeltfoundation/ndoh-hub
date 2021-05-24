@@ -142,7 +142,7 @@ class ProcessWhatsAppUnsentEventTaskTests(WhatsAppBaseTestCase):
         message sender
         """
         user = User.objects.create_user("test")
-        source = Source.objects.create(user=user)
+        Source.objects.create(user=user)
 
         self.create_outbound_lookup()
         self.create_identity_lookup()
@@ -151,7 +151,7 @@ class ProcessWhatsAppUnsentEventTaskTests(WhatsAppBaseTestCase):
 
         process_whatsapp_unsent_event(
             "messageid",
-            source.pk,
+            user.pk,
             [
                 {
                     "code": 500,
@@ -192,7 +192,7 @@ class ProcessWhatsAppUnsentEventTaskTests(WhatsAppBaseTestCase):
         the message sender
         """
         user = User.objects.create_user("test")
-        source = Source.objects.create(user=user)
+        Source.objects.create(user=user)
 
         self.create_outbound_lookup()
         self.create_identity_lookup("zul_ZA")
@@ -201,7 +201,7 @@ class ProcessWhatsAppUnsentEventTaskTests(WhatsAppBaseTestCase):
 
         process_whatsapp_unsent_event(
             "messageid",
-            source.pk,
+            user.pk,
             [
                 {
                     "code": 500,
@@ -233,7 +233,7 @@ class ProcessWhatsAppUnsentEventTaskTests(WhatsAppBaseTestCase):
         created
         """
         user = User.objects.create_user("test")
-        source = Source.objects.create(user=user)
+        Source.objects.create(user=user)
 
         self.create_outbound_lookup(0)
 
@@ -241,7 +241,7 @@ class ProcessWhatsAppUnsentEventTaskTests(WhatsAppBaseTestCase):
 
         process_whatsapp_unsent_event(
             "messageid",
-            source.pk,
+            user.pk,
             [
                 {
                     "code": 500,
@@ -261,7 +261,7 @@ class ProcessWhatsAppUnsentEventTaskTests(WhatsAppBaseTestCase):
         The task should not create a switch if it is not a hsm failure
         """
         user = User.objects.create_user("test")
-        source = Source.objects.create(user=user)
+        Source.objects.create(user=user)
 
         self.create_outbound_lookup(1)
 
@@ -269,7 +269,7 @@ class ProcessWhatsAppUnsentEventTaskTests(WhatsAppBaseTestCase):
 
         process_whatsapp_unsent_event(
             "messageid",
-            source.pk,
+            user.pk,
             [{"code": 200, "title": "random error: temporary random error"}],
         )
 
