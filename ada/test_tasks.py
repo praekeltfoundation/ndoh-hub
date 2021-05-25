@@ -16,6 +16,6 @@ class HandleSubmitShatsappidToRapidpro(DjangoTestCase):
 
         with patch("ada.tasks.rapidpro") as p:
             submit_whatsappid_to_rapidpro(whatsappid)
-        p.create_flow_start.delay.assert_called_once_with(
+        p.create_flow_start.assert_called_once_with(
             extra={}, flow="test-flow-uuid", urns=["whatsapp:27820001001"]
         )

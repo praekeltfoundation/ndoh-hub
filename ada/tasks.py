@@ -17,7 +17,7 @@ from ndoh_hub.celery import app
 )
 def submit_whatsappid_to_rapidpro(whatsappid):
     if rapidpro and settings.ADA_PROTOTYPE_SURVEY_FLOW_ID:
-        return rapidpro.create_flow_start.delay(
+        return rapidpro.create_flow_start(
             extra={},
             flow=settings.ADA_PROTOTYPE_SURVEY_FLOW_ID,
             urns=[f"whatsapp:{whatsappid.lstrip('+')}"],
