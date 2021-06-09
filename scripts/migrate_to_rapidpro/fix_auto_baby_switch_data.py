@@ -68,14 +68,14 @@ def get_babyswitches(conn):
         f"""
         select contact_id, timestamp
         from eventstore_babyswitch
-        order by timestamp desc
+        order by timestamp asc
         limit {LIMIT}
         """
     )  # 158680
     total = 0
     start, d_print = time.time(), time.time()
     for (contact_id, timestamp) in cursor:
-        babyswitches[contact_id] = {"timestamp": timestamp}
+        babyswitches[contact_id] = timestamp
 
         if time.time() - d_print > 1:
             print(
@@ -99,14 +99,14 @@ def get_optouts(conn):
         f"""
         select contact_id, timestamp
         from eventstore_optout
-        order by timestamp desc
+        order by timestamp asc
         limit {LIMIT}
         """
     )  # 255855
     total = 0
     start, d_print = time.time(), time.time()
     for (contact_id, timestamp) in cursor:
-        optouts[contact_id] = {"timestamp": timestamp}
+        optouts[contact_id] = timestamp
 
         if time.time() - d_print > 1:
             print(
@@ -130,19 +130,16 @@ def get_registrations(conn, babyswitches, optouts):
         select contact_id, timestamp
         from eventstore_prebirthregistration
         where edd < '2021-04-20'
-        order by timestamp desc
+        order by timestamp asc
         limit {LIMIT}
         """
     )  # 216808
     total = 0
     start, d_print = time.time(), time.time()
     for (contact_id, timestamp) in cursor:
-        if (
-            contact_id in babyswitches
-            and timestamp < babyswitches[contact_id]["timestamp"]
-        ):
+        if contact_id in babyswitches and timestamp < babyswitches[contact_id]:
             continue
-        if contact_id in optouts and timestamp < optouts[contact_id]["timestamp"]:
+        if contact_id in optouts and timestamp < optouts[contact_id]:
             continue
         registrations.append(contact_id)
 
