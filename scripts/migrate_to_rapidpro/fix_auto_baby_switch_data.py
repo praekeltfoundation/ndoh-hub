@@ -170,7 +170,11 @@ async def process_registration(session, contact_id, hub_writer, rp_writer):
         msisdn = get_contact_msisdn(contact)
 
         in_group = in_postbirth_group(contact)
-        if in_group or not msisdn:
+        if (
+            in_group
+            or not msisdn
+            or contact["fields"].get("preferred_channel") != "WhatsApp"
+        ):
             excluded += 1
         else:
             baby_dob_field = get_baby_dob_field(contact["fields"])
