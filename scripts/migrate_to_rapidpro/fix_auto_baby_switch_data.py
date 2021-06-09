@@ -1,13 +1,12 @@
-import aiohttp
 import asyncio
 import csv
 import os
-import psycopg2
 import time
-
 from datetime import datetime, timedelta
-from six.moves import urllib_parse
 
+import aiohttp
+import psycopg2
+from six.moves import urllib_parse
 
 CONCURRENCY = 10
 HUB_OUTPUT_FILE = "hub_babyswitches.csv"
