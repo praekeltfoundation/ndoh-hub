@@ -15,7 +15,7 @@ RAPIDPRO_OUTPUT_FILE = "rapidpro_babyswitch_updates.csv"
 
 LIMIT = 10_000_000
 RAPIDPRO_URL = "https://rapidpro.prd.momconnect.co.za/"
-RAPIDPRO_TOKEN = os.environ['RAPIDPRO_TOKEN']
+RAPIDPRO_TOKEN = os.environ["RAPIDPRO_TOKEN"]
 
 HUB_DB_PASSWORD = os.environ["HUB_PASS"]
 
@@ -251,11 +251,7 @@ async def process_registrations(registrations):
 
 if __name__ == "__main__":
     conn = psycopg2.connect(
-        dbname="hub",
-        user="hub",
-        password=HUB_DB_PASSWORD,
-        host="localhost",
-        port=7000,
+        dbname="hub", user="hub", password=HUB_DB_PASSWORD, host="localhost", port=7000
     )
     babyswitches = get_babyswitches(conn)
     optouts = get_optouts(conn)
