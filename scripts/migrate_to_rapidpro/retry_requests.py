@@ -30,6 +30,8 @@ async def request(session, url, method, headers, data, target):
         target.write(json.dumps(request_data))
         target.write("\n")
 
+        return response_body
+
 
 async def bounded_retry(session, url, method, headers, data, target, sem):
     async with sem:
