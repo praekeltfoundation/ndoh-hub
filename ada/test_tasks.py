@@ -50,6 +50,4 @@ class HandleSubmitShatsappidToRapidpro(DjangoTestCase):
         head = {"Authorization": "Token " + "token", "Content-Type": "application/json"}
         url = reverse("rapidpro_topup_flow")
         post_to_topup_endpoint(whatsappid)
-        mock_post.assert_called_with(
-            url, data=json.dumps(payload), headers=head
-        )
+        mock_post.assert_called_with(url, data=json.dumps(payload), headers=head)
