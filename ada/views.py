@@ -8,7 +8,11 @@ from rest_framework.response import Response
 from ada.serializers import SymptomCheckSerializer
 
 from .models import RedirectUrl, RedirectUrlsEntry
-from .tasks import submit_whatsappid_to_rapidpro
+from .tasks import (
+    post_to_topup_endpoint,
+    submit_whatsappid_to_rapidpro,
+    submit_whatsappid_to_rapidpro_topup,
+)
 
 
 class RapidProStartFlowView(generics.GenericAPIView):
@@ -21,6 +25,20 @@ class RapidProStartFlowView(generics.GenericAPIView):
         whatsappid = serializer.validated_data.get("whatsappid")
 
         submit_whatsappid_to_rapidpro.delay(str(whatsappid))
+
+        return Response({}, status=status.HTTP_200_OK)
+
+
+class RapidProStartTopupFlowView(generics.GenericAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        serializer = SymptomCheckSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        whatsappid = serializer.validated_data.get("whatsappid")
+
+        submit_whatsappid_to_rapidpro_topup.delay(str(whatsappid))
 
         return Response({}, status=status.HTTP_200_OK)
 
@@ -48,3 +66,15 @@ def default_page(request: HttpRequest, pk: int) -> HttpResponse:
     else:
         context = {"pk": pk, "whatsappid": whatsappid}
         return render(request, "meta_refresh.html", context)
+
+
+def topuprequest(request: HttpRequest) -> HttpResponse:
+    whatsappid = request.GET.get("whatsappid")
+    if whatsappid is None:
+        return render(
+            request, "index.html", {"error": "404 Bad Request: Whatsappid is none"}
+        )
+    else:
+        context = {"whatsappid": whatsappid}
+        post_to_topup_endpoint(str(whatsappid))
+        return render(request, "topup_request.html", context)
