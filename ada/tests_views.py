@@ -94,7 +94,7 @@ class AdaSymptomCheckEndpointTests(APITestCase):
     url = reverse("rapidpro_start_flow")
     topup_url = reverse("rapidpro_topup_flow")
 
-    @mock.patch("ada.views.submit_whatsappid_to_rapidpro")
+    @mock.patch("ada.views.start_prototype_survey_flow")
     def test_unauthenticated(self, mock_start_rapidpro_flow):
         whatsappid = "12345"
 
@@ -103,7 +103,7 @@ class AdaSymptomCheckEndpointTests(APITestCase):
 
         mock_start_rapidpro_flow.delay.assert_not_called()
 
-    @mock.patch("ada.views.submit_whatsappid_to_rapidpro")
+    @mock.patch("ada.views.start_prototype_survey_flow")
     def test_invalid_data(self, mock_start_rapidpro_flow):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
@@ -113,7 +113,7 @@ class AdaSymptomCheckEndpointTests(APITestCase):
 
         mock_start_rapidpro_flow.delay.assert_not_called()
 
-    @mock.patch("ada.views.submit_whatsappid_to_rapidpro")
+    @mock.patch("ada.views.start_prototype_survey_flow")
     def test_successful_flow_start(self, mock_start_rapidpro_flow):
         whatsappid = "12345"
 
@@ -124,7 +124,7 @@ class AdaSymptomCheckEndpointTests(APITestCase):
 
         mock_start_rapidpro_flow.delay.assert_called_once_with(whatsappid)
 
-    @mock.patch("ada.views.submit_whatsappid_to_rapidpro_topup")
+    @mock.patch("ada.views.start_topup_flow")
     def test_invalid_post_data(self, mock_start_rapidpro_topup_flow):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
@@ -134,7 +134,7 @@ class AdaSymptomCheckEndpointTests(APITestCase):
 
         mock_start_rapidpro_topup_flow.delay.assert_not_called()
 
-    @mock.patch("ada.views.submit_whatsappid_to_rapidpro_topup")
+    @mock.patch("ada.views.start_topup_flow")
     def test_successful_topup_flow_start(self, mock_start_rapidpro_topup_flow):
         whatsappid = "12345"
 

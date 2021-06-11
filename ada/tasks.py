@@ -19,7 +19,7 @@ from ndoh_hub.celery import app
     soft_time_limit=10,
     time_limit=15,
 )
-def submit_whatsappid_to_rapidpro(whatsappid):
+def start_prototype_survey_flow(whatsappid):
     if rapidpro and settings.ADA_PROTOTYPE_SURVEY_FLOW_ID:
         return rapidpro.create_flow_start(
             extra={},
@@ -28,7 +28,15 @@ def submit_whatsappid_to_rapidpro(whatsappid):
         )
 
 
-def submit_whatsappid_to_rapidpro_topup(whatsappid):
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def start_topup_flow(whatsappid):
     if rapidpro and settings.ADA_TOPUP_FLOW_ID:
         return rapidpro.create_flow_start(
             extra={},
@@ -37,6 +45,14 @@ def submit_whatsappid_to_rapidpro_topup(whatsappid):
         )
 
 
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
 def post_to_topup_endpoint(whatsappid):
     token = settings.ADA_TOPUP_AUTHORIZATION_TOKEN
     head = {"Authorization": "Token " + token, "Content-Type": "application/json"}

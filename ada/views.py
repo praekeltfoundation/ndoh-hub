@@ -8,11 +8,7 @@ from rest_framework.response import Response
 from ada.serializers import SymptomCheckSerializer
 
 from .models import RedirectUrl, RedirectUrlsEntry
-from .tasks import (
-    post_to_topup_endpoint,
-    submit_whatsappid_to_rapidpro,
-    submit_whatsappid_to_rapidpro_topup,
-)
+from .tasks import post_to_topup_endpoint, start_prototype_survey_flow, start_topup_flow
 
 
 class RapidProStartFlowView(generics.GenericAPIView):
@@ -24,7 +20,7 @@ class RapidProStartFlowView(generics.GenericAPIView):
 
         whatsappid = serializer.validated_data.get("whatsappid")
 
-        submit_whatsappid_to_rapidpro.delay(str(whatsappid))
+        start_prototype_survey_flow.delay(str(whatsappid))
 
         return Response({}, status=status.HTTP_200_OK)
 
@@ -38,7 +34,7 @@ class RapidProStartTopupFlowView(generics.GenericAPIView):
 
         whatsappid = serializer.validated_data.get("whatsappid")
 
-        submit_whatsappid_to_rapidpro_topup.delay(str(whatsappid))
+        start_topup_flow.delay(str(whatsappid))
 
         return Response({}, status=status.HTTP_200_OK)
 
