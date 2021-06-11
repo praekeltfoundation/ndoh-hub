@@ -46,7 +46,7 @@ def start_topup_flow(whatsappid):
 
 
 @app.task(
-    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
     retry_backoff=True,
     max_retries=15,
     acks_late=True,
