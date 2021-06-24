@@ -75,6 +75,16 @@ class AdaHookViewTests(TestCase):
         )
         self.assertEqual(response.status_code, 302)
 
+    # check that symptom check url has the right query parameters
+    def test_ada_hook_redirect_content(self):
+        response = self.client.get(
+            reverse("ada_hook_redirect", args=(self.post.id, "1235"))
+        )
+        self.assertEqual(
+            response.url,
+            "http://symptomcheck.co.za?whatsappid=1235&customizationId=kh93qnNLps",
+        )
+
     # Raise HTTp404 if RedirectUrl does not exist
     def test_ada_hook_redirect_404(self):
         response = self.client.get(
@@ -92,8 +102,9 @@ class AdaHookViewTests(TestCase):
 
 class AdaSymptomCheckEndpointTests(APITestCase):
     url = reverse("rapidpro_start_flow")
+    topup_url = reverse("rapidpro_topup_flow")
 
-    @mock.patch("ada.views.submit_whatsappid_to_rapidpro")
+    @mock.patch("ada.views.start_prototype_survey_flow")
     def test_unauthenticated(self, mock_start_rapidpro_flow):
         whatsappid = "12345"
 
@@ -102,7 +113,7 @@ class AdaSymptomCheckEndpointTests(APITestCase):
 
         mock_start_rapidpro_flow.delay.assert_not_called()
 
-    @mock.patch("ada.views.submit_whatsappid_to_rapidpro")
+    @mock.patch("ada.views.start_prototype_survey_flow")
     def test_invalid_data(self, mock_start_rapidpro_flow):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
@@ -112,7 +123,7 @@ class AdaSymptomCheckEndpointTests(APITestCase):
 
         mock_start_rapidpro_flow.delay.assert_not_called()
 
-    @mock.patch("ada.views.submit_whatsappid_to_rapidpro")
+    @mock.patch("ada.views.start_prototype_survey_flow")
     def test_successful_flow_start(self, mock_start_rapidpro_flow):
         whatsappid = "12345"
 
@@ -122,3 +133,24 @@ class AdaSymptomCheckEndpointTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         mock_start_rapidpro_flow.delay.assert_called_once_with(whatsappid)
+
+    @mock.patch("ada.views.start_topup_flow")
+    def test_invalid_post_data(self, mock_start_rapidpro_topup_flow):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(self.topup_url, {"whatsapp": "123"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.json(), {"whatsappid": ["This field is required."]})
+
+        mock_start_rapidpro_topup_flow.delay.assert_not_called()
+
+    @mock.patch("ada.views.start_topup_flow")
+    def test_successful_topup_flow_start(self, mock_start_rapidpro_topup_flow):
+        whatsappid = "12345"
+
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(self.topup_url, {"whatsappid": whatsappid})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        mock_start_rapidpro_topup_flow.delay.assert_called_once_with(whatsappid)
