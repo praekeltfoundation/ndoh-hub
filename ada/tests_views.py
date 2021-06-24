@@ -75,6 +75,16 @@ class AdaHookViewTests(TestCase):
         )
         self.assertEqual(response.status_code, 302)
 
+    # check that symptom check url has the right query parameters
+    def test_ada_hook_redirect_content(self):
+        response = self.client.get(
+            reverse("ada_hook_redirect", args=(self.post.id, "1235"))
+        )
+        self.assertEqual(
+            response.url,
+            "http://symptomcheck.co.za?whatsappid=1235&customizationId=kh93qnNLps",
+        )
+
     # Raise HTTp404 if RedirectUrl does not exist
     def test_ada_hook_redirect_404(self):
         response = self.client.get(

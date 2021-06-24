@@ -1,5 +1,6 @@
 from urllib.parse import urlencode
 
+from django.conf import settings
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import HttpResponseRedirect, render
 from rest_framework import generics, permissions, status
@@ -47,8 +48,9 @@ def clickActivity(request: HttpRequest, pk: int, whatsappid: str) -> HttpRespons
     else:
         store_url_entry = RedirectUrlsEntry(symptom_check_url=redirect_url)
         store_url_entry.save()
+        customization_id = settings.ADA_CUSTOMIZATION_ID
         url = f"{redirect_url.symptom_check_url}"
-        qs = urlencode({"whatsappid": whatsappid})
+        qs = urlencode({"whatsappid": whatsappid, "customizationId": customization_id})
         destination_url = f"{url}?{qs}"
         return HttpResponseRedirect(destination_url)
 
