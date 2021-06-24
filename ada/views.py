@@ -33,9 +33,11 @@ def clickActivity(request: HttpRequest, pk: int, whatsappid: str) -> HttpRespons
     else:
         store_url_entry = RedirectUrlsEntry(symptom_check_url=redirect_url)
         store_url_entry.save()
+        customizationId = "kh93qnNLps"
         url = f"{redirect_url.symptom_check_url}"
-        qs = urlencode({"whatsappid": whatsappid})
-        destination_url = f"{url}?{qs}"
+        whatsapp_qs = urlencode({"whatsappid": whatsappid})
+        customization_qs = urlencode({"customizationId": customizationId})
+        destination_url = f"{url}?{whatsapp_qs}?{customization_qs}"
         return HttpResponseRedirect(destination_url)
 
 
