@@ -212,7 +212,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_CLASSES": ["rest_framework.throttling.ScopedRateThrottle"],
     "DEFAULT_THROTTLE_RATES": {
         "covid19triage.create": os.environ.get("CREATE_THROTTLE_RATE", "30/second"),
-        "covid19triage.list": os.environ.get("CREATE_THROTTLE_RATE", "60/minute"),
+        "covid19triage.list": os.environ.get("LIST_THROTTLE_RATE", "60/minute"),
     },
 }
 
