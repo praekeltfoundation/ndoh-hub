@@ -211,8 +211,8 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
     "DEFAULT_THROTTLE_CLASSES": ["rest_framework.throttling.ScopedRateThrottle"],
     "DEFAULT_THROTTLE_RATES": {
-        "covid19triage.create": "30/second",
-        "covid19triage.list": "60/minute",
+        "covid19triage.create": os.environ.get("CREATE_THROTTLE_RATE", "30/second"),
+        "covid19triage.list": os.environ.get("CREATE_THROTTLE_RATE", "60/minute"),
     },
 }
 
