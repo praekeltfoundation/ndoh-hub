@@ -333,7 +333,10 @@ class ValidateMomConnectImportTests(TestCase):
         self.assertEqual(error.error_type, ImportError.ErrorType.ALREADY_REGISTERED)
 
 
-@override_settings(RAPIDPRO_PREBIRTH_CLINIC_FLOW="prebirth-clinic-flow-uuid")
+@override_settings(
+    RAPIDPRO_PREBIRTH_CLINIC_FLOW="prebirth-clinic-flow-uuid",
+    RAPIDPRO_POSTBIRTH_CLINIC_FLOW="postbirth-clinic-flow-uuid",
+)
 class UploadMomConnectImportTests(TestCase):
     def setUp(self):
         responses.add(
@@ -496,6 +499,53 @@ class UploadMomConnectImportTests(TestCase):
                     "sa_id_number": "",
                     "passport_number": "",
                     "registered_by": "+27820001001",
+                    "research_consent": "FALSE",
+                },
+            },
+        )
+
+    @responses.activate
+    def test_success_postbirth(self):
+        """
+        If the validation passes, then should be updated to validation complete
+        """
+
+        mcimport = MomConnectImport.objects.create(
+            status=MomConnectImport.Status.VALIDATED
+        )
+        mcimport.rows.create(
+            row_number=2,
+            msisdn="+27820001001",
+            messaging_consent=True,
+            facility_code="123456",
+            baby_dob_year=2021,
+            baby_dob_month=12,
+            baby_dob_day=13,
+            id_type=ImportRow.IDType.SAID,
+            id_number="9001010001088",
+        )
+        tasks.upload_momconnect_import(mcimport.id)
+
+        mcimport.refresh_from_db()
+        self.assertEqual(mcimport.status, MomConnectImport.Status.COMPLETE)
+
+        request = json.loads(responses.calls[0].request.body)
+        request["extra"].pop("timestamp")
+        self.assertEqual(
+            request,
+            {
+                "flow": "postbirth-clinic-flow-uuid",
+                "urns": ["whatsapp:27820001001"],
+                "extra": {
+                    "clinic_code": "123456",
+                    "baby_dob": "2021-12-13",
+                    "id_type": "sa_id",
+                    "sa_id_number": "9001010001088",
+                    "language": "eng",
+                    "source": "MomConnect Import",
+                    "swt": "7",
+                    "registered_by": "+27820001001",
+                    "passport_number": "",
                     "research_consent": "FALSE",
                 },
             },

@@ -409,13 +409,14 @@ def upload_momconnect_import(mcimport_id):
         .filter(row_number__gt=mcimport.last_uploaded_row)
         .iterator()
     ):
+        flow_uuid = settings.RAPIDPRO_PREBIRTH_CLINIC_FLOW
+
         msisdn = phonenumbers.parse(row.msisdn, "ZA")
         msisdn = phonenumbers.format_number(msisdn, phonenumbers.PhoneNumberFormat.E164)
         urn = f"whatsapp:{msisdn.lstrip('+')}"
         data = {
             "research_consent": "TRUE" if row.research_consent else "FALSE",
             "registered_by": msisdn,
-            "edd": date(row.edd_year, row.edd_month, row.edd_day).isoformat(),
             "language": {
                 ImportRow.Language.ZUL: "zul",
                 ImportRow.Language.XHO: "xho",
@@ -441,6 +442,16 @@ def upload_momconnect_import(mcimport_id):
             "passport_number": row.passport_number,
             "swt": "7",
         }
+
+        if row.edd_year and row.edd_month and row.edd_day:
+            data["edd"] = date(row.edd_year, row.edd_month, row.edd_day).isoformat()
+
+        if row.baby_dob_year and row.baby_dob_month and row.baby_dob_day:
+            data["baby_dob"] = date(
+                row.baby_dob_year, row.baby_dob_month, row.baby_dob_day
+            ).isoformat()
+            flow_uuid = settings.RAPIDPRO_POSTBIRTH_CLINIC_FLOW
+
         if row.passport_country is not None:
             data["passport_origin"] = {
                 ImportRow.PassportCountry.ZW: "zw",
@@ -454,9 +465,7 @@ def upload_momconnect_import(mcimport_id):
         if row.dob_year and row.dob_month and row.dob_day:
             data["dob"] = date(row.dob_year, row.dob_month, row.dob_day).isoformat()
 
-        rapidpro.create_flow_start(
-            flow=settings.RAPIDPRO_PREBIRTH_CLINIC_FLOW, urns=[urn], extra=data
-        )
+        rapidpro.create_flow_start(flow=flow_uuid, urns=[urn], extra=data)
         mcimport.last_uploaded_row = row.row_number
         mcimport.save()
 
