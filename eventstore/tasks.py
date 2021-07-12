@@ -430,7 +430,7 @@ def upload_momconnect_import(mcimport_id):
                 ImportRow.Language.NBL: "nbl",
             }[row.language],
             "timestamp": datetime.now().isoformat(),
-            "source": "MomConnect Import",
+            "source": mcimport.source,
             "id_type": {
                 ImportRow.IDType.SAID: "sa_id",
                 ImportRow.IDType.PASSPORT: "passport",

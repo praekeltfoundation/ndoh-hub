@@ -28,7 +28,9 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv", b"msisdn,messaging consent,edd year,edd month\n"
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         self.assertTrue(form.is_valid())
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
@@ -42,7 +44,9 @@ class MomConnectImportFormTests(TestCase):
         If we cannot decode the file, should mark import as error and write an error
         """
         file = SimpleUploadedFile("test.csv", b"\xe8")
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         self.assertTrue(form.is_valid())
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
@@ -59,7 +63,9 @@ class MomConnectImportFormTests(TestCase):
             b"edd month,edd day,language\n"
             b"+27820001001,123456,said,9001010001088,true,2021,12,1,afr\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         self.assertTrue(form.is_valid())
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.VALIDATING)
@@ -90,7 +96,9 @@ class MomConnectImportFormTests(TestCase):
             b"edd month,edd day\n"
             b"+1234,123456,said,9001010001088,1,2021,12,1\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         self.assertTrue(form.is_valid())
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
@@ -110,7 +118,9 @@ class MomConnectImportFormTests(TestCase):
             b"edd month,edd day\n"
             b"+27820001001,123456,said,9001010001088,,2021,12,1\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
         [error] = instance.errors.all()
@@ -126,7 +136,9 @@ class MomConnectImportFormTests(TestCase):
             b"edd month,edd day\n"
             b"+27820001001,123456,said,9001010001088,no,2021,12,1\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
         [error] = instance.errors.all()
@@ -141,7 +153,9 @@ class MomConnectImportFormTests(TestCase):
             b"edd month,edd day\n"
             b"+27820001001,123456,said,9001010001088,foo,2021,12,1\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
         [error] = instance.errors.all()
@@ -162,7 +176,9 @@ class MomConnectImportFormTests(TestCase):
             b"research_consent,edd year,edd month,edd day\n"
             b"+27820001001,123456,said,9001010001088,true,foo,2021,12,1\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
         [error] = instance.errors.all()
@@ -183,7 +199,9 @@ class MomConnectImportFormTests(TestCase):
             b"research_consent,edd year,edd month,edd day\n"
             b"+27820001001,123456,said,9001010001088,true,,2021,12,1\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.VALIDATING)
         self.assertEqual(instance.errors.count(), 0)
@@ -200,7 +218,9 @@ class MomConnectImportFormTests(TestCase):
             b"previous_optout,edd year,edd month,edd day\n"
             b"+27820001001,123456,said,9001010001088,true,foo,2021,12,1\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
         [error] = instance.errors.all()
@@ -221,7 +241,9 @@ class MomConnectImportFormTests(TestCase):
             b"previous_optout,edd year,edd month,edd day\n"
             b"+27820001001,123456,said,9001010001088,true,,2021,12,1\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.VALIDATING)
         self.assertEqual(instance.errors.count(), 0)
@@ -238,7 +260,9 @@ class MomConnectImportFormTests(TestCase):
             b"edd year,edd month,edd day\n"
             b"+27820001001,,said,9001010001088,true,2021,12,1\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
         [error] = instance.errors.all()
@@ -253,7 +277,9 @@ class MomConnectImportFormTests(TestCase):
             b"edd year,edd month,edd day\n"
             b"+27820001001,abc123,said,9001010001088,true,2021,12,1\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
         [error] = instance.errors.all()
@@ -267,7 +293,9 @@ class MomConnectImportFormTests(TestCase):
             b"edd year,edd month,edd day\n"
             b"+27820001001,1234567,said,9001010001088,true,2021,12,1\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
         [error] = instance.errors.all()
@@ -287,7 +315,9 @@ class MomConnectImportFormTests(TestCase):
             b"edd year,edd month,edd day\n"
             b"+27820001001,123456,said,9001010001088,true,2021,2,29\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
         [error] = instance.errors.all()
@@ -302,7 +332,9 @@ class MomConnectImportFormTests(TestCase):
             b"edd year,edd month,edd day\n"
             b"+27820001001,123456,said,9001010001088,true,2021,Feb,20\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
         [error] = instance.errors.all()
@@ -317,7 +349,9 @@ class MomConnectImportFormTests(TestCase):
             b"edd year,edd month,edd day\n"
             b"+27820001001,123456,said,9001010001088,true,2121,2,4\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
         [error] = instance.errors.all()
@@ -335,7 +369,9 @@ class MomConnectImportFormTests(TestCase):
             b"edd day\n"
             b"+27820001001,123456,said,true,2021,2,3\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
         [error] = instance.errors.all()
@@ -353,7 +389,9 @@ class MomConnectImportFormTests(TestCase):
             b"edd month,edd day\n"
             b"+27820001001,123456,said,9001010001089,true,2021,2,3\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
         [error] = instance.errors.all()
@@ -373,7 +411,9 @@ class MomConnectImportFormTests(TestCase):
             b"messaging consent,edd year,edd month,edd day\n"
             b"+27820001001,123456,passport,A1234,,true,2021,2,3\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
         [error] = instance.errors.all()
@@ -388,7 +428,9 @@ class MomConnectImportFormTests(TestCase):
             b"messaging consent,edd year,edd month,edd day\n"
             b"+27820001001,123456,passport,,zimbabwe,true,2021,2,3\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
         [error] = instance.errors.all()
@@ -407,7 +449,9 @@ class MomConnectImportFormTests(TestCase):
             b"edd day\n"
             b"+27820001001,123456,none,true,2021,2,3\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
         [error] = instance.errors.all()
@@ -425,7 +469,9 @@ class MomConnectImportFormTests(TestCase):
             b"edd day,dob year,dob month,dob day\n"
             b"+27820001001,123456,none,true,2021,2,3,1990,2,29\n",
         )
-        form = MomConnectImportForm(data={}, files={"file": file})
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
         instance = form.save()
         self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
         [error] = instance.errors.all()

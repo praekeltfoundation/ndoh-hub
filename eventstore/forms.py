@@ -10,6 +10,7 @@ from eventstore.tasks import validate_momconnect_import
 
 class MomConnectImportForm(forms.ModelForm):
     file = forms.FileField()
+    source = forms.CharField(initial="MomConnect Import")
 
     required_fields = {
         "msisdn",
