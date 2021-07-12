@@ -19,6 +19,9 @@ class MomConnectImportForm(forms.ModelForm):
         "edd_year",
         "edd_month",
         "edd_day",
+        "baby_dob_year",
+        "baby_dob_month",
+        "baby_dob_day",
         "id_type",
     }
 

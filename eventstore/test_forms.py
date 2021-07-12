@@ -26,7 +26,9 @@ class MomConnectImportFormTests(TestCase):
         Should mark the import as error, and write an error for the missing columns
         """
         file = SimpleUploadedFile(
-            "test.csv", b"msisdn,messaging consent,edd year,edd month\n"
+            "test.csv",
+            b"msisdn,messaging consent,edd year,edd month,baby dob year,"
+            b"baby dob month,baby dob day\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -60,8 +62,8 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,id number,messaging consent,edd year,"
-            b"edd month,edd day,language\n"
-            b"+27820001001,123456,said,9001010001088,true,2021,12,1,afr\n",
+            b"edd month,edd day,baby dob year, baby dob month, baby dob day,language\n"
+            b"+27820001001,123456,said,9001010001088,true,2021,12,1,,,,afr\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -93,8 +95,8 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,id number,messaging consent,edd year,"
-            b"edd month,edd day\n"
-            b"+1234,123456,said,9001010001088,1,2021,12,1\n",
+            b"edd month,edd day,baby dob year,baby dob month,baby dob day\n"
+            b"+1234,123456,said,9001010001088,1,2021,12,1,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -115,8 +117,8 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,id number,messaging consent,edd year,"
-            b"edd month,edd day\n"
-            b"+27820001001,123456,said,9001010001088,,2021,12,1\n",
+            b"edd month,edd day,baby dob year,baby dob month,baby dob day\n"
+            b"+27820001001,123456,said,9001010001088,,2021,12,1,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -133,8 +135,8 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,id number,messaging consent,edd year,"
-            b"edd month,edd day\n"
-            b"+27820001001,123456,said,9001010001088,no,2021,12,1\n",
+            b"edd month,edd day,baby dob year,baby dob month,baby dob day\n"
+            b"+27820001001,123456,said,9001010001088,no,2021,12,1,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -150,8 +152,8 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,id number,messaging consent,edd year,"
-            b"edd month,edd day\n"
-            b"+27820001001,123456,said,9001010001088,foo,2021,12,1\n",
+            b"edd month,edd day,baby dob year,baby dob month,baby dob day\n"
+            b"+27820001001,123456,said,9001010001088,foo,2021,12,1,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -173,8 +175,9 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,id number,messaging consent,"
-            b"research_consent,edd year,edd month,edd day\n"
-            b"+27820001001,123456,said,9001010001088,true,foo,2021,12,1\n",
+            b"research_consent,edd year,edd month,edd day,baby dob year,"
+            b"baby dob month,baby dob day\n"
+            b"+27820001001,123456,said,9001010001088,true,foo,2021,12,1,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -196,8 +199,9 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,id number,messaging consent,"
-            b"research_consent,edd year,edd month,edd day\n"
-            b"+27820001001,123456,said,9001010001088,true,,2021,12,1\n",
+            b"research_consent,edd year,edd month,edd day,baby dob year,"
+            b"baby dob month,baby dob day\n"
+            b"+27820001001,123456,said,9001010001088,true,,2021,12,1,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -215,8 +219,9 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,id number,messaging consent,"
-            b"previous_optout,edd year,edd month,edd day\n"
-            b"+27820001001,123456,said,9001010001088,true,foo,2021,12,1\n",
+            b"previous_optout,edd year,edd month,edd day,baby dob year,"
+            b"baby dob month,baby dob day\n"
+            b"+27820001001,123456,said,9001010001088,true,foo,2021,12,1,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -238,8 +243,9 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,id number,messaging consent,"
-            b"previous_optout,edd year,edd month,edd day\n"
-            b"+27820001001,123456,said,9001010001088,true,,2021,12,1\n",
+            b"previous_optout,edd year,edd month,edd day,baby dob year,"
+            b"baby dob month,baby dob day\n"
+            b"+27820001001,123456,said,9001010001088,true,,2021,12,1,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -257,8 +263,8 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,id number,messaging consent,"
-            b"edd year,edd month,edd day\n"
-            b"+27820001001,,said,9001010001088,true,2021,12,1\n",
+            b"edd year,edd month,edd day,baby dob year,baby dob month,baby dob day\n"
+            b"+27820001001,,said,9001010001088,true,2021,12,1,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -274,8 +280,8 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,id number,messaging consent,"
-            b"edd year,edd month,edd day\n"
-            b"+27820001001,abc123,said,9001010001088,true,2021,12,1\n",
+            b"edd year,edd month,edd day,baby dob year,baby dob month,baby dob day\n"
+            b"+27820001001,abc123,said,9001010001088,true,2021,12,1,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -290,8 +296,8 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,id number,messaging consent,"
-            b"edd year,edd month,edd day\n"
-            b"+27820001001,1234567,said,9001010001088,true,2021,12,1\n",
+            b"edd year,edd month,edd day,baby dob year,baby dob month,baby dob day\n"
+            b"+27820001001,1234567,said,9001010001088,true,2021,12,1,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -312,8 +318,8 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,id number,messaging consent,"
-            b"edd year,edd month,edd day\n"
-            b"+27820001001,123456,said,9001010001088,true,2021,2,29\n",
+            b"edd year,edd month,edd day,baby dob year,baby dob month,baby dob day\n"
+            b"+27820001001,123456,said,9001010001088,true,2021,2,29,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -329,8 +335,8 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,id number,messaging consent,"
-            b"edd year,edd month,edd day\n"
-            b"+27820001001,123456,said,9001010001088,true,2021,Feb,20\n",
+            b"edd year,edd month,edd day,baby dob year,baby dob month,baby dob day\n"
+            b"+27820001001,123456,said,9001010001088,true,2021,Feb,20,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -346,8 +352,8 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,id number,messaging consent,"
-            b"edd year,edd month,edd day\n"
-            b"+27820001001,123456,said,9001010001088,true,2121,2,4\n",
+            b"edd year,edd month,edd day,baby dob year,baby dob month,baby dob day\n"
+            b"+27820001001,123456,said,9001010001088,true,2121,2,4,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -359,6 +365,63 @@ class MomConnectImportFormTests(TestCase):
             error.error, "Failed validation: EDD must be between now and 9 months"
         )
 
+    def test_invalid_baby_dob(self):
+        """
+        baby dob fields should form a valid date
+        """
+        file = SimpleUploadedFile(
+            "test.csv",
+            b"msisdn,facility code,id type,id number,messaging consent,"
+            b"edd year,edd month,edd day,baby dob year,baby dob month,baby dob day\n"
+            b"+27820001001,123456,said,9001010001088,true,,,,2021,2,29\n",
+        )
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
+        instance = form.save()
+        self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
+        [error] = instance.errors.all()
+        self.assertEqual(
+            error.error,
+            "Failed validation: Invalid Baby DOB date, day is out of range for month",
+        )
+
+        file = SimpleUploadedFile(
+            "test.csv",
+            b"msisdn,facility code,id type,id number,messaging consent,"
+            b"edd year,edd month,edd day,baby dob year,baby dob month,baby dob day\n"
+            b"+27820001001,123456,said,9001010001088,true,,,,2021,Feb,20\n",
+        )
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
+        instance = form.save()
+        self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
+        [error] = instance.errors.all()
+        self.assertEqual(
+            error.error, "Field baby_dob_month failed validation: Enter a whole number."
+        )
+
+    def test_valid_baby_dob_or_edd(self):
+        """
+        baby dob or edd should be added
+        """
+        file = SimpleUploadedFile(
+            "test.csv",
+            b"msisdn,facility code,id type,id number,messaging consent,"
+            b"edd year,edd month,edd day,baby dob year,baby dob month,baby dob day\n"
+            b"+27820001001,123456,said,9001010001088,true,,,,,,\n",
+        )
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
+        instance = form.save()
+        self.assertEqual(instance.status, MomConnectImport.Status.ERROR)
+        [error] = instance.errors.all()
+        self.assertEqual(
+            error.error, "Failed validation: EDD or Baby DOB fields must be populated"
+        )
+
     def test_idtype_said(self):
         """
         id_number is required for sa_id
@@ -366,8 +429,8 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,messaging consent,edd year,edd month,"
-            b"edd day\n"
-            b"+27820001001,123456,said,true,2021,2,3\n",
+            b"edd day,baby dob year,baby dob month,baby dob day\n"
+            b"+27820001001,123456,said,true,2021,2,3,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -386,8 +449,8 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,id number,messaging consent,edd year,"
-            b"edd month,edd day\n"
-            b"+27820001001,123456,said,9001010001089,true,2021,2,3\n",
+            b"edd month,edd day,baby dob year,baby dob month,baby dob day\n"
+            b"+27820001001,123456,said,9001010001089,true,2021,2,3,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -408,8 +471,9 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,passport number,passport country,"
-            b"messaging consent,edd year,edd month,edd day\n"
-            b"+27820001001,123456,passport,A1234,,true,2021,2,3\n",
+            b"messaging consent,edd year,edd month,edd day,baby dob year,"
+            b"baby dob month,baby dob day\n"
+            b"+27820001001,123456,passport,A1234,,true,2021,2,3,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -425,8 +489,9 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,passport number,passport country,"
-            b"messaging consent,edd year,edd month,edd day\n"
-            b"+27820001001,123456,passport,,zimbabwe,true,2021,2,3\n",
+            b"messaging consent,edd year,edd month,edd day,baby dob year,"
+            b"baby dob month,baby dob day\n"
+            b"+27820001001,123456,passport,,zimbabwe,true,2021,2,3,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -446,8 +511,8 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,messaging consent,edd year,edd month,"
-            b"edd day\n"
-            b"+27820001001,123456,none,true,2021,2,3\n",
+            b"edd day,baby dob year,baby dob month,baby dob day\n"
+            b"+27820001001,123456,none,true,2021,2,3,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}
@@ -466,8 +531,9 @@ class MomConnectImportFormTests(TestCase):
         file = SimpleUploadedFile(
             "test.csv",
             b"msisdn,facility code,id type,messaging consent,edd year,edd month,"
-            b"edd day,dob year,dob month,dob day\n"
-            b"+27820001001,123456,none,true,2021,2,3,1990,2,29\n",
+            b"edd day,dob year,dob month,dob day,baby dob year,baby dob month,"
+            b"baby dob day\n"
+            b"+27820001001,123456,none,true,2021,2,3,1990,2,29,,,\n",
         )
         form = MomConnectImportForm(
             data={"source": "MomConnect Import"}, files={"file": file}

@@ -937,9 +937,12 @@ class ImportRow(models.Model):
     research_consent = models.BooleanField(default=False)
     previous_optout = models.BooleanField(default=False)
     facility_code = models.CharField(max_length=6, validators=[validate_facility_code])
-    edd_year = models.PositiveSmallIntegerField()
-    edd_month = models.PositiveSmallIntegerField()
-    edd_day = models.PositiveSmallIntegerField()
+    edd_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    edd_month = models.PositiveSmallIntegerField(null=True, blank=True)
+    edd_day = models.PositiveSmallIntegerField(null=True, blank=True)
+    baby_dob_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    baby_dob_month = models.PositiveSmallIntegerField(null=True, blank=True)
+    baby_dob_day = models.PositiveSmallIntegerField(null=True, blank=True)
     id_type = models.PositiveSmallIntegerField(choices=IDType.choices)
     id_number = models.CharField(
         max_length=13, blank=True, validators=[validate_sa_id_number]
@@ -965,6 +968,24 @@ class ImportRow(models.Model):
         except TypeError:
             # Should be handled by the individual field validator
             pass
+
+        try:
+            date(self.baby_dob_year, self.baby_dob_month, self.baby_dob_day)
+        except ValueError as e:
+            raise ValidationError(f"Invalid Baby DOB date, {str(e)}")
+        except TypeError:
+            # Should be handled by the individual field validator
+            pass
+
+        if (
+            not self.edd_year
+            and not self.edd_month
+            and not self.edd_day
+            and not self.baby_dob_year
+            and not self.baby_dob_month
+            and not self.baby_dob_day
+        ):
+            raise ValidationError("EDD or Baby DOB fields must be populated")
 
         if self.id_type == self.IDType.SAID and not self.id_number:
             raise ValidationError("ID number required for SA ID ID type")
