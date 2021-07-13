@@ -88,6 +88,29 @@ class MomConnectImportFormTests(TestCase):
 
         self.validate_momconnect_import.delay.assert_called_once_with(instance.id)
 
+    def test_empty_language(self):
+        """
+        Should save the rows
+        """
+        file = SimpleUploadedFile(
+            "test.csv",
+            b"msisdn,facility code,id type,id number,messaging consent,edd year,"
+            b"edd month,edd day,baby dob year,baby dob month,baby dob day,language\n"
+            b"+27820001001,123456,said,9001010001088,true,2021,12,1,,,,\n",
+        )
+        form = MomConnectImportForm(
+            data={"source": "MomConnect Import"}, files={"file": file}
+        )
+        self.assertTrue(form.is_valid())
+        instance = form.save()
+        self.assertEqual(instance.status, MomConnectImport.Status.VALIDATING)
+        self.assertEqual(instance.errors.count(), 0)
+
+        [row] = instance.rows.all()
+        self.assertEqual(row.language, ImportRow.Language.ENG)
+
+        self.validate_momconnect_import.delay.assert_called_once_with(instance.id)
+
     def test_invalid_msisdn(self):
         """
         Should mark import as error, and write an error row

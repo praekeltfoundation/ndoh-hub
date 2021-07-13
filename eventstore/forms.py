@@ -91,6 +91,8 @@ class MomConnectImportForm(forms.ModelForm):
             )
         if row_data.get("language"):
             row_data["language"] = self.get_language(row_data["language"])
+        else:
+            row_data["language"] = ImportRow.Language.ENG
         form = ImportRowForm(data=row_data)
         if form.errors:
             mcimport.status = MomConnectImport.Status.ERROR
