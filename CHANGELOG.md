@@ -1,6 +1,14 @@
 # Changelog
 
 ## 0.8.36
+1. Add source field to mcimport
+  ([#402](https://github.com/praekeltfoundation/ndoh-hub/pull/402))
+1. Add baby dob fields to import
+  ([#403](https://github.com/praekeltfoundation/ndoh-hub/pull/403))
+1. Allow empty language to be specified
+  ([#404](https://github.com/praekeltfoundation/ndoh-hub/pull/404))
+
+## 0.8.36
 1. Stop sending SMSes on whatsapp send errors
   ([#376](https://github.com/praekeltfoundation/ndoh-hub/pull/376))
 
