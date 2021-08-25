@@ -1,6 +1,10 @@
 # Changelog
 
-## 0.8.36
+## 0.8.46
+1. Update docker cmd - cpu usage
+  ([#405](https://github.com/praekeltfoundation/ndoh-hub/pull/405))
+
+## 0.8.45
 1. Add source field to mcimport
   ([#402](https://github.com/praekeltfoundation/ndoh-hub/pull/402))
 1. Add baby dob fields to import
