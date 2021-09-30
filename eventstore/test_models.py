@@ -1,12 +1,8 @@
-import random
-import json
 from unittest.mock import call, patch
 
 from django.test import TestCase, override_settings
 
 from eventstore.models import Covid19Triage, Event, HealthCheckUserProfile, Message
-
-from django.db import models
 
 
 class MessageTests(TestCase):

@@ -5,13 +5,10 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('eventstore', '0046_auto_20210712_1223'),
-    ]
+    dependencies = [("eventstore", "0046_auto_20210712_1223")]
 
     operations = [
         migrations.RemoveField(
-            model_name='healthcheckuserprofile',
-            name='hcs_study_c_pilot_arm',
-        ),
+            model_name="healthcheckuserprofile", name="hcs_study_c_pilot_arm"
+        )
     ]
