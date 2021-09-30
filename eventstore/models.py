@@ -17,6 +17,7 @@ from eventstore.validators import (
     validate_sa_id_number,
     validate_true,
 )
+from ndoh_hub.constants import HCS_STUDY_A_TARGETS
 from ndoh_hub.utils import is_valid_edd_date
 from registrations.validators import geographic_coordinate, za_phone_number
 
@@ -668,7 +669,7 @@ class HealthCheckUserProfile(models.Model):
                 self.data[k] = v
 
     def update_post_screening_study_arms(self, risk, source):
-        if self.age == Covid19Triage.AGE_U18:
+        if self.age == Covid19Triage.AGE_U18 and not self.province:
             return
 
         self.process_study_a(source)
@@ -681,9 +682,11 @@ class HealthCheckUserProfile(models.Model):
 
         if source == "WhatsApp" and not self.hcs_study_a_arm:
             self.hcs_study_a_arm = self.get_random_study_arm()
-            update_turn_contact.delay(
-                self.msisdn, "hcs_study_a_arm", self.hcs_study_a_arm
-            )
+
+            if self.hcs_study_a_arm:
+                update_turn_contact.delay(
+                    self.msisdn, "hcs_study_a_arm", self.hcs_study_a_arm
+                )
 
     def process_study_c(self, risk, source):
         if not settings.HCS_STUDY_C_ACTIVE:
@@ -727,8 +730,30 @@ class HealthCheckUserProfile(models.Model):
                 self.msisdn, None, None, self.hcs_study_c_pilot_arm, risk, source
             )
 
+    def get_study_totals_per_province(self):
+        all_provinces = HealthCheckUserProfile.objects.filter(
+            hcs_study_a_arm__isnull=False
+        ).values("province")
+
+        actual_total = {
+            province["province"]: province["province__count"]
+            for province in all_provinces.annotate(models.Count("province"))
+        }.get(self.province, 0)
+
+        actual_percentage = {
+            province["province"]: province["province__count"] * 100 / len(all_provinces)
+            for province in all_provinces.annotate(models.Count("province"))
+        }.get(self.province, 0)
+        return (actual_total, actual_percentage)
+
     def get_random_study_arm(self):
-        return random.choice(self.STUDY_ARM_CHOICES)[0]
+        target_total = HCS_STUDY_A_TARGETS[self.province]["total"]
+        target_percentage = HCS_STUDY_A_TARGETS[self.province]["percentage"]
+
+        actual_total, actual_percentage = self.get_study_totals_per_province()
+
+        if actual_total < target_total or actual_percentage < target_percentage:
+            return random.choice(self.STUDY_ARM_CHOICES)[0]
 
     def get_random_study_quarantine_arm(self):
         return random.choice(self.STUDY_ARM_QUARANTINE_CHOICES)[0]

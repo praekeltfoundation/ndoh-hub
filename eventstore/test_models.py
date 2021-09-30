@@ -1,8 +1,12 @@
+import random
+import json
 from unittest.mock import call, patch
 
 from django.test import TestCase, override_settings
 
 from eventstore.models import Covid19Triage, Event, HealthCheckUserProfile, Message
+
+from django.db import models
 
 
 class MessageTests(TestCase):
@@ -179,6 +183,41 @@ class HealthCheckUserProfileTests(TestCase):
         self.assertEqual(profile.last_name, "newlast")
         self.assertEqual(profile.preexisting_condition, "no")
 
+    def test_get_study_totals_per_province(self):
+        HealthCheckUserProfile.objects.create(
+            msisdn=f"+27820001001",
+            province="ZA-WC",
+            hcs_study_a_arm=HealthCheckUserProfile.ARM_CONTROL,
+        )
+        profile_wc = HealthCheckUserProfile.objects.create(
+            msisdn=f"+27820001002",
+            province="ZA-WC",
+            hcs_study_a_arm=HealthCheckUserProfile.ARM_CONTROL,
+        )
+        profile_ec = HealthCheckUserProfile.objects.create(
+            msisdn=f"+27820001003",
+            province="ZA-EC",
+            hcs_study_a_arm=HealthCheckUserProfile.ARM_CONTROL,
+        )
+
+        total, percentage = profile_wc.get_study_totals_per_province()
+        self.assertEqual(total, 2)
+        self.assertEqual(int(percentage), 66)
+
+        total, percentage = profile_ec.get_study_totals_per_province()
+        self.assertEqual(total, 1)
+        self.assertEqual(int(percentage), 33)
+
+    @patch("eventstore.models.HealthCheckUserProfile.get_study_totals_per_province")
+    def test_get_random_study_arm(self, mock_get_study_totals_per_province):
+        profile = HealthCheckUserProfile(msisdn=f"+27820001001", province="ZA-WC")
+
+        mock_get_study_totals_per_province.return_value = (500, 9)
+        self.assertIsNotNone(profile.get_random_study_arm())
+
+        mock_get_study_totals_per_province.return_value = (5000, 30)
+        self.assertIsNone(profile.get_random_study_arm())
+
     @patch("eventstore.models.update_turn_contact")
     def test_update_post_screening_study_arms_a_whatsapp(
         self, mock_update_turn_contact
@@ -188,6 +227,7 @@ class HealthCheckUserProfileTests(TestCase):
             first_name="oldfirst",
             last_name="old_last",
             hcs_study_c_testing_arm=HealthCheckUserProfile.ARM_CONTROL,
+            province="ZA-WC",
             data={
                 "donotreplace": "value",
                 "replaceint": 1,
@@ -303,6 +343,7 @@ class HealthCheckUserProfileTests(TestCase):
             first_name="oldfirst",
             last_name="old_last",
             hcs_study_a_arm=HealthCheckUserProfile.ARM_CONTROL,
+            province="ZA-WC",
             data={
                 "donotreplace": "value",
                 "replaceint": 1,
