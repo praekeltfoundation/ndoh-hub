@@ -42,3 +42,15 @@ WHATSAPP_LANGUAGE_MAP = {
     "ven_ZA": "en",
     "nbl_ZA": "en",
 }
+
+HCS_STUDY_A_TARGETS = {
+    "ZA-LP": {"total": 2275, "percentage": 13},
+    "ZA-NW": {"total": 1050, "percentage": 6},
+    "ZA-NL": {"total": 2975, "percentage": 17},
+    "ZA-EC": {"total": 1575, "percentage": 9},
+    "ZA-MP": {"total": 1050, "percentage": 6},
+    "ZA-WC": {"total": 2450, "percentage": 14},
+    "ZA-FS": {"total": 1050, "percentage": 6},
+    "ZA-NC": {"total": 175, "percentage": 1},
+    "ZA-GT": {"total": 4900, "percentage": 28},
+}

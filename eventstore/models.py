@@ -17,6 +17,7 @@ from eventstore.validators import (
     validate_sa_id_number,
     validate_true,
 )
+from ndoh_hub.constants import HCS_STUDY_A_TARGETS
 from ndoh_hub.utils import is_valid_edd_date
 from registrations.validators import geographic_coordinate, za_phone_number
 
@@ -580,15 +581,6 @@ class HealthCheckUserProfile(models.Model):
         (ARM_TREATMENT_3, "Treatment 3"),
     )
 
-    PILOT_ARM_DIRECT = "D"
-    PILOT_ARM_RANDOM_A = "A"
-    PILOT_ARM_RANDOM_B = "B"
-    STUDY_ARM_PILOT_CHOICES = (
-        (PILOT_ARM_DIRECT, "Direct Response"),
-        (PILOT_ARM_RANDOM_A, "List Randomization List A"),
-        (PILOT_ARM_RANDOM_B, "List Randomization List B"),
-    )
-
     msisdn = models.CharField(
         primary_key=True, max_length=255, validators=[za_phone_number]
     )
@@ -624,9 +616,6 @@ class HealthCheckUserProfile(models.Model):
     )
     hcs_study_c_quarantine_arm = models.CharField(
         max_length=3, choices=STUDY_ARM_QUARANTINE_CHOICES, null=True, default=None
-    )
-    hcs_study_c_pilot_arm = models.CharField(
-        max_length=3, choices=STUDY_ARM_PILOT_CHOICES, null=True, default=None
     )
     data = JSONField(default=dict, blank=True, null=True)
 
@@ -668,12 +657,11 @@ class HealthCheckUserProfile(models.Model):
                 self.data[k] = v
 
     def update_post_screening_study_arms(self, risk, source):
-        if self.age == Covid19Triage.AGE_U18:
+        if self.age == Covid19Triage.AGE_U18 or not self.province:
             return
 
         self.process_study_a(source)
         self.process_study_c(risk, source)
-        self.process_study_c_pilot(risk, source)
 
     def process_study_a(self, source):
         if not settings.HCS_STUDY_A_ACTIVE:
@@ -681,9 +669,11 @@ class HealthCheckUserProfile(models.Model):
 
         if source == "WhatsApp" and not self.hcs_study_a_arm:
             self.hcs_study_a_arm = self.get_random_study_arm()
-            update_turn_contact.delay(
-                self.msisdn, "hcs_study_a_arm", self.hcs_study_a_arm
-            )
+
+            if self.hcs_study_a_arm:
+                update_turn_contact.delay(
+                    self.msisdn, "hcs_study_a_arm", self.hcs_study_a_arm
+                )
 
     def process_study_c(self, risk, source):
         if not settings.HCS_STUDY_C_ACTIVE:
@@ -709,32 +699,35 @@ class HealthCheckUserProfile(models.Model):
                     self.msisdn,
                     self.hcs_study_c_testing_arm,
                     self.hcs_study_c_quarantine_arm,
-                    None,
                     risk,
                     source,
                 )
 
-    def process_study_c_pilot(self, risk, source):
-        if not settings.HCS_STUDY_C_PILOT_ACTIVE:
-            return
+    def get_study_totals_per_province(self):
+        all_provinces = HealthCheckUserProfile.objects.filter(
+            hcs_study_a_arm__isnull=False
+        ).values("province")
 
-        if not self.hcs_study_c_pilot_arm and risk == Covid19Triage.RISK_HIGH:
-            self.hcs_study_c_pilot_arm = self.get_random_study_pilot_arm()
-            update_turn_contact.delay(
-                self.msisdn, "hcs_study_c_pilot_arm", self.hcs_study_c_pilot_arm
-            )
-            start_study_c_registration_flow.delay(
-                self.msisdn, None, None, self.hcs_study_c_pilot_arm, risk, source
-            )
+        all_total = all_provinces.count()
+        province_total = all_provinces.filter(province=self.province).count()
+
+        province_percentage = 0
+        if all_total > 0:
+            province_percentage = province_total * 100 / all_total
+
+        return province_total, province_percentage
 
     def get_random_study_arm(self):
-        return random.choice(self.STUDY_ARM_CHOICES)[0]
+        target_total = HCS_STUDY_A_TARGETS[self.province]["total"]
+        target_percentage = HCS_STUDY_A_TARGETS[self.province]["percentage"]
+
+        actual_total, actual_percentage = self.get_study_totals_per_province()
+
+        if actual_total < target_total or actual_percentage < target_percentage:
+            return random.choice(self.STUDY_ARM_CHOICES)[0]
 
     def get_random_study_quarantine_arm(self):
         return random.choice(self.STUDY_ARM_QUARANTINE_CHOICES)[0]
-
-    def get_random_study_pilot_arm(self):
-        return random.choice(self.STUDY_ARM_PILOT_CHOICES)[0]
 
 
 class CDUAddressUpdate(models.Model):
