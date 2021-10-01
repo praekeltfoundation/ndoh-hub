@@ -293,6 +293,7 @@ class HealthCheckUserProfileTests(TestCase):
             msisdn="+27820001001",
             first_name="oldfirst",
             last_name="old_last",
+            province="ZA-WC",
             hcs_study_a_arm=HealthCheckUserProfile.ARM_CONTROL,
             data={
                 "donotreplace": "value",
