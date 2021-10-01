@@ -16,7 +16,7 @@ setup(
         "Markdown==3.1.1",
         "dj-database-url==0.5.0",
         "django-environ==0.4.5",
-        "psycopg2==2.7.5",
+        "psycopg2==2.9.1",
         "raven==6.9.0",
         "django-filter==2.0.0",
         "celery==4.2.1",
