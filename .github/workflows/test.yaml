@@ -30,7 +30,7 @@ jobs:
           key: ${{ hashFiles('requirements.txt', 'requirements-dev.txt') }}-pip
       - uses: actions/setup-python@v2
         with:
-          python-version: 3.6.12
+          python-version: 3.7.11
       - name: Install dependancies
         run: |
           python -m pip install --upgrade pip
@@ -39,6 +39,7 @@ jobs:
       - name: Lint
         run: |
           flake8
+          mypy .
           python manage.py makemigrations registrations changes --dry-run | grep 'No changes detected' || (echo 'There are changes which require migrations.' && exit 1)
           black --check .
           isort -c -rc .
