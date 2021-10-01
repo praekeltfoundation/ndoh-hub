@@ -657,7 +657,7 @@ class HealthCheckUserProfile(models.Model):
                 self.data[k] = v
 
     def update_post_screening_study_arms(self, risk, source):
-        if self.age == Covid19Triage.AGE_U18 and not self.province:
+        if self.age == Covid19Triage.AGE_U18 or not self.province:
             return
 
         self.process_study_a(source)
@@ -708,16 +708,11 @@ class HealthCheckUserProfile(models.Model):
             hcs_study_a_arm__isnull=False
         ).values("province")
 
-        actual_total = {
-            province["province"]: province["province__count"]
-            for province in all_provinces.annotate(models.Count("province"))
-        }.get(self.province, 0)
+        all_total = all_provinces.count()
+        province_total = all_provinces.filter(province=self.province).count()
+        province_percentage = province_total * 100 / all_total
 
-        actual_percentage = {
-            province["province"]: province["province__count"] * 100 / len(all_provinces)
-            for province in all_provinces.annotate(models.Count("province"))
-        }.get(self.province, 0)
-        return (actual_total, actual_percentage)
+        return province_total, province_percentage
 
     def get_random_study_arm(self):
         target_total = HCS_STUDY_A_TARGETS[self.province]["total"]
