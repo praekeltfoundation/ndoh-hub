@@ -710,7 +710,10 @@ class HealthCheckUserProfile(models.Model):
 
         all_total = all_provinces.count()
         province_total = all_provinces.filter(province=self.province).count()
-        province_percentage = province_total * 100 / all_total
+
+        province_percentage = 0
+        if all_total > 0:
+            province_percentage = province_total * 100 / all_total
 
         return province_total, province_percentage
 
