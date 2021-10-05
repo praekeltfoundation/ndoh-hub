@@ -366,12 +366,15 @@ def validate_momconnect_import(mcimport_id):
             )
             continue
 
-        # validate already receiving prebirth messaging
+        # validate already receiving prebirth/postbirth messaging
         try:
             prebirth_messaging = int(contact.fields.get("prebirth_messaging"))
         except (TypeError, ValueError):
             prebirth_messaging = -1
-        if prebirth_messaging >= 1 and prebirth_messaging <= 6:
+        postbirth_messaging = contact.fields.get("postbirth_messaging", "FALSE")
+        if (
+            prebirth_messaging >= 1 and prebirth_messaging <= 6
+        ) or postbirth_messaging == "TRUE":
             mcimport.status = MomConnectImport.Status.ERROR
             mcimport.save()
             mcimport.errors.create(
