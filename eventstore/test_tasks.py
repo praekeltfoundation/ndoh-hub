@@ -332,6 +332,53 @@ class ValidateMomConnectImportTests(TestCase):
         [error] = mcimport.errors.all()
         self.assertEqual(error.error_type, ImportError.ErrorType.ALREADY_REGISTERED)
 
+    @responses.activate
+    def test_fail_already_registered_postbirth(self):
+        """
+        If the mother is already receiving postbirth messages, then validation should
+        fail
+        """
+        responses.add(
+            responses.GET,
+            "https://textit.in/api/v2/contacts.json?urn=whatsapp%3A27820001001",
+            json={
+                "results": [
+                    {
+                        "uuid": "contact-uuid",
+                        "name": "",
+                        "language": "zul",
+                        "groups": [],
+                        "fields": {"postbirth_messaging": "TRUE"},
+                        "blocked": False,
+                        "stopped": False,
+                        "created_on": "2015-11-11T08:30:24.922024+00:00",
+                        "modified_on": "2015-11-11T08:30:25.525936+00:00",
+                        "urns": ["whatsapp:27820001001"],
+                    }
+                ],
+                "next": None,
+            },
+        )
+
+        mcimport = MomConnectImport.objects.create()
+        mcimport.rows.create(
+            row_number=2,
+            msisdn="+27820001001",
+            messaging_consent=True,
+            facility_code="123456",
+            edd_year=2021,
+            edd_month=12,
+            edd_day=13,
+            id_type=ImportRow.IDType.SAID,
+        )
+        tasks.validate_momconnect_import(mcimport.id)
+
+        mcimport.refresh_from_db()
+        self.assertEqual(mcimport.status, MomConnectImport.Status.ERROR)
+
+        [error] = mcimport.errors.all()
+        self.assertEqual(error.error_type, ImportError.ErrorType.ALREADY_REGISTERED)
+
 
 @override_settings(
     RAPIDPRO_PREBIRTH_CLINIC_FLOW="prebirth-clinic-flow-uuid",
