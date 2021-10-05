@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.47
+1. Update hcs study randomization + remove pilot c study
+  ([#406](https://github.com/praekeltfoundation/ndoh-hub/pull/406))
+1. Add disabled EDD flow setting
+  ([#407](https://github.com/praekeltfoundation/ndoh-hub/pull/407))
+
 ## 0.8.46
 1. Update docker cmd - cpu usage
   ([#405](https://github.com/praekeltfoundation/ndoh-hub/pull/405))
