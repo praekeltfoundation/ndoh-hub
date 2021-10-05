@@ -167,6 +167,18 @@ class HandleInboundTests(DjangoTestCase):
             handle_inbound(message)
             handle.assert_called_once_with(message)
 
+    @override_settings(DISABLE_EDD_LABEL_FLOW=True)
+    def test_handle_edd_label_disabled(self):
+        """
+        If the functionality is disabled do nothing
+        """
+        message = Mock()
+        message.has_label.return_value = True
+
+        with patch("eventstore.whatsapp_actions.handle_edd_message") as handle:
+            handle_inbound(message)
+            handle.assert_not_called
+
 
 class UpdateRapidproPreferredChannelTests(DjangoTestCase):
     def test_contact_update_is_called(self):
