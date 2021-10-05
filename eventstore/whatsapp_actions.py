@@ -47,7 +47,7 @@ def handle_inbound(message):
     if not message.fallback_channel:
         update_rapidpro_preferred_channel(message)
 
-    if message.has_label("EDD ISSUE"):
+    if not settings.DISABLE_EDD_LABEL_FLOW and message.has_label("EDD ISSUE"):
         handle_edd_message(message)
 
 
