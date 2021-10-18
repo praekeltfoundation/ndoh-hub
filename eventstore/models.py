@@ -855,7 +855,7 @@ class ImportError(models.Model):
             (FIELD_VALIDATION_ERROR, "Field {} failed validation: {}"),
             (ROW_VALIDATION_ERROR, "Failed validation: {}"),
             (OPTED_OUT_ERROR, "Mother is opted out and has not chosen to opt in again"),
-            (ALREADY_REGISTERED, "Mother is already receiving prebirth messages"),
+            (ALREADY_REGISTERED, "Mother is already receiving messages"),
         )
 
     mcimport = models.ForeignKey(
