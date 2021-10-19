@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.48
+1. Fail gcc import validation for existing postbirth registration
+  ([#408](https://github.com/praekeltfoundation/ndoh-hub/pull/408))
+1. Change error message
+  ([#409](https://github.com/praekeltfoundation/ndoh-hub/pull/409))
+
 ## 0.8.47
 1. Update hcs study randomization + remove pilot c study
   ([#406](https://github.com/praekeltfoundation/ndoh-hub/pull/406))
