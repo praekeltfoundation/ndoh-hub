@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.49
+1. HCS Study A fixes
+  ([#410](https://github.com/praekeltfoundation/ndoh-hub/pull/410))
+  ([#411](https://github.com/praekeltfoundation/ndoh-hub/pull/411))
+
 ## 0.8.48
 1. Fail gcc import validation for existing postbirth registration
   ([#408](https://github.com/praekeltfoundation/ndoh-hub/pull/408))
