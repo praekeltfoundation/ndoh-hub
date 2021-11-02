@@ -668,7 +668,7 @@ class HealthCheckUserProfile(models.Model):
             if not settings.HCS_STUDY_A_ACTIVE:
                 return
 
-        if created_by == "whatsapp_healthcheck" and not self.hcs_study_a_arm:
+        if created_by == settings.HCS_STUDY_A_CREATED_BY and not self.hcs_study_a_arm:
             self.hcs_study_a_arm = self.get_random_study_arm()
 
             if self.hcs_study_a_arm:
