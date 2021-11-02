@@ -656,18 +656,19 @@ class HealthCheckUserProfile(models.Model):
             if has_value(v):
                 self.data[k] = v
 
-    def update_post_screening_study_arms(self, risk, source):
+    def update_post_screening_study_arms(self, risk, created_by):
         if self.age == Covid19Triage.AGE_U18 or not self.province:
             return
 
-        self.process_study_a(source)
-        self.process_study_c(risk, source)
+        self.process_study_a(created_by)
+        self.process_study_c(risk, created_by)
 
-    def process_study_a(self, source):
-        if not settings.HCS_STUDY_A_ACTIVE:
-            return
+    def process_study_a(self, created_by):
+        if self.msisdn not in settings.HCS_STUDY_A_WHITELIST:
+            if not settings.HCS_STUDY_A_ACTIVE:
+                return
 
-        if source == "WhatsApp" and not self.hcs_study_a_arm:
+        if created_by == "whatsapp_healthcheck" and not self.hcs_study_a_arm:
             self.hcs_study_a_arm = self.get_random_study_arm()
 
             if self.hcs_study_a_arm:
@@ -675,7 +676,7 @@ class HealthCheckUserProfile(models.Model):
                     self.msisdn, "hcs_study_a_arm", self.hcs_study_a_arm
                 )
 
-    def process_study_c(self, risk, source):
+    def process_study_c(self, risk, created_by):
         if not settings.HCS_STUDY_C_ACTIVE:
             return
 
@@ -700,7 +701,7 @@ class HealthCheckUserProfile(models.Model):
                     self.hcs_study_c_testing_arm,
                     self.hcs_study_c_quarantine_arm,
                     risk,
-                    source,
+                    created_by,
                 )
 
     def get_study_totals_per_province(self):

@@ -181,17 +181,17 @@ class HealthCheckUserProfileTests(TestCase):
 
     def test_get_study_totals_per_province(self):
         HealthCheckUserProfile.objects.create(
-            msisdn=f"+27820001001",
+            msisdn="+27820001001",
             province="ZA-WC",
             hcs_study_a_arm=HealthCheckUserProfile.ARM_CONTROL,
         )
         profile_wc = HealthCheckUserProfile.objects.create(
-            msisdn=f"+27820001002",
+            msisdn="+27820001002",
             province="ZA-WC",
             hcs_study_a_arm=HealthCheckUserProfile.ARM_CONTROL,
         )
         profile_ec = HealthCheckUserProfile.objects.create(
-            msisdn=f"+27820001003",
+            msisdn="+27820001003",
             province="ZA-EC",
             hcs_study_a_arm=HealthCheckUserProfile.ARM_CONTROL,
         )
@@ -206,7 +206,7 @@ class HealthCheckUserProfileTests(TestCase):
 
     @patch("eventstore.models.HealthCheckUserProfile.get_study_totals_per_province")
     def test_get_random_study_arm(self, mock_get_study_totals_per_province):
-        profile = HealthCheckUserProfile(msisdn=f"+27820001001", province="ZA-WC")
+        profile = HealthCheckUserProfile(msisdn="+27820001001", province="ZA-WC")
 
         mock_get_study_totals_per_province.return_value = (500, 9)
         self.assertIsNotNone(profile.get_random_study_arm())
@@ -232,7 +232,9 @@ class HealthCheckUserProfileTests(TestCase):
             },
         )
 
-        profile.update_post_screening_study_arms(Covid19Triage.RISK_LOW, "WhatsApp")
+        profile.update_post_screening_study_arms(
+            Covid19Triage.RISK_LOW, "whatsapp_healthcheck"
+        )
 
         self.assertIsNotNone(profile.hcs_study_a_arm)
 
@@ -246,6 +248,8 @@ class HealthCheckUserProfileTests(TestCase):
             msisdn="+27820001001",
             first_name="oldfirst",
             last_name="old_last",
+            age=Covid19Triage.AGE_18T40,
+            province="ZA-WC",
             hcs_study_c_testing_arm=HealthCheckUserProfile.ARM_CONTROL,
             data={
                 "donotreplace": "value",
@@ -268,6 +272,8 @@ class HealthCheckUserProfileTests(TestCase):
             first_name="oldfirst",
             last_name="old_last",
             hcs_study_a_arm=HealthCheckUserProfile.ARM_CONTROL,
+            age=Covid19Triage.AGE_18T40,
+            province="ZA-WC",
             data={
                 "donotreplace": "value",
                 "replaceint": 1,
@@ -276,7 +282,9 @@ class HealthCheckUserProfileTests(TestCase):
             },
         )
 
-        profile.update_post_screening_study_arms(Covid19Triage.RISK_LOW, "WhatsApp")
+        profile.update_post_screening_study_arms(
+            Covid19Triage.RISK_LOW, "whatsapp_healthcheck"
+        )
 
         self.assertIsNone(profile.hcs_study_c_testing_arm)
         self.assertIsNone(profile.hcs_study_c_quarantine_arm)
@@ -294,6 +302,7 @@ class HealthCheckUserProfileTests(TestCase):
             first_name="oldfirst",
             last_name="old_last",
             province="ZA-WC",
+            age=Covid19Triage.AGE_18T40,
             hcs_study_a_arm=HealthCheckUserProfile.ARM_CONTROL,
             data={
                 "donotreplace": "value",
@@ -304,7 +313,7 @@ class HealthCheckUserProfileTests(TestCase):
         )
 
         profile.update_post_screening_study_arms(
-            Covid19Triage.RISK_MODERATE, "WhatsApp"
+            Covid19Triage.RISK_MODERATE, "whatsapp_healthcheck"
         )
 
         self.assertIsNone(profile.hcs_study_c_testing_arm)
@@ -325,7 +334,7 @@ class HealthCheckUserProfileTests(TestCase):
             profile.hcs_study_c_testing_arm,
             profile.hcs_study_c_quarantine_arm,
             Covid19Triage.RISK_MODERATE,
-            "WhatsApp",
+            "whatsapp_healthcheck",
         )
 
     @patch("eventstore.models.start_study_c_registration_flow")
@@ -340,6 +349,7 @@ class HealthCheckUserProfileTests(TestCase):
             last_name="old_last",
             hcs_study_a_arm=HealthCheckUserProfile.ARM_CONTROL,
             province="ZA-WC",
+            age=Covid19Triage.AGE_18T40,
             data={
                 "donotreplace": "value",
                 "replaceint": 1,
@@ -348,7 +358,9 @@ class HealthCheckUserProfileTests(TestCase):
             },
         )
 
-        profile.update_post_screening_study_arms(Covid19Triage.RISK_HIGH, "WhatsApp")
+        profile.update_post_screening_study_arms(
+            Covid19Triage.RISK_HIGH, "whatsapp_healthcheck"
+        )
 
         self.assertIsNotNone(profile.hcs_study_c_testing_arm)
         self.assertIsNone(profile.hcs_study_c_quarantine_arm)
@@ -362,7 +374,7 @@ class HealthCheckUserProfileTests(TestCase):
             profile.hcs_study_c_testing_arm,
             profile.hcs_study_c_quarantine_arm,
             Covid19Triage.RISK_HIGH,
-            "WhatsApp",
+            "whatsapp_healthcheck",
         )
 
     @patch("eventstore.models.update_turn_contact")
@@ -371,6 +383,8 @@ class HealthCheckUserProfileTests(TestCase):
             msisdn="+27820001001",
             first_name="oldfirst",
             last_name="old_last",
+            age=Covid19Triage.AGE_18T40,
+            province="ZA-WC",
             hcs_study_a_arm=HealthCheckUserProfile.ARM_CONTROL,
             hcs_study_c_testing_arm=HealthCheckUserProfile.ARM_CONTROL,
             data={
@@ -381,7 +395,9 @@ class HealthCheckUserProfileTests(TestCase):
             },
         )
 
-        profile.update_post_screening_study_arms(Covid19Triage.RISK_HIGH, "WhatsApp")
+        profile.update_post_screening_study_arms(
+            Covid19Triage.RISK_HIGH, "whatsapp_healthcheck"
+        )
 
         mock_update_turn_contact.delay.assert_not_called()
 
@@ -392,6 +408,7 @@ class HealthCheckUserProfileTests(TestCase):
             first_name="oldfirst",
             last_name="old_last",
             age=Covid19Triage.AGE_U18,
+            province="ZA-WC",
             data={
                 "donotreplace": "value",
                 "replaceint": 1,
@@ -401,7 +418,7 @@ class HealthCheckUserProfileTests(TestCase):
         )
 
         profile.update_post_screening_study_arms(
-            Covid19Triage.RISK_MODERATE, "WhatsApp"
+            Covid19Triage.RISK_MODERATE, "whatsapp_healthcheck"
         )
 
         self.assertIsNone(profile.hcs_study_a_arm)
@@ -417,6 +434,8 @@ class HealthCheckUserProfileTests(TestCase):
     ):
         profile = HealthCheckUserProfile(
             msisdn="+27820001001",
+            age=Covid19Triage.AGE_18T40,
+            province="ZA-WC",
             first_name="oldfirst",
             last_name="old_last",
             data={
@@ -428,7 +447,7 @@ class HealthCheckUserProfileTests(TestCase):
         )
 
         profile.update_post_screening_study_arms(
-            Covid19Triage.RISK_MODERATE, "WhatsApp"
+            Covid19Triage.RISK_MODERATE, "whatsapp_healthcheck"
         )
 
         self.assertIsNone(profile.hcs_study_a_arm)
@@ -436,3 +455,32 @@ class HealthCheckUserProfileTests(TestCase):
         self.assertIsNone(profile.hcs_study_c_quarantine_arm)
 
         mock_update_turn_contact.delay.assert_not_called()
+
+    @patch("eventstore.models.update_turn_contact")
+    @override_settings(
+        HCS_STUDY_A_ACTIVE=False,
+        HCS_STUDY_C_ACTIVE=False,
+        HCS_STUDY_A_WHITELIST=["+27820001001"],
+    )
+    def test_update_post_screening_study_arms_whitelist(self, mock_update_turn_contact):
+        profile = HealthCheckUserProfile(
+            msisdn="+27820001001",
+            age=Covid19Triage.AGE_18T40,
+            province="ZA-WC",
+            first_name="oldfirst",
+            last_name="old_last",
+            data={
+                "donotreplace": "value",
+                "replaceint": 1,
+                "replacebool": True,
+                "existing": "value",
+            },
+        )
+
+        profile.update_post_screening_study_arms(
+            Covid19Triage.RISK_MODERATE, "whatsapp_healthcheck"
+        )
+
+        self.assertIsNotNone(profile.hcs_study_a_arm)
+
+        mock_update_turn_contact.delay.assert_called()
