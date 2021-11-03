@@ -69,7 +69,6 @@ from eventstore.serializers import (
 )
 from eventstore.tasks import (
     forget_contact,
-    mark_turn_contact_healthcheck_complete,
     process_ada_assessment_notification,
     reset_delivery_failure,
 )
@@ -343,8 +342,6 @@ class Covid19TriageViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
         Mark turn healthcheck complete, and update the user profile
         """
         instance = serializer.save()
-
-        mark_turn_contact_healthcheck_complete.delay(instance.msisdn)
 
         profile = HealthCheckUserProfile.objects.get_or_prefill(msisdn=instance.msisdn)
         profile.update_from_healthcheck(instance)

@@ -1627,8 +1627,7 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
     @mock.patch(
         "eventstore.models.HealthCheckUserProfile.update_post_screening_study_arms"
     )
-    @mock.patch("eventstore.views.mark_turn_contact_healthcheck_complete")
-    def test_successful_request(self, task, mock_update_post_screening_study_arms):
+    def test_successful_request(self, mock_update_post_screening_study_arms):
         """
         Should create a new Covid19Triage object in the database
         """
@@ -1674,7 +1673,6 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         self.assertNotEqual(covid19triage.deduplication_id, "")
         self.assertEqual(covid19triage.risk, Covid19Triage.RISK_LOW)
         self.assertEqual(covid19triage.created_by, user.username)
-        task.delay.assert_called_once_with("+27820001001")
 
         mock_update_post_screening_study_arms.assert_called_with(
             Covid19Triage.RISK_LOW, user.username
@@ -2233,8 +2231,7 @@ class Covid19TriageV4ViewSetTests(Covid19TriageViewSetTests):
     @mock.patch(
         "eventstore.models.HealthCheckUserProfile.update_post_screening_study_arms"
     )
-    @mock.patch("eventstore.views.mark_turn_contact_healthcheck_complete")
-    def test_successful_request(self, task, mock_update_post_screening_study_arms):
+    def test_successful_request(self, mock_update_post_screening_study_arms):
         """
         Should create a new Covid19Triage object in the database
         """
@@ -2280,7 +2277,6 @@ class Covid19TriageV4ViewSetTests(Covid19TriageViewSetTests):
         self.assertNotEqual(covid19triage.deduplication_id, "")
         self.assertEqual(covid19triage.risk, Covid19Triage.RISK_LOW)
         self.assertEqual(covid19triage.created_by, user.username)
-        task.delay.assert_called_once_with("+27820001001")
 
         mock_update_post_screening_study_arms.assert_called_with(
             Covid19Triage.RISK_LOW, user.username
