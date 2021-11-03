@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.50
+1. Remove healthcheck Turn update task
+  ([#412](https://github.com/praekeltfoundation/ndoh-hub/pull/412))
+
 ## 0.8.49
 1. HCS Study A fixes
   ([#410](https://github.com/praekeltfoundation/ndoh-hub/pull/410))
