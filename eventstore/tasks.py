@@ -575,8 +575,6 @@ def send_whatsapp_media_template(wa_id, template_name, media_url):
     )
 
     r = requests.post(
-        urljoin(settings.TURN_URL, "v1/messages"),
-        headers=headers,
-        data=data,
+        urljoin(settings.TURN_URL, "v1/messages"), headers=headers, data=data
     )
     r.raise_for_status()
