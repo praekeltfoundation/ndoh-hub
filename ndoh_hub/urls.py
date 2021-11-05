@@ -34,6 +34,7 @@ from eventstore.views import (
     PrebirthRegistrationViewSet,
     PublicRegistrationViewSet,
     ResearchOptinSwitchViewSet,
+    SendMediaTemplateView,
 )
 from ndoh_hub.decorators import internal_only
 from registrations import views
@@ -91,6 +92,7 @@ urlpatterns = [
     url(r"^", include("changes.urls")),
     path("", include("ada.urls")),
     url(r"^api/v1/forgetcontact/", ForgetContactView.as_view(), name="forgetcontact"),
+    url(r"^api/v1/sendmediatemplate/", SendMediaTemplateView.as_view(), name="sendmediatemplate"),
     path("api/v2/", include(v2router.urls)),
     path("api/v3/", include(v3router.urls)),
     path("api/v4/", include(v4router.urls)),

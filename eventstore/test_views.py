@@ -2751,3 +2751,56 @@ class AdaAssessmentNotificationViewSetTests(APITestCase, BaseEventTestCase):
                 "timestamp": "2021-01-02T03:04:05Z",
             },
         )
+
+
+class SendMediaTemplateViewTests(APITestCase):
+    url = reverse("sendmediatemplate")
+
+    @mock.patch("eventstore.views.send_whatsapp_media_template")
+    def test_unauthenticated(self, mock_send_whatsapp_media_template):
+        response = self.client.post(
+            self.url,
+            {
+                "wa_id": "271231234",
+                "template_name": "template",
+                "media_url": "media.pdf",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        mock_send_whatsapp_media_template.delay.assert_not_called()
+
+    @mock.patch("eventstore.views.send_whatsapp_media_template")
+    def test_invalid_data(self, mock_send_whatsapp_media_template):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url, {"contact": "123"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {
+                "wa_id": ["This field is required."],
+                "template_name": ["This field is required."],
+                "media_url": ["This field is required."],
+            },
+        )
+
+        mock_send_whatsapp_media_template.delay.assert_not_called()
+
+    @mock.patch("eventstore.views.send_whatsapp_media_template")
+    def test_successful_forget(self, mock_send_whatsapp_media_template):
+        wa_id = "271231234"
+        template_name = "template-name"
+        media_url = "media.pdf"
+
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {"wa_id": wa_id, "template_name": template_name, "media_url": media_url},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        mock_send_whatsapp_media_template.delay.assert_called_once_with(
+            wa_id, template_name, media_url
+        )

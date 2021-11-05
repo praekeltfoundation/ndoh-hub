@@ -64,6 +64,7 @@ from eventstore.serializers import (
     PrebirthRegistrationSerializer,
     PublicRegistrationSerializer,
     ResearchOptinSwitchSerializer,
+    SendMediaTemplateSerializer,
     TurnOutboundSerializer,
     WhatsAppWebhookSerializer,
 )
@@ -71,6 +72,7 @@ from eventstore.tasks import (
     forget_contact,
     process_ada_assessment_notification,
     reset_delivery_failure,
+    send_whatsapp_media_template,
 )
 from eventstore.whatsapp_actions import handle_event, handle_inbound, handle_outbound
 from ndoh_hub.utils import TokenAuthQueryString, validate_signature
@@ -526,3 +528,19 @@ class AdaAssessmentNotificationViewSet(ViewSet):
         }
         process_ada_assessment_notification.delay(**data)
         return Response(data, status=status.HTTP_202_ACCEPTED)
+
+
+class SendMediaTemplateView(generics.GenericAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        serializer = SendMediaTemplateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        wa_id = str(serializer.validated_data.get("wa_id"))
+        template_name = str(serializer.validated_data.get("template_name"))
+        media_url = str(serializer.validated_data.get("media_url"))
+
+        send_whatsapp_media_template.delay(wa_id, template_name, media_url)
+
+        return Response({}, status=status.HTTP_200_OK)

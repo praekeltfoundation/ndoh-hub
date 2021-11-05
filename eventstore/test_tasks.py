@@ -89,7 +89,7 @@ class HandleOldWaitingForHelpdeskContactsTests(TestCase):
         )
 
         responses.add(
-            responses.POST, f"http://turn/v1/chats/27820001001/archive", json={}
+            responses.POST, "http://turn/v1/chats/27820001001/archive", json={}
         )
 
         tasks.handle_expired_helpdesk_contacts()
@@ -109,7 +109,7 @@ class HandleOldWaitingForHelpdeskContactsTests(TestCase):
             json.loads(turn_archive.request.body),
             {
                 "before": "ABGGJ4NjeFMfAgo-sCqKaSQU4UzP",
-                "reason": f"Auto archived after 11 days",
+                "reason": "Auto archived after 11 days",
             },
         )
 
@@ -703,3 +703,51 @@ class ProcessAdaAssessmentNotificationTests(TestCase):
         )
         self.assertEqual(triage.created_by, "test"),
         self.assertEqual(triage.data, {"age": 30, "pregnant": False}),
+
+
+class SendWhatsAppMediaTemplateTests(TestCase):
+    @responses.activate
+    def test_send_whatsapp_media_template(self):
+        responses.add(
+            responses.POST,
+            "http://turn/v1/messages",
+            json={"messages": [{"id": "gBEGkYiEB1VXAglK1ZEqA1YKPrU"}]},
+        )
+
+        tasks.send_whatsapp_media_template(
+            "wa-id", "template", "http://test.com/media.pdf"
+        )
+
+        request = json.loads(responses.calls[0].request.body)
+        headers = responses.calls[0].request.headers
+
+        self.assertEqual(
+            request,
+            {
+                "to": "wa-id",
+                "type": "template",
+                "template": {
+                    "namespace": "whatsapp:hsm:npo:praekeltpbc",
+                    "name": "template",
+                    "language": {"code": "en", "policy": "deterministic"},
+                    "components": [
+                        {
+                            "type": "header",
+                            "parameters": [
+                                {
+                                    "type": "document",
+                                    "document": {
+                                        "filename": "media.pdf",
+                                        "link": "http://test.com/media.pdf",
+                                    },
+                                }
+                            ],
+                        }
+                    ],
+                },
+            },
+        )
+
+        self.assertEqual(headers["Authorization"], "Bearer turn-token")
+        self.assertEqual(headers["Accept"], "application/vnd.v1+json")
+        self.assertEqual(headers["Content-Type"], "application/json")

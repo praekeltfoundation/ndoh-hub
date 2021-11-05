@@ -389,3 +389,9 @@ class AdaObservationSerializer(serializers.Serializer):
 
 class ForgetContactSerializer(serializers.Serializer):
     contact_id = serializers.UUIDField(required=True)
+
+
+class SendMediaTemplateSerializer(serializers.Serializer):
+    wa_id = serializers.CharField(required=True)
+    template_name = serializers.CharField(required=True)
+    media_url = serializers.CharField(required=True)

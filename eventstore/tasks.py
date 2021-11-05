@@ -532,3 +532,51 @@ def process_ada_assessment_notification(
     triage.risk = triage.calculate_risk()
     triage.full_clean()
     triage.save()
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def send_whatsapp_media_template(wa_id, template_name, media_url):
+    headers = {
+        "Authorization": "Bearer {}".format(settings.TURN_TOKEN),
+        "Accept": "application/vnd.v1+json",
+        "Content-Type": "application/json",
+    }
+
+    filename = media_url.split("/")[-1]
+
+    data = json.dumps(
+        {
+            "to": wa_id,
+            "type": "template",
+            "template": {
+                "namespace": settings.TURN_NAMESPACE,
+                "name": template_name,
+                "language": {"code": "en", "policy": "deterministic"},
+                "components": [
+                    {
+                        "type": "header",
+                        "parameters": [
+                            {
+                                "type": "document",
+                                "document": {"filename": filename, "link": media_url},
+                            }
+                        ],
+                    }
+                ],
+            },
+        }
+    )
+
+    r = requests.post(
+        urljoin(settings.TURN_URL, "v1/messages"),
+        headers=headers,
+        data=data,
+    )
+    r.raise_for_status()
