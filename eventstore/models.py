@@ -56,6 +56,7 @@ class OptOut(models.Model):
     OTHER_REASON = "other"
     UNKNOWN_REASON = "unknown"
     SMS_FAILURE_REASON = "sms_failure"
+    WHATSAPP_FAILURE_REASON = "whatsapp_failure"
     MISCARRIAGE_REASON = "miscarriage"
     STILLBIRTH_REASON = "stillbirth"
     BABYLOSS_REASON = "babyloss"
@@ -65,6 +66,7 @@ class OptOut(models.Model):
         (OTHER_REASON, "Other"),
         (UNKNOWN_REASON, "Unknown"),
         (SMS_FAILURE_REASON, "SMS failure"),
+        (WHATSAPP_FAILURE_REASON, "WhatsApp failure"),
         (MISCARRIAGE_REASON, "Miscarriage"),
         (STILLBIRTH_REASON, "Stillbirth"),
         (BABYLOSS_REASON, "Lost baby"),
