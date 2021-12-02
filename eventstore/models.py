@@ -76,7 +76,7 @@ class OptOut(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     contact_id = models.UUIDField()
     optout_type = models.CharField(max_length=6, choices=OPTOUT_TYPES)
-    reason = models.CharField(max_length=11, choices=REASON_TYPES)
+    reason = models.CharField(max_length=16, choices=REASON_TYPES)
     source = models.CharField(max_length=255)
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
