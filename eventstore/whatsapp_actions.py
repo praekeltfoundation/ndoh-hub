@@ -72,14 +72,13 @@ def handle_event(event):
     """
     Triggers all the actions that are required for this event
     """
-    if event.fallback_channel is True:
-        handle_fallback_event(event)
-
-
-def handle_fallback_event(event):
     if event.status == Event.FAILED:
-        if settings.DISABLE_SMS_FAILURE_OPTOUTS:
-            return
+        reason = OptOut.WHATSAPP_FAILURE_REASON
+        if event.fallback_channel is True:
+            reason = OptOut.SMS_FAILURE_REASON
+
+            if settings.DISABLE_SMS_FAILURE_OPTOUTS:
+                return
 
         df, created = DeliveryFailure.objects.get_or_create(
             contact_id=event.recipient_id, defaults={"number_of_failures": 0}
@@ -93,7 +92,7 @@ def handle_fallback_event(event):
         if df.number_of_failures == 5:
             async_create_flow_start.delay(
                 extra={
-                    "optout_reason": OptOut.SMS_FAILURE_REASON,
+                    "optout_reason": reason,
                     "timestamp": event.timestamp.timestamp(),
                     "babyloss_subscription": "FALSE",
                     "delete_info_for_babyloss": "FALSE",
@@ -103,7 +102,8 @@ def handle_fallback_event(event):
                 flow=settings.RAPIDPRO_OPTOUT_FLOW,
                 urns=[f"whatsapp:{event.recipient_id}"],
             )
+
     elif event.status == Event.READ or event.status == Event.DELIVERED:
-        df = DeliveryFailure.objects.update_or_create(
+        DeliveryFailure.objects.update_or_create(
             contact_id=event.recipient_id, defaults={"number_of_failures": 0}
         )

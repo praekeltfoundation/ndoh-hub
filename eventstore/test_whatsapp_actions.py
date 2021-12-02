@@ -11,7 +11,7 @@ from eventstore import tasks
 from eventstore.models import DeliveryFailure, Event
 from eventstore.whatsapp_actions import (
     handle_edd_message,
-    handle_fallback_event,
+    handle_event,
     handle_inbound,
     handle_operator_message,
     handle_outbound,
@@ -217,6 +217,36 @@ class HandleEddLabelTests(DjangoTestCase):
 
 class HandleEventTests(DjangoTestCase):
     @override_settings(RAPIDPRO_OPTOUT_FLOW="test-flow-uuid")
+    def test_whatsapp_delivery_failure_error(self):
+        """
+        If the event is of type Failed, and uses whatsapp,
+        then it should trigger the message delivery failed action
+        """
+        event = Event.objects.create()
+        event.fallback_channel = False
+        event.status = Event.FAILED
+        event.recipient_id = "27820001001"
+        event.timestamp = timezone.now() + timedelta(days=2)
+
+        DeliveryFailure.objects.create(number_of_failures=4, contact_id="27820001001")
+
+        with patch("eventstore.tasks.rapidpro") as p:
+            handle_event(event)
+
+        p.create_flow_start.assert_called_once_with(
+            extra={
+                "optout_reason": "whatsapp_failure",
+                "timestamp": event.timestamp.timestamp(),
+                "babyloss_subscription": "FALSE",
+                "delete_info_for_babyloss": "FALSE",
+                "delete_info_consent": "FALSE",
+                "source": "System",
+            },
+            flow="test-flow-uuid",
+            urns=["whatsapp:27820001001"],
+        )
+
+    @override_settings(RAPIDPRO_OPTOUT_FLOW="test-flow-uuid")
     def test_fallback_channel_delivery_failure_error(self):
         """
         If the event is of type Failed, and uses the fallback channel,
@@ -231,7 +261,7 @@ class HandleEventTests(DjangoTestCase):
         DeliveryFailure.objects.create(number_of_failures=4, contact_id="27820001001")
 
         with patch("eventstore.tasks.rapidpro") as p:
-            handle_fallback_event(event)
+            handle_event(event)
 
         p.create_flow_start.assert_called_once_with(
             extra={
@@ -262,7 +292,7 @@ class HandleEventTests(DjangoTestCase):
         DeliveryFailure.objects.create(number_of_failures=4, contact_id="27820001001")
 
         with patch("eventstore.tasks.rapidpro") as p:
-            handle_fallback_event(event)
+            handle_event(event)
 
         p.create_flow_start.assert_not_called()
         df = DeliveryFailure.objects.get(contact_id="27820001001")
@@ -283,7 +313,7 @@ class HandleEventTests(DjangoTestCase):
         DeliveryFailure.objects.create(number_of_failures=5, contact_id="27820001001")
 
         with patch("eventstore.tasks.rapidpro") as p:
-            handle_fallback_event(event)
+            handle_event(event)
 
         p.create_flow_start.assert_not_called()
         df = DeliveryFailure.objects.get(contact_id="27820001001")
@@ -302,7 +332,7 @@ class HandleEventTests(DjangoTestCase):
         event.timestamp = timezone.now() + timedelta(days=2)
 
         with patch("eventstore.tasks.rapidpro") as p:
-            handle_fallback_event(event)
+            handle_event(event)
 
         p.create_flow_start.assert_not_called()
         df = DeliveryFailure.objects.get(contact_id="27820001001")
@@ -322,7 +352,7 @@ class HandleEventTests(DjangoTestCase):
         event.timestamp = timezone.now() + timedelta(days=2)
 
         with patch("eventstore.tasks.rapidpro") as p:
-            handle_fallback_event(event)
+            handle_event(event)
 
         p.create_flow_start.assert_not_called()
         self.assertFalse(
@@ -342,7 +372,7 @@ class HandleEventTests(DjangoTestCase):
         event.timestamp = timezone.now() + timedelta(days=2)
 
         with patch("eventstore.tasks.rapidpro") as p:
-            handle_fallback_event(event)
+            handle_event(event)
 
         p.create_flow_start.assert_not_called()
         df = DeliveryFailure.objects.get(contact_id="27820001001")
@@ -363,7 +393,7 @@ class HandleEventTests(DjangoTestCase):
         DeliveryFailure.objects.create(number_of_failures=3, contact_id="27820001001")
 
         with patch("eventstore.tasks.rapidpro") as p:
-            handle_fallback_event(event)
+            handle_event(event)
 
         p.create_flow_start.assert_not_called()
         df = DeliveryFailure.objects.get(contact_id="27820001001")
@@ -384,7 +414,7 @@ class HandleEventTests(DjangoTestCase):
         DeliveryFailure.objects.create(number_of_failures=1, contact_id="27820001001")
 
         with patch("eventstore.tasks.rapidpro") as p:
-            handle_fallback_event(event)
+            handle_event(event)
 
         p.create_flow_start.assert_not_called()
         df = DeliveryFailure.objects.get(contact_id="27820001001")
