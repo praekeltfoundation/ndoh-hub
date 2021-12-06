@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.51
+1. Handle whatsapp failure events too
+  ([#414](https://github.com/praekeltfoundation/ndoh-hub/pull/414))
+2. Increase optout reason field size
+  ([#415](https://github.com/praekeltfoundation/ndoh-hub/pull/415))
+
 ## 0.8.50
 1. Remove healthcheck Turn update task
   ([#412](https://github.com/praekeltfoundation/ndoh-hub/pull/412))
