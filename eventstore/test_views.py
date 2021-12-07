@@ -22,6 +22,7 @@ from temba_client.v2 import TembaClient
 from eventstore import tasks
 from eventstore.models import (
     PASSPORT_IDTYPE,
+    AskFeedback,
     BabyDobSwitch,
     BabySwitch,
     CDUAddressUpdate,
@@ -480,6 +481,36 @@ class BabyDobSwitchViewSettests(APITestCase, BaseEventTestCase):
         self.assertEqual(babydobswitch.old_baby_dob, date(2020, 6, 6))
         self.assertEqual(babydobswitch.new_baby_dob, date(2020, 6, 7))
         self.assertEqual(babydobswitch.created_by, user.username)
+
+
+class AskFeedbackViewSettests(APITestCase, BaseEventTestCase):
+    url = reverse("askfeedback-list")
+
+    def test_data_validation(self):
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_askfeedback"))
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_successful_request(self):
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_askfeedback"))
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "contact_id": "9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+                "question_answered": True,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [askfeedback] = AskFeedback.objects.all()
+        self.assertEqual(
+            str(askfeedback.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
+        )
+        self.assertTrue(askfeedback.question_answered)
+        self.assertEqual(askfeedback.created_by, user.username)
 
 
 class IdentificationSwitchViewSetTests(APITestCase, BaseEventTestCase):
