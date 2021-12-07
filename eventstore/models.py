@@ -286,6 +286,15 @@ class BabyDobSwitch(models.Model):
     data = JSONField(default=dict, blank=True, null=True)
 
 
+class AskFeedback(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    contact_id = models.UUIDField()
+    question_answered = models.BooleanField(default=False)
+    timestamp = models.DateTimeField(default=timezone.now)
+    created_by = models.CharField(max_length=255, blank=True, default="")
+    data = JSONField(default=dict, blank=True, null=True)
+
+
 class Message(models.Model):
     INBOUND = "I"
     OUTBOUND = "O"

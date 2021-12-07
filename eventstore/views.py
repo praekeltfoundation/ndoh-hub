@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ViewSet
 
 from eventstore.models import (
+    AskFeedback,
     BabyDobSwitch,
     BabySwitch,
     CDUAddressUpdate,
@@ -40,6 +41,7 @@ from eventstore.serializers import (
     AdaAssessmentNotificationSerializer,
     AdaObservationSerializer,
     AdaPatientSerializer,
+    AskFeedbackSerializer,
     BabyDobSwitchSerializer,
     BabySwitchSerializer,
     CDUAddressUpdateSerializer,
@@ -310,6 +312,12 @@ class EddSwitchViewSet(GenericViewSet, CreateModelMixin):
 class BabyDobSwitchViewSet(GenericViewSet, CreateModelMixin):
     queryset = BabyDobSwitch.objects.all()
     serializer_class = BabyDobSwitchSerializer
+    permission_classes = (DjangoViewModelPermissions,)
+
+
+class AskFeedbackViewSet(GenericViewSet, CreateModelMixin):
+    queryset = AskFeedback.objects.all()
+    serializer_class = AskFeedbackSerializer
     permission_classes = (DjangoViewModelPermissions,)
 
 

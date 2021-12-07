@@ -10,6 +10,7 @@ from rest_framework.documentation import include_docs_urls
 
 from eventstore.views import (
     AdaAssessmentNotificationViewSet,
+    AskFeedbackViewSet,
     BabyDobSwitchViewSet,
     BabySwitchViewSet,
     CDUAddressUpdateViewSet,
@@ -58,6 +59,7 @@ v2router.register("researchoptins", ResearchOptinSwitchViewSet)
 v2router.register("messages", MessagesViewSet, basename="messages")
 v2router.register("eddswitches", EddSwitchViewSet)
 v2router.register("babydobswitches", BabyDobSwitchViewSet)
+v2router.register("askfeedback", AskFeedbackViewSet)
 v2router.register("cduaddressupdate", CDUAddressUpdateViewSet)
 v2router.register("healthcheckuserprofile", HealthCheckUserProfileViewSet)
 v2router.register("dbeonbehalfofprofile", DBEOnBehalfOfProfileViewSet)

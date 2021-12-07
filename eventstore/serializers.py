@@ -4,6 +4,7 @@ from datetime import timezone
 from rest_framework import serializers
 
 from eventstore.models import (
+    AskFeedback,
     BabyDobSwitch,
     BabySwitch,
     CDUAddressUpdate,
@@ -350,6 +351,13 @@ class EddSwitchSerializer(BaseEventSerializer):
 class BabyDobSwitchSerializer(BaseEventSerializer):
     class Meta:
         model = BabyDobSwitch
+        fields = "__all__"
+        read_only_fields = ("id", "created_by")
+
+
+class AskFeedbackSerializer(BaseEventSerializer):
+    class Meta:
+        model = AskFeedback
         fields = "__all__"
         read_only_fields = ("id", "created_by")
 
