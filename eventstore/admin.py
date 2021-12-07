@@ -5,6 +5,7 @@ from django.utils.functional import cached_property
 
 from eventstore.forms import MomConnectImportForm
 from eventstore.models import (
+    AskFeedback,
     BabyDobSwitch,
     BabySwitch,
     CDUAddressUpdate,
@@ -153,6 +154,12 @@ class EddSwitchAdmin(BaseEventAdmin):
 class BabyDobSwitchAdmin(BaseEventAdmin):
     readonly_fields = ("id", "created_by", "timestamp")
     list_display = ("contact_id", "source", "timestamp")
+
+
+@admin.register(AskFeedback)
+class AskFeedbackAdmin(BaseEventAdmin):
+    readonly_fields = ("id", "created_by", "timestamp")
+    list_display = ("contact_id", "question_answered", "timestamp")
 
 
 @admin.register(Covid19Triage)
