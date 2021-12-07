@@ -153,7 +153,7 @@ class EddSwitchAdmin(BaseEventAdmin):
 @admin.register(BabyDobSwitch)
 class BabyDobSwitchAdmin(BaseEventAdmin):
     readonly_fields = ("id", "created_by", "timestamp")
-    list_display = ("contact_id", "source", "timestamp")
+    list_display = ("contact_id", "question_answered", "timestamp")
 
 
 @admin.register(AskFeedback)
