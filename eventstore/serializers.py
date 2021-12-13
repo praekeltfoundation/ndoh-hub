@@ -4,7 +4,6 @@ from datetime import timezone
 from rest_framework import serializers
 
 from eventstore.models import (
-    AskFeedback,
     BabyDobSwitch,
     BabySwitch,
     CDUAddressUpdate,
@@ -14,6 +13,7 @@ from eventstore.models import (
     Covid19TriageStart,
     DBEOnBehalfOfProfile,
     EddSwitch,
+    Feedback,
     HealthCheckUserProfile,
     IdentificationSwitch,
     LanguageSwitch,
@@ -355,9 +355,9 @@ class BabyDobSwitchSerializer(BaseEventSerializer):
         read_only_fields = ("id", "created_by")
 
 
-class AskFeedbackSerializer(BaseEventSerializer):
+class FeedbackSerializer(BaseEventSerializer):
     class Meta:
-        model = AskFeedback
+        model = Feedback
         fields = "__all__"
         read_only_fields = ("id", "created_by")
 
