@@ -52,7 +52,7 @@ class HandleTurnProfileTests(TestCase):
                 "chat": {
                     "assigned_to": None,
                     "owner": "+27836378500",
-                    "permalink": "https://app.turn.io/c/68cc14b3-6a4e-4962-82ed-c572c6836fdd",
+                    "permalink": "https://app.turn.io/c/68cc14-6a4e-4962-82ed-c576fdd",
                     "state": "OPEN",
                     "state_reason": "Re-opened by inbound message.",
                     "unread_count": 0,
@@ -81,7 +81,7 @@ class HandleTurnProfileTests(TestCase):
                 "chat": {
                     "assigned_to": None,
                     "owner": "+27836378500",
-                    "permalink": "https://app.turn.io/c/68cc14b3-6a4e-4962-82ed-c572c6836fdc",
+                    "permalink": "https://app.turn.io/c/68cc13-6a4e-4962-82ed-c572cfdc",
                     "state": "OPEN",
                     "state_reason": "Re-opened by inbound message.",
                     "unread_count": 0,
@@ -99,18 +99,16 @@ class HandleSendSlackMessage(TestCase):
     def setUp(self):
         self.contact_details = [
             {
-                "Rapid_Pro_Link: ": "http://rapidpro.qa.momconnect.co.za/contact/read/d62aabca-7b6c-4d32-a017-1a30a8a27663/",
-                "Turn_Profile_Link": "http://app.turn.io/c/68cc14b3-6a4e-4962-82ed-c572c6836fdc",
+                "Rapid_Pro_Link: ": "http://connect.co.za/contact/read/dc-7c-42-a1-a3/",
+                "Turn_Profile_Link": "http://app.turn.io/c/684b3-6ae-496-82d-c6c",
             },
             {
-                "Rapid_Pro_Link: ": "http://rapidpro.qa.momconnect.co.za/contact/read/b18cb592-5ee9-4e77-\
-                           a21c-f155df2a405d/",
-                "Turn_Profile_Link": "http://app.turn.io/c/0e10681a-13a2-4284-b961-d099a34bf74d",
+                "Rapid_Pro_Link: ": "http://connect.co.za/contact/read/b2-59-4e-ac-fd/",
+                "Turn_Profile_Link": "http://app.turn.io/c/0e11a-13a2-4284-b961-3474d",
             },
             {
-                "Rapid_Pro_Link: ": "http://rapidpro.qa.momconnect.co.za/contact/read/388412d0-22d1-469b-\
-                           b0ab-230c55170903/",
-                "Turn_Profile_Link": "http://app.turn.io/c/cda524fb-80b9-40c0-a3e2-a452b725b697",
+                "Pro_Link: ": "http://connect.co.za/contact/read/341-2d1-49b-b0b-230c/",
+                "Profile_Link": "http://app.turn.io/c/cda524fb-80b9-40c0-a3e2-a452b797",
             },
         ]
 
