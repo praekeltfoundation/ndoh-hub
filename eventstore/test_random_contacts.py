@@ -10,7 +10,11 @@ class HandleRapidProContactsTests(TestCase):
         random_contacts.rapidpro = TembaClient("textit.in", "test-token")
 
     @responses.activate
-    @override_settings(RAPIDPRO_URL="https://rapidpro", RAPIDPRO_TOKEN="rapidpro_token", EXTERNAL_REGISTRATIONS_V2=True)
+    @override_settings(
+        RAPIDPRO_URL="https://rapidpro",
+        RAPIDPRO_TOKEN="rapidpro_token",
+        EXTERNAL_REGISTRATIONS_V2=True,
+    )
     def test_get_contacts(self):
         responses.add(
             responses.GET,
@@ -31,7 +35,7 @@ class HandleRapidProContactsTests(TestCase):
 
         self.assertEqual(type(response), dict)
         self.assertEqual(type(response.get("results")), list)
-        self.assertIn('success', response)
+        self.assertIn("success", response)
 
 
 class HandleTurnProfileTests(TestCase):
@@ -117,13 +121,13 @@ class HandleSendSlackMessage(TestCase):
             responses.POST,
             "http://slack.com/api/chat.postMessage",
             json={
-                'ok': True,
+                "ok": True,
                 "token": "slack_token",
                 "channel": "test-mon",
                 "text": self.contact_details,
-                'deleted': False,
-                'updated': 1639475940,
-                'team_id': 'T0CJ9CT7W'
+                "deleted": False,
+                "updated": 1639475940,
+                "team_id": "T0CJ9CT7W",
             },
         )
 
