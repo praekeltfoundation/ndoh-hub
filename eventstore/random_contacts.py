@@ -1,13 +1,13 @@
-import requests
+import datetime
 from urllib.parse import urljoin
+
+import requests
+from celery.exceptions import SoftTimeLimitExceeded
 from django.conf import settings
 from ndoh_hub.celery import app
-from celery.exceptions import SoftTimeLimitExceeded
+from ndoh_hub.utils import get_today, rapidpro
 from requests.exceptions import RequestException
 from temba_client.exceptions import TembaHttpError
-import datetime
-from ndoh_hub.utils import rapidpro, get_today
-
 
 if settings.EXTERNAL_REGISTRATIONS_V2:
     if settings.TURN_URL and settings.TURN_TOKEN:

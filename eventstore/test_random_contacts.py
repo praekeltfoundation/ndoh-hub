@@ -1,8 +1,7 @@
-from django.test import TestCase, override_settings
-from temba_client.v2 import TembaClient
-
-from eventstore import random_contacts
 import responses
+from django.test import TestCase, override_settings
+from eventstore import random_contacts
+from temba_client.v2 import TembaClient
 
 
 class HandleRapidProContactsTests(TestCase):
