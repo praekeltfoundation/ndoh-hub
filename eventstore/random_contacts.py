@@ -33,7 +33,7 @@ if settings.EXTERNAL_REGISTRATIONS_V2:
 def get_contacts():
     # modified before and after datetime
     before = get_today()
-    after = get_today() - datetime.timedelta(days=6)
+    after = get_today() - datetime.timedelta(days=16)
     contact_details = []
     try:
         for contact_batch in rapidpro.get_contacts(
@@ -97,6 +97,7 @@ def send_slack_message(contact_details):
                 "text": contact_details,
             },
         ).json()
+
         if response:
             if response["ok"]:
                 return True
