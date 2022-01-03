@@ -26,6 +26,7 @@ from ndoh_hub.constants import (  # noqa:F401
     PASSPORT_ORIGINS,
     WHATSAPP_LANGUAGE_MAP,
 )
+import random
 
 sbm_client = StageBasedMessagingApiClient(
     api_url=settings.STAGE_BASED_MESSAGING_URL,
@@ -215,3 +216,21 @@ class TokenAuthQueryString(CachedTokenAuthentication):
         if token is not None:
             return self.authenticate_credentials(token)
         return None
+
+
+def get_random_date():
+    start_date = datetime.date(2020, 1, 1)
+    today = datetime.datetime.now()
+    year = today.year
+    month = today.month
+    day = today.day
+
+    end_date = datetime.date(year, month, day)
+
+    time_between_dates = end_date - start_date
+    days_between_dates = time_between_dates.days
+
+    random_number_of_days = random.randrange(days_between_dates)
+
+    random_date = start_date + datetime.timedelta(days=random_number_of_days)
+    return random_date

@@ -32,7 +32,7 @@ from eventstore.models import (
     ResearchOptinSwitch,
 )
 from ndoh_hub.celery import app
-from ndoh_hub.utils import get_mom_age, get_today, rapidpro
+from ndoh_hub.utils import get_mom_age, get_today, rapidpro, get_random_date
 from registrations.models import ClinicCode
 from registrations.tasks import request_to_jembi_api
 from requests.exceptions import RequestException
@@ -554,23 +554,24 @@ if settings.RAPIDPRO_URL and settings.RAPIDPRO_TOKEN:
 )
 def post_random_contacts_to_slack_channel():
     # modified before and after datetime
-    before = get_today()
-    after = get_today() - timedelta(days=16)
+    before = get_random_date()
+    after = before + timedelta(days=16)
     contact_details = []
-    try:
-        for contact_batch in rapidpro.get_contacts(
-            before=before, after=after
-        ).iterfetches(retry_on_rate_exceed=True):
-            for contact in contact_batch:
-                contact_uuid = contact.uuid
-                contact_urns = contact.urns
 
-                if contact_uuid and contact_urns:
-                    whatsapp_number = [
-                        i.split(":")[1] for i in contact_urns if "whatsapp" in i
-                    ]
+    for contact_batch in rapidpro.get_contacts(
+        before=before, after=after
+    ).iterfetches(retry_on_rate_exceed=True):
+        for contact in contact_batch:
+            contact_uuid = contact.uuid
+            contact_urns = contact.urns
 
-                    if whatsapp_number:
+            if contact_uuid and contact_urns:
+                whatsapp_number = [
+                    i.split(":")[1] for i in contact_urns if "whatsapp" in i
+                ]
+
+                if whatsapp_number:
+                    while len(contact_details) < settings.RANDOM_CONTACT_LIMIT:
                         contact = whatsapp_number[0]
                         profile_link = get_turn_profile_link(contact)
 
@@ -583,48 +584,40 @@ def post_random_contacts_to_slack_channel():
 
                             contact_details.append(links)
 
-        if contact_details:
-            sent = send_slack_message(contact_details)
-            return {"success": sent, "results": contact_details}
-        return {"success": False, "results": contact_details}
-    except TembaHttpError:
-        return {"success": False, "results": contact_details}
+    if contact_details:
+        sent = send_slack_message(contact_details)
+        return {"success": sent, "results": contact_details}
+    return {"success": False, "results": contact_details}
 
 
 def get_turn_profile_link(contact):
     turn_link = None
 
     if contact:
-        try:
-            turn_url = turn_api.format(contact)
+        turn_url = turn_api.format(contact)
 
-            profile = requests.get(url=turn_url, headers=turn_header)
+        profile = requests.get(url=turn_url, headers=turn_header)
 
-            if profile:
-                # Get turn message link
-                turn_link = profile.json().get("chat").get("permalink")
-        except RequestException:
-            return turn_link
+        if profile:
+            # Get turn message link
+            turn_link = profile.json().get("chat").get("permalink")
     return turn_link
 
 
 def send_slack_message(contact_details):
     # Send message to slack
     if settings.SLACK_URL and settings.SLACK_TOKEN:
-        try:
-            response = requests.post(
-                urljoin(settings.SLACK_URL, "/api/chat.postMessage"),
-                {
-                    "token": settings.SLACK_TOKEN,
-                    "channel": "test-mon",
-                    "text": contact_details,
-                },
-            ).json()
+        response = requests.post(
+            urljoin(settings.SLACK_URL, "/api/chat.postMessage"),
+            {
+                "token": settings.SLACK_TOKEN,
+                "channel": "test-mon",
+                "text": contact_details,
+            },
+        ).json()
 
-            if response:
-                if response["ok"]:
-                    return True
-                return False
-        except RequestException:
+        if response:
+            if response["ok"]:
+                return True
             return False
     return False
