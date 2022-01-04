@@ -4,20 +4,16 @@ import base64
 import datetime
 import hmac
 import json
+import random
 from hashlib import sha256
+from urllib.parse import urljoin
 
 import phonenumbers
 import pkg_resources
+import requests
 import six
 from django.conf import settings
 from django_redis import get_redis_connection
-from rest_framework.exceptions import AuthenticationFailed
-from seed_services_client.identity_store import IdentityStoreApiClient
-from seed_services_client.message_sender import MessageSenderApiClient
-from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
-from temba_client.v2 import TembaClient
-from wabclient import Client as WABClient
-
 from ndoh_hub.auth import CachedTokenAuthentication
 from ndoh_hub.constants import (  # noqa:F401
     ID_TYPES,
@@ -26,10 +22,12 @@ from ndoh_hub.constants import (  # noqa:F401
     PASSPORT_ORIGINS,
     WHATSAPP_LANGUAGE_MAP,
 )
-import random
-import requests
-from urllib.parse import urljoin
-
+from rest_framework.exceptions import AuthenticationFailed
+from seed_services_client.identity_store import IdentityStoreApiClient
+from seed_services_client.message_sender import MessageSenderApiClient
+from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
+from temba_client.v2 import TembaClient
+from wabclient import Client as WABClient
 
 sbm_client = StageBasedMessagingApiClient(
     api_url=settings.STAGE_BASED_MESSAGING_URL,
@@ -238,11 +236,7 @@ def send_slack_message(channel, text):
     if settings.SLACK_URL and settings.SLACK_TOKEN:
         response = requests.post(
             urljoin(settings.SLACK_URL, "/api/chat.postMessage"),
-            {
-                "token": settings.SLACK_TOKEN,
-                "channel": channel,
-                "text": text,
-            },
+            {"token": settings.SLACK_TOKEN, "channel": channel, "text": text},
         ).json()
 
         if response:
