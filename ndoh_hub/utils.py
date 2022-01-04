@@ -27,6 +27,9 @@ from ndoh_hub.constants import (  # noqa:F401
     WHATSAPP_LANGUAGE_MAP,
 )
 import random
+import requests
+from urllib.parse import urljoin
+
 
 sbm_client = StageBasedMessagingApiClient(
     api_url=settings.STAGE_BASED_MESSAGING_URL,
@@ -220,17 +223,30 @@ class TokenAuthQueryString(CachedTokenAuthentication):
 
 def get_random_date():
     start_date = datetime.date(2020, 1, 1)
-    today = datetime.datetime.now()
-    year = today.year
-    month = today.month
-    day = today.day
-
-    end_date = datetime.date(year, month, day)
+    end_date = datetime.date.today()
 
     time_between_dates = end_date - start_date
     days_between_dates = time_between_dates.days
 
     random_number_of_days = random.randrange(days_between_dates)
 
-    random_date = start_date + datetime.timedelta(days=random_number_of_days)
-    return random_date
+    return start_date + datetime.timedelta(days=random_number_of_days)
+
+
+def send_slack_message(channel, text):
+    # Send message to slack
+    if settings.SLACK_URL and settings.SLACK_TOKEN:
+        response = requests.post(
+            urljoin(settings.SLACK_URL, "/api/chat.postMessage"),
+            {
+                "token": settings.SLACK_TOKEN,
+                "channel": channel,
+                "text": text,
+            },
+        ).json()
+
+        if response:
+            if response["ok"]:
+                return True
+            return False
+    return False

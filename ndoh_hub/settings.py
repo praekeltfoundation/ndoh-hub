@@ -236,7 +236,7 @@ CELERY_BROKER_URL = os.environ.get("BROKER_URL", "redis://localhost:6379/0")
 CELERY_TASK_DEFAULT_QUEUE = "ndoh_hub"
 CELERY_TASK_QUEUES = (Queue("ndoh_hub", Exchange("ndoh_hub"), routing_key="ndoh_hub"),)
 
-CELERY_TASK_ALWAYS_EAGER = False
+CELERY_TASK_ALWAYS_EAGER = True
 
 # Tell Celery where to find the tasks
 CELERY_IMPORTS = ("registrations.tasks", "changes.tasks", "eventstore.tasks")
@@ -368,4 +368,4 @@ ADA_CUSTOMIZATION_ID = env.str("ADA_CUSTOMIZATION_ID", "kh93qnNLps")
 
 SLACK_URL = env.str("SLACK_URL", None)
 SLACK_TOKEN = env.str("SLACK_TOKEN", None)
-RANDOM_CONTACT_LIMIT = env.str("RANDOM_CONTACT_LIMIT", 6)
+RANDOM_CONTACT_LIMIT = env.str("RANDOM_CONTACT_LIMIT", 11)

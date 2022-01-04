@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from urllib.parse import urljoin
 
 import phonenumbers
@@ -32,7 +32,13 @@ from eventstore.models import (
     ResearchOptinSwitch,
 )
 from ndoh_hub.celery import app
-from ndoh_hub.utils import get_mom_age, get_today, rapidpro, get_random_date
+from ndoh_hub.utils import (
+    get_mom_age,
+    get_random_date,
+    get_today,
+    rapidpro,
+    send_slack_message,
+)
 from registrations.models import ClinicCode
 from registrations.tasks import request_to_jembi_api
 from requests.exceptions import RequestException
@@ -533,17 +539,6 @@ def process_ada_assessment_notification(
     triage.save()
 
 
-if settings.TURN_URL and settings.TURN_TOKEN:
-    turn_api = settings.TURN_URL + "/v1/contacts/{}/messages"
-    turn_header = {
-        "Authorization": "Bearer {}".format(settings.TURN_TOKEN),
-        "Accept": "application/vnd.v1+json",
-    }
-
-if settings.RAPIDPRO_URL and settings.RAPIDPRO_TOKEN:
-    rapidpro_url = urljoin(settings.RAPIDPRO_URL, "/contact/read/{}/")
-
-
 @app.task(
     autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
     retry_backoff=True,
@@ -553,71 +548,66 @@ if settings.RAPIDPRO_URL and settings.RAPIDPRO_TOKEN:
     time_limit=15,
 )
 def post_random_contacts_to_slack_channel():
-    # modified before and after datetime
-    before = get_random_date()
-    after = before + timedelta(days=16)
-    contact_details = []
+    # Get 10 random contacts to post to slack channel
+    if settings.RAPIDPRO_URL and settings.RAPIDPRO_TOKEN:
+        rapidpro_url = urljoin(settings.RAPIDPRO_URL, "/contact/read/{}/")
 
-    for contact_batch in rapidpro.get_contacts(
-        before=before, after=after
-    ).iterfetches(retry_on_rate_exceed=True):
-        for contact in contact_batch:
-            contact_uuid = contact.uuid
-            contact_urns = contact.urns
+        contact_details = []
 
-            if contact_uuid and contact_urns:
-                whatsapp_number = [
-                    i.split(":")[1] for i in contact_urns if "whatsapp" in i
-                ]
+        while len(contact_details) < settings.RANDOM_CONTACT_LIMIT:
+            # modified before and after datetime
+            before = get_random_date()
 
-                if whatsapp_number:
-                    while len(contact_details) < settings.RANDOM_CONTACT_LIMIT:
-                        contact = whatsapp_number[0]
-                        profile_link = get_turn_profile_link(contact)
+            for contact_batch in rapidpro.get_contacts(before=before).iterfetches(
+                retry_on_rate_exceed=True
+            ):
+                for contact in contact_batch:
+                    contact_uuid = contact.uuid
+                    contact_urns = contact.urns
 
-                        if profile_link:
-                            rapidpro_link = rapidpro_url.format(contact_uuid)
-                            links = {
-                                "Rapid Pro Link: ": rapidpro_link,
-                                "Turn Link": profile_link,
-                            }
+                    if contact_uuid and contact_urns:
+                        whatsapp_number = [
+                            i.split(":")[1] for i in contact_urns if "whatsapp" in i
+                        ]
 
-                            contact_details.append(links)
+                        if whatsapp_number:
+                            contact_number = whatsapp_number[0]
+                            profile_link = get_turn_profile_link(contact_number)
 
-    if contact_details:
-        sent = send_slack_message(contact_details)
-        return {"success": sent, "results": contact_details}
-    return {"success": False, "results": contact_details}
+                            if profile_link:
+                                rapidpro_link = rapidpro_url.format(contact_uuid)
+                                links = {
+                                    "Rapid Pro Link: ": rapidpro_link,
+                                    "Turn Link": profile_link,
+                                }
+
+                                contact_details.append(links)
+                                break
+                break
+
+        if contact_details:
+            sent = send_slack_message("test-mon", contact_details)
+            return {"success": sent, "results": contact_details}
+        return {"success": False, "results": contact_details}
 
 
-def get_turn_profile_link(contact):
+def get_turn_profile_link(contact_number):
     turn_link = None
 
-    if contact:
-        turn_url = turn_api.format(contact)
+    if settings.TURN_URL and settings.TURN_TOKEN:
+        turn_api = settings.TURN_URL + "/v1/contacts/{}/messages"
+        turn_header = {
+            "Authorization": "Bearer {}".format(settings.TURN_TOKEN),
+            "Accept": "application/vnd.v1+json",
+        }
 
-        profile = requests.get(url=turn_url, headers=turn_header)
+        if contact_number:
+            turn_url = turn_api.format(contact_number)
 
-        if profile:
-            # Get turn message link
-            turn_link = profile.json().get("chat").get("permalink")
+            profile = requests.get(url=turn_url, headers=turn_header)
+
+            if profile:
+                # Get turn message link
+                turn_link = profile.json().get("chat").get("permalink")
+        return turn_link
     return turn_link
-
-
-def send_slack_message(contact_details):
-    # Send message to slack
-    if settings.SLACK_URL and settings.SLACK_TOKEN:
-        response = requests.post(
-            urljoin(settings.SLACK_URL, "/api/chat.postMessage"),
-            {
-                "token": settings.SLACK_TOKEN,
-                "channel": "test-mon",
-                "text": contact_details,
-            },
-        ).json()
-
-        if response:
-            if response["ok"]:
-                return True
-            return False
-    return False
