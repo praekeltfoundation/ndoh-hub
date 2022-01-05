@@ -552,7 +552,7 @@ def post_random_contacts_to_slack_channel():
     if settings.RAPIDPRO_URL and settings.RAPIDPRO_TOKEN:
         rapidpro_url = urljoin(settings.RAPIDPRO_URL, "/contact/read/{}/")
 
-        contact_details = {}
+        contact_details = []
 
         while len(contact_details) < settings.RANDOM_CONTACT_LIMIT:
             turn_profile_link, contact_uuid = get_random_contact()
@@ -560,14 +560,15 @@ def post_random_contacts_to_slack_channel():
             if turn_profile_link and contact_uuid:
                 rapidpro_link = rapidpro_url.format(contact_uuid)
                 contact_number = len(contact_details) + 1
-                links = {
-                    contact_number: str(rapidpro_link) + " " + str(turn_profile_link)
-                }
 
-                contact_details.update(links)
+                contact_details.append(
+                    f"{contact_number} - {rapidpro_link} {turn_profile_link}"
+                )
 
         if contact_details and settings.SLACK_CHANNEL:
-            sent = send_slack_message(settings.SLACK_CHANNEL, str(contact_details))
+            sent = send_slack_message(
+                settings.SLACK_CHANNEL, "\n".join(contact_details)
+            )
             return {"success": sent, "results": contact_details}
         return {"success": False, "results": contact_details}
 
