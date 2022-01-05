@@ -559,10 +559,7 @@ def post_random_contacts_to_slack_channel():
             profile_link, contact_uuid = get_random_contact()
 
             rapidpro_link = rapidpro_url.format(contact_uuid)
-            links = {
-                "Rapid Pro Link: ": rapidpro_link,
-                "Turn Link": profile_link,
-            }
+            links = {"Rapid Pro Link: ": rapidpro_link, "Turn Link": profile_link}
 
             contact_details.append(links)
 
@@ -580,7 +577,9 @@ def get_turn_profile_link(contact_number):
         }
 
         if contact_number:
-            turn_url = settings.TURN_URL + "/v1/contacts/{}/messages".format(contact_number)
+            turn_url = settings.TURN_URL + "/v1/contacts/{}/messages".format(
+                contact_number
+            )
 
             profile = requests.get(url=turn_url, headers=turn_header)
 
