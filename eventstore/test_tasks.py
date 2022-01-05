@@ -4,11 +4,11 @@ from unittest import mock
 
 import responses
 from django.test import TestCase, override_settings
-from temba_client.v2 import TembaClient
-
 from eventstore import tasks
 from eventstore.models import Covid19Triage, ImportError, ImportRow, MomConnectImport
+from ndoh_hub import utils
 from registrations.models import ClinicCode
+from temba_client.v2 import TembaClient
 
 
 def override_get_today():
@@ -765,7 +765,7 @@ class GetTurnContactProfileTests(TestCase):
 
         self.assertEqual(type(response), str)
         self.assertEqual(
-            str(response), "https://app.turn.io/c/68cc14b3-6a4e-4962-82ed-c572c6836fdd"
+            str(response), "https://app.turn.io/c/68cc14-6a4e-4962-82ed-c576fdd"
         )
         self.assertNotEqual(
             type(response), "https://app.turn.io/c/68cc14b3-6a4e-4962-82ed-c572c6836fdz"
@@ -829,6 +829,6 @@ class SendSlackMessageTests(TestCase):
             },
         )
 
-        response = tasks.send_slack_message(self.contact_details)
+        response = utils.send_slack_message("test-mom", str(self.contact_details))
 
         self.assertEqual(response, True)

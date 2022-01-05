@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from urllib.parse import urljoin
 
 import phonenumbers
@@ -8,9 +8,6 @@ import pytz
 import requests
 from celery.exceptions import SoftTimeLimitExceeded
 from django.conf import settings
-from requests.exceptions import RequestException
-from temba_client.exceptions import TembaHttpError
-
 from eventstore.models import (
     BabyDobSwitch,
     BabySwitch,
@@ -44,6 +41,8 @@ from ndoh_hub.utils import (
 )
 from registrations.models import ClinicCode
 from registrations.tasks import request_to_jembi_api
+from requests.exceptions import RequestException
+from temba_client.exceptions import TembaHttpError
 
 logger = logging.getLogger(__name__)
 
@@ -553,18 +552,22 @@ def post_random_contacts_to_slack_channel():
     if settings.RAPIDPRO_URL and settings.RAPIDPRO_TOKEN:
         rapidpro_url = urljoin(settings.RAPIDPRO_URL, "/contact/read/{}/")
 
-        contact_details = []
+        contact_details = {}
 
         while len(contact_details) < settings.RANDOM_CONTACT_LIMIT:
-            profile_link, contact_uuid = get_random_contact()
+            turn_profile_link, contact_uuid = get_random_contact()
 
-            rapidpro_link = rapidpro_url.format(contact_uuid)
-            links = {"Rapid Pro Link: ": rapidpro_link, "Turn Link": profile_link}
+            if turn_profile_link and contact_uuid:
+                rapidpro_link = rapidpro_url.format(contact_uuid)
+                contact_number = len(contact_details) + 1
+                links = {
+                    contact_number: str(rapidpro_link) + " " + str(turn_profile_link)
+                }
 
-            contact_details.append(links)
+                contact_details.update(links)
 
-        if contact_details:
-            sent = send_slack_message("test-mon", str(contact_details))
+        if contact_details and settings.SLACK_CHANNEL:
+            sent = send_slack_message(settings.SLACK_CHANNEL, str(contact_details))
             return {"success": sent, "results": contact_details}
         return {"success": False, "results": contact_details}
 
@@ -585,17 +588,19 @@ def get_turn_profile_link(contact_number):
 
             if profile:
                 # Get turn message link
-                return profile.json().get("chat").get("permalink")
+                return profile.json().get("chat", {}).get("permalink")
 
 
 def get_random_contact():
-    # modified before and after datetime
-    before = get_random_date()
+    # After date must be lass then before date
+    after = get_random_date()
+    before = after + timedelta(days=1)
 
-    for contact_batch in rapidpro.get_contacts(before=before).iterfetches(
+    for contact_batch in rapidpro.get_contacts(after=after, before=before).iterfetches(
         retry_on_rate_exceed=True
     ):
         for contact in contact_batch:
+            print(contact)
             contact_uuid = contact.uuid
             contact_urns = contact.urns
 
