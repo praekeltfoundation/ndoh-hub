@@ -555,59 +555,58 @@ def post_random_contacts_to_slack_channel():
         contact_details = []
 
         while len(contact_details) < settings.RANDOM_CONTACT_LIMIT:
-            # modified before and after datetime
-            before = get_random_date()
+            profile_link, contact_uuid = get_random_contact()
 
-            for contact_batch in rapidpro.get_contacts(before=before).iterfetches(
-                retry_on_rate_exceed=True
-            ):
-                for contact in contact_batch:
-                    contact_uuid = contact.uuid
-                    contact_urns = contact.urns
+            rapidpro_link = rapidpro_url.format(contact_uuid)
+            links = {
+                "Rapid Pro Link: ": rapidpro_link,
+                "Turn Link": profile_link,
+            }
 
-                    if contact_uuid and contact_urns:
-                        whatsapp_number = [
-                            i.split(":")[1] for i in contact_urns if "whatsapp" in i
-                        ]
-
-                        if whatsapp_number:
-                            contact_number = whatsapp_number[0]
-                            profile_link = get_turn_profile_link(contact_number)
-
-                            if profile_link:
-                                rapidpro_link = rapidpro_url.format(contact_uuid)
-                                links = {
-                                    "Rapid Pro Link: ": rapidpro_link,
-                                    "Turn Link": profile_link,
-                                }
-
-                                contact_details.append(links)
-                                break
-                break
+            contact_details.append(links)
 
         if contact_details:
-            sent = send_slack_message("test-mon", contact_details)
+            sent = send_slack_message("test-mon", str(contact_details))
             return {"success": sent, "results": contact_details}
         return {"success": False, "results": contact_details}
 
 
 def get_turn_profile_link(contact_number):
-    turn_link = None
-
     if settings.TURN_URL and settings.TURN_TOKEN:
-        turn_api = settings.TURN_URL + "/v1/contacts/{}/messages"
         turn_header = {
             "Authorization": "Bearer {}".format(settings.TURN_TOKEN),
             "Accept": "application/vnd.v1+json",
         }
 
         if contact_number:
-            turn_url = turn_api.format(contact_number)
+            turn_url = settings.TURN_URL + "/v1/contacts/{}/messages".format(contact_number)
 
             profile = requests.get(url=turn_url, headers=turn_header)
 
             if profile:
                 # Get turn message link
-                turn_link = profile.json().get("chat").get("permalink")
-        return turn_link
-    return turn_link
+                return profile.json().get("chat").get("permalink")
+
+
+def get_random_contact():
+    # modified before and after datetime
+    before = get_random_date()
+
+    for contact_batch in rapidpro.get_contacts(before=before).iterfetches(
+        retry_on_rate_exceed=True
+    ):
+        for contact in contact_batch:
+            contact_uuid = contact.uuid
+            contact_urns = contact.urns
+
+            if contact_uuid and contact_urns:
+                whatsapp_number = [
+                    i.split(":")[1] for i in contact_urns if "whatsapp" in i
+                ]
+
+                if whatsapp_number:
+                    contact_number = whatsapp_number[0]
+                    profile_link = get_turn_profile_link(contact_number)
+
+                    if profile_link:
+                        return profile_link, contact_uuid
