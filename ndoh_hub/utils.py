@@ -14,6 +14,13 @@ import requests
 import six
 from django.conf import settings
 from django_redis import get_redis_connection
+from rest_framework.exceptions import AuthenticationFailed
+from seed_services_client.identity_store import IdentityStoreApiClient
+from seed_services_client.message_sender import MessageSenderApiClient
+from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
+from temba_client.v2 import TembaClient
+from wabclient import Client as WABClient
+
 from ndoh_hub.auth import CachedTokenAuthentication
 from ndoh_hub.constants import (  # noqa:F401
     ID_TYPES,
@@ -22,12 +29,6 @@ from ndoh_hub.constants import (  # noqa:F401
     PASSPORT_ORIGINS,
     WHATSAPP_LANGUAGE_MAP,
 )
-from rest_framework.exceptions import AuthenticationFailed
-from seed_services_client.identity_store import IdentityStoreApiClient
-from seed_services_client.message_sender import MessageSenderApiClient
-from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
-from temba_client.v2 import TembaClient
-from wabclient import Client as WABClient
 
 sbm_client = StageBasedMessagingApiClient(
     api_url=settings.STAGE_BASED_MESSAGING_URL,
