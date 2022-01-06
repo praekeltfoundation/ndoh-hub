@@ -4,12 +4,11 @@ from unittest import mock
 
 import responses
 from django.test import TestCase, override_settings
-from temba_client.v2 import TembaClient
-
 from eventstore import tasks
 from eventstore.models import Covid19Triage, ImportError, ImportRow, MomConnectImport
 from ndoh_hub import utils
 from registrations.models import ClinicCode
+from temba_client.v2 import TembaClient
 
 
 def override_get_today():
@@ -712,24 +711,67 @@ class PostRandomContactsToSlackTests(TestCase):
 
     @responses.activate
     @override_settings(
-        RAPIDPRO_URL="https://rapidpro",
-        RAPIDPRO_TOKEN="rapidpro_token",
-        EXTERNAL_REGISTRATIONS_V2=True,
+        TURN_URL="https://turn", TURN_TOKEN="token", EXTERNAL_REGISTRATIONS_V2=True
     )
-    def test_get_contacts(self):
+    def test_post_random_contacts_to_slack_channel(self):
         responses.add(
             responses.GET,
-            "https://rapidpro/api/v2/contacts.json",
-            json=[
-                {
-                    "uuid": "148947f5-a3b6-4b6b-9e9b-25058b1b7800",
-                    "urns": ["whatsapp:27786159018"],
-                },
-                {
-                    "uuid": "128947f5-a3b6-4b3b-9e9b-25058b1b7801",
-                    "urns": ["whatsapp:27720001010", "tel:0102584697"],
-                },
-            ],
+            "https://textit.in/api/v2/contacts.json",
+            json={
+                "results": [
+                    {
+                        "uuid": "148947f5-a3b6-4b6b-9e9b-25058b1b7800",
+                        "name": "",
+                        "language": "eng",
+                        "groups": [],
+                        "fields": "",
+                        "blocked": False,
+                        "stopped": False,
+                        "created_on": "2015-11-11T08:30:24.922024+00:00",
+                        "modified_on": "2015-11-11T08:30:25.525936+00:00",
+                        "urns": ["whatsapp:27712345682"],
+                    },
+                    {
+                        "uuid": "128947f5-a3b6-4b3b-9e9b-25058b1b7801",
+                        "name": "",
+                        "language": "zul",
+                        "groups": [],
+                        "fields": "",
+                        "blocked": False,
+                        "stopped": False,
+                        "created_on": "2020-11-11T08:30:24.922024+00:00",
+                        "modified_on": "2021-11-11T08:30:25.525936+00:00",
+                        "urns": ["whatsapp:27720001010", "tel:0102584697"],
+                    },
+                ],
+                "next": None,
+            },
+        )
+
+        responses.add(
+            responses.GET,
+            "https://turn/v1/contacts/27712345682/messages",
+            json={
+                "chat": {
+                    "permalink": "https://turn.io/c/8cc14-6a4e-4f2-82ed-c5",
+                    "state_reason": "Re-opened by inbound message.",
+                    "unread_count": 0,
+                    "uuid": "68cc14b3-6a4e-4962-82ed-c572c6836fdd",
+                }
+            },
+        )
+
+        responses.add(
+            responses.GET,
+            "https://turn/v1/contacts/27720001010/messages",
+            json={
+                "chat": {
+                    "permalink": "https://turn.io/c/68c4-6ae-492-8ed-c6f",
+                    "state_reason": "Re-opened by inbound message.",
+                    "unread_count": 0,
+                    "uuid": "68h4b3-6a4e-4962-8ed-c572c36fdd",
+                }
+            },
         )
 
         response = tasks.post_random_contacts_to_slack_channel()
