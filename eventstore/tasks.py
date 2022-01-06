@@ -8,9 +8,6 @@ import pytz
 import requests
 from celery.exceptions import SoftTimeLimitExceeded
 from django.conf import settings
-from requests.exceptions import RequestException
-from temba_client.exceptions import TembaHttpError
-
 from eventstore.models import (
     BabyDobSwitch,
     BabySwitch,
@@ -44,6 +41,8 @@ from ndoh_hub.utils import (
 )
 from registrations.models import ClinicCode
 from registrations.tasks import request_to_jembi_api
+from requests.exceptions import RequestException
+from temba_client.exceptions import TembaHttpError
 
 logger = logging.getLogger(__name__)
 

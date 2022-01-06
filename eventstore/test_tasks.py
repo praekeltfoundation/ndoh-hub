@@ -4,12 +4,11 @@ from unittest import mock
 
 import responses
 from django.test import TestCase, override_settings
-from temba_client.v2 import TembaClient
-
 from eventstore import tasks
 from eventstore.models import Covid19Triage, ImportError, ImportRow, MomConnectImport
 from ndoh_hub import utils
 from registrations.models import ClinicCode
+from temba_client.v2 import TembaClient
 
 
 def override_get_today():
@@ -786,8 +785,8 @@ class PostRandomContactsToSlackTests(TestCase):
                 "ok": True,
                 "token": "slack_token",
                 "channel": "test-mon",
-                "text": """1: "http://connect.co.za/contact/read/dc-7c-42-a1-a3/ http://app.turn.io/c/684b3-6ae-496-82d-c6c"
-                2: "http://connect.co.za/contact/read/b2-59-4e-ac-fd/ http://app.turn.io/c/0e11a-13a2-4284-b961-3474d",
+                "text": """1: "http://con.co.za/contact/dc-7c-a3/ http://turn.io/c/683-66-82d-c"
+                2: "http://con.co.za/contact/b2-59-4ed/ http://turn.io/c/0e61-374d",
             """,
                 "deleted": False,
                 "updated": 1_639_475_940,
@@ -863,13 +862,13 @@ class SendSlackMessageTests(TestCase):
     def setUp(self):
         self.contact_details = [
             {
-                1: "http://connect.co.za/contact/read/dc-7c-42-a1-a3/ http://app.turn.io/c/684b3-6ae-496-82d-c6c"
+                1: "http://con.co.za/contact/dcc-42-a1-a3/ http://turn.io/c/6b3-6ad-c6c"
             },
             {
-                2: "http://connect.co.za/contact/read/b2-59-4e-ac-fd/ http://app.turn.io/c/0e11a-13a2-4284-b961-3474d"
+                2: "http://con.co.za/contact/b29-4e-ac-fd/ http://turn.io/c/ea-3b1-74d"
             },
             {
-                3: "http://connect.co.za/contact/read/341-2d1-49b-b0b-230c/ http://app.turn.io/c/cda524fb-80b9-40c0-a3e2-a452b797"
+                3: "http://con.co.za/contact/30b-230c/ http://turn.io/c/cd-0b-4ce2-a97"
             },
         ]
 
