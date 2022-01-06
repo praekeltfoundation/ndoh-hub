@@ -861,15 +861,9 @@ class GetTurnContactProfileTests(TestCase):
 class SendSlackMessageTests(TestCase):
     def setUp(self):
         self.contact_details = [
-            {
-                1: "http://con.co.za/contact/dcc-42-a1-a3/ http://turn.io/c/6b3-6ad-c6c"
-            },
-            {
-                2: "http://con.co.za/contact/b29-4e-ac-fd/ http://turn.io/c/ea-3b1-74d"
-            },
-            {
-                3: "http://con.co.za/contact/30b-230c/ http://turn.io/c/cd-0b-4ce2-a97"
-            },
+            {1: "http://con.co.za/contact/dcc-42-a1-a3/ http://turn.io/c/6b3-6ad-c6c"},
+            {2: "http://con.co.za/contact/b29-4e-ac-fd/ http://turn.io/c/ea-3b1-74d"},
+            {3: "http://con.co.za/contact/30b-230c/ http://turn.io/c/cd-0b-4ce2-a97"},
         ]
 
     @responses.activate
