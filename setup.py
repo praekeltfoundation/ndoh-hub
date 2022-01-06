@@ -19,7 +19,7 @@ setup(
         "psycopg2==2.7.5",
         "raven==6.9.0",
         "django-filter==2.0.0",
-        "celery==4.2.1",
+        "celery==5.2.2",
         "six==1.11.0",
         "django-rest-hooks==1.5.0",
         "requests==2.22.0",
