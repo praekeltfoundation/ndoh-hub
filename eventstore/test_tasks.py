@@ -712,7 +712,11 @@ class PostRandomContactsToSlackTests(TestCase):
 
     @responses.activate
     @override_settings(
-        TURN_URL="https://turn", TURN_TOKEN="token", EXTERNAL_REGISTRATIONS_V2=True
+        TURN_URL="https://turn",
+        TURN_TOKEN="token",
+        EXTERNAL_REGISTRATIONS_V2=True,
+        SLACK_CHANNEL="test-slack",
+        SLACK_URL="http://slack.com",
     )
     def test_post_random_contacts_to_slack_channel(self):
         responses.add(
@@ -772,6 +776,22 @@ class PostRandomContactsToSlackTests(TestCase):
                     "unread_count": 0,
                     "uuid": "68h4b3-6a4e-4962-8ed-c572c36fdd",
                 }
+            },
+        )
+
+        responses.add(
+            responses.POST,
+            "http://slack.com/api/chat.postMessage",
+            json={
+                "ok": True,
+                "token": "slack_token",
+                "channel": "test-mon",
+                "text": """1: "http://connect.co.za/contact/read/dc-7c-42-a1-a3/ http://app.turn.io/c/684b3-6ae-496-82d-c6c"
+                2: "http://connect.co.za/contact/read/b2-59-4e-ac-fd/ http://app.turn.io/c/0e11a-13a2-4284-b961-3474d",
+            """,
+                "deleted": False,
+                "updated": 1_639_475_940,
+                "team_id": "T0CJ9CT7W",
             },
         )
 
@@ -843,16 +863,13 @@ class SendSlackMessageTests(TestCase):
     def setUp(self):
         self.contact_details = [
             {
-                "Rapid_Pro_Link: ": "http://connect.co.za/contact/read/dc-7c-42-a1-a3/",
-                "Turn_Profile_Link": "http://app.turn.io/c/684b3-6ae-496-82d-c6c",
+                1: "http://connect.co.za/contact/read/dc-7c-42-a1-a3/ http://app.turn.io/c/684b3-6ae-496-82d-c6c"
             },
             {
-                "Rapid_Pro_Link: ": "http://connect.co.za/contact/read/b2-59-4e-ac-fd/",
-                "Turn_Profile_Link": "http://app.turn.io/c/0e11a-13a2-4284-b961-3474d",
+                2: "http://connect.co.za/contact/read/b2-59-4e-ac-fd/ http://app.turn.io/c/0e11a-13a2-4284-b961-3474d"
             },
             {
-                "Pro_Link: ": "http://connect.co.za/contact/read/341-2d1-49b-b0b-230c/",
-                "Profile_Link": "http://app.turn.io/c/cda524fb-80b9-40c0-a3e2-a452b797",
+                3: "http://connect.co.za/contact/read/341-2d1-49b-b0b-230c/ http://app.turn.io/c/cda524fb-80b9-40c0-a3e2-a452b797"
             },
         ]
 

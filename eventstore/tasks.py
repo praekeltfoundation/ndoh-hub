@@ -550,7 +550,7 @@ def process_ada_assessment_notification(
 )
 def post_random_contacts_to_slack_channel():
     # Get 10 random contacts to post to slack channel
-    if settings.RAPIDPRO_URL and settings.RAPIDPRO_TOKEN:
+    if settings.RAPIDPRO_URL and settings.RAPIDPRO_TOKEN and settings.SLACK_CHANNEL:
         rapidpro_url = urljoin(settings.RAPIDPRO_URL, "/contact/read/{}/")
 
         contact_details = []
@@ -566,7 +566,7 @@ def post_random_contacts_to_slack_channel():
                     f"{contact_number} - {rapidpro_link} {turn_profile_link}"
                 )
 
-        if contact_details and settings.SLACK_CHANNEL:
+        if contact_details:
             sent = send_slack_message(
                 settings.SLACK_CHANNEL, "\n".join(contact_details)
             )
@@ -602,7 +602,6 @@ def get_random_contact():
         retry_on_rate_exceed=True
     ):
         for contact in contact_batch:
-            print(contact)
             contact_uuid = contact.uuid
             contact_urns = contact.urns
 
