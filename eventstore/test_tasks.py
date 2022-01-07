@@ -716,6 +716,8 @@ class PostRandomContactsToSlackTests(TestCase):
         EXTERNAL_REGISTRATIONS_V2=True,
         SLACK_CHANNEL="test-slack",
         SLACK_URL="http://slack.com",
+        RAPIDPRO_URL="rapidpro",
+        RAPIDPRO_TOKEN="rapidpro-token"
     )
     def test_post_random_contacts_to_slack_channel(self):
         responses.add(
