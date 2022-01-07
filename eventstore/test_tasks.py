@@ -719,6 +719,7 @@ class PostRandomContactsToSlackTests(TestCase):
         SLACK_URL="http://slack.com",
         RAPIDPRO_URL="rapidpro",
         RAPIDPRO_TOKEN="rapidpro-token",
+        SLACK_TOKEN="slack-token",
     )
     def test_post_random_contacts_to_slack_channel(self):
         responses.add(
@@ -731,7 +732,7 @@ class PostRandomContactsToSlackTests(TestCase):
                         "name": "",
                         "language": "eng",
                         "groups": [],
-                        "fields": "",
+                        "fields": {"helpdesk_timeout": None},
                         "blocked": False,
                         "stopped": False,
                         "created_on": "2015-11-11T08:30:24.922024+00:00",
@@ -769,39 +770,21 @@ class PostRandomContactsToSlackTests(TestCase):
         )
 
         responses.add(
-            responses.GET,
-            "https://turn/v1/contacts/27720001010/messages",
-            json={
-                "chat": {
-                    "permalink": "https://turn.io/c/68c4-6ae-492-8ed-c6f",
-                    "state_reason": "Re-opened by inbound message.",
-                    "unread_count": 0,
-                    "uuid": "68h4b3-6a4e-4962-8ed-c572c36fdd",
-                }
-            },
-        )
-
-        responses.add(
-            responses.POST,
-            "http://slack.com/api/chat.postMessage",
-            json={
-                "ok": True,
-                "token": "slack_token",
-                "channel": "test-mon",
-                "text": """1: "http://con.co.za/contact/dc-7c-a3/ http://turn.io/c/683-66-82d-c"
-                2: "http://con.co.za/contact/b2-59-4ed/ http://turn.io/c/0e61-374d",
-            """,
-                "deleted": False,
-                "updated": 1_639_475_940,
-                "team_id": "T0CJ9CT7W",
-            },
+            responses.POST, "http://slack.com/api/chat.postMessage", json={"ok": True}
         )
 
         response = tasks.post_random_contacts_to_slack_channel()
 
+        slack_message = responses.calls[-1]
+
+        self.assertIn("success", response)
         self.assertEqual(type(response), dict)
         self.assertEqual(type(response.get("results")), list)
-        self.assertIn("success", response)
+        self.assertEqual(len((response.get("results"))), 10)
+        self.assertEqual(slack_message.request.method, "POST")
+        self.assertEqual(
+            slack_message.request.url, "http://slack.com/api/chat.postMessage"
+        )
 
 
 class GetTurnContactProfileTests(TestCase):

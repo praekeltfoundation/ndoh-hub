@@ -243,5 +243,4 @@ def send_slack_message(channel, text):
         if response:
             if response["ok"]:
                 return True
-            return False
     return False
