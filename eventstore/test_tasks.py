@@ -5,11 +5,12 @@ from unittest import mock
 import requests
 import responses
 from django.test import TestCase, override_settings
+from temba_client.v2 import TembaClient
+
 from eventstore import tasks
 from eventstore.models import Covid19Triage, ImportError, ImportRow, MomConnectImport
 from ndoh_hub import utils
 from registrations.models import ClinicCode
-from temba_client.v2 import TembaClient
 
 
 def override_get_today():
