@@ -786,6 +786,34 @@ class PostRandomContactsToSlackTests(TestCase):
         )
         self.assertIn("/contact/read/148947f5-a3b6-4b6b-9e9b-25058b1b7800/", slack_body)
 
+    @responses.activate
+    @override_settings(TURN_URL="https://turn", TURN_TOKEN="token")
+    def test_get_random_contact(self):
+        responses.add(
+            responses.GET,
+            "https://textit.in/api/v2/contacts.json",
+            json={"next": None, "previous": None, "results": []},
+        )
+
+        responses.add(
+            responses.GET,
+            "http://turn/v1/contacts/27781234567/messages",
+            json={
+                "chat": {
+                    "owner": "+27836378500",
+                    "permalink": "https://app.turn.io/c/68cc14-462-8ed-c5df",
+                    "uuid": "68cc14b3-6a4e-4962-82ed-c572c6836fdd",
+                }
+            },
+        )
+
+        data, response = tasks.get_random_contact()
+
+        contacts = responses.calls[-1]
+
+        self.assertEqual(contacts.request.body, None)
+        self.assertEqual(response, None)
+
 
 class GetTurnContactProfileTests(TestCase):
     def setUp(self):
