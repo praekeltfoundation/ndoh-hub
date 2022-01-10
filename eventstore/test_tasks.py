@@ -2,12 +2,14 @@ import datetime
 import json
 from unittest import mock
 
+import requests
 import responses
 from django.test import TestCase, override_settings
 from temba_client.v2 import TembaClient
 
 from eventstore import tasks
 from eventstore.models import Covid19Triage, ImportError, ImportRow, MomConnectImport
+from ndoh_hub import utils
 from registrations.models import ClinicCode
 
 
@@ -703,3 +705,171 @@ class ProcessAdaAssessmentNotificationTests(TestCase):
         )
         self.assertEqual(triage.created_by, "test"),
         self.assertEqual(triage.data, {"age": 30, "pregnant": False}),
+
+
+class PostRandomContactsToSlackTests(TestCase):
+    def setUp(self):
+        tasks.rapidpro = TembaClient("textit.in", "test-token")
+
+    @responses.activate
+    @override_settings(
+        TURN_URL="https://turn",
+        TURN_TOKEN="token",
+        EXTERNAL_REGISTRATIONS_V2=True,
+        SLACK_CHANNEL="test-slack",
+        SLACK_URL="http://slack.com",
+        RAPIDPRO_URL="rapidpro",
+        RAPIDPRO_TOKEN="rapidpro-token",
+        SLACK_TOKEN="slack-token",
+    )
+    def test_post_random_contacts_to_slack_channel(self):
+        responses.add(
+            responses.GET,
+            "https://textit.in/api/v2/contacts.json",
+            json={
+                "results": [
+                    {
+                        "uuid": "148947f5-a3b6-4b6b-9e9b-25058b1b7800",
+                        "name": "",
+                        "language": "eng",
+                        "groups": [],
+                        "fields": {"helpdesk_timeout": None},
+                        "blocked": False,
+                        "stopped": False,
+                        "created_on": "2015-11-11T08:30:24.922024+00:00",
+                        "modified_on": "2015-11-11T08:30:25.525936+00:00",
+                        "urns": ["whatsapp:27712345682"],
+                    },
+                    {
+                        "uuid": "128947f5-a3b6-4b3b-9e9b-25058b1b7801",
+                        "name": "",
+                        "language": "zul",
+                        "groups": [],
+                        "fields": "",
+                        "blocked": False,
+                        "stopped": False,
+                        "created_on": "2020-11-11T08:30:24.922024+00:00",
+                        "modified_on": "2021-11-11T08:30:25.525936+00:00",
+                        "urns": ["whatsapp:27720001010", "tel:0102584697"],
+                    },
+                ],
+                "next": None,
+            },
+        )
+
+        responses.add(
+            responses.GET,
+            "https://turn/v1/contacts/27712345682/messages",
+            json={
+                "chat": {
+                    "permalink": "https://turn.io/c/8cc14-6a4e-4f2-82ed-c5",
+                    "state_reason": "Re-opened by inbound message.",
+                    "unread_count": 0,
+                    "uuid": "68cc14b3-6a4e-4962-82ed-c572c6836fdd",
+                }
+            },
+        )
+
+        responses.add(
+            responses.POST, "http://slack.com/api/chat.postMessage", json={"ok": True}
+        )
+
+        response = tasks.post_random_contacts_to_slack_channel()
+
+        slack_message = responses.calls[-1]
+        slack_body = requests.utils.unquote(slack_message.request.body)
+
+        self.assertIn("success", response)
+        self.assertEqual(len(response.get("results")), 10)
+        self.assertEqual(slack_message.request.method, "POST")
+        self.assertEqual(
+            slack_message.request.url, "http://slack.com/api/chat.postMessage"
+        )
+        self.assertIn("/contact/read/148947f5-a3b6-4b6b-9e9b-25058b1b7800/", slack_body)
+
+
+class GetTurnContactProfileTests(TestCase):
+    def setUp(self):
+        tasks.rapidpro = TembaClient("textit.in", "test-token")
+
+    @responses.activate
+    @override_settings(TURN_URL="http://turn", TURN_TOKEN="token")
+    def test_get_turn_profile_link(self):
+        responses.add(
+            responses.GET,
+            "http://turn/v1/contacts/27781234567/messages",
+            json={
+                "chat": {
+                    "assigned_to": None,
+                    "owner": "+27836378500",
+                    "permalink": "https://app.turn.io/c/68cc14-6a4e-4962-82ed-c576fdd",
+                    "state": "OPEN",
+                    "state_reason": "Re-opened by inbound message.",
+                    "unread_count": 0,
+                    "uuid": "68cc14b3-6a4e-4962-82ed-c572c6836fdd",
+                }
+            },
+            status=200,
+        )
+        response = tasks.get_turn_profile_link("27781234567")
+
+        self.assertEqual(type(response), str)
+        self.assertEqual(
+            str(response), "https://app.turn.io/c/68cc14-6a4e-4962-82ed-c576fdd"
+        )
+        self.assertNotEqual(
+            type(response), "https://app.turn.io/c/68cc14b3-6a4e-4962-82ed-c572c6836fdz"
+        )
+
+    @responses.activate
+    def test_get_turn_profile_link_none_contact(self):
+        contact = None
+        responses.add(
+            responses.GET,
+            "http://turn/v1/contacts//messages",
+            json={
+                "chat": {
+                    "assigned_to": None,
+                    "owner": "+27836378500",
+                    "permalink": "https://app.turn.io/c/68cc13-6a4e-4962-82ed-c572cfdc",
+                    "state": "OPEN",
+                    "state_reason": "Re-opened by inbound message.",
+                    "unread_count": 0,
+                    "uuid": "68cc14b3-6a4e-4962-82ed-c572c6836fdc",
+                }
+            },
+            status=200,
+        )
+        response = tasks.get_turn_profile_link(contact)
+
+        self.assertEqual(response, None)
+
+
+class SendSlackMessageTests(TestCase):
+    def setUp(self):
+        self.contact_details = [
+            {1: "http://con.co.za/contact/dcc-42-a1-a3/ http://turn.io/c/6b3-6ad-c6c"},
+            {2: "http://con.co.za/contact/b29-4e-ac-fd/ http://turn.io/c/ea-3b1-74d"},
+            {3: "http://con.co.za/contact/30b-230c/ http://turn.io/c/cd-0b-4ce2-a97"},
+        ]
+
+    @responses.activate
+    @override_settings(SLACK_URL="http://slack.com", SLACK_TOKEN="slack_token")
+    def test_send_slack_message(self):
+        responses.add(
+            responses.POST,
+            "http://slack.com/api/chat.postMessage",
+            json={
+                "ok": True,
+                "token": "slack_token",
+                "channel": "test-mon",
+                "text": self.contact_details,
+                "deleted": False,
+                "updated": 1_639_475_940,
+                "team_id": "T0CJ9CT7W",
+            },
+        )
+
+        response = utils.send_slack_message("test-mom", str(self.contact_details))
+
+        self.assertEqual(response, True)

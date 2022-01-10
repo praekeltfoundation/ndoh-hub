@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from urllib.parse import urljoin
 
 import phonenumbers
@@ -35,7 +35,13 @@ from eventstore.models import (
     ResearchOptinSwitch,
 )
 from ndoh_hub.celery import app
-from ndoh_hub.utils import get_mom_age, get_today, rapidpro
+from ndoh_hub.utils import (
+    get_mom_age,
+    get_random_date,
+    get_today,
+    rapidpro,
+    send_slack_message,
+)
 from registrations.models import ClinicCode
 from registrations.tasks import request_to_jembi_api
 
@@ -532,3 +538,81 @@ def process_ada_assessment_notification(
     triage.risk = triage.calculate_risk()
     triage.full_clean()
     triage.save()
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def post_random_contacts_to_slack_channel():
+    # Get 10 random contacts to post to slack channel
+    if settings.RAPIDPRO_URL and settings.RAPIDPRO_TOKEN and settings.SLACK_CHANNEL:
+        rapidpro_url = urljoin(settings.RAPIDPRO_URL, "/contact/read/{}/")
+
+        contact_details = []
+
+        while len(contact_details) < settings.RANDOM_CONTACT_LIMIT:
+            turn_profile_link, contact_uuid = get_random_contact()
+
+            if turn_profile_link and contact_uuid:
+                rapidpro_link = rapidpro_url.format(contact_uuid)
+                contact_number = len(contact_details) + 1
+
+                contact_details.append(
+                    f"{contact_number} - {rapidpro_link} {turn_profile_link}"
+                )
+
+        if contact_details:
+            sent = send_slack_message(
+                settings.SLACK_CHANNEL, "\n".join(contact_details)
+            )
+            return {"success": sent, "results": contact_details}
+        return {"success": False, "results": contact_details}
+
+
+def get_turn_profile_link(contact_number):
+    if settings.TURN_URL and settings.TURN_TOKEN:
+        turn_header = {
+            "Authorization": "Bearer {}".format(settings.TURN_TOKEN),
+            "Accept": "application/vnd.v1+json",
+        }
+
+        if contact_number:
+            turn_url = settings.TURN_URL + "/v1/contacts/{}/messages".format(
+                contact_number
+            )
+
+            profile = requests.get(url=turn_url, headers=turn_header)
+
+            if profile:
+                # Get turn message link
+                return profile.json().get("chat", {}).get("permalink")
+
+
+def get_random_contact():
+    # After date must be lass then before date
+    after = get_random_date()
+    before = after + timedelta(days=1)
+
+    for contact_batch in rapidpro.get_contacts(after=after, before=before).iterfetches(
+        retry_on_rate_exceed=True
+    ):
+        for contact in contact_batch:
+            contact_uuid = contact.uuid
+            contact_urns = contact.urns
+
+            if contact_uuid and contact_urns:
+                whatsapp_number = [
+                    i.split(":")[1] for i in contact_urns if "whatsapp" in i
+                ]
+
+                if whatsapp_number:
+                    contact_number = whatsapp_number[0]
+                    profile_link = get_turn_profile_link(contact_number)
+
+                    if profile_link:
+                        return profile_link, contact_uuid

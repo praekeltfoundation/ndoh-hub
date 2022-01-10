@@ -4,10 +4,13 @@ import base64
 import datetime
 import hmac
 import json
+import random
 from hashlib import sha256
+from urllib.parse import urljoin
 
 import phonenumbers
 import pkg_resources
+import requests
 import six
 from django.conf import settings
 from django_redis import get_redis_connection
@@ -215,3 +218,29 @@ class TokenAuthQueryString(CachedTokenAuthentication):
         if token is not None:
             return self.authenticate_credentials(token)
         return None
+
+
+def get_random_date():
+    start_date = datetime.date(2020, 1, 1)
+    end_date = datetime.date.today()
+
+    time_between_dates = end_date - start_date
+    days_between_dates = time_between_dates.days
+
+    random_number_of_days = random.randrange(days_between_dates)
+
+    return start_date + datetime.timedelta(days=random_number_of_days)
+
+
+def send_slack_message(channel, text):
+    # Send message to slack
+    if settings.SLACK_URL and settings.SLACK_TOKEN:
+        response = requests.post(
+            urljoin(settings.SLACK_URL, "/api/chat.postMessage"),
+            {"token": settings.SLACK_TOKEN, "channel": channel, "text": text},
+        ).json()
+
+        if response:
+            if response["ok"]:
+                return True
+    return False
