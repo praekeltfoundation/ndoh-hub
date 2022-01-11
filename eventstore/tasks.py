@@ -563,7 +563,8 @@ def post_random_contacts_to_slack_channel():
                 contact_number = len(contact_details) + 1
 
                 contact_details.append(
-                    f"{contact_number} - {rapidpro_link} {turn_profile_link}"
+                    f"{contact_number} - <{rapidpro_link}|RapidPro>"
+                    f" <{turn_profile_link}|Turn>"
                 )
 
         if contact_details:
