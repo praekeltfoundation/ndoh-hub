@@ -257,11 +257,22 @@ HANDLE_EXPIRED_HELPDESK_CONTACTS_HOUR = env.str(
     "HANDLE_EXPIRED_HELPDESK_CONTACTS_HOUR", "3"
 )
 
+RANDOM_CONTACTS_HOUR = env.str("RANDOM_CONTACTS_HOUR", "9")
+RANDOM_CONTACTS_DAY_OF_WEEK = env.str("RANDOM_CONTACTS_DAY_OF_WEEK", "5")
+
 CELERY_BEAT_SCHEDULE = {
     "handle-expired-helpdesk-contacts": {
         "task": "eventstore.tasks.handle_expired_helpdesk_contacts",
         "schedule": crontab(minute="0", hour=HANDLE_EXPIRED_HELPDESK_CONTACTS_HOUR),
-    }
+    },
+    "post-random-contacts-to-slack-channel": {
+        "task": "eventstore.tasks.post_random_contacts_to_slack_channel",
+        "schedule": crontab(
+            minute="0",
+            hour=RANDOM_CONTACTS_HOUR,
+            day_of_week=RANDOM_CONTACTS_DAY_OF_WEEK,
+        ),
+    },
 }
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
