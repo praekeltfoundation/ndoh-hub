@@ -1,4 +1,5 @@
 from django.test import TestCase
+
 from freezegun import freeze_time
 
 from .models import RedirectUrl, RedirectUrlsEntry
@@ -19,5 +20,5 @@ class TestAppModels(TestCase):
         self.assertEqual(
             str(url),
             "Url with parameter \n"
-            "None \nwas visited at 2021-05-06 07:24:14.014990+00:00",
+            "None \nwas visited at 2021-05-06 07:24:14.014990",
         )

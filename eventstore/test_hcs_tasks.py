@@ -12,7 +12,7 @@ class UpdateTurnContactTaskTest(TestCase):
     def test_update_turn_contact_task(self):
         responses.add(
             responses.PATCH,
-            f"https://turn/v1/contacts/27820001001/profile",
+            f"{'https://turn/v1/contacts/27820001001/profile'}",
             json={"test_field": "test_value"},
             status=201,
         )
@@ -22,6 +22,6 @@ class UpdateTurnContactTaskTest(TestCase):
         [patch] = responses.calls
 
         self.assertEqual(
-            patch.request.url, f"https://turn/v1/contacts/27820001001/profile"
+            patch.request.url, f"{'https://turn/v1/contacts/27820001001/profile'}"
         )
         self.assertEqual(json.loads(patch.request.body), {"test_field": "test_value"})

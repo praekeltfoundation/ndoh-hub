@@ -7,7 +7,7 @@ import phonenumbers
 import pytz
 import requests
 from celery.exceptions import SoftTimeLimitExceeded
-from celery.task import Task
+from celery import Task
 from celery.utils.log import get_task_logger
 from demands import HTTPServiceError
 from django.conf import settings

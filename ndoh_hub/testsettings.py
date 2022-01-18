@@ -1,4 +1,4 @@
-from ndoh_hub.settings import *  # flake8: noqa
+from ndoh_hub.settings import REST_FRAMEWORK  # flake8: noqa
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "TESTSEKRET"
