@@ -3,7 +3,6 @@ import json
 
 import responses
 from django.contrib.auth.models import User
-from django.core.management import call_command
 from django.db.models.signals import post_save
 from django.test import TestCase
 from rest_framework import status
@@ -12,7 +11,7 @@ from rest_framework.test import APIClient
 from rest_hooks.models import model_saved
 
 from ndoh_hub import utils, utils_tests
-from registrations.models import Registration, Source, SubscriptionRequest
+from registrations.models import Registration, Source
 from registrations.signals import psh_validate_subscribe
 
 from .models import Change
@@ -22,11 +21,6 @@ from .tasks import (
     restore_personally_identifiable_fields,
     validate_implement,
 )
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 
 def override_get_today():

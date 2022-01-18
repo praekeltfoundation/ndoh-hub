@@ -6,8 +6,8 @@ from uuid import UUID
 import phonenumbers
 import pytz
 import requests
-from celery.exceptions import SoftTimeLimitExceeded
 from celery import Task
+from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 from demands import HTTPServiceError
 from django.conf import settings
