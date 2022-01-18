@@ -30,7 +30,7 @@ jobs:
           key: ${{ hashFiles('requirements.txt', 'requirements-dev.txt') }}-pip
       - uses: actions/setup-python@v2
         with:
-          python-version: 3.6
+          python-version: 3.9
       - name: Install dependancies
         run: |
           python3 -m pip install --upgrade pip
