@@ -10,7 +10,7 @@ from registrations.models import Source
 
 @python_2_unicode_compatible
 class Change(models.Model):
-    """ A request to change a subscription
+    """A request to change a subscription
 
     Args:
         registrant_id (str): UUID of the registrant's identity

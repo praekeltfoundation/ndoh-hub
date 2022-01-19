@@ -910,7 +910,7 @@ class TestRegistrationCreation(AuthenticatedAPITestCase):
 
 class TestChangeValidation(AuthenticatedAPITestCase):
     def test_validate_baby_switch_good(self):
-        """ Good data baby_switch test """
+        """Good data baby_switch test"""
         # Setup
         change_data = {
             "registrant_id": "mother01-63e2-4acc-9b94-26663b9bc267",
@@ -927,7 +927,7 @@ class TestChangeValidation(AuthenticatedAPITestCase):
         self.assertEqual(change.validated, True)
 
     def test_validate_baby_switch_malformed_data(self):
-        """ Malformed data baby_switch test """
+        """Malformed data baby_switch test"""
         # Setup
         change_data = {
             "registrant_id": "mother01",

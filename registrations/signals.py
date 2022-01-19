@@ -2,8 +2,7 @@
 
 
 def psh_validate_subscribe(sender, instance, created, **kwargs):
-    """ Post save hook to fire Registration validation task
-    """
+    """Post save hook to fire Registration validation task"""
     if created:
         from .tasks import validate_subscribe
 

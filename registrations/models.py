@@ -9,9 +9,9 @@ from simple_history.models import HistoricalRecords
 
 @python_2_unicode_compatible
 class Source(models.Model):
-    """ The source from which a registation originates.
-        The User foreignkey is used to identify the source based on the
-        user's api token.
+    """The source from which a registation originates.
+    The User foreignkey is used to identify the source based on the
+    user's api token.
     """
 
     AUTHORITY_CHOICES = (
@@ -36,7 +36,7 @@ class Source(models.Model):
 
 @python_2_unicode_compatible
 class Registration(models.Model):
-    """ A registation submitted via Vumi or other sources.
+    """A registation submitted via Vumi or other sources.
 
     After a registation has been created, a task will fire that
     validates if the data provided is sufficient for the type
@@ -144,7 +144,7 @@ class Registration(models.Model):
 
 @python_2_unicode_compatible
 class SubscriptionRequest(models.Model):
-    """ A data model that maps to the Stagebased Store
+    """A data model that maps to the Stagebased Store
     Subscription model. Created after a successful Registration
     validation.
     """

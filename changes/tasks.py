@@ -45,16 +45,14 @@ is_client = IdentityStoreApiClient(
 
 
 class ValidateImplement(Task):
-    """ Task to apply a Change action.
-    """
+    """Task to apply a Change action."""
 
     name = "ndoh_hub.changes.tasks.validate_implement"
     log = get_task_logger(__name__)
 
     # Helpers
     def deactivate_all(self, change):
-        """ Deactivates all subscriptions for an identity
-        """
+        """Deactivates all subscriptions for an identity"""
         self.log.info("Retrieving active subscriptions")
         active_subs = sbm_client.get_subscriptions(
             {"identity": change.registrant_id, "active": True}
@@ -68,7 +66,7 @@ class ValidateImplement(Task):
         return True
 
     def deactivate_all_except_nurseconnect(self, change):
-        """ Deactivates all subscriptions for an identity that are not to
+        """Deactivates all subscriptions for an identity that are not to
         nurseconnect
         """
         self.log.info("Retrieving active subscriptions")
@@ -91,8 +89,7 @@ class ValidateImplement(Task):
         return True
 
     def deactivate_nurseconnect(self, change):
-        """ Deactivates nurseconnect subscriptions only
-        """
+        """Deactivates nurseconnect subscriptions only"""
         self.log.info("Retrieving messagesets")
         messagesets = sbm_client.get_messagesets()["results"]
         nc_messagesets = [
@@ -117,8 +114,7 @@ class ValidateImplement(Task):
             sbm_client.update_subscription(active_sub["id"], {"active": False})
 
     def deactivate_pmtct(self, change):
-        """ Deactivates any pmtct subscriptions
-        """
+        """Deactivates any pmtct subscriptions"""
         self.log.info("Retrieving active subscriptions")
         active_subs = sbm_client.get_subscriptions(
             {"identity": change.registrant_id, "active": True}
@@ -189,7 +185,7 @@ class ValidateImplement(Task):
 
     # Action implementation
     def baby_switch(self, change):
-        """ This should be applied when a mother has her baby. Currently it
+        """This should be applied when a mother has her baby. Currently it
         only changes the pmtct subscription, but in the future it will also
         change her momconnect subscription.
         """
@@ -211,7 +207,7 @@ class ValidateImplement(Task):
         return push_momconnect_babyswitch_to_jembi.si(str(change.pk))
 
     def pmtct_loss_switch(self, change):
-        """ Deactivate any active momconnect & pmtct subscriptions, then
+        """Deactivate any active momconnect & pmtct subscriptions, then
         subscribe them to loss messages.
         """
         self.log.info("Starting PMTCT switch to loss")
@@ -224,8 +220,7 @@ class ValidateImplement(Task):
             self.log.info("Aborted PMTCT switch to loss")
 
     def pmtct_loss_optout(self, change):
-        """ This only deactivates non-nurseconnect subscriptions
-        """
+        """This only deactivates non-nurseconnect subscriptions"""
         self.log.info("Starting PMTCT loss optout")
         self.deactivate_all_except_nurseconnect(change)
         self.log.info("Completed PMTCT loss optout")
@@ -233,7 +228,7 @@ class ValidateImplement(Task):
         return push_pmtct_optout_to_jembi.si(str(change.pk))
 
     def pmtct_nonloss_optout(self, change):
-        """ Identity optout only happens for SMS optout and is done
+        """Identity optout only happens for SMS optout and is done
         in the JS app. SMS optout deactivates all subscriptions,
         whereas USSD optout deactivates only pmtct subscriptions
         """
@@ -249,21 +244,21 @@ class ValidateImplement(Task):
         return push_pmtct_optout_to_jembi.si(str(change.pk))
 
     def nurse_update_detail(self, change):
-        """ This currently does nothing, but in a seperate issue this will
+        """This currently does nothing, but in a seperate issue this will
         handle sending the information update to Jembi
         """
         self.log.info("Starting nurseconnect detail update")
         self.log.info("Completed nurseconnect detail update")
 
     def nurse_change_msisdn(self, change):
-        """ This currently does nothing, but in a seperate issue this will
+        """This currently does nothing, but in a seperate issue this will
         handle sending the information update to Jembi
         """
         self.log.info("Starting nurseconnect msisdn change")
         self.log.info("Completed nurseconnect msisdn change")
 
     def nurse_optout(self, change):
-        """ The rest of the action required (opting out the identity on the
+        """The rest of the action required (opting out the identity on the
         identity store) is currently done via the ndoh-jsbox ussd_nurse
         app, we're only deactivating any NurseConnect subscriptions here.
         """
@@ -273,7 +268,7 @@ class ValidateImplement(Task):
         return push_nurseconnect_optout_to_jembi.si(str(change.pk))
 
     def momconnect_loss_switch(self, change):
-        """ Deactivate any active momconnect & pmtct subscriptions, then
+        """Deactivate any active momconnect & pmtct subscriptions, then
         subscribe them to loss messages.
         """
         self.log.info("Starting MomConnect switch to loss")
@@ -286,8 +281,7 @@ class ValidateImplement(Task):
             self.log.info("Aborted MomConnect switch to loss")
 
     def momconnect_loss_optout(self, change):
-        """ This only deactivates non-nurseconnect subscriptions
-        """
+        """This only deactivates non-nurseconnect subscriptions"""
         self.log.info("Starting MomConnect loss optout")
         self.deactivate_all_except_nurseconnect(change)
         self.log.info("Completed MomConnect loss optout")
@@ -295,7 +289,7 @@ class ValidateImplement(Task):
         return push_momconnect_optout_to_jembi.si(str(change.pk))
 
     def momconnect_nonloss_optout(self, change):
-        """ Identity optout only happens for SMS optout and is done
+        """Identity optout only happens for SMS optout and is done
         in the JS app. SMS optout deactivates all subscriptions,
         whereas USSD optout deactivates all except nurseconnect
         """
@@ -640,7 +634,7 @@ class ValidateImplement(Task):
 
     # Validate
     def validate(self, change):
-        """ Validates that all the required info is provided for a
+        """Validates that all the required info is provided for a
         change.
         """
         self.log.info("Starting change validation")
@@ -720,8 +714,7 @@ class ValidateImplement(Task):
 
     # Run
     def run(self, change_id, **kwargs):
-        """ Implements the appropriate action
-        """
+        """Implements the appropriate action"""
         self.log = self.get_logger(**kwargs)
         self.log.info("Looking up the change")
 

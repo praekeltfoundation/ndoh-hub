@@ -42,7 +42,7 @@ sr_client = ServiceRatingApiClient(
 
 
 def get_risk_status(reg_type, mom_dob, edd):
-    """ Determine the risk level of the mother """
+    """Determine the risk level of the mother"""
 
     # high risk if postbirth registration
     if "postbirth" in reg_type:
@@ -85,7 +85,7 @@ class HTTPRetryMixin(object):
 
 
 class ValidateSubscribe(Task):
-    """ Task to validate a registration model entry's registration
+    """Task to validate a registration model entry's registration
     data.
     """
 
@@ -208,7 +208,7 @@ class ValidateSubscribe(Task):
 
     # Validate
     def validate(self, registration):
-        """ Validates that all the required info is provided for a
+        """Validates that all the required info is provided for a
         registration.
         """
         self.log.info("Starting registration validation")
@@ -302,12 +302,16 @@ class ValidateSubscribe(Task):
         message set tells the user how to access the POPI required services.
         This should only be sent for Clinic or CHW registrations.
         """
-        if registration.reg_type not in (
-            "momconnect_prebirth",
-            "momconnect_postbirth",
-            "whatsapp_prebirth",
-            "whatsapp_postbirth",
-        ) or registration.source.authority not in ["hw_partial", "hw_full"]:
+        if (
+            registration.reg_type
+            not in (
+                "momconnect_prebirth",
+                "momconnect_postbirth",
+                "whatsapp_prebirth",
+                "whatsapp_postbirth",
+            )
+            or registration.source.authority not in ["hw_partial", "hw_full"]
+        ):
             return "POPI Subscription request not created"
 
         self.log.info("Fetching messageset")
@@ -332,10 +336,14 @@ class ValidateSubscribe(Task):
         Creates a new subscription request for the service info message set.
         This should only be created for momconnect whatsapp registrations.
         """
-        if registration.reg_type not in (
-            "whatsapp_prebirth",
-            "whatsapp_postbirth",
-        ) or registration.source.authority in ["hw_partial", "patient"]:
+        if (
+            registration.reg_type
+            not in (
+                "whatsapp_prebirth",
+                "whatsapp_postbirth",
+            )
+            or registration.source.authority in ["hw_partial", "patient"]
+        ):
             return
 
         self.log.info("Fetching messageset")
@@ -369,7 +377,7 @@ class ValidateSubscribe(Task):
 
     # Create SubscriptionRequest
     def create_subscriptionrequests(self, registration):
-        """ Create SubscriptionRequest(s) based on the
+        """Create SubscriptionRequest(s) based on the
         validated registration.
         """
         self.log.info("Starting subscriptionrequest creation")
@@ -378,10 +386,14 @@ class ValidateSubscribe(Task):
         weeks = 1  # default week number
 
         # . calculate weeks along
-        if registration.reg_type in (
-            "momconnect_prebirth",
-            "whatsapp_prebirth",
-        ) and registration.source.authority not in ["hw_partial", "patient"]:
+        if (
+            registration.reg_type
+            in (
+                "momconnect_prebirth",
+                "whatsapp_prebirth",
+            )
+            and registration.source.authority not in ["hw_partial", "patient"]
+        ):
             weeks = utils.get_pregnancy_week(
                 utils.get_today(), registration.data["edd"]
             )
@@ -428,8 +440,7 @@ class ValidateSubscribe(Task):
 
     # Create ServiceRating Invite
     def create_servicerating_invite(self, registration):
-        """ Create a new servicerating invite
-        """
+        """Create a new servicerating invite"""
         invite_data = {
             "identity": registration.registrant_id
             # could provide "invite" to override servicerating defaults
@@ -441,8 +452,7 @@ class ValidateSubscribe(Task):
 
     # Set risk status
     def set_risk_status(self, registration):
-        """ Determine the risk status of the mother and save it to her identity
-        """
+        """Determine the risk status of the mother and save it to her identity"""
         self.log.info("Calculating risk level")
         risk = get_risk_status(
             registration.reg_type,
@@ -501,7 +511,7 @@ class ValidateSubscribe(Task):
 
     # Run
     def run(self, registration_id, **kwargs):
-        """ Sets the registration's validated field to True if
+        """Sets the registration's validated field to True if
         validation is successful.
         """
         self.log = self.get_logger(**kwargs)
@@ -1029,8 +1039,7 @@ class BasePushRegistrationToJembi(object):
 
 
 class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
-    """ Task to push registration data to Jembi
-    """
+    """Task to push registration data to Jembi"""
 
     name = "ndoh_hub.registrations.tasks.push_registration_to_jembi"
     log = get_task_logger(__name__)
@@ -1052,7 +1061,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
         return authority_map[authority]
 
     def get_software_type(self, registration):
-        """ Get the software type (swt) code Jembi expects """
+        """Get the software type (swt) code Jembi expects"""
         if registration.data.get("swt", None):
             return registration.data.get("swt")
         if "whatsapp" in registration.reg_type:
@@ -1077,7 +1086,7 @@ class PushRegistrationToJembi(BasePushRegistrationToJembi, Task):
         }[lang]
 
     def build_jembi_json(self, registration):
-        """ Compile json to be sent to Jembi. """
+        """Compile json to be sent to Jembi."""
         self.log.info("Compiling Jembi Json data for PushRegistrationToJembi")
         authority = self.get_authority_from_source(registration.source)
 
@@ -1136,8 +1145,7 @@ push_registration_to_jembi = PushRegistrationToJembi()
 
 
 class PushPmtctRegistrationToJembi(PushRegistrationToJembi, Task):
-    """ Task to push PMTCT registration data to Jembi
-    """
+    """Task to push PMTCT registration data to Jembi"""
 
     name = "ndoh_hub.registrations.tasks.push_pmtct_registration_to_jembi"
     URL = "pmtctSubscription"
@@ -1195,7 +1203,7 @@ class PushNurseRegistrationToJembi(BasePushRegistrationToJembi, Task):
         return details.get("nurseconnect", {}).get("sanc_reg_no")
 
     def get_software_type(self, registration):
-        """ Get the software type (swt) code Jembi expects """
+        """Get the software type (swt) code Jembi expects"""
         if registration.data.get("swt", None):
             return registration.data.get("swt")
         if "whatsapp" in registration.reg_type:

@@ -168,7 +168,7 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class UserView(APIView):
-    """ API endpoint that allows users creation and returns their token.
+    """API endpoint that allows users creation and returns their token.
     Only admin users can do this to avoid permissions escalation.
     """
 
@@ -256,8 +256,7 @@ class RegistrationFilter(filters.FilterSet):
 
 
 class RegistrationGetViewSet(viewsets.ReadOnlyModelViewSet):
-    """ API endpoint that allows Registrations to be viewed.
-    """
+    """API endpoint that allows Registrations to be viewed."""
 
     permission_classes = (IsAuthenticated,)
     queryset = Registration.objects.all()
@@ -267,8 +266,7 @@ class RegistrationGetViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class JembiHelpdeskOutgoingView(APIView):
-    """ API endpoint that allows the helpdesk to post messages to Jembi
-    """
+    """API endpoint that allows the helpdesk to post messages to Jembi"""
 
     permission_classes = (IsAuthenticated,)
     UNCLASSIFIED_MESSAGES_DEFAULT_LABEL = "Unclassified"
@@ -278,8 +276,8 @@ class JembiHelpdeskOutgoingView(APIView):
             return date.strftime("%Y%m%d%H%M%S")
 
         def get_software_type(channel_id):
-            """ Returns the swt value based on the type of the Junebug channel.
-                Defaults to sms type
+            """Returns the swt value based on the type of the Junebug channel.
+            Defaults to sms type
             """
             if channel_id == "":
                 return 2
@@ -352,8 +350,8 @@ class JembiHelpdeskOutgoingView(APIView):
 
 class HealthcheckView(APIView):
 
-    """ Healthcheck Interaction
-        GET - returns service up - getting auth'd requires DB
+    """Healthcheck Interaction
+    GET - returns service up - getting auth'd requires DB
     """
 
     permission_classes = (IsAuthenticated,)
@@ -366,8 +364,8 @@ class HealthcheckView(APIView):
 
 class JembiFacilityCheckHealthcheckView(APIView):
 
-    """ Jembi Facility Check Healthcheck Interaction
-        GET - returns service up - getting auth'd requires DB
+    """Jembi Facility Check Healthcheck Interaction
+    GET - returns service up - getting auth'd requires DB
     """
 
     permission_classes = (IsAuthenticated,)
@@ -690,9 +688,9 @@ class JembiAppRegistrationStatus(APIView):
 
 class MetricsView(APIView):
 
-    """ Metrics Interaction
-        GET - returns list of all available metrics on the service
-        POST - starts up the task that fires all the scheduled metrics
+    """Metrics Interaction
+    GET - returns list of all available metrics on the service
+    POST - starts up the task that fires all the scheduled metrics
     """
 
     permission_classes = (IsAuthenticated,)
@@ -1126,9 +1124,9 @@ class WhatsAppContactCheckViewSet(mixins.CreateModelMixin, viewsets.GenericViewS
 
 
 class FacilityCodeCheckView(APIView):
-    """ Facility Code Check
-        GET - returns clinic name and clinic code for varification
-        getting auth'd requires DB
+    """Facility Code Check
+    GET - returns clinic name and clinic code for varification
+    getting auth'd requires DB
     """
 
     permission_classes = (IsAuthenticated,)
