@@ -26,7 +26,6 @@ from eventstore.models import (
     PublicRegistration,
     ResearchOptinSwitch,
 )
-from registrations.models import Registration
 
 from .validators import posix_timestamp
 
@@ -426,26 +425,3 @@ class ForgetContactSerializer(serializers.Serializer):
     contact_id = serializers.UUIDField(required=True)
 
 
-class RegistrationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Registration
-        read_only_fields = (
-            "validated",
-            "created_by",
-            "updated_by",
-            "created_at",
-            "updated_at",
-        )
-        fields = (
-            "id",
-            "external_id",
-            "reg_type",
-            "registrant_id",
-            "validated",
-            "data",
-            "source",
-            "created_at",
-            "updated_at",
-            "created_by",
-            "updated_by",
-        )
