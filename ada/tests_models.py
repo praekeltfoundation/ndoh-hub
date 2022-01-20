@@ -1,7 +1,7 @@
 from django.test import TestCase
 from freezegun import freeze_time
 
-from .models import RedirectUrl, RedirectUrlsEntry
+from ada.models import RedirectUrl, RedirectUrlsEntry
 
 
 class TestAppModels(TestCase):
@@ -18,5 +18,6 @@ class TestAppModels(TestCase):
         url = RedirectUrlsEntry.objects.create(symptom_check_url=urls)
         self.assertEqual(
             str(url),
-            "Url with parameter \n" "None \nwas visited at 2021-05-06 07:24:14.014990",
+            "Url with parameter \n"
+            "None \nwas visited at 2021-05-06 07:24:14.014990+00:00",
         )

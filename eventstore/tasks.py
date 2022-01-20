@@ -1,14 +1,19 @@
 import json
 import logging
 from datetime import date, datetime, timedelta
+from itertools import chain as ichain
+from itertools import dropwhile, takewhile
 from urllib.parse import urljoin
+from uuid import UUID
 
 import phonenumbers
 import pytz
 import requests
 from celery.exceptions import SoftTimeLimitExceeded
 from django.conf import settings
+from django.utils import dateparse
 from requests.exceptions import RequestException
+from seed_services_client.identity_store import IdentityStoreApiClient
 from temba_client.exceptions import TembaHttpError
 
 from eventstore.models import (
@@ -42,14 +47,58 @@ from ndoh_hub.utils import (
     rapidpro,
     send_slack_message,
 )
-from registrations.models import ClinicCode
-from registrations.tasks import request_to_jembi_api
+from registrations.models import ClinicCode, JembiSubmission, Registration
+
+
+@app.task
+def store_jembi_request(url, json_doc):
+    sub = JembiSubmission.objects.create(path=url, request_data=json_doc)
+    return sub.id, url, json_doc
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def push_to_jembi_api(args):
+    if not settings.ENABLE_JEMBI_EVENTS:
+        return
+    db_id, url, json_doc = args
+    r = requests.post(
+        url=urljoin(settings.JEMBI_BASE_URL, url),
+        headers={"Content-Type": "application/json"},
+        data=json.dumps(json_doc),
+        auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+        verify=False,
+    )
+    r.raise_for_status()
+    JembiSubmission.objects.filter(pk=db_id).update(
+        submitted=True,
+        response_status_code=r.status_code,
+        response_headers=dict(r.headers),
+        response_body=r.text,
+    )
+
+
+if settings.ENABLE_JEMBI_EVENTS:
+    request_to_jembi_api = store_jembi_request.s() | push_to_jembi_api.s()
+else:
+    request_to_jembi_api = store_jembi_request.s()
 
 logger = logging.getLogger(__name__)
 
 
 def get_utc_now():
     return datetime.now(tz=pytz.utc)
+
+
+is_client = IdentityStoreApiClient(
+    api_url=settings.IDENTITY_STORE_URL, auth_token=settings.IDENTITY_STORE_TOKEN
+)
 
 
 @app.task(
@@ -109,6 +158,58 @@ def get_rapidpro_contact_by_msisdn(context, field):
         .serialize()
     )
     return context
+
+
+@app.task()
+def remove_personally_identifiable_fields(registration_id):
+    """
+    Saves the personally identifiable fields to the identity, and then
+    removes them from the registration object.
+    """
+    registration = Registration.objects.get(id=registration_id)
+
+    fields = set(
+        (
+            "id_type",
+            "mom_dob",
+            "passport_no",
+            "passport_origin",
+            "sa_id_no",
+            "language",
+            "consent",
+            "mom_given_name",
+            "mom_family_name",
+            "mom_email",
+        )
+    ).intersection(registration.data.keys())
+    if fields:
+        identity = is_client.get_identity(registration.registrant_id)
+
+        for field in fields:
+            #  Language is stored as 'lang_code' in the Identity Store
+            if field == "language":
+                identity["details"]["lang_code"] = registration.data.pop(field)
+                continue
+            identity["details"][field] = registration.data.pop(field)
+
+        is_client.update_identity(identity["id"], {"details": identity["details"]})
+
+    msisdn_fields = set(("msisdn_device", "msisdn_registrant")).intersection(
+        registration.data.keys()
+    )
+    for field in msisdn_fields:
+        msisdn = registration.data.pop(field)
+        identities = is_client.get_identity_by_address("msisdn", msisdn)
+        try:
+            field_identity = next(identities["results"])
+        except StopIteration:
+            field_identity = is_client.create_identity(
+                {"details": {"addresses": {"msisdn": {msisdn: {}}}}}
+            )
+        field = field.replace("msisdn", "uuid")
+        registration.data[field] = field_identity["id"]
+
+    registration.save()
 
 
 @app.task(acks_late=True, soft_time_limit=10, time_limit=15, bind=True)
@@ -618,3 +719,129 @@ def get_random_contact():
                     if profile_link:
                         return profile_link, contact_uuid
     return None, None
+
+
+def get_text_or_caption_from_turn_message(message: dict) -> str:
+    """
+    Gets the text content of the message, or the caption if it's a media message, and
+    returns. Returns an empty string if no text content can be found.
+    """
+    try:
+        return message["text"]["body"]
+    except KeyError:
+        pass
+    for message_type in ("image", "document", "audio", "video", "voice", "sticker"):
+        try:
+            return message[message_type].get("caption", "<{}>".format(message_type))
+        except KeyError:
+            pass
+    try:
+        assert "contacts" in message
+        return "<contacts>"
+    except AssertionError:
+        pass
+    try:
+        return "<location {0[latitude]},{0[longitude]}>".format(message["location"])
+    except KeyError:
+        pass
+    try:
+        assert message["type"] == "unknown"
+        return "<unknown>"
+    except AssertionError:
+        pass
+    try:
+        assert message["type"] is None
+        return "<unknown>"
+    except AssertionError:
+        pass
+
+    raise ValueError("Unknown message type")
+
+
+def get_timestamp_from_turn_message(message: dict) -> datetime:
+    """
+    Gets the timestamp from a turn message, returns it as a timezone aware datetime
+    object.
+    """
+    try:
+        return datetime.fromtimestamp(int(message["timestamp"]), tz=pytz.utc)
+    except TypeError:
+        return dateparse.parse_datetime(message["_vnd"]["v1"]["inserted_at"])
+
+
+@app.task
+def get_engage_inbound_and_reply(wa_contact_id, message_id):
+    """
+    Fetches the messages for `wa_contact_id`, and returns details about the outbound
+    specified by `message_id`, as well as details about the possible inbound/s that
+    the outbound is responding to.
+
+    This is a best-guess effort, and isn't guaranteed to be correct.
+
+    Args:
+        wa_contact_id (str): The whatsapp ID for the contact
+        message_id (str): The message ID for the outbound
+
+    Returns:
+        dict:
+            inbound_text: The concatenated text body of the inbound/s
+            inbound_timestamp: The timestamp of the last inbound
+            inbound_address: The contact address of the inbound
+            reply_text: The text of the outbound
+            reply_timestamp: The timestamp of the outbound
+            reply_operator: The operator who sent the outbound
+    """
+
+    response = requests.get(
+        urljoin(settings.ENGAGE_URL, "v1/contacts/{}/messages".format(wa_contact_id)),
+        headers={
+            "Authorization": "Bearer {}".format(settings.ENGAGE_TOKEN),
+            "Accept": "application/vnd.v1+json",
+        },
+    )
+    response.raise_for_status()
+    messages = response.json()["messages"]
+
+    # Filter out outbounds that aren't from helpdesk operators
+    messages = filter(
+        lambda m: m["_vnd"]["v1"]["direction"] == "inbound"
+        or m["_vnd"]["v1"]["author"].get("type") == "OPERATOR",
+        messages,
+    )
+    # Sort in timestamp order, descending
+    messages = sorted(messages, key=get_timestamp_from_turn_message, reverse=True)
+    # Filter out all messages that came after after the one we care about
+    messages = dropwhile(lambda m: m["id"] != message_id, messages)
+
+    reply = next(messages)
+    # Text content is in an object placed at a key with the same name as the type,
+    # eg. {"type": "text", "text": {"body": "Message content"}}
+    reply_text = reply[reply["type"]]
+    # For text messages, message is in "body", for media, it's in "caption"
+    reply_text = reply_text.get("body") or reply_text.get("caption")
+    reply_timestamp = get_timestamp_from_turn_message(reply)
+    reply_operator = reply["_vnd"]["v1"]["author"]["id"]
+    reply_operator = UUID(reply_operator).int
+
+    # Remove all outbound from beginning now that we have the one we care about
+    messages = dropwhile(lambda m: m["_vnd"]["v1"]["direction"] == "outbound", messages)
+    # Get all the inbounds until the previous outbound, and join into single string
+    inbounds = list(
+        takewhile(lambda m: m["_vnd"]["v1"]["direction"] == "inbound", messages)
+    )
+    inbound_timestamp = get_timestamp_from_turn_message(inbounds[0])
+    inbound_address = inbounds[0]["from"]
+    inbound_text = map(get_text_or_caption_from_turn_message, inbounds)
+    inbound_text = " | ".join(list(inbound_text)[::-1])
+    labels = map(lambda m: m["_vnd"]["v1"]["labels"], inbounds)
+    labels = map(lambda l: l["value"], ichain.from_iterable(labels))
+
+    return {
+        "inbound_text": inbound_text or "No Question",
+        "inbound_timestamp": inbound_timestamp.timestamp(),
+        "inbound_address": inbound_address,
+        "inbound_labels": list(labels),
+        "reply_text": reply_text or "No Answer",
+        "reply_timestamp": reply_timestamp.timestamp(),
+        "reply_operator": reply_operator,
+    }

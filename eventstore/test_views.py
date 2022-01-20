@@ -12,6 +12,7 @@ from django.contrib.auth.models import Permission
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
+from pytz import UTC
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.renderers import JSONRenderer
@@ -1273,7 +1274,7 @@ class MessagesViewSetTests(APITestCase):
         [messages] = Message.objects.all()
         self.assertEqual(str(messages.contact_id), "sender-wa-id")
         self.assertEqual(
-            messages.timestamp, datetime.datetime(2018, 2, 15, 11, 38, 20)
+            messages.timestamp, datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
         ),
         self.assertEqual(messages.id, "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"),
         self.assertEqual(messages.type, "image"),
@@ -1454,7 +1455,9 @@ class MessagesViewSetTests(APITestCase):
         self.assertEqual(str(event.message_id), "ABGGFlA5FpafAgo6tHcNmNjXmuSf")
         self.assertEqual(str(event.recipient_id), "16315555555")
         self.assertEqual(event.status, "read")
-        self.assertEqual(event.timestamp, datetime.datetime(2018, 2, 15, 11, 38, 20))
+        self.assertEqual(
+            event.timestamp, datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+        )
         self.assertEqual(event.created_by, user.username)
         self.assertFalse(event.fallback_channel)
 

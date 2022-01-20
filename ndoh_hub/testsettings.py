@@ -1,4 +1,4 @@
-from ndoh_hub.settings import REST_FRAMEWORK  # flake8: noqa
+from ndoh_hub.settings import *  # noqa: F403 # flake8: noqa
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "TESTSEKRET"
@@ -13,7 +13,7 @@ CELERY_TASK_ALWAYS_EAGER = True
 
 PASSWORD_HASHERS = ("django.contrib.auth.hashers.MD5PasswordHasher",)
 
-REST_FRAMEWORK["PAGE_SIZE"] = 2
+REST_FRAMEWORK["PAGE_SIZE"] = 2  # noqa: F405
 
 IDENTITY_STORE_URL = "http://is/api/v1"
 STAGE_BASED_MESSAGING_URL = "http://sbm/api/v1"

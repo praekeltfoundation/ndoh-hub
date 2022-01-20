@@ -5,7 +5,7 @@ import functools
 import django.contrib.postgres.fields.jsonb
 from django.db import migrations, models
 
-import registrations.validators
+import eventstore.validators
 
 
 class Migration(migrations.Migration):
@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
                         serialize=False,
                         validators=[
                             functools.partial(
-                                registrations.validators._phone_number,
+                                eventstore.validators._phone_number,
                                 *(),
                                 **{"country": "ZA"}
                             )
@@ -97,7 +97,7 @@ class Migration(migrations.Migration):
                         blank=True,
                         default="",
                         max_length=255,
-                        validators=[registrations.validators.geographic_coordinate],
+                        validators=[eventstore.validators.geographic_coordinate],
                     ),
                 ),
                 (
@@ -107,7 +107,7 @@ class Migration(migrations.Migration):
                         default=None,
                         max_length=255,
                         null=True,
-                        validators=[registrations.validators.geographic_coordinate],
+                        validators=[eventstore.validators.geographic_coordinate],
                     ),
                 ),
                 (

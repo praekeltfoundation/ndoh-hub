@@ -1,7 +1,7 @@
 from django.test import SimpleTestCase
 from django.urls import resolve, reverse
 
-from .views import clickActivity, default_page
+from ada.views import clickActivity, default_page
 
 
 class TestUrls(SimpleTestCase):

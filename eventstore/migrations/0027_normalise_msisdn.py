@@ -6,7 +6,7 @@ import logging
 import phonenumbers
 from django.db import migrations, models
 
-import registrations.validators
+import eventstore.validators
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
                 max_length=255,
                 validators=[
                     functools.partial(
-                        registrations.validators._phone_number, *(), **{"country": "ZA"}
+                        eventstore.validators._phone_number, *(), **{"country": "ZA"}
                     )
                 ],
             ),

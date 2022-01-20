@@ -2,7 +2,7 @@
 
 from django.db import migrations, models
 
-import registrations.validators
+import eventstore.validators
 
 
 class Migration(migrations.Migration):
@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
                 default=None,
                 max_length=255,
                 null=True,
-                validators=[registrations.validators.geographic_coordinate],
+                validators=[eventstore.validators.geographic_coordinate],
             ),
         ),
         migrations.AddField(

@@ -9,6 +9,7 @@ from rest_framework import generics, permissions, serializers, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.exceptions import ValidationError
 from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin
+from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ViewSet
@@ -76,7 +77,21 @@ from eventstore.tasks import (
 )
 from eventstore.whatsapp_actions import handle_event, handle_inbound, handle_outbound
 from ndoh_hub.utils import TokenAuthQueryString, validate_signature
-from registrations.views import CursorPaginationFactory
+
+
+def CursorPaginationFactory(field):
+    """
+    Returns a CursorPagination class with the field specified by field
+    """
+
+    class CustomCursorPagination(CursorPagination):
+        ordering = field
+
+    name = "{}CursorPagination".format(field.capitalize())
+    CustomCursorPagination.__name__ = name
+    CustomCursorPagination.__qualname__ = name
+
+    return CustomCursorPagination
 
 
 class DjangoViewModelPermissions(DjangoModelPermissions):

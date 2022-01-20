@@ -117,7 +117,7 @@ class Registration(models.Model):
         """
         Returns the processing status information for the registration
         """
-        from registrations.serializers import RegistrationSerializer
+        from eventstore.serializers import RegistrationSerializer
 
         data = {
             "registration_id": str(self.external_id or self.id),

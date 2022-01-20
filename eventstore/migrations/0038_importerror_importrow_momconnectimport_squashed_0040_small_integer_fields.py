@@ -8,7 +8,6 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 import eventstore.validators
-import registrations.validators
 
 
 class Migration(migrations.Migration):
@@ -107,7 +106,7 @@ class Migration(migrations.Migration):
                         max_length=255,
                         validators=[
                             functools.partial(
-                                registrations.validators._phone_number,
+                                eventstore.validators._phone_number,
                                 *(),
                                 **{"country": "ZA"}
                             )
