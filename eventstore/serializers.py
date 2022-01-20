@@ -423,5 +423,3 @@ class AdaObservationSerializer(serializers.Serializer):
 
 class ForgetContactSerializer(serializers.Serializer):
     contact_id = serializers.UUIDField(required=True)
-
-
