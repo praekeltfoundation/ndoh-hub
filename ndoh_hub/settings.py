@@ -59,6 +59,7 @@ INSTALLED_APPS = (
     "django_prometheus",
     # us
     "registrations",
+    "changes",
     "eventstore",
     "ada",
 )
