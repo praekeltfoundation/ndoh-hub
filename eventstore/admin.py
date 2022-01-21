@@ -29,9 +29,6 @@ from eventstore.models import (
     PublicRegistration,
     ResearchOptinSwitch,
 )
-from registrations.models import Registration
-
-from .tasks import remove_personally_identifiable_fields
 
 
 class ApproximatePaginator(Paginator):
@@ -236,27 +233,3 @@ class MomConnectImportAdmin(admin.ModelAdmin):
         if obj is None:
             return ()
         return super().get_readonly_fields(request, obj)
-
-
-class RegistrationAdmin(admin.ModelAdmin):
-    list_display = [
-        "id",
-        "reg_type",
-        "validated",
-        "registrant_id",
-        "source",
-        "created_at",
-        "updated_at",
-        "created_by",
-        "updated_by",
-    ]
-    list_filter = ["source", "validated", "created_at"]
-    search_fields = ["registrant_id", "data"]
-    actions = ["remove_personal_information"]
-
-    def remove_personal_information(modeladmin, request, queryset):
-        for q in queryset.iterator():
-            remove_personally_identifiable_fields.delay(str(q.pk))
-
-
-admin.site.register(Registration, RegistrationAdmin)

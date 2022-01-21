@@ -13,7 +13,6 @@ from celery.exceptions import SoftTimeLimitExceeded
 from django.conf import settings
 from django.utils import dateparse
 from requests.exceptions import RequestException
-from seed_services_client.identity_store import IdentityStoreApiClient
 from temba_client.exceptions import TembaHttpError
 
 from eventstore.models import (
@@ -47,7 +46,7 @@ from ndoh_hub.utils import (
     rapidpro,
     send_slack_message,
 )
-from registrations.models import ClinicCode, JembiSubmission, Registration
+from registrations.models import ClinicCode, JembiSubmission
 
 
 @app.task
@@ -94,11 +93,6 @@ logger = logging.getLogger(__name__)
 
 def get_utc_now():
     return datetime.now(tz=pytz.utc)
-
-
-is_client = IdentityStoreApiClient(
-    api_url=settings.IDENTITY_STORE_URL, auth_token=settings.IDENTITY_STORE_TOKEN
-)
 
 
 @app.task(
@@ -158,58 +152,6 @@ def get_rapidpro_contact_by_msisdn(context, field):
         .serialize()
     )
     return context
-
-
-@app.task()
-def remove_personally_identifiable_fields(registration_id):
-    """
-    Saves the personally identifiable fields to the identity, and then
-    removes them from the registration object.
-    """
-    registration = Registration.objects.get(id=registration_id)
-
-    fields = set(
-        (
-            "id_type",
-            "mom_dob",
-            "passport_no",
-            "passport_origin",
-            "sa_id_no",
-            "language",
-            "consent",
-            "mom_given_name",
-            "mom_family_name",
-            "mom_email",
-        )
-    ).intersection(registration.data.keys())
-    if fields:
-        identity = is_client.get_identity(registration.registrant_id)
-
-        for field in fields:
-            #  Language is stored as 'lang_code' in the Identity Store
-            if field == "language":
-                identity["details"]["lang_code"] = registration.data.pop(field)
-                continue
-            identity["details"][field] = registration.data.pop(field)
-
-        is_client.update_identity(identity["id"], {"details": identity["details"]})
-
-    msisdn_fields = set(("msisdn_device", "msisdn_registrant")).intersection(
-        registration.data.keys()
-    )
-    for field in msisdn_fields:
-        msisdn = registration.data.pop(field)
-        identities = is_client.get_identity_by_address("msisdn", msisdn)
-        try:
-            field_identity = next(identities["results"])
-        except StopIteration:
-            field_identity = is_client.create_identity(
-                {"details": {"addresses": {"msisdn": {msisdn: {}}}}}
-            )
-        field = field.replace("msisdn", "uuid")
-        registration.data[field] = field_identity["id"]
-
-    registration.save()
 
 
 @app.task(acks_late=True, soft_time_limit=10, time_limit=15, bind=True)

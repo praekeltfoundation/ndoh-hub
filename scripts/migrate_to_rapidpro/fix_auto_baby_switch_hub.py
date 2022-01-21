@@ -19,7 +19,7 @@ async def process_babyswitch(session, row, target, jembi_writer):
     contact_id = row["contact_id"]
     timestamp = row["timestamp"]
 
-    url = urllib_parse.urljoin(HUB_URL, f"{'/api/v2/babyswitches/'}")
+    url = urllib_parse.urljoin(HUB_URL, "/api/v2/babyswitches/")
     headers = {
         "Authorization": f"TOKEN {HUB_TOKEN}",
         "Content-Type": "application/json",
