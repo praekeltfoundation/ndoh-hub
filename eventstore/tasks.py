@@ -677,25 +677,20 @@ def get_text_or_caption_from_turn_message(message: dict) -> str:
             return message[message_type].get("caption", "<{}>".format(message_type))
         except KeyError:
             pass
-    try:
-        assert "contacts" in message
+
+    if "contacts" in message:
         return "<contacts>"
-    except AssertionError:
-        pass
+
     try:
         return "<location {0[latitude]},{0[longitude]}>".format(message["location"])
     except KeyError:
         pass
-    try:
-        assert message["type"] == "unknown"
+
+    if message.get("type") == "unknown":
         return "<unknown>"
-    except AssertionError:
-        pass
-    try:
-        assert message["type"] is None
+
+    if message["type"] is None:
         return "<unknown>"
-    except AssertionError:
-        pass
 
     raise ValueError("Unknown message type")
 
