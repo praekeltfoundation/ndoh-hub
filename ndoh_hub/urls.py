@@ -82,6 +82,7 @@ urlpatterns = [
     url(r"^api/auth/", include("rest_framework.urls", namespace="rest_framework")),
     url(r"^api/token-auth/", obtain_auth_token),
     url(r"^docs/", include_docs_urls(title="NDOH Hub")),
+    url(r"^", include("registrations.urls")),
     path("", include("ada.urls")),
     url(r"^api/v1/forgetcontact/", ForgetContactView.as_view(), name="forgetcontact"),
     path("api/v2/", include(v2router.urls)),
