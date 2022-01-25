@@ -18,7 +18,7 @@ setup(
         "django-environ==0.4.5",
         "psycopg2-binary==2.8.6",
         "raven==6.9.0",
-        "django-filter==2.0.0",
+        "django-filter==2.4.0",
         "celery==5.2.3",
         "six==1.11.0",
         "requests==2.22.0",
