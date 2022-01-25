@@ -1,4 +1,4 @@
-FROM praekeltfoundation/django-bootstrap:py3.6
+FROM praekeltfoundation/django-bootstrap:py3.9
 
 COPY setup.py /app
 RUN pip install --no-cache-dir -e .
