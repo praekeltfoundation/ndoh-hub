@@ -21,7 +21,6 @@ setup(
         "django-filter==2.0.0",
         "celery==5.2.3",
         "six==1.11.0",
-        "django-rest-hooks==1.5.0",
         "requests==2.22.0",
         "seed-services-client==0.37.2",
         "demands==3.0.0",
