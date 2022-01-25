@@ -54,7 +54,6 @@ INSTALLED_APPS = (
     "rest_framework",
     "rest_framework.authtoken",
     "django_filters",
-    "rest_hooks",
     "simple_history",
     "django_prometheus",
     # us
@@ -220,16 +219,6 @@ REST_FRAMEWORK = {
     },
 }
 
-# Webhook event definition
-HOOK_EVENTS = {
-    # 'any.event.name': 'App.Model.Action' (created/updated/deleted)
-    "subscriptionrequest.added": "registrations.SubscriptionRequest.created+"
-}
-
-HOOK_DELIVERER = "registrations.tasks.deliver_hook_wrapper"
-
-HOOK_AUTH_TOKEN = os.environ.get("HOOK_AUTH_TOKEN", "REPLACEME")
-
 # Celery configuration options
 CELERY_BROKER_URL = os.environ.get("BROKER_URL", "redis://localhost:6379/0")
 
@@ -239,14 +228,12 @@ CELERY_TASK_QUEUES = (Queue("ndoh_hub", Exchange("ndoh_hub"), routing_key="ndoh_
 CELERY_TASK_ALWAYS_EAGER = False
 
 # Tell Celery where to find the tasks
-CELERY_IMPORTS = ("registrations.tasks", "changes.tasks", "eventstore.tasks")
+CELERY_IMPORTS = ("eventstore.tasks", )
 
 CELERY_TASK_CREATE_MISSING_QUEUES = True
 CELERY_TASK_ROUTES = {
     "celery.backend_cleanup": {"queue": "mediumpriority"},
-    "ndoh_hub.registrations.tasks.validate_subscribe": {"queue": "mediumpriority"},
     "ndoh_hub.changes.tasks.validate_implement": {"queue": "mediumpriority"},
-    "registrations.tasks.DeliverHook": {"queue": "priority"},
 }
 
 CELERY_TASK_SERIALIZER = "json"
