@@ -4,7 +4,7 @@ import uuid
 
 from django.db import migrations, models
 
-import registrations.validators
+import eventstore.validators
 
 
 def set_default(apps, schema_editor):
@@ -54,7 +54,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 default="",
                 max_length=255,
-                validators=[registrations.validators.geographic_coordinate],
+                validators=[eventstore.validators.geographic_coordinate],
             ),
         ),
         migrations.AddField(

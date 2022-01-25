@@ -19,7 +19,8 @@ from eventstore.validators import (
 )
 from ndoh_hub.constants import HCS_STUDY_A_TARGETS
 from ndoh_hub.utils import is_valid_edd_date
-from registrations.validators import geographic_coordinate, za_phone_number
+
+from .validators import geographic_coordinate, za_phone_number
 
 LANGUAGE_TYPES = ((v["code"].rstrip("-za"), v["name"]) for v in LANG_INFO.values())
 

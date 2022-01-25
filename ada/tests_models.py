@@ -1,7 +1,7 @@
 from django.test import TestCase
 from freezegun import freeze_time
 
-from .models import RedirectUrl, RedirectUrlsEntry
+from ada.models import RedirectUrl, RedirectUrlsEntry
 
 
 class TestAppModels(TestCase):

@@ -91,7 +91,7 @@ class HandleOldWaitingForHelpdeskContactsTests(TestCase):
         )
 
         responses.add(
-            responses.POST, f"http://turn/v1/chats/27820001001/archive", json={}
+            responses.POST, "http://turn/v1/chats/27820001001/archive", json={}
         )
 
         tasks.handle_expired_helpdesk_contacts()
@@ -111,7 +111,7 @@ class HandleOldWaitingForHelpdeskContactsTests(TestCase):
             json.loads(turn_archive.request.body),
             {
                 "before": "ABGGJ4NjeFMfAgo-sCqKaSQU4UzP",
-                "reason": f"Auto archived after 11 days",
+                "reason": "Auto archived after 11 days",
             },
         )
 

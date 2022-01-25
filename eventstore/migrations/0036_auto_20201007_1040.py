@@ -4,7 +4,7 @@ import functools
 
 from django.db import migrations, models
 
-import registrations.validators
+import eventstore.validators
 
 
 class Migration(migrations.Migration):
@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
                         max_length=255,
                         validators=[
                             functools.partial(
-                                registrations.validators._phone_number,
+                                eventstore.validators._phone_number,
                                 *(),
                                 **{"country": "ZA"}
                             )
@@ -75,7 +75,7 @@ class Migration(migrations.Migration):
                         blank=True,
                         default="",
                         max_length=255,
-                        validators=[registrations.validators.geographic_coordinate],
+                        validators=[eventstore.validators.geographic_coordinate],
                     ),
                 ),
                 (
@@ -84,7 +84,7 @@ class Migration(migrations.Migration):
                         blank=True,
                         default="",
                         max_length=255,
-                        validators=[registrations.validators.geographic_coordinate],
+                        validators=[eventstore.validators.geographic_coordinate],
                     ),
                 ),
                 ("school", models.CharField(max_length=255)),

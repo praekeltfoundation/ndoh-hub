@@ -101,8 +101,8 @@ if __name__ == "__main__":
 
     total = 0
     start, d_print = time.time(), time.time()
-    for l in open("results.json"):
-        contact = json.loads(l)
+    for item in open("results.json"):
+        contact = json.loads(item)
         msisdn = contact["msisdn"]
         name = (
             f"{contact.get('mom_given_name', '')} {contact.get('mom_family_name', '')}"
@@ -182,7 +182,7 @@ if __name__ == "__main__":
         if time.time() - d_print > 1:
             print(
                 f"\rProcessed {total} identities at "
-                f"{total/(time.time() - start):.0f}/s",
+                f"{total / (time.time() - start):.0f}/s",
                 end="",
             )
             d_print = time.time()

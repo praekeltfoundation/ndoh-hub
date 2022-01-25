@@ -1,6 +1,7 @@
 import uuid
 from datetime import timezone
 
+import phonenumbers
 from rest_framework import serializers
 
 from eventstore.models import (
@@ -25,8 +26,8 @@ from eventstore.models import (
     PublicRegistration,
     ResearchOptinSwitch,
 )
-from registrations.serializers import MSISDNField
-from registrations.validators import posix_timestamp
+
+from .validators import posix_timestamp
 
 
 class BaseEventSerializer(serializers.ModelSerializer):
@@ -117,6 +118,31 @@ class PMTCTRegistrationSerializer(BaseEventSerializer):
         model = PMTCTRegistration
         fields = "__all__"
         read_only_fields = ("id", "created_by")
+
+
+class MSISDNField(serializers.CharField):
+    """
+    A phone number, validated using the phonenumbers library
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.country = kwargs.pop("country", None)
+        return super(MSISDNField, self).__init__(*args, **kwargs)
+
+    def to_representation(self, obj):
+        number = phonenumbers.parse(obj, self.country)
+        return phonenumbers.format_number(number, phonenumbers.PhoneNumberFormat.E164)
+
+    def to_internal_value(self, data):
+        try:
+            number = phonenumbers.parse(data, self.country)
+        except phonenumbers.NumberParseException as e:
+            raise serializers.ValidationError(str(e))
+        if not phonenumbers.is_possible_number(number):
+            raise serializers.ValidationError("Not a possible phone number")
+        if not phonenumbers.is_valid_number(number):
+            raise serializers.ValidationError("Not a valid phone number")
+        return phonenumbers.format_number(number, phonenumbers.PhoneNumberFormat.E164)
 
 
 class Covid19TriageSerializer(BaseEventSerializer):

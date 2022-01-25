@@ -1,7 +1,10 @@
+import functools
 import re
-from datetime import date
+from datetime import date, datetime
 
+import phonenumbers
 from django.core.exceptions import ValidationError
+from iso6709 import Location
 
 from registrations.models import ClinicCode
 
@@ -48,3 +51,31 @@ def validate_sa_id_number(value):
 def validate_facility_code(value):
     if not ClinicCode.objects.filter(value=value).exists():
         raise ValidationError("Invalid Facility Code")
+
+
+def posix_timestamp(value):
+    try:
+        datetime.fromtimestamp(int(value))
+    except ValueError:
+        raise ValidationError("Invalid POSIX timestamp.")
+
+
+def geographic_coordinate(value):
+    try:
+        Location(value)
+    except AttributeError:
+        raise ValidationError("Invalid ISO6709 geographic coordinate")
+
+
+def _phone_number(value, country):
+    try:
+        number = phonenumbers.parse(value, country)
+    except phonenumbers.NumberParseException as e:
+        raise ValidationError(str(e))
+    if not phonenumbers.is_possible_number(number):
+        raise ValidationError("Not a possible phone number")
+    if not phonenumbers.is_valid_number(number):
+        raise ValidationError("Not a valid phone number")
+
+
+za_phone_number = functools.partial(_phone_number, country="ZA")

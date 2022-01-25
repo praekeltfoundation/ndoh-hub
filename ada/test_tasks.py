@@ -5,7 +5,11 @@ from django.test import TestCase as DjangoTestCase
 from django.test import override_settings
 from django.urls import reverse
 
-from .tasks import post_to_topup_endpoint, start_prototype_survey_flow, start_topup_flow
+from ada.tasks import (
+    post_to_topup_endpoint,
+    start_prototype_survey_flow,
+    start_topup_flow,
+)
 
 
 class HandleSubmitShatsappidToRapidpro(DjangoTestCase):

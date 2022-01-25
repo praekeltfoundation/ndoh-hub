@@ -1,7 +1,6 @@
 from celery import chain
 from django.conf import settings
 
-from changes.tasks import get_engage_inbound_and_reply
 from eventstore.models import DeliveryFailure, Event, OptOut
 from eventstore.tasks import (
     async_create_flow_start,
@@ -10,6 +9,8 @@ from eventstore.tasks import (
     update_rapidpro_contact,
 )
 from ndoh_hub.utils import normalise_msisdn
+
+from .tasks import get_engage_inbound_and_reply
 
 
 def handle_outbound(message):

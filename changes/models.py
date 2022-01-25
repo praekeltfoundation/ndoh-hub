@@ -10,7 +10,7 @@ from registrations.models import Source
 
 @python_2_unicode_compatible
 class Change(models.Model):
-    """ A request to change a subscription
+    """A request to change a subscription
 
     Args:
         registrant_id (str): UUID of the registrant's identity
@@ -78,14 +78,6 @@ class Change(models.Model):
     @property
     def is_engage_action(self):
         return "engage" in self.data
-
-    def async_refresh_engage_context(self):
-        from changes.tasks import refresh_engage_context
-
-        engage = self.data["engage"]
-        refresh_engage_context.delay(
-            engage["integration_uuid"], engage["integration_action_uuid"]
-        )
 
     def __str__(self):
         return str(self.id)

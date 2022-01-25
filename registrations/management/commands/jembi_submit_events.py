@@ -2,7 +2,7 @@ from django.core.management import BaseCommand
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
-from registrations.tasks import push_to_jembi_api
+from eventstore.tasks import push_to_jembi_api
 
 
 class Command(BaseCommand):
