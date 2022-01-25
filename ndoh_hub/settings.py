@@ -228,7 +228,7 @@ CELERY_TASK_QUEUES = (Queue("ndoh_hub", Exchange("ndoh_hub"), routing_key="ndoh_
 CELERY_TASK_ALWAYS_EAGER = False
 
 # Tell Celery where to find the tasks
-CELERY_IMPORTS = ("eventstore.tasks", )
+CELERY_IMPORTS = ("eventstore.tasks",)
 
 CELERY_TASK_CREATE_MISSING_QUEUES = True
 CELERY_TASK_ROUTES = {
