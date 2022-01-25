@@ -4,7 +4,6 @@ from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-
 from .models import ClinicCode
 
 
