@@ -23,7 +23,6 @@ class HUBAPITestCase(TestCase):
 
 
 class AuthenticatedAPITestCase(HUBAPITestCase):
-
     def setUp(self):
         super(AuthenticatedAPITestCase, self).setUp()
 
