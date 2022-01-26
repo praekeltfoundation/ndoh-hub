@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.9.0
+1. Add ask feedback model and view
+  ([#416](https://github.com/praekeltfoundation/ndoh-hub/pull/416))
+1. Add AskFeedback to admin
+  ([#417](https://github.com/praekeltfoundation/ndoh-hub/pull/417))
+1. Change ask feedback into more generic model
+  ([#418](https://github.com/praekeltfoundation/ndoh-hub/pull/418))
+1. Random contacts information
+  ([#419](https://github.com/praekeltfoundation/ndoh-hub/pull/419))
+1. Random contact debug info
+  ([#421](https://github.com/praekeltfoundation/ndoh-hub/pull/421))
+1. Slack text message link tags
+  ([#422](https://github.com/praekeltfoundation/ndoh-hub/pull/422))
+1. Library upgrade and python version upgrade + major cleanup
+  ([#423](https://github.com/praekeltfoundation/ndoh-hub/pull/423)
+1. Bump django-filter from 2.0.0 to 2.4.0
+  ([#424](https://github.com/praekeltfoundation/ndoh-hub/pull/424))
+1. Bump django from 2.2.24 to 2.2.26
+  ([#425](https://github.com/praekeltfoundation/ndoh-hub/pull/425))
+1. Remove hooks and refs to registr & changes tasks
+  ([#426](https://github.com/praekeltfoundation/ndoh-hub/pull/426))
+1. Fix facility code check
+  ([#427](https://github.com/praekeltfoundation/ndoh-hub/pull/427))
+1. Add contacts endpoint again
+  ([#428](https://github.com/praekeltfoundation/ndoh-hub/pull/428))
+
 ## 0.8.51
 1. Handle whatsapp failure events too
   ([#414](https://github.com/praekeltfoundation/ndoh-hub/pull/414))
