@@ -3,17 +3,14 @@ import json
 from unittest import mock
 
 from django.contrib.auth.models import Permission, User
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
-from django.test import TestCase
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from rest_framework.test import APIClient
-from rest_framework.test import APITestCase
-from registrations.models import (
-    ClinicCode,
-    WhatsAppContact,
-)
+from rest_framework.test import APIClient, APITestCase
+
+from registrations.models import ClinicCode, WhatsAppContact
 
 
 class HUBAPITestCase(TestCase):

@@ -10,14 +10,10 @@ from rest_framework.authentication import (
 )
 from rest_framework.decorators import action
 from rest_framework.permissions import DjangoModelPermissions
-
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from .models import (
-    ClinicCode,
-    WhatsAppContact,
-)
+from .models import ClinicCode, WhatsAppContact
 from .serializers import WhatsAppContactCheckSerializer
 from .tasks import get_whatsapp_contact
 

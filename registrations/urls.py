@@ -4,7 +4,6 @@ from rest_framework import routers
 
 from . import views
 
-
 router = routers.DefaultRouter()
 router.trailing_slash = "/?"
 router.register(r"contacts", views.WhatsAppContactCheckViewSet)
