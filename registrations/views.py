@@ -33,7 +33,7 @@ class PruneContactsPermission(DjangoModelPermissions):
 class FacilityCheckView(generics.RetrieveAPIView):
     queryset = ClinicCode.objects.all()
     permission_classes = (DjangoModelPermissions,)
-    authentication_classes = (BasicAuthentication,)
+    authentication_classes = (BasicAuthentication, TokenAuthentication)
 
     def get(self, request: Request) -> Response:
         try:
