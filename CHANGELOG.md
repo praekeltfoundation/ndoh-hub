@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.1
+1. Add token auth to facilitycheck endpoint
+
 ## 0.9.0
 1. Add ask feedback model and view
   ([#416](https://github.com/praekeltfoundation/ndoh-hub/pull/416))
