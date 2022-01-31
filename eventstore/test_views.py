@@ -691,6 +691,7 @@ class PrebirthRegistrationViewSetTests(APITestCase, BaseEventTestCase):
                 "passport_country": "zw",
                 "passport_number": "FN123456",
                 "date_of_birth": None,
+                "age": 31,
                 "language": "zul",
                 "edd": "2020-10-11",
                 "facility_code": "123456",
@@ -712,6 +713,7 @@ class PrebirthRegistrationViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(registration.passport_country, "zw")
         self.assertEqual(registration.passport_number, "FN123456")
         self.assertEqual(registration.date_of_birth, None)
+        self.assertEqual(registration.age, 31)
         self.assertEqual(registration.language, "zul")
         self.assertEqual(registration.edd, datetime.date(2020, 10, 11))
         self.assertEqual(registration.facility_code, "123456")
@@ -954,6 +956,7 @@ class PostbirthRegistrationViewSetTests(APITestCase, BaseEventTestCase):
                 "passport_country": "zw",
                 "passport_number": "FN123456",
                 "date_of_birth": None,
+                "age": 31,
                 "language": "zul",
                 "baby_dob": "2018-10-11",
                 "facility_code": "123456",
@@ -975,6 +978,7 @@ class PostbirthRegistrationViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(registration.passport_country, "zw")
         self.assertEqual(registration.passport_number, "FN123456")
         self.assertEqual(registration.date_of_birth, None)
+        self.assertEqual(registration.age, 31)
         self.assertEqual(registration.language, "zul")
         self.assertEqual(registration.baby_dob, datetime.date(2018, 10, 11))
         self.assertEqual(registration.facility_code, "123456")
@@ -1598,22 +1602,24 @@ class CHWRegistrationViewSetTests(APITestCase, BaseEventTestCase):
                 "passport_country": "",
                 "passport_number": "",
                 "date_of_birth": "1990-02-03",
+                "age": 31,
                 "language": "nso",
             },
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        [channelswitch] = CHWRegistration.objects.all()
+        [registration] = CHWRegistration.objects.all()
         self.assertEqual(
-            str(channelswitch.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
+            str(registration.contact_id), "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
         )
         self.assertEqual(
-            str(channelswitch.device_contact_id), "d80d51cb-8a95-4588-ac74-250d739edef8"
+            str(registration.device_contact_id), "d80d51cb-8a95-4588-ac74-250d739edef8"
         )
-        self.assertEqual(channelswitch.source, "WhatsApp")
-        self.assertEqual(channelswitch.id_type, "dob")
-        self.assertEqual(channelswitch.date_of_birth, datetime.date(1990, 2, 3))
-        self.assertEqual(channelswitch.language, "nso")
-        self.assertEqual(channelswitch.created_by, user.username)
+        self.assertEqual(registration.source, "WhatsApp")
+        self.assertEqual(registration.id_type, "dob")
+        self.assertEqual(registration.date_of_birth, datetime.date(1990, 2, 3))
+        self.assertEqual(registration.age, 31)
+        self.assertEqual(registration.language, "nso")
+        self.assertEqual(registration.created_by, user.username)
 
     def test_chw_other_passport_origin(self):
         """
