@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.2
+1. Add age field to registration models
+  ([#429](https://github.com/praekeltfoundation/ndoh-hub/pull/429))
+
 ## 0.9.1
 1. Add token auth to facilitycheck endpoint
 
