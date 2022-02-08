@@ -713,7 +713,7 @@ class PostRandomContactsToSlackTests(TestCase):
 
     @responses.activate
     @override_settings(
-        TURN_URL="https://turn",
+        TURN_URL="https://turn/",
         TURN_TOKEN="token",
         EXTERNAL_REGISTRATIONS_V2=True,
         SLACK_CHANNEL="test-slack",
@@ -788,7 +788,7 @@ class PostRandomContactsToSlackTests(TestCase):
         self.assertIn("/contact/read/148947f5-a3b6-4b6b-9e9b-25058b1b7800/", slack_body)
 
     @responses.activate
-    @override_settings(TURN_URL="https://turn", TURN_TOKEN="token")
+    @override_settings(TURN_URL="https://turn/", TURN_TOKEN="token")
     def test_get_random_contact(self):
         responses.add(
             responses.GET,
@@ -821,7 +821,7 @@ class GetTurnContactProfileTests(TestCase):
         tasks.rapidpro = TembaClient("textit.in", "test-token")
 
     @responses.activate
-    @override_settings(TURN_URL="http://turn", TURN_TOKEN="token")
+    @override_settings(TURN_URL="http://turn/", TURN_TOKEN="token")
     def test_get_turn_profile_link(self):
         responses.add(
             responses.GET,
