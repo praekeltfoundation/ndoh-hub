@@ -626,7 +626,7 @@ def get_turn_profile_link(contact_number):
         }
 
         if contact_number:
-            turn_url = settings.TURN_URL + "v1/contacts/{}/messages".format(
+            turn_url = urljoin(settings.TURN_URL, "v1/contacts/{}/messages").format(
                 contact_number
             )
 
