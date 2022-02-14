@@ -630,7 +630,10 @@ def get_turn_profile_link(contact_number):
                 settings.TURN_URL, f"v1/contacts/{contact_number}/messages"
             )
 
-            profile = requests.get(url=turn_url, headers=turn_header)
+            try:
+                profile = requests.get(url=turn_url, headers=turn_header)
+            except ValueError:
+                profile = None
 
             if profile:
                 # Get turn message link
