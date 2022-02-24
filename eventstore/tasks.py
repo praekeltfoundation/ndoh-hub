@@ -295,6 +295,9 @@ def archive_turn_conversation(urn, message_id, reason):
     time_limit=600,
 )
 def handle_expired_helpdesk_contacts():
+    if not settings.HANDLE_EXPIRED_HELPDESK_CONTACTS_ENABLED:
+        return
+
     for contact_batch in rapidpro.get_contacts(
         group="Waiting for helpdesk"
     ).iterfetches(retry_on_rate_exceed=True):
