@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.4
+1. Flag to disable expire helpdesk task
+  ([#434](https://github.com/praekeltfoundation/ndoh-hub/pull/434))
+
 ## 0.9.3
 1. Changed turn url format
   ([#430](https://github.com/praekeltfoundation/ndoh-hub/pull/430))
