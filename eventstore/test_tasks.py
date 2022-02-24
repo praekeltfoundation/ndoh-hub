@@ -68,6 +68,15 @@ class HandleOldWaitingForHelpdeskContactsTests(TestCase):
         )
 
     @responses.activate
+    @override_settings(
+        HANDLE_EXPIRED_HELPDESK_CONTACTS_ENABLED=False,
+    )
+    def test_conversation_expired_disabled(self):
+        tasks.handle_expired_helpdesk_contacts()
+
+        self.assertEqual(len(responses.calls), 0)
+
+    @responses.activate
     def test_conversation_expired(self):
 
         contact_id = "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
