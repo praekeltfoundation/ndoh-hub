@@ -61,6 +61,7 @@ INSTALLED_APPS = (
     "changes",
     "eventstore",
     "ada",
+    "mqr",
 )
 
 
@@ -371,3 +372,5 @@ SLACK_URL = env.str("SLACK_URL", None)
 SLACK_TOKEN = env.str("SLACK_TOKEN", None)
 SLACK_CHANNEL = env.str("SLACK_CHANNEL", None)
 RANDOM_CONTACT_LIMIT = env.str("RANDOM_CONTACT_LIMIT", 10)
+
+MQR_CONTENTREPO_URL = env.str("MQR_CONTENTREPO_URL", None)

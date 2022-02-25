@@ -39,7 +39,7 @@ jobs:
       - name: Lint
         run: |
           flake8
-          python manage.py makemigrations registrations changes eventstore --dry-run | grep 'No changes detected' || (echo 'There are changes which require migrations.' && exit 1)
+          python manage.py makemigrations registrations changes eventstore mqr --dry-run | grep 'No changes detected' || (echo 'There are changes which require migrations.' && exit 1)
           black --check .
           isort -c -rc .
       - name: Test
