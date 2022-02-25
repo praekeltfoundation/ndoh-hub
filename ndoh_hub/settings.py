@@ -61,7 +61,7 @@ INSTALLED_APPS = (
     "changes",
     "eventstore",
     "ada",
-    "mqr"
+    "mqr",
 )
 
 
