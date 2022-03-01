@@ -5,6 +5,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from mqr.models import MqrStrata
 from mqr.utils import get_next_send_date
 
 
@@ -121,7 +122,6 @@ class FaqViewTests(APITestCase):
         )
 
         mock_get_message_details.assert_called_with("BCM_week_pre22_faq1")
-from mqr.models import MqrStrata
 
 
 class StrataRandomization(APITestCase):
