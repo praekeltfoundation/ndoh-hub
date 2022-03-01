@@ -36,7 +36,7 @@ from eventstore.views import (
     PublicRegistrationViewSet,
     ResearchOptinSwitchViewSet,
 )
-from mqr.views import RandomArmView
+from mqr.views import RandomArmView, RandomStrataArmView
 from ndoh_hub.decorators import internal_only
 
 admin.site.site_header = os.environ.get("HUB_TITLE", "NDOH Hub Admin")
@@ -87,6 +87,7 @@ urlpatterns = [
     path("", include("ada.urls")),
     url(r"^api/v1/forgetcontact/", ForgetContactView.as_view(), name="forgetcontact"),
     url(r"^api/v1/mqr_randomarm/", RandomArmView.as_view(), name="mqr-randomarm"),
+    url(r"^api/v1/mqr_randomstrataarm/", RandomStrataArmView.as_view(), name="mqr_randomstrataarm"),
     path("api/v2/", include(v2router.urls)),
     path("api/v3/", include(v3router.urls)),
     path("api/v4/", include(v4router.urls)),
