@@ -26,7 +26,11 @@ class StrataRandomization(APITestCase):
 
         response = self.client.post(
             self.url,
-            data={"province": "EC", "weeks_pregnant": "30+", "age": 23},
+            data={
+                "province": "EC",
+                "weeks_pregnant_bucket": "21-25",
+                "age_bucket": "31+",
+            },
             format="json",
         )
 
@@ -44,22 +48,28 @@ class StrataRandomization(APITestCase):
 
         MqrStrata.objects.create(
             province="MP",
-            weeks_pregnant="28-30",
-            age=25,
+            weeks_pregnant_bucket="28-30",
+            age_bucket="31+",
             next_index=1,
             order="ARM,RCM_BCM,RCM,RCM_SMS,BCM",
         )
 
-        get_arm = MqrStrata.objects.get(province="MP", weeks_pregnant="28-30", age="25")
+        get_arm = MqrStrata.objects.get(
+            province="MP", weeks_pregnant_bucket="28-30", age_bucket="31+"
+        )
 
         response = self.client.post(
             self.url,
-            data={"province": "MP", "weeks_pregnant": "28-30", "age": 25},
+            data={
+                "province": "MP",
+                "weeks_pregnant_bucket": "28-30",
+                "age_bucket": "31+",
+            },
             format="json",
         )
 
         splitted_arms = get_arm.order.split(",")
 
         self.assertNotEqual(splitted_arms[0], response.data)
-        self.assertEqual(splitted_arms[2], response.data)
+        self.assertEqual(splitted_arms[1], response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
