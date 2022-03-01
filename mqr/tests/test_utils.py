@@ -1,9 +1,10 @@
-import responses
 from datetime import datetime, timedelta
 from unittest import TestCase
 from unittest.mock import patch
 
-from mqr.utils import get_tag, get_message, get_message_details, get_next_send_date
+import responses
+
+from mqr.utils import get_message, get_message_details, get_next_send_date, get_tag
 
 
 class TestGetTag(TestCase):

@@ -4,7 +4,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 
 from mqr.serializers import FaqSerializer, NextMessageSerializer
-from mqr.utils import get_tag, get_message_details, get_next_send_date
+from mqr.utils import get_message_details, get_next_send_date, get_tag
 
 
 class RandomArmView(generics.GenericAPIView):
