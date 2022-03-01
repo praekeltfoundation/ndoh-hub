@@ -48,7 +48,7 @@ class FaqView(generics.GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         """
-
+        Get FAQ from content repo based on tag and faq number
         """
         serializer = FaqSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

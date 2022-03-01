@@ -53,7 +53,7 @@ class NextMessageViewTests(APITestCase):
                 "message": "Test Message 1",
                 "is_template": False,
                 "next_send_date": next_date,
-                "tag": "BCM_week_PRE19"
+                "tag": "BCM_week_PRE19",
             },
         )
 
