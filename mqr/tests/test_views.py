@@ -206,7 +206,7 @@ class StrataRandomization(APITestCase):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
-        strata = MqrStrata.objects.create(
+        MqrStrata.objects.create(
             province="FS",
             weeks_pregnant_bucket="26-30",
             age_bucket="31+",
@@ -225,7 +225,10 @@ class StrataRandomization(APITestCase):
             format="json",
         )
 
-        # strata.refresh_from_db()
+        strata_arm = MqrStrata.objects.filter(
+            province="FS", weeks_pregnant_bucket="26-30", age_bucket="31+"
+        )
 
+        self.assertEqual(strata_arm.count(), 0)
         self.assertEqual(response.data.get("random_arm"), "RCM_BCM")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
