@@ -54,7 +54,7 @@ class NextMessageViewTests(APITestCase):
                 "message": "Test Message 1",
                 "is_template": False,
                 "next_send_date": next_date,
-                "tag": "BCM_week_PRE19",
+                "tag": "BCM_week_PRE18",
             },
         )
 
@@ -142,13 +142,20 @@ class StrataRandomization(APITestCase):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
+        MqrStrata.objects.create(
+            province="EC",
+            weeks_pregnant_bucket="21-25",
+            age_bucket="31+",
+            next_index=3,
+            order="RCM_SMS,RCM_BCM,RCM,ARM,BCM",
+        )
+        
         response = MqrStrata.objects.get(
-                province="EC",
-                weeks_pregnant_bucket="21-25",
-                age_bucket="31+"
+            province="EC", weeks_pregnant_bucket="21-25", age_bucket="31+"
         )
 
         self.assertIsNotNone(response)
+        self.assertEqual(response.province, "EC")
 
     def test_get_random_starta_arm(self):
         """
@@ -203,30 +210,31 @@ class StrataRandomization(APITestCase):
             order="ARM,RCM,RCM_SMS,BCM,RCM_BCM",
         )
 
-        first_arm = self.client.post(
-                                    self.url,
-                                    data={
-                                            "province": "FS",
-                                            "weeks_pregnant_bucket": "26-30",
-                                            "age_bucket": "31+",
-                                        },
-                                    format="json",
-                                    )
+        # This api call will delete the existing arm
+        self.client.post(
+            self.url,
+            data={
+                "province": "FS",
+                "weeks_pregnant_bucket": "26-30",
+                "age_bucket": "31+",
+            },
+            format="json",
+        )
 
-        second_arm = self.client.post(
-                                    self.url,
-                                    data={
-                                        "province": "FS",
-                                        "weeks_pregnant_bucket": "26-30",
-                                        "age_bucket": "31+",
-                                    },
-                                    format="json",
-                                )
+        # New arm will be created
+        self.client.post(
+            self.url,
+            data={
+                "province": "FS",
+                "weeks_pregnant_bucket": "26-30",
+                "age_bucket": "31+",
+            },
+            format="json",
+        )
 
         get_resp = MqrStrata.objects.get(
-                                        province="FS",
-                                        weeks_pregnant_bucket="26-30",
-                                        age_bucket="31+")
+            province="FS", weeks_pregnant_bucket="26-30", age_bucket="31+"
+        )
 
         self.assertEqual(get_resp.next_index, 1)
         self.assertNotEqual(strata.id, get_resp.id)
