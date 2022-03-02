@@ -149,7 +149,7 @@ class StrataRandomization(APITestCase):
             next_index=3,
             order="RCM_SMS,RCM_BCM,RCM,ARM,BCM",
         )
-        
+
         response = MqrStrata.objects.get(
             province="EC", weeks_pregnant_bucket="21-25", age_bucket="31+"
         )
