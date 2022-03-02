@@ -1,3 +1,4 @@
+import datetime
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -5,11 +6,18 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from mqr.utils import get_next_send_date
+from mqr import utils
+
+
+def override_get_today():
+    return datetime.datetime.strptime("20220301", "%Y%m%d").date()
 
 
 class NextMessageViewTests(APITestCase):
     url = reverse("mqr-nextmessage")
+
+    def setUp(self):
+        utils.get_today = override_get_today
 
     def test_unauthenticated(self):
         response = self.client.post(self.url, {})
@@ -44,7 +52,7 @@ class NextMessageViewTests(APITestCase):
             {"arm": "BCM", "edd_or_dob_date": "2022-07-12", "subscription_type": "PRE"},
         )
 
-        next_date = str(get_next_send_date())
+        next_date = str(utils.get_next_send_date())
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
