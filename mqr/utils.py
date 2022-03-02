@@ -4,9 +4,11 @@ from urllib.parse import urljoin
 import requests
 from django.conf import settings
 
+from ndoh_hub.utils import get_today
+
 
 def get_tag(arm, subscription_type, edd_or_dob_date, sequence=None):
-    week = abs(datetime.today().date() - edd_or_dob_date).days // 7
+    week = abs(get_today() - edd_or_dob_date).days // 7
 
     label = f"{arm}_week_{subscription_type}{week}"
     if sequence:
