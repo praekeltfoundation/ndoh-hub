@@ -164,6 +164,8 @@ class StrataRandomization(APITestCase):
             province="EC", weeks_pregnant_bucket="21-25", age_bucket="31+"
         )
 
+        self.assertContains(response, strata_arm.order.split(",")[0])
+        self.assertEqual(strata_arm.next_index, 1)
         self.assertContains(response, "random_arm")
         self.assertEqual(strata_arm.province, "EC")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
