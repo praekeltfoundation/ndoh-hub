@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from mqr import utils
+from mqr.models import MqrStrata
 
 
 def override_get_today():
@@ -129,3 +130,104 @@ class FaqViewTests(APITestCase):
         )
 
         mock_get_message_details.assert_called_with("BCM_week_pre22_faq1")
+
+
+class StrataRandomization(APITestCase):
+    url = reverse("mqr_randomstrataarm")
+
+    def test_random_arm_unauthorized_user(self):
+        """
+        unauthorized user access denied
+        Returns: status code 401
+
+        """
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_random_arm(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        response = self.client.post(
+            self.url,
+            data={
+                "province": "EC",
+                "weeks_pregnant_bucket": "21-25",
+                "age_bucket": "31+",
+            },
+            format="json",
+        )
+
+        strata_arm = MqrStrata.objects.get(
+            province="EC", weeks_pregnant_bucket="21-25", age_bucket="31+"
+        )
+
+        self.assertContains(response, strata_arm.order.split(",")[0])
+        self.assertEqual(strata_arm.next_index, 1)
+
+    def test_get_random_starta_arm(self):
+        """
+        Check the next arm from the existing data
+        Returns: string response
+
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        MqrStrata.objects.create(
+            province="MP",
+            weeks_pregnant_bucket="28-30",
+            age_bucket="31+",
+            next_index=1,
+            order="ARM,RCM_BCM,RCM,RCM_SMS,BCM",
+        )
+
+        response = self.client.post(
+            self.url,
+            data={
+                "province": "MP",
+                "weeks_pregnant_bucket": "28-30",
+                "age_bucket": "31+",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.data, {"random_arm": "RCM_BCM"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_out_of_index_arm(self):
+        """
+        Test for out of index to delete the order after maximum arm
+        """
+
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        MqrStrata.objects.create(
+            province="FS",
+            weeks_pregnant_bucket="26-30",
+            age_bucket="31+",
+            next_index=4,
+            order="ARM,RCM,RCM_SMS,BCM,RCM_BCM",
+        )
+
+        # This api call will delete the existing arm
+        response = self.client.post(
+            self.url,
+            data={
+                "province": "FS",
+                "weeks_pregnant_bucket": "26-30",
+                "age_bucket": "31+",
+            },
+            format="json",
+        )
+
+        strata_arm = MqrStrata.objects.filter(
+            province="FS", weeks_pregnant_bucket="26-30", age_bucket="31+"
+        )
+
+        self.assertEqual(strata_arm.count(), 0)
+        self.assertEqual(response.data.get("random_arm"), "RCM_BCM")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
