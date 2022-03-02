@@ -6,9 +6,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from mqr.models import MqrStrata
-from mqr.utils import get_next_send_date
 from mqr import utils
+from mqr.models import MqrStrata
 
 
 def override_get_today():
@@ -151,20 +150,25 @@ class StrataRandomization(APITestCase):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
-        MqrStrata.objects.create(
-            province="EC",
-            weeks_pregnant_bucket="21-25",
-            age_bucket="31+",
-            next_index=3,
-            order="RCM_SMS,RCM_BCM,RCM,ARM,BCM",
+        response = self.client.post(
+            self.url,
+            data={
+                "province": "EC",
+                "weeks_pregnant_bucket": "21-25",
+                "age_bucket": "31+",
+            },
+            format="json",
         )
 
-        response = MqrStrata.objects.get(
+        strata_arm = MqrStrata.objects.get(
             province="EC", weeks_pregnant_bucket="21-25", age_bucket="31+"
         )
 
         self.assertIsNotNone(response)
-        self.assertEqual(response.province, "EC")
+        self.assertIsNotNone(strata_arm)
+        self.assertContains(response, "random_arm")
+        self.assertEqual(strata_arm.province, "EC")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_get_random_starta_arm(self):
         """
@@ -183,7 +187,7 @@ class StrataRandomization(APITestCase):
             order="ARM,RCM_BCM,RCM,RCM_SMS,BCM",
         )
 
-        get_arm = MqrStrata.objects.get(
+        MqrStrata.objects.get(
             province="MP", weeks_pregnant_bucket="28-30", age_bucket="31+"
         )
 
@@ -197,10 +201,7 @@ class StrataRandomization(APITestCase):
             format="json",
         )
 
-        splitted_arms = get_arm.order.split(",")
-
-        self.assertNotEqual(splitted_arms[0], "RCM_BCM")
-        self.assertEqual(splitted_arms[1], "RCM_BCM")
+        self.assertEqual(response.data, {"random_arm": "RCM_BCM"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_out_of_index_arm(self):
@@ -211,7 +212,7 @@ class StrataRandomization(APITestCase):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
-        strata = MqrStrata.objects.create(
+        MqrStrata.objects.create(
             province="FS",
             weeks_pregnant_bucket="26-30",
             age_bucket="31+",
@@ -220,7 +221,7 @@ class StrataRandomization(APITestCase):
         )
 
         # This api call will delete the existing arm
-        self.client.post(
+        response = self.client.post(
             self.url,
             data={
                 "province": "FS",
@@ -230,21 +231,10 @@ class StrataRandomization(APITestCase):
             format="json",
         )
 
-        # New arm will be created
-        self.client.post(
-            self.url,
-            data={
-                "province": "FS",
-                "weeks_pregnant_bucket": "26-30",
-                "age_bucket": "31+",
-            },
-            format="json",
-        )
-
-        get_resp = MqrStrata.objects.get(
+        strata_arm = MqrStrata.objects.filter(
             province="FS", weeks_pregnant_bucket="26-30", age_bucket="31+"
         )
 
-        self.assertEqual(get_resp.next_index, 1)
-        self.assertNotEqual(strata.id, get_resp.id)
-        self.assertNotEqual(get_resp.order, "ARM,RCM,RCM_SMS,BCM,RCM_BCM")
+        self.assertEqual(strata_arm.count(), 0)
+        self.assertEqual(response.data.get("random_arm"), "RCM_BCM")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
