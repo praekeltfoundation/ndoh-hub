@@ -39,13 +39,13 @@ class RandomStrataArmView(generics.GenericAPIView):
 
         arm = random_arms[strata.next_index]
 
-        if strata.next_index == len(random_arms):
+        if strata.next_index + 1 == len(random_arms):
             strata.delete()
         else:
             strata.next_index += 1
             strata.save()
 
-        return Response(arm)
+        return Response({"random_arm": arm})
 
 
 class NextMessageView(generics.GenericAPIView):
