@@ -1,10 +1,14 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from unittest import TestCase
 from unittest.mock import patch
 
 import responses
 
-from mqr.utils import get_message, get_message_details, get_next_send_date, get_tag
+from mqr import utils
+
+
+def override_get_today():
+    return datetime.strptime("20220301", "%Y%m%d").date()
 
 
 class TestGetTag(TestCase):
@@ -13,22 +17,22 @@ class TestGetTag(TestCase):
         Returns the correct tag
         """
         self.assertEqual(
-            get_tag("RCM", "pre", datetime.today().date()), "RCM_week_pre0"
+            utils.get_tag("RCM", "pre", datetime.today().date()), "RCM_week_pre0"
         )
 
         few_weeks_ago = datetime.today().date() - timedelta(days=23)
-        self.assertEqual(get_tag("BCM", "post", few_weeks_ago), "BCM_week_post3")
+        self.assertEqual(utils.get_tag("BCM", "post", few_weeks_ago), "BCM_week_post3")
 
     def test_get_tag_with_sequence(self):
         """
         Returns the correct tag with a sequence
         """
         self.assertEqual(
-            get_tag("RCM", "pre", datetime.today().date(), "a"), "RCM_week_pre0_a"
+            utils.get_tag("RCM", "pre", datetime.today().date(), "a"), "RCM_week_pre0_a"
         )
 
         few_weeks_ago = datetime.today().date() - timedelta(days=23)
-        self.assertEqual(get_tag("BCM", "post", few_weeks_ago), "BCM_week_post3")
+        self.assertEqual(utils.get_tag("BCM", "post", few_weeks_ago), "BCM_week_post3")
 
 
 class TestGetMessage(TestCase):
@@ -43,8 +47,9 @@ class TestGetMessage(TestCase):
             json={"body": {"text": {"value": {"message": "Test Message"}}}},
             status=200,
         )
-        is_template, message = get_message(1111)
+        is_template, has_parameters, message = utils.get_message(1111)
         self.assertFalse(is_template)
+        self.assertFalse(has_parameters)
         self.assertEqual(message, "Test Message")
 
     @responses.activate
@@ -62,8 +67,29 @@ class TestGetMessage(TestCase):
             },
             status=200,
         )
-        is_template, message = get_message(1111)
+        is_template, has_parameters, message = utils.get_message(1111)
         self.assertTrue(is_template)
+        self.assertFalse(has_parameters)
+        self.assertEqual(message, "BCM_POST_week_3_123123")
+
+    @responses.activate
+    def test_get_message_template_with_parameters(self):
+        """
+        Returns the message body
+        """
+        responses.add(
+            responses.GET,
+            "http://contentrepo/api/v2/pages/1111/?whatsapp=True",
+            json={
+                "body": {"text": {"value": {"message": "Test Message {{1}}"}}},
+                "is_whatsapp_template": True,
+                "title": "BCM_POST_week_3_123123",
+            },
+            status=200,
+        )
+        is_template, has_parameters, message = utils.get_message(1111)
+        self.assertTrue(is_template)
+        self.assertTrue(has_parameters)
         self.assertEqual(message, "BCM_POST_week_3_123123")
 
 
@@ -78,7 +104,7 @@ class TestGetMessageDetails(TestCase):
             status=200,
         )
 
-        details = get_message_details(tag)
+        details = utils.get_message_details(tag)
 
         self.assertEqual(details, {"error": "no message found"})
 
@@ -92,14 +118,14 @@ class TestGetMessageDetails(TestCase):
             status=200,
         )
 
-        details = get_message_details(tag)
+        details = utils.get_message_details(tag)
 
         self.assertEqual(details, {"error": "multiple message found"})
 
     @responses.activate
     @patch("mqr.utils.get_message")
     def test_get_message_details(self, mock_get_message):
-        mock_get_message.return_value = (False, "Test Message")
+        mock_get_message.return_value = (False, False, "Test Message {{1}}")
 
         tag = "BCM_POST_week_3"
         responses.add(
@@ -109,14 +135,52 @@ class TestGetMessageDetails(TestCase):
             status=200,
         )
 
-        details = get_message_details(tag)
+        details = utils.get_message_details(tag, "Mom")
 
-        self.assertEqual(details, {"is_template": False, "message": "Test Message"})
+        self.assertEqual(
+            details,
+            {
+                "is_template": False,
+                "has_parameters": False,
+                "message": "Test Message Mom",
+            },
+        )
+
+
+class TestGetNextMessage(TestCase):
+    def setUp(self):
+        utils.get_today = override_get_today
+
+    @patch("mqr.utils.get_message_details")
+    def test_get_next_message(self, mock_get_message_details):
+
+        mock_get_message_details.return_value = {
+            "is_template": False,
+            "has_parameters": False,
+            "message": "Test Message Mom",
+        }
+
+        edd = datetime.strptime("20220701", "%Y%m%d").date()
+        response = utils.get_next_message(edd, "pre", "RCM", None, "Mom")
+
+        print(response)
+
+        self.assertEqual(
+            response,
+            {
+                "is_template": False,
+                "has_parameters": False,
+                "message": "Test Message Mom",
+                "next_send_date": utils.get_next_send_date(),
+                "tag": "RCM_week_pre17",
+            },
+        )
 
 
 class TestGetNextSendDate(TestCase):
-    def test_get_next_send_date(self):
-        today = datetime.today().date()
-        next_date = get_next_send_date()
+    def setUp(self):
+        utils.get_today = override_get_today
 
-        self.assertEqual(next_date, today + timedelta(weeks=1))
+    def test_get_next_send_date(self):
+        next_date = utils.get_next_send_date()
+        self.assertEqual(next_date, date(2022, 3, 8))
