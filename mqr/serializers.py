@@ -3,8 +3,8 @@ from rest_framework import serializers
 
 class MqrStrataSerializer(serializers.Serializer):
     facility_code = serializers.CharField(required=True)
-    estimated_delivery_date = serializers.CharField(required=True)
-    mom_age = serializers.CharField(required=True)
+    estimated_delivery_date = serializers.DateField(required=True)
+    mom_age = serializers.IntegerField(required=True)
 
 
 class NextMessageSerializer(serializers.Serializer):

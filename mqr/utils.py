@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from urllib.parse import urljoin
 
 import requests
@@ -82,15 +82,8 @@ def get_facility_province(facility_code):
     return clinic_code
 
 
-def get_weeks_pregnant(edd):
+def get_weeks_pregnant(estimated_date):
     full_term_weeks = 40
-    estimated_date = edd
-
-    if isinstance(edd, str):
-        # convert to date
-        estimated_date = datetime.strptime(edd, "%Y-%m-%d").date()
-    elif isinstance(edd, datetime):
-        estimated_date = edd.date()
 
     # Get remaining weeks
     remaining_weeks = (estimated_date - get_today()).days // 7
@@ -107,9 +100,7 @@ def get_weeks_pregnant(edd):
         return None
 
 
-def get_age_bucket(age):
-    mom_age = int(age)
-
+def get_age_bucket(mom_age):
     # Get age range
     if 18 <= mom_age <= 30:
         return "18-30"
