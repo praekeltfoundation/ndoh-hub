@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from urllib.parse import urljoin
 
 import requests
@@ -13,7 +13,7 @@ def get_tag(arm, subscription_type, edd_or_dob_date, sequence=None):
     label = f"{arm}_week_{subscription_type}{week}"
     if sequence:
         label = f"{label}_{sequence}"
-    return label
+    return label.lower()
 
 
 def get_message(page_id):
