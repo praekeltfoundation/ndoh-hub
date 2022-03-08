@@ -4,7 +4,14 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 
 from mqr.serializers import FaqSerializer, NextMessageSerializer
-from mqr.utils import get_message_details, get_next_send_date, get_tag
+from mqr.utils import (
+    get_age_bucket,
+    get_facility_province,
+    get_message_details,
+    get_next_send_date,
+    get_tag,
+    get_weeks_pregnant,
+)
 
 from .models import MqrStrata
 from .serializers import MqrStrataSerializer
@@ -20,32 +27,43 @@ class RandomStrataArmView(generics.GenericAPIView):
         serializer = MqrStrataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        province = serializer.validated_data.get("province")
-        weeks_pregnant_bucket = serializer.validated_data.get("weeks_pregnant_bucket")
-        age_bucket = serializer.validated_data.get("age_bucket")
-
-        strata, created = MqrStrata.objects.get_or_create(
-            province=province,
-            weeks_pregnant_bucket=weeks_pregnant_bucket,
-            age_bucket=age_bucket,
+        # use facility code and look up on db for province
+        facility_code = serializer.validated_data.get("facility_code")
+        estimated_delivery_date = serializer.validated_data.get(
+            "estimated_delivery_date"
         )
+        mom_age = serializer.validated_data.get("mom_age")
 
-        if created:
-            random.shuffle(STUDY_ARMS)
-            random_arms = STUDY_ARMS
-            strata.order = ",".join(random_arms)
-        else:
-            random_arms = strata.order.split(",")
+        clinic_code = get_facility_province(facility_code)
+        weeks_pregnant_bucket = get_weeks_pregnant(estimated_delivery_date)
+        age_bucket = get_age_bucket(mom_age)
 
-        arm = random_arms[strata.next_index]
+        if clinic_code and weeks_pregnant_bucket and age_bucket:
+            province = clinic_code.province
 
-        if strata.next_index + 1 == len(random_arms):
-            strata.delete()
-        else:
-            strata.next_index += 1
-            strata.save()
+            strata, created = MqrStrata.objects.get_or_create(
+                province=province,
+                weeks_pregnant_bucket=weeks_pregnant_bucket,
+                age_bucket=age_bucket,
+            )
 
-        return Response({"random_arm": arm})
+            if created:
+                random.shuffle(STUDY_ARMS)
+                random_arms = STUDY_ARMS
+                strata.order = ",".join(random_arms)
+            else:
+                random_arms = strata.order.split(",")
+
+            arm = random_arms[strata.next_index]
+
+            if strata.next_index + 1 == len(random_arms):
+                strata.delete()
+            else:
+                strata.next_index += 1
+                strata.save()
+
+            return Response({"random_arm": arm})
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 class NextMessageView(generics.GenericAPIView):

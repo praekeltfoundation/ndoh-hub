@@ -2,9 +2,9 @@ from rest_framework import serializers
 
 
 class MqrStrataSerializer(serializers.Serializer):
-    province = serializers.CharField(required=True)
-    weeks_pregnant_bucket = serializers.CharField(required=True)
-    age_bucket = serializers.CharField(required=True)
+    facility_code = serializers.CharField(required=True)
+    estimated_delivery_date = serializers.CharField(required=True)
+    mom_age = serializers.CharField(required=True)
 
 
 class NextMessageSerializer(serializers.Serializer):

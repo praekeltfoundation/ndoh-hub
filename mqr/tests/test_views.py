@@ -8,6 +8,7 @@ from rest_framework.test import APITestCase
 
 from mqr import utils
 from mqr.models import MqrStrata
+from registrations.models import ClinicCode
 
 
 def override_get_today():
@@ -150,20 +151,25 @@ class StrataRandomization(APITestCase):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
+        ClinicCode.objects.create(
+            code="123456", value=1, uid=1, name="test", province="EC"
+        )
+
         response = self.client.post(
             self.url,
             data={
-                "province": "EC",
-                "weeks_pregnant_bucket": "21-25",
-                "age_bucket": "31+",
+                "facility_code": "123456",
+                "estimated_delivery_date": datetime.date(2022, 8, 17),
+                "mom_age": 32,
             },
             format="json",
         )
 
         strata_arm = MqrStrata.objects.get(
-            province="EC", weeks_pregnant_bucket="21-25", age_bucket="31+"
+            province="EC", weeks_pregnant_bucket="16-20", age_bucket="31+"
         )
 
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertContains(response, strata_arm.order.split(",")[0])
         self.assertEqual(strata_arm.next_index, 1)
 
@@ -176,9 +182,13 @@ class StrataRandomization(APITestCase):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
+        ClinicCode.objects.create(
+            code="246800", value=2, uid=2, name="test", province="MP"
+        )
+
         MqrStrata.objects.create(
             province="MP",
-            weeks_pregnant_bucket="28-30",
+            weeks_pregnant_bucket="26-30",
             age_bucket="31+",
             next_index=1,
             order="ARM,RCM_BCM,RCM,RCM_SMS,BCM",
@@ -187,9 +197,9 @@ class StrataRandomization(APITestCase):
         response = self.client.post(
             self.url,
             data={
-                "province": "MP",
-                "weeks_pregnant_bucket": "28-30",
-                "age_bucket": "31+",
+                "facility_code": "246800",
+                "estimated_delivery_date": datetime.date(2022, 6, 13),
+                "mom_age": 34,
             },
             format="json",
         )
@@ -205,10 +215,14 @@ class StrataRandomization(APITestCase):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
+        ClinicCode.objects.create(
+            code="369120", value=3, uid=3, name="test", province="FS"
+        )
+
         MqrStrata.objects.create(
             province="FS",
             weeks_pregnant_bucket="26-30",
-            age_bucket="31+",
+            age_bucket="18-30",
             next_index=4,
             order="ARM,RCM,RCM_SMS,BCM,RCM_BCM",
         )
@@ -217,15 +231,15 @@ class StrataRandomization(APITestCase):
         response = self.client.post(
             self.url,
             data={
-                "province": "FS",
-                "weeks_pregnant_bucket": "26-30",
-                "age_bucket": "31+",
+                "facility_code": "369120",
+                "estimated_delivery_date": datetime.date(2022, 6, 13),
+                "mom_age": 22,
             },
             format="json",
         )
 
         strata_arm = MqrStrata.objects.filter(
-            province="FS", weeks_pregnant_bucket="26-30", age_bucket="31+"
+            province="FS", weeks_pregnant_bucket="26-30", age_bucket="18-30"
         )
 
         self.assertEqual(strata_arm.count(), 0)
