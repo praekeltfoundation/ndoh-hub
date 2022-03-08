@@ -8,7 +8,7 @@ from rest_framework.test import APITestCase
 
 from mqr.models import MqrStrata
 from registrations.models import ClinicCode
-
+from ndoh_hub import utils
 
 class NextMessageViewTests(APITestCase):
     url = reverse("mqr-nextmessage")
@@ -138,7 +138,14 @@ class FaqViewTests(APITestCase):
         mock_get_message_details.assert_called_with("BCM_week_pre22_faq1")
 
 
+def override_get_today():
+    return datetime.datetime.strptime("20200308", "%Y%m%d").date()
+
+
 class StrataRandomization(APITestCase):
+    def setUp(self):
+        utils.get_today = override_get_today()
+
     url = reverse("mqr_randomstrataarm")
 
     def test_random_arm_unauthorized_user(self):
