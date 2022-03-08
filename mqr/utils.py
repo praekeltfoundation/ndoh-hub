@@ -14,7 +14,7 @@ def get_tag(arm, subscription_type, edd_or_dob_date, sequence=None):
     label = f"{arm}_week_{subscription_type}{week}"
     if sequence:
         label = f"{label}_{sequence}"
-    return label
+    return label.lower()
 
 
 def get_message(page_id):
@@ -25,33 +25,52 @@ def get_message(page_id):
     response.raise_for_status()
 
     page = response.json()
+    message = page["body"]["text"]["value"]["message"]
 
     if page.get("is_whatsapp_template"):
-        return True, page["title"]
+        return True, "{{1}}" in message, page["title"]
 
-    return False, page["body"]["text"]["value"]["message"]
+    return False, False, message
 
 
-def get_message_details(tag):
+def get_message_details(tag, mom_name=None):
     url = urljoin(settings.MQR_CONTENTREPO_URL, f"api/v2/pages?tag={tag}")
     response = requests.get(url)
     response.raise_for_status()
 
     if len(response.json()["results"]) == 1:
         page_id = response.json()["results"][0]["id"]
-        is_template, message = get_message(page_id)
+        is_template, has_parameters, message = get_message(page_id)
 
-        return {"is_template": is_template, "message": message}
+        if not is_template and mom_name:
+            message = message.replace("{{1}}", mom_name)
+
+        return {
+            "is_template": is_template,
+            "has_parameters": has_parameters,
+            "message": message,
+        }
     if len(response.json()["results"]) == 0:
         return {"error": "no message found"}
     elif len(response.json()["results"]) > 1:
         return {"error": "multiple message found"}
 
 
+def get_next_message(edd_or_dob_date, subscription_type, arm, sequence, mom_name):
+    tag = get_tag(arm, subscription_type, edd_or_dob_date, sequence)
+
+    response = get_message_details(tag, mom_name)
+
+    response["next_send_date"] = get_next_send_date()
+    response["tag"] = tag
+
+    return response
+
+
 def get_next_send_date():
     # TODO: maybe this should be smarter
     # calculate date based on edd_or_dob and next week, incase message failed?
-    return datetime.today().date() + timedelta(weeks=1)
+    return get_today() + timedelta(weeks=1)
 
 
 def get_facility_province(facility_code):

@@ -1,4 +1,3 @@
-import datetime
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -6,20 +5,12 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from mqr import utils
 from mqr.models import MqrStrata
 from registrations.models import ClinicCode
 
 
-def override_get_today():
-    return datetime.datetime.strptime("20220301", "%Y%m%d").date()
-
-
 class NextMessageViewTests(APITestCase):
     url = reverse("mqr-nextmessage")
-
-    def setUp(self):
-        utils.get_today = override_get_today
 
     def test_unauthenticated(self):
         response = self.client.post(self.url, {})
@@ -36,25 +27,32 @@ class NextMessageViewTests(APITestCase):
                 "arm": ["This field is required."],
                 "edd_or_dob_date": ["This field is required."],
                 "subscription_type": ["This field is required."],
+                "mom_name": ["This field is required."],
             },
         )
 
-    @patch("mqr.views.get_message_details")
-    def test_next_message(self, mock_get_message_details):
+    @patch("mqr.views.get_next_message")
+    def test_next_message(self, mock_get_next_message):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
-        mock_get_message_details.return_value = {
+        mock_get_next_message.return_value = {
             "is_template": False,
+            "has_parameters": False,
             "message": "Test Message 1",
+            "next_send_date": "2022-03-14",
+            "tag": "BCM_week_PRE19",
         }
 
         response = self.client.post(
             self.url,
-            {"arm": "BCM", "edd_or_dob_date": "2022-07-12", "subscription_type": "PRE"},
+            {
+                "arm": "BCM",
+                "edd_or_dob_date": "2022-07-12",
+                "subscription_type": "PRE",
+                "mom_name": "Test",
+            },
         )
-
-        next_date = str(utils.get_next_send_date())
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
@@ -62,21 +60,27 @@ class NextMessageViewTests(APITestCase):
             {
                 "message": "Test Message 1",
                 "is_template": False,
-                "next_send_date": next_date,
+                "has_parameters": False,
+                "next_send_date": "2022-03-14",
                 "tag": "BCM_week_PRE19",
             },
         )
 
-    @patch("mqr.views.get_message_details")
-    def test_next_message_error(self, mock_get_message_details):
+    @patch("mqr.views.get_next_message")
+    def test_next_message_error(self, mock_get_next_message):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
-        mock_get_message_details.return_value = {"error": "no message found"}
+        mock_get_next_message.return_value = {"error": "no message found"}
 
         response = self.client.post(
             self.url,
-            {"arm": "BCM", "edd_or_dob_date": "2022-07-12", "subscription_type": "PRE"},
+            {
+                "arm": "BCM",
+                "edd_or_dob_date": "2022-07-12",
+                "subscription_type": "PRE",
+                "mom_name": "Test",
+            },
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

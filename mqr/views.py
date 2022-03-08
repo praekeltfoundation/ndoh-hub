@@ -4,6 +4,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 
 from mqr.serializers import FaqSerializer, NextMessageSerializer
+from mqr.utils import get_message_details, get_next_message
 from mqr.utils import (
     get_age_bucket,
     get_facility_province,
@@ -79,17 +80,16 @@ class NextMessageView(generics.GenericAPIView):
         edd_or_dob_date = serializer.validated_data.get("edd_or_dob_date")
         subscription_type = serializer.validated_data.get("subscription_type")
         arm = serializer.validated_data.get("arm")
+        mom_name = serializer.validated_data.get("mom_name")
         sequence = serializer.validated_data.get("sequence")
 
-        tag = get_tag(arm, subscription_type, edd_or_dob_date, sequence)
-
-        response = get_message_details(tag)
+        response = get_next_message(
+            edd_or_dob_date, subscription_type, arm, sequence, mom_name
+        )
 
         if "error" in response:
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
-        response["next_send_date"] = get_next_send_date()
-        response["tag"] = tag
         return Response(response, status=status.HTTP_200_OK)
 
 

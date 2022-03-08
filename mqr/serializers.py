@@ -11,6 +11,7 @@ class NextMessageSerializer(serializers.Serializer):
     edd_or_dob_date = serializers.DateField(required=True)
     subscription_type = serializers.CharField(required=True)
     arm = serializers.CharField(required=True)
+    mom_name = serializers.CharField(required=True)
     sequence = serializers.CharField(required=False)
 
 
