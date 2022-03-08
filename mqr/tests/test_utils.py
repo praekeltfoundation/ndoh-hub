@@ -17,22 +17,22 @@ class TestGetTag(TestCase):
         Returns the correct tag
         """
         self.assertEqual(
-            utils.get_tag("RCM", "pre", datetime.today().date()), "RCM_week_pre0"
+            utils.get_tag("RCM", "pre", datetime.today().date()), "rcm_week_pre0"
         )
 
         few_weeks_ago = datetime.today().date() - timedelta(days=23)
-        self.assertEqual(utils.get_tag("BCM", "post", few_weeks_ago), "BCM_week_post3")
+        self.assertEqual(utils.get_tag("BCM", "post", few_weeks_ago), "bcm_week_post3")
 
     def test_get_tag_with_sequence(self):
         """
         Returns the correct tag with a sequence
         """
         self.assertEqual(
-            utils.get_tag("RCM", "pre", datetime.today().date(), "a"), "RCM_week_pre0_a"
+            utils.get_tag("RCM", "pre", datetime.today().date(), "a"), "rcm_week_pre0_a"
         )
 
         few_weeks_ago = datetime.today().date() - timedelta(days=23)
-        self.assertEqual(utils.get_tag("BCM", "post", few_weeks_ago), "BCM_week_post3")
+        self.assertEqual(utils.get_tag("BCM", "post", few_weeks_ago), "bcm_week_post3")
 
 
 class TestGetMessage(TestCase):
@@ -63,14 +63,14 @@ class TestGetMessage(TestCase):
             json={
                 "body": {"text": {"value": {"message": "Test Message"}}},
                 "is_whatsapp_template": True,
-                "title": "BCM_POST_week_3_123123",
+                "title": "bcm_week_post3_123123",
             },
             status=200,
         )
         is_template, has_parameters, message = utils.get_message(1111)
         self.assertTrue(is_template)
         self.assertFalse(has_parameters)
-        self.assertEqual(message, "BCM_POST_week_3_123123")
+        self.assertEqual(message, "bcm_week_post3_123123")
 
     @responses.activate
     def test_get_message_template_with_parameters(self):
@@ -83,20 +83,20 @@ class TestGetMessage(TestCase):
             json={
                 "body": {"text": {"value": {"message": "Test Message {{1}}"}}},
                 "is_whatsapp_template": True,
-                "title": "BCM_POST_week_3_123123",
+                "title": "bcm_week_post3_123123",
             },
             status=200,
         )
         is_template, has_parameters, message = utils.get_message(1111)
         self.assertTrue(is_template)
         self.assertTrue(has_parameters)
-        self.assertEqual(message, "BCM_POST_week_3_123123")
+        self.assertEqual(message, "bcm_week_post3_123123")
 
 
 class TestGetMessageDetails(TestCase):
     @responses.activate
     def test_get_message_details_not_found(self):
-        tag = "BCM_POST_week_3"
+        tag = "bcm_week_post3"
         responses.add(
             responses.GET,
             f"http://contentrepo/api/v2/pages?tag={tag}",
@@ -110,7 +110,7 @@ class TestGetMessageDetails(TestCase):
 
     @responses.activate
     def test_get_message_details_too_many(self):
-        tag = "BCM_POST_week_3"
+        tag = "bcm_week_post3"
         responses.add(
             responses.GET,
             f"http://contentrepo/api/v2/pages?tag={tag}",
@@ -127,7 +127,7 @@ class TestGetMessageDetails(TestCase):
     def test_get_message_details(self, mock_get_message):
         mock_get_message.return_value = (False, False, "Test Message {{1}}")
 
-        tag = "BCM_POST_week_3"
+        tag = "bcm_week_post3"
         responses.add(
             responses.GET,
             f"http://contentrepo/api/v2/pages?tag={tag}",
@@ -172,7 +172,7 @@ class TestGetNextMessage(TestCase):
                 "has_parameters": False,
                 "message": "Test Message Mom",
                 "next_send_date": utils.get_next_send_date(),
-                "tag": "RCM_week_pre17",
+                "tag": "rcm_week_pre17",
             },
         )
 
