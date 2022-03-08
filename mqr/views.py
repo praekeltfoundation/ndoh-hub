@@ -4,13 +4,11 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 
 from mqr.serializers import FaqSerializer, NextMessageSerializer
-from mqr.utils import get_message_details, get_next_message
 from mqr.utils import (
     get_age_bucket,
     get_facility_province,
     get_message_details,
-    get_next_send_date,
-    get_tag,
+    get_next_message,
     get_weeks_pregnant,
 )
 
