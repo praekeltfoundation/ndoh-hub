@@ -5,6 +5,7 @@ import requests
 from django.conf import settings
 
 from ndoh_hub.utils import get_today
+from registrations.models import ClinicCode
 
 
 def get_tag(arm, subscription_type, edd_or_dob_date, sequence=None):
@@ -70,3 +71,40 @@ def get_next_send_date():
     # TODO: maybe this should be smarter
     # calculate date based on edd_or_dob and next week, incase message failed?
     return get_today() + timedelta(weeks=1)
+
+
+def get_facility_province(facility_code):
+    try:
+        clinic_code = ClinicCode.objects.get(code=facility_code)
+    except ClinicCode.DoesNotExist:
+        clinic_code = None
+
+    return clinic_code
+
+
+def get_weeks_pregnant(estimated_date):
+    full_term_weeks = 40
+
+    # Get remaining weeks
+    remaining_weeks = (estimated_date - get_today()).days // 7
+
+    weeks_pregnant = full_term_weeks - remaining_weeks
+
+    if 16 <= weeks_pregnant <= 20:
+        return "16-20"
+    elif 21 <= weeks_pregnant <= 25:
+        return "21-25"
+    elif 26 <= weeks_pregnant <= 30:
+        return "26-30"
+    else:
+        return None
+
+
+def get_age_bucket(mom_age):
+    # Get age range
+    if 18 <= mom_age <= 30:
+        return "18-30"
+    elif mom_age >= 31:
+        return "31+"
+    else:
+        return None
