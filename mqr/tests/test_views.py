@@ -7,8 +7,9 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from mqr.models import MqrStrata
-from registrations.models import ClinicCode
 from ndoh_hub import utils
+from registrations.models import ClinicCode
+
 
 class NextMessageViewTests(APITestCase):
     url = reverse("mqr-nextmessage")
