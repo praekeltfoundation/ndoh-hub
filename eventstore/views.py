@@ -467,7 +467,7 @@ class Covid19TriageStartViewSet(GenericViewSet, CreateModelMixin, ListModelMixin
     filterset_class = Covid19TriageStartFilter
 
 
-class HCSStudyBRandomizationViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
+class HCSStudyBRandomizationViewSet(GenericViewSet):
     queryset = HCSStudyBRandomization.objects.all()
     serializer_class = HCSStudyBRandomizationSerializer
     permission_classes = (DjangoViewModelPermissions,)
@@ -475,12 +475,16 @@ class HCSStudyBRandomizationViewSet(GenericViewSet, CreateModelMixin, ListModelM
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = HCSStudyBRandomizationFilter
 
-    def create(self, *args, **kwargs):
-        try:
-            return super().create(*args, **kwargs)
-        except IntegrityError:
-            # We already have this entry
-            return Response(status=status.HTTP_200_OK)
+    def create(self, request, *args, **kwargs):
+        serializer = HCSStudyBRandomizationSerializer(data=request.data)
+
+        if serializer.is_valid():
+            obj, created = HCSStudyBRandomization.objects.update_or_create(**serializer.validated_data)
+
+            return Response(serializer.validated_data)
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 class HealthCheckUserProfileViewSet(GenericViewSet, RetrieveModelMixin):
