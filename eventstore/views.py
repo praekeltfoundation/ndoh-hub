@@ -22,6 +22,7 @@ from eventstore.models import (
     CHWRegistration,
     Covid19Triage,
     Covid19TriageStart,
+    HCSStudyBRandomization,
     DBEOnBehalfOfProfile,
     EddSwitch,
     Event,
@@ -49,6 +50,7 @@ from eventstore.serializers import (
     CHWRegistrationSerializer,
     Covid19TriageSerializer,
     Covid19TriageStartSerializer,
+    HCSStudyBRandomizationSerializer,
     Covid19TriageV2Serializer,
     Covid19TriageV3Serializer,
     Covid19TriageV4Serializer,
@@ -352,6 +354,14 @@ class Covid19TriageStartFilter(filters.FilterSet):
         fields: list = []
 
 
+class HCSStudyBRandomizationFilter(filters.FilterSet):
+    timestamp_gt = filters.IsoDateTimeFilter(field_name="timestamp", lookup_expr="gt")
+
+    class Meta:
+        model = HCSStudyBRandomization
+        fields: list = []
+
+
 class Covid19TriageViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
     queryset = Covid19Triage.objects.all()
     serializer_class = Covid19TriageSerializer
@@ -455,6 +465,22 @@ class Covid19TriageStartViewSet(GenericViewSet, CreateModelMixin, ListModelMixin
     pagination_class = CursorPaginationFactory("timestamp")
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = Covid19TriageStartFilter
+
+
+class HCSStudyBRandomizationViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
+    queryset = HCSStudyBRandomization.objects.all()
+    serializer_class = HCSStudyBRandomizationSerializer
+    permission_classes = (DjangoViewModelPermissions,)
+    pagination_class = CursorPaginationFactory("timestamp")
+    filter_backends = [filters.DjangoFilterBackend]
+    filterset_class = HCSStudyBRandomizationFilter
+
+    def create(self, *args, **kwargs):
+        try:
+            return super().create(*args, **kwargs)
+        except IntegrityError:
+            # We already have this entry
+            return Response(status=status.HTTP_200_OK)
 
 
 class HealthCheckUserProfileViewSet(GenericViewSet, RetrieveModelMixin):

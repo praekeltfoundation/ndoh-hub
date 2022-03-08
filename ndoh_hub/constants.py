@@ -54,3 +54,28 @@ HCS_STUDY_A_TARGETS = {
     "ZA-NC": {"total": 175, "percentage": 1},
     "ZA-GT": {"total": 4900, "percentage": 28},
 }
+
+HCS_STUDY_B_TARGETS = {
+    "WhatsApp": {
+        "ZA-LP": {"total": 1152, "percentage": 6},
+        "ZA-NW": {"total": 192, "percentage": 1},
+        "ZA-NL": {"total": 192, "percentage": 5},
+        "ZA-EC": {"total": 384, "percentage": 2},
+        "ZA-MP": {"total": 256, "percentage": 1},
+        "ZA-WC": {"total": 1024, "percentage": 5},
+        "ZA-FS": {"total": 448, "percentage": 2},
+        "ZA-NC": {"total": 128, "percentage": 1},
+        "ZA-GT": {"total": 1792, "percentage": 9}
+    },
+    "USSD": {
+        "ZA-LP": {"total": 2448, "percentage": 4},
+        "ZA-NW": {"total": 408, "percentage": 2},
+        "ZA-NL": {"total": 2176, "percentage": 11},
+        "ZA-EC": {"total": 816, "percentage": 4},
+        "ZA-MP": {"total": 544, "percentage": 3},
+        "ZA-WC": {"total": 2176, "percentage": 11},
+        "ZA-FS": {"total": 952, "percentage": 5},
+        "ZA-NC": {"total": 272, "percentage": 1},
+        "ZA-GT": {"total": 3808, "percentage": 19}
+    }
+}

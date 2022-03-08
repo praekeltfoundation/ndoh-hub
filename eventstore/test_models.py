@@ -2,7 +2,8 @@ from unittest.mock import call, patch
 
 from django.test import TestCase, override_settings
 
-from eventstore.models import Covid19Triage, Event, HealthCheckUserProfile, Message
+from eventstore.models import (
+    Covid19Triage, Event, HealthCheckUserProfile, Message,HCSStudyBRandomization)
 
 
 class MessageTests(TestCase):
@@ -484,3 +485,22 @@ class HealthCheckUserProfileTests(TestCase):
         self.assertIsNotNone(profile.hcs_study_a_arm)
 
         mock_update_turn_contact.delay.assert_called()
+
+
+class HCSStudyBRandomizationTests(TestCase):
+    @override_settings(
+        HCS_STUDY_B_ACTIVE=True,
+        HCS_STUDY_B_WHITELIST=["+27820001001"],
+        HCS_STUDY_B_CREATED_BY=["sometokenuser"]
+    )
+    def test_create_study_b_arm_when_active(self):
+        study = HCSStudyBRandomization(
+            msisdn="+27820001001",
+            province="ZA-WC",
+            created_by="sometokenuser",
+            source="WhatsApp"
+        )
+
+        study.process_study_b()
+
+        self.assertIsNotNone(study.study_b_arm)
