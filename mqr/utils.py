@@ -97,7 +97,7 @@ def get_faq_menu(tag, viewed):
     menu = []
     for i, page in enumerate(pages):
         order = str(page["order"])
-        title = page["title"]
+        title = page["title"].replace("*", "")
 
         faq_numbers.append(order)
         menu.append(f"*{i+1}* {title}")
