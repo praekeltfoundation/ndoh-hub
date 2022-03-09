@@ -65,7 +65,16 @@ class RandomStrataArmView(generics.GenericAPIView):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
-class NextMessageView(generics.GenericAPIView):
+class BaseMessageView(generics.GenericAPIView):
+    def get_tracking_data(self, serializer, message_type):
+        return {
+            "data__contact_uuid": str(serializer.validated_data.get("contact_uuid")),
+            "data__run_uuid": str(serializer.validated_data.get("run_uuid")),
+            "data__mqr": message_type,
+        }
+
+
+class NextMessageView(BaseMessageView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
@@ -82,7 +91,12 @@ class NextMessageView(generics.GenericAPIView):
         sequence = serializer.validated_data.get("sequence")
 
         response = get_next_message(
-            edd_or_dob_date, subscription_type, arm, sequence, mom_name
+            edd_or_dob_date,
+            subscription_type,
+            arm,
+            sequence,
+            mom_name,
+            self.get_tracking_data(serializer, "scheduled"),
         )
 
         if "error" in response:
@@ -91,7 +105,7 @@ class NextMessageView(generics.GenericAPIView):
         return Response(response, status=status.HTTP_200_OK)
 
 
-class FaqView(generics.GenericAPIView):
+class FaqView(BaseMessageView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
@@ -105,6 +119,11 @@ class FaqView(generics.GenericAPIView):
         faq_number = serializer.validated_data.get("faq_number")
         viewed = serializer.validated_data.get("viewed", [])
 
-        response = get_faq_message(tag, faq_number, viewed)
+        response = get_faq_message(
+            tag,
+            faq_number,
+            viewed,
+            self.get_tracking_data(serializer, "faq"),
+        )
 
         return Response(response, status=status.HTTP_200_OK)
