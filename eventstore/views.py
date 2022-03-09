@@ -3,6 +3,7 @@ from datetime import datetime
 from django.conf import settings
 from django.db import IntegrityError
 from django.http import Http404
+from django.http import JsonResponse
 from django_filters import rest_framework as filters
 from pytz import UTC
 from rest_framework import generics, permissions, serializers, status
@@ -467,7 +468,7 @@ class Covid19TriageStartViewSet(GenericViewSet, CreateModelMixin, ListModelMixin
     filterset_class = Covid19TriageStartFilter
 
 
-class HCSStudyBRandomizationViewSet(GenericViewSet):
+class HCSStudyBRandomizationViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
     queryset = HCSStudyBRandomization.objects.all()
     serializer_class = HCSStudyBRandomizationSerializer
     permission_classes = (DjangoViewModelPermissions,)
@@ -476,12 +477,17 @@ class HCSStudyBRandomizationViewSet(GenericViewSet):
     filterset_class = HCSStudyBRandomizationFilter
 
     def create(self, request, *args, **kwargs):
-        serializer = HCSStudyBRandomizationSerializer(data=request.data)
+
+        serializer = HCSStudyBRandomizationSerializer(
+            data=request.data, context={'request': request})
 
         if serializer.is_valid():
-            obj, created = HCSStudyBRandomization.objects.update_or_create(**serializer.validated_data)
-
-            return Response(serializer.validated_data)
+            data = serializer.validated_data
+            msisdn = data["msisdn"]
+            data["created_by"] = request.user.username
+            obj, created = HCSStudyBRandomization.objects.update_or_create(
+                msisdn=msisdn, defaults=data)
+            return JsonResponse(HCSStudyBRandomizationSerializer(obj).data)
         else:
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
