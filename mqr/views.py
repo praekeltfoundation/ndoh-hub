@@ -7,7 +7,7 @@ from mqr.serializers import FaqSerializer, NextMessageSerializer
 from mqr.utils import (
     get_age_bucket,
     get_facility_province,
-    get_message_details,
+    get_faq_message,
     get_next_message,
     get_weeks_pregnant,
 )
@@ -103,8 +103,8 @@ class FaqView(generics.GenericAPIView):
 
         tag = serializer.validated_data.get("tag")
         faq_number = serializer.validated_data.get("faq_number")
+        viewed = serializer.validated_data.get("viewed", [])
 
-        faq_tag = f"{tag}_faq{faq_number}"
-        response = get_message_details(faq_tag)
+        response = get_faq_message(tag, faq_number, viewed)
 
         return Response(response, status=status.HTTP_200_OK)

@@ -163,8 +163,6 @@ class TestGetNextMessage(TestCase):
         edd = datetime.strptime("20220701", "%Y%m%d").date()
         response = utils.get_next_message(edd, "pre", "RCM", None, "Mom")
 
-        print(response)
-
         self.assertEqual(
             response,
             {
@@ -175,6 +173,70 @@ class TestGetNextMessage(TestCase):
                 "tag": "rcm_week_pre17",
             },
         )
+
+
+class TestGetFaqMessage(TestCase):
+    @patch("mqr.utils.get_faq_menu")
+    @patch("mqr.utils.get_message_details")
+    def test_get_faq_message(self, mock_get_message_details, mock_get_faq_menu):
+        mock_get_message_details.return_value = {
+            "is_template": False,
+            "has_parameters": False,
+            "message": "Test Message Mom",
+        }
+        mock_get_faq_menu.return_value = ("*1* question1?\n*2* question 2?", "1,3")
+
+        response = utils.get_faq_message("rcm_week_pre21", 2, [])
+
+        self.assertEqual(
+            response,
+            {
+                "is_template": False,
+                "has_parameters": False,
+                "message": "Test Message Mom",
+                "faq_menu": "*1* question1?\n*2* question 2?",
+                "faq_numbers": "1,3",
+                "viewed": ["rcm_week_pre21_faq2"],
+            },
+        )
+
+
+class TestGetFaqMenu(TestCase):
+    @responses.activate
+    def test_get_faq_menu(self):
+        tag = "rcm_week_pre21"
+        responses.add(
+            responses.GET,
+            f"http://contentrepo/faqmenu?viewed=&tag={tag}",
+            json=[
+                {"order": 1, "title": "Question 1?"},
+                {"order": 3, "title": "Question 3?"},
+            ],
+            status=200,
+        )
+
+        menu, faq_numbers = utils.get_faq_menu(tag, [])
+
+        self.assertEqual(menu, "*1* Question 1?\n*2* Question 3?")
+        self.assertEqual(faq_numbers, "1,3")
+
+    @responses.activate
+    def test_get_faq_menu_with_viewed(self):
+        tag = "rcm_week_pre21"
+        responses.add(
+            responses.GET,
+            f"http://contentrepo/faqmenu?viewed={tag}_faq1&tag={tag}",
+            json=[
+                {"order": 1, "title": "Question 1?"},
+                {"order": 3, "title": "Question 3?"},
+            ],
+            status=200,
+        )
+
+        menu, faq_numbers = utils.get_faq_menu(tag, [f"{tag}_faq1"])
+
+        self.assertEqual(menu, "*1* Question 1?\n*2* Question 3?")
+        self.assertEqual(faq_numbers, "1,3")
 
 
 class TestGetNextSendDate(TestCase):
