@@ -17,6 +17,7 @@ def get_tag(arm, subscription_type, edd_or_dob_date, sequence=None):
 
 
 def get_message(page_id):
+    # TODO: add run_uuid and contact_uuid
     url = urljoin(
         settings.MQR_CONTENTREPO_URL, f"/api/v2/pages/{page_id}/?whatsapp=True"
     )
@@ -64,6 +65,43 @@ def get_next_message(edd_or_dob_date, subscription_type, arm, sequence, mom_name
     response["tag"] = tag
 
     return response
+
+
+def get_faq_message(tag, faq_number, viewed):
+    faq_tag = f"{tag}_faq{faq_number}"
+    response = get_message_details(faq_tag)
+
+    viewed.append(faq_tag)
+
+    faq_menu, faq_numbers = get_faq_menu(tag, viewed)
+
+    response["faq_menu"] = faq_menu
+    response["faq_numbers"] = faq_numbers
+    response["viewed"] = viewed
+
+    return response
+
+
+def get_faq_menu(tag, viewed):
+    viewed_filter = ",".join(viewed)
+    url = urljoin(
+        settings.MQR_CONTENTREPO_URL, f"/faqmenu?viewed={viewed_filter}&tag={tag}"
+    )
+    response = requests.get(url)
+    response.raise_for_status()
+
+    pages = response.json()
+
+    faq_numbers = []
+    menu = []
+    for i, page in enumerate(pages):
+        order = str(page["order"])
+        title = page["title"]
+
+        faq_numbers.append(order)
+        menu.append(f"*{i+1}* {title}")
+
+    return "\n".join(menu), ",".join(faq_numbers)
 
 
 def get_next_send_date():

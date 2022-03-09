@@ -4,7 +4,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 
 from mqr.serializers import FaqSerializer, NextMessageSerializer
-from mqr.utils import get_message_details, get_next_message
+from mqr.utils import get_faq_message, get_next_message
 
 from .models import MqrStrata
 from .serializers import MqrStrataSerializer
@@ -86,8 +86,8 @@ class FaqView(generics.GenericAPIView):
 
         tag = serializer.validated_data.get("tag")
         faq_number = serializer.validated_data.get("faq_number")
+        viewed = serializer.validated_data.get("viewed", [])
 
-        faq_tag = f"{tag}_faq{faq_number}"
-        response = get_message_details(faq_tag)
+        response = get_faq_message(tag, faq_number, viewed)
 
         return Response(response, status=status.HTTP_200_OK)

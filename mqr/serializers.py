@@ -18,3 +18,4 @@ class NextMessageSerializer(serializers.Serializer):
 class FaqSerializer(serializers.Serializer):
     tag = serializers.CharField(required=True)
     faq_number = serializers.IntegerField(required=True)
+    viewed = serializers.ListField(required=False)

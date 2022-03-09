@@ -109,19 +109,20 @@ class FaqViewTests(APITestCase):
             },
         )
 
-    @patch("mqr.views.get_message_details")
-    def test_faq_message(self, mock_get_message_details):
+    @patch("mqr.views.get_faq_message")
+    def test_faq_message(self, mock_get_faq_message):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
-        mock_get_message_details.return_value = {
+        mock_get_faq_message.return_value = {
             "is_template": False,
+            "has_parameters": False,
             "message": "Test Message 1",
         }
 
         response = self.client.post(
             self.url,
-            {"tag": "BCM_week_pre22", "faq_number": 1},
+            {"tag": "BCM_week_pre22", "faq_number": 1, "viewed": ["test"]},
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -130,10 +131,11 @@ class FaqViewTests(APITestCase):
             {
                 "message": "Test Message 1",
                 "is_template": False,
+                "has_parameters": False,
             },
         )
 
-        mock_get_message_details.assert_called_with("BCM_week_pre22_faq1")
+        mock_get_faq_message.assert_called_with("BCM_week_pre22", 1, ["test"])
 
 
 class StrataRandomization(APITestCase):
