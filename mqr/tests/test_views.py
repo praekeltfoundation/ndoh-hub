@@ -1,4 +1,5 @@
 import datetime
+import uuid
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -30,11 +31,16 @@ class NextMessageViewTests(APITestCase):
                 "edd_or_dob_date": ["This field is required."],
                 "subscription_type": ["This field is required."],
                 "mom_name": ["This field is required."],
+                "contact_uuid": ["This field is required."],
+                "run_uuid": ["This field is required."],
             },
         )
 
     @patch("mqr.views.get_next_message")
     def test_next_message(self, mock_get_next_message):
+        contact_uuid = str(uuid.uuid4())
+        run_uuid = str(uuid.uuid4())
+
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
@@ -53,6 +59,8 @@ class NextMessageViewTests(APITestCase):
                 "edd_or_dob_date": "2022-07-12",
                 "subscription_type": "PRE",
                 "mom_name": "Test",
+                "contact_uuid": contact_uuid,
+                "run_uuid": run_uuid,
             },
         )
 
@@ -68,8 +76,21 @@ class NextMessageViewTests(APITestCase):
             },
         )
 
+        mock_tracking_data = {
+            "data__contact_uuid": contact_uuid,
+            "data__run_uuid": run_uuid,
+            "data__mqr": "scheduled",
+        }
+
+        mock_get_next_message.assert_called_with(
+            datetime.date(2022, 7, 12), "PRE", "BCM", None, "Test", mock_tracking_data
+        )
+
     @patch("mqr.views.get_next_message")
     def test_next_message_error(self, mock_get_next_message):
+        contact_uuid = str(uuid.uuid4())
+        run_uuid = str(uuid.uuid4())
+
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
@@ -82,6 +103,8 @@ class NextMessageViewTests(APITestCase):
                 "edd_or_dob_date": "2022-07-12",
                 "subscription_type": "PRE",
                 "mom_name": "Test",
+                "contact_uuid": contact_uuid,
+                "run_uuid": run_uuid,
             },
         )
 
@@ -109,11 +132,16 @@ class FaqViewTests(APITestCase):
             {
                 "tag": ["This field is required."],
                 "faq_number": ["This field is required."],
+                "contact_uuid": ["This field is required."],
+                "run_uuid": ["This field is required."],
             },
         )
 
     @patch("mqr.views.get_faq_message")
     def test_faq_message(self, mock_get_faq_message):
+        contact_uuid = str(uuid.uuid4())
+        run_uuid = str(uuid.uuid4())
+
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
@@ -125,7 +153,13 @@ class FaqViewTests(APITestCase):
 
         response = self.client.post(
             self.url,
-            {"tag": "BCM_week_pre22", "faq_number": 1, "viewed": ["test"]},
+            {
+                "tag": "BCM_week_pre22",
+                "faq_number": 1,
+                "viewed": ["test"],
+                "contact_uuid": contact_uuid,
+                "run_uuid": run_uuid,
+            },
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -138,7 +172,15 @@ class FaqViewTests(APITestCase):
             },
         )
 
-        mock_get_faq_message.assert_called_with("BCM_week_pre22", 1, ["test"])
+        mock_tracking_data = {
+            "data__contact_uuid": contact_uuid,
+            "data__run_uuid": run_uuid,
+            "data__mqr": "faq",
+        }
+
+        mock_get_faq_message.assert_called_with(
+            "BCM_week_pre22", 1, ["test"], mock_tracking_data
+        )
 
 
 def override_get_today():

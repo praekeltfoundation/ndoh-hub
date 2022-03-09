@@ -43,11 +43,13 @@ class TestGetMessage(TestCase):
         """
         responses.add(
             responses.GET,
-            "http://contentrepo/api/v2/pages/1111/?whatsapp=True",
+            "http://contentrepo/api/v2/pages/1111/?whatsapp=True&tracking=yes",
             json={"body": {"text": {"value": {"message": "Test Message"}}}},
             status=200,
         )
-        is_template, has_parameters, message = utils.get_message(1111)
+        is_template, has_parameters, message = utils.get_message(
+            1111, {"tracking": "yes"}
+        )
         self.assertFalse(is_template)
         self.assertFalse(has_parameters)
         self.assertEqual(message, "Test Message")
@@ -59,7 +61,7 @@ class TestGetMessage(TestCase):
         """
         responses.add(
             responses.GET,
-            "http://contentrepo/api/v2/pages/1111/?whatsapp=True",
+            "http://contentrepo/api/v2/pages/1111/?whatsapp=True&tracking=yes",
             json={
                 "body": {"text": {"value": {"message": "Test Message"}}},
                 "is_whatsapp_template": True,
@@ -67,7 +69,9 @@ class TestGetMessage(TestCase):
             },
             status=200,
         )
-        is_template, has_parameters, message = utils.get_message(1111)
+        is_template, has_parameters, message = utils.get_message(
+            1111, {"tracking": "yes"}
+        )
         self.assertTrue(is_template)
         self.assertFalse(has_parameters)
         self.assertEqual(message, "bcm_week_post3_123123")
@@ -79,7 +83,7 @@ class TestGetMessage(TestCase):
         """
         responses.add(
             responses.GET,
-            "http://contentrepo/api/v2/pages/1111/?whatsapp=True",
+            "http://contentrepo/api/v2/pages/1111/?whatsapp=True&tracking=yes",
             json={
                 "body": {"text": {"value": {"message": "Test Message {{1}}"}}},
                 "is_whatsapp_template": True,
@@ -87,7 +91,9 @@ class TestGetMessage(TestCase):
             },
             status=200,
         )
-        is_template, has_parameters, message = utils.get_message(1111)
+        is_template, has_parameters, message = utils.get_message(
+            1111, {"tracking": "yes"}
+        )
         self.assertTrue(is_template)
         self.assertTrue(has_parameters)
         self.assertEqual(message, "bcm_week_post3_123123")
@@ -104,7 +110,7 @@ class TestGetMessageDetails(TestCase):
             status=200,
         )
 
-        details = utils.get_message_details(tag)
+        details = utils.get_message_details(tag, {})
 
         self.assertEqual(details, {"error": "no message found"})
 
@@ -118,7 +124,7 @@ class TestGetMessageDetails(TestCase):
             status=200,
         )
 
-        details = utils.get_message_details(tag)
+        details = utils.get_message_details(tag, {})
 
         self.assertEqual(details, {"error": "multiple message found"})
 
@@ -135,7 +141,7 @@ class TestGetMessageDetails(TestCase):
             status=200,
         )
 
-        details = utils.get_message_details(tag, "Mom")
+        details = utils.get_message_details(tag, {}, "Mom")
 
         self.assertEqual(
             details,
@@ -161,7 +167,7 @@ class TestGetNextMessage(TestCase):
         }
 
         edd = datetime.strptime("20220701", "%Y%m%d").date()
-        response = utils.get_next_message(edd, "pre", "RCM", None, "Mom")
+        response = utils.get_next_message(edd, "pre", "RCM", None, "Mom", {})
 
         self.assertEqual(
             response,
@@ -186,7 +192,7 @@ class TestGetFaqMessage(TestCase):
         }
         mock_get_faq_menu.return_value = ("*1* question1?\n*2* question 2?", "1,3")
 
-        response = utils.get_faq_message("rcm_week_pre21", 2, [])
+        response = utils.get_faq_message("rcm_week_pre21", 2, [], {})
 
         self.assertEqual(
             response,
@@ -217,7 +223,7 @@ class TestGetFaqMenu(TestCase):
 
         menu, faq_numbers = utils.get_faq_menu(tag, [])
 
-        self.assertEqual(menu, "*1* Question 1?\n*2* Question 3?")
+        self.assertEqual(menu, "*1* - Question 1?\n*2* - Question 3?")
         self.assertEqual(faq_numbers, "1,3")
 
     @responses.activate
@@ -235,7 +241,7 @@ class TestGetFaqMenu(TestCase):
 
         menu, faq_numbers = utils.get_faq_menu(tag, [f"{tag}_faq1"])
 
-        self.assertEqual(menu, "*1* Question 1?\n*2* Question 3?")
+        self.assertEqual(menu, "*1* - Question 1?\n*2* - Question 3?")
         self.assertEqual(faq_numbers, "1,3")
 
 

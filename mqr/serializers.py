@@ -1,3 +1,4 @@
+from typing_extensions import Required
 from rest_framework import serializers
 
 
@@ -7,7 +8,12 @@ class MqrStrataSerializer(serializers.Serializer):
     mom_age = serializers.IntegerField(required=True)
 
 
-class NextMessageSerializer(serializers.Serializer):
+class BaseMessageSerializer(serializers.Serializer):
+    contact_uuid = serializers.UUIDField(required=True)
+    run_uuid = serializers.UUIDField(required=True)
+
+
+class NextMessageSerializer(BaseMessageSerializer):
     edd_or_dob_date = serializers.DateField(required=True)
     subscription_type = serializers.CharField(required=True)
     arm = serializers.CharField(required=True)
@@ -15,7 +21,7 @@ class NextMessageSerializer(serializers.Serializer):
     sequence = serializers.CharField(required=False)
 
 
-class FaqSerializer(serializers.Serializer):
+class FaqSerializer(BaseMessageSerializer):
     tag = serializers.CharField(required=True)
     faq_number = serializers.IntegerField(required=True)
     viewed = serializers.ListField(required=False)

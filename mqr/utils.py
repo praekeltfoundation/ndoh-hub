@@ -17,12 +17,10 @@ def get_tag(arm, subscription_type, edd_or_dob_date, sequence=None):
     return label.lower()
 
 
-def get_message(page_id):
-    # TODO: add run_uuid and contact_uuid
-    url = urljoin(
-        settings.MQR_CONTENTREPO_URL, f"/api/v2/pages/{page_id}/?whatsapp=True"
-    )
-    response = requests.get(url)
+def get_message(page_id, tracking_data):
+    tracking_data["whatsapp"] = "True"
+    url = urljoin(settings.MQR_CONTENTREPO_URL, f"/api/v2/pages/{page_id}/")
+    response = requests.get(url, params=tracking_data)
     response.raise_for_status()
 
     page = response.json()
@@ -34,14 +32,14 @@ def get_message(page_id):
     return False, False, message
 
 
-def get_message_details(tag, mom_name=None):
+def get_message_details(tag, tracking_data, mom_name=None):
     url = urljoin(settings.MQR_CONTENTREPO_URL, f"api/v2/pages?tag={tag}")
     response = requests.get(url)
     response.raise_for_status()
 
     if len(response.json()["results"]) == 1:
         page_id = response.json()["results"][0]["id"]
-        is_template, has_parameters, message = get_message(page_id)
+        is_template, has_parameters, message = get_message(page_id, tracking_data)
 
         if not is_template and mom_name:
             message = message.replace("{{1}}", mom_name)
@@ -57,10 +55,12 @@ def get_message_details(tag, mom_name=None):
         return {"error": "multiple message found"}
 
 
-def get_next_message(edd_or_dob_date, subscription_type, arm, sequence, mom_name):
+def get_next_message(
+    edd_or_dob_date, subscription_type, arm, sequence, mom_name, tracking_data
+):
     tag = get_tag(arm, subscription_type, edd_or_dob_date, sequence)
 
-    response = get_message_details(tag, mom_name)
+    response = get_message_details(tag, tracking_data, mom_name)
 
     response["next_send_date"] = get_next_send_date()
     response["tag"] = tag
@@ -68,9 +68,9 @@ def get_next_message(edd_or_dob_date, subscription_type, arm, sequence, mom_name
     return response
 
 
-def get_faq_message(tag, faq_number, viewed):
+def get_faq_message(tag, faq_number, viewed, tracking_data):
     faq_tag = f"{tag}_faq{faq_number}"
-    response = get_message_details(faq_tag)
+    response = get_message_details(faq_tag, tracking_data)
 
     viewed.append(faq_tag)
 
@@ -100,7 +100,7 @@ def get_faq_menu(tag, viewed):
         title = page["title"].replace("*", "")
 
         faq_numbers.append(order)
-        menu.append(f"*{i+1}* {title}")
+        menu.append(f"*{i+1}* - {title}")
 
     return "\n".join(menu), ",".join(faq_numbers)
 
