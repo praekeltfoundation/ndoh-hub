@@ -2428,9 +2428,7 @@ class HCSStudyBRandomizationViewSetTests(APITestCase, BaseEventTestCase):
                 "province": "ZA-WC",
             },
         )
-        # self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        print(response.json())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         [rand] = HCSStudyBRandomization.objects.all()
         self.assertEqual(rand.msisdn, "+27820001001")
         self.assertEqual(rand.source, "WhatsApp")
@@ -2439,7 +2437,7 @@ class HCSStudyBRandomizationViewSetTests(APITestCase, BaseEventTestCase):
 
     def test_repeat_request(self):
         """
-        XXX Should create a new HCSStudyBRandomization object in the database
+        Should update an existing HCSStudyBRandomization object in the database
         """
         user = self.create_authed_user()
         # Create obj
@@ -2451,9 +2449,7 @@ class HCSStudyBRandomizationViewSetTests(APITestCase, BaseEventTestCase):
                 "province": "ZA-WC",
             },
         )
-        # self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        print(response.json())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         [rand] = HCSStudyBRandomization.objects.all()
         self.assertEqual(rand.msisdn, "+27820001001")
         self.assertEqual(rand.source, "WhatsApp")
@@ -2469,7 +2465,6 @@ class HCSStudyBRandomizationViewSetTests(APITestCase, BaseEventTestCase):
                 "province": "ZA-EC",
             },
         )
-        # self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         print(response.json())
         [rand] = HCSStudyBRandomization.objects.all()

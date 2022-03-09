@@ -13,7 +13,7 @@ from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveMode
 from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ViewSet
+from rest_framework.viewsets import GenericViewSet, ViewSet, ModelViewSet
 
 from eventstore.models import (
     BabyDobSwitch,
@@ -487,7 +487,9 @@ class HCSStudyBRandomizationViewSet(GenericViewSet, CreateModelMixin, ListModelM
             data["created_by"] = request.user.username
             obj, created = HCSStudyBRandomization.objects.update_or_create(
                 msisdn=msisdn, defaults=data)
-            return JsonResponse(HCSStudyBRandomizationSerializer(obj).data)
+            code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+            return JsonResponse(
+                HCSStudyBRandomizationSerializer(obj).data, status=code)
         else:
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
