@@ -16,6 +16,7 @@ from eventstore.models import (
     EddSwitch,
     Feedback,
     HealthCheckUserProfile,
+    HCSStudyBRandomization,
     IdentificationSwitch,
     ImportError,
     ImportRow,
@@ -177,6 +178,11 @@ class Covid19TriageStartAdmin(BaseEventAdmin):
 @admin.register(HealthCheckUserProfile)
 class HealthCheckUserProfileAdmin(BaseEventAdmin):
     list_display = ("msisdn", "first_name", "gender")
+
+
+@admin.register(HCSStudyBRandomization)
+class HCSStudyBRandomizationAdmin(BaseEventAdmin):
+    list_display = ("msisdn", "study_b_arm", "province", "source")
 
 
 @admin.register(CDUAddressUpdate)
