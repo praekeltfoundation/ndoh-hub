@@ -3,7 +3,12 @@ from unittest.mock import call, patch
 from django.test import TestCase, override_settings
 
 from eventstore.models import (
-    Covid19Triage, Event, HealthCheckUserProfile, Message,HCSStudyBRandomization)
+    Covid19Triage,
+    Event,
+    HCSStudyBRandomization,
+    HealthCheckUserProfile,
+    Message,
+)
 
 
 class MessageTests(TestCase):
@@ -491,14 +496,14 @@ class HCSStudyBRandomizationTests(TestCase):
     @override_settings(
         HCS_STUDY_B_ACTIVE=True,
         HCS_STUDY_B_WHITELIST=["+27820001001"],
-        HCS_STUDY_B_CREATED_BY=["sometokenuser"]
+        HCS_STUDY_B_CREATED_BY=["sometokenuser"],
     )
     def test_create_study_b_arm_when_active(self):
         study = HCSStudyBRandomization(
             msisdn="+27820001001",
             province="ZA-WC",
             created_by="sometokenuser",
-            source="WhatsApp"
+            source="WhatsApp",
         )
 
         study.process_study_b()

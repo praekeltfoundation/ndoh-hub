@@ -2,8 +2,7 @@ from datetime import datetime
 
 from django.conf import settings
 from django.db import IntegrityError
-from django.http import Http404
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django_filters import rest_framework as filters
 from pytz import UTC
 from rest_framework import generics, permissions, serializers, status
@@ -13,7 +12,7 @@ from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveMode
 from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ViewSet, ModelViewSet
+from rest_framework.viewsets import GenericViewSet, ViewSet
 
 from eventstore.models import (
     BabyDobSwitch,
@@ -23,11 +22,11 @@ from eventstore.models import (
     CHWRegistration,
     Covid19Triage,
     Covid19TriageStart,
-    HCSStudyBRandomization,
     DBEOnBehalfOfProfile,
     EddSwitch,
     Event,
     Feedback,
+    HCSStudyBRandomization,
     HealthCheckUserProfile,
     IdentificationSwitch,
     LanguageSwitch,
@@ -51,7 +50,6 @@ from eventstore.serializers import (
     CHWRegistrationSerializer,
     Covid19TriageSerializer,
     Covid19TriageStartSerializer,
-    HCSStudyBRandomizationSerializer,
     Covid19TriageV2Serializer,
     Covid19TriageV3Serializer,
     Covid19TriageV4Serializer,
@@ -59,6 +57,7 @@ from eventstore.serializers import (
     EddSwitchSerializer,
     FeedbackSerializer,
     ForgetContactSerializer,
+    HCSStudyBRandomizationSerializer,
     HealthCheckUserProfileSerializer,
     IdentificationSwitchSerializer,
     LanguageSwitchSerializer,
@@ -479,20 +478,20 @@ class HCSStudyBRandomizationViewSet(GenericViewSet, CreateModelMixin, ListModelM
     def create(self, request, *args, **kwargs):
 
         serializer = HCSStudyBRandomizationSerializer(
-            data=request.data, context={'request': request})
+            data=request.data, context={"request": request}
+        )
 
         if serializer.is_valid():
             data = serializer.validated_data
             msisdn = data["msisdn"]
             data["created_by"] = request.user.username
             obj, created = HCSStudyBRandomization.objects.update_or_create(
-                msisdn=msisdn, defaults=data)
+                msisdn=msisdn, defaults=data
+            )
             code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
-            return JsonResponse(
-                HCSStudyBRandomizationSerializer(obj).data, status=code)
+            return JsonResponse(HCSStudyBRandomizationSerializer(obj).data, status=code)
         else:
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class HealthCheckUserProfileViewSet(GenericViewSet, RetrieveModelMixin):

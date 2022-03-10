@@ -2395,9 +2395,9 @@ class HCSStudyBRandomizationViewSetTests(APITestCase, BaseEventTestCase):
 
     def create_authed_user(self):
         user = get_user_model().objects.create_user("test")
-        user.user_permissions.add(Permission.objects.get(
-            codename="add_hcsstudybrandomization"
-        ))
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_hcsstudybrandomization")
+        )
         self.client.force_authenticate(user)
         return user
 
@@ -2409,11 +2409,14 @@ class HCSStudyBRandomizationViewSetTests(APITestCase, BaseEventTestCase):
         self.client.force_authenticate(user)
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.json(), {
-            "msisdn": ["This field is required."],
-            "source": ["This field is required."],
-            "province": ["This field is required."],
-        })
+        self.assertEqual(
+            response.json(),
+            {
+                "msisdn": ["This field is required."],
+                "source": ["This field is required."],
+                "province": ["This field is required."],
+            },
+        )
 
     def test_successful_request(self):
         """

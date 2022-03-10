@@ -12,10 +12,10 @@ from eventstore.models import (
     CHWRegistration,
     Covid19Triage,
     Covid19TriageStart,
-    HCSStudyBRandomization,
     DBEOnBehalfOfProfile,
     EddSwitch,
     Feedback,
+    HCSStudyBRandomization,
     HealthCheckUserProfile,
     IdentificationSwitch,
     LanguageSwitch,
@@ -318,7 +318,14 @@ class HCSStudyBRandomizationSerializer(BaseEventSerializer):
 
     class Meta:
         model = HCSStudyBRandomization
-        fields = ("msisdn", "source", "timestamp", "created_by", "province", "study_b_arm")
+        fields = (
+            "msisdn",
+            "source",
+            "timestamp",
+            "created_by",
+            "province",
+            "study_b_arm",
+        )
         read_only_fields = ("msisdn", "created_by")
 
 

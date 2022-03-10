@@ -579,7 +579,9 @@ class HCSStudyBRandomization(models.Model):
         ("USSD", "USSD"),
     )
 
-    msisdn = models.CharField(primary_key=True, max_length=255, validators=[za_phone_number])
+    msisdn = models.CharField(
+        primary_key=True, max_length=255, validators=[za_phone_number]
+    )
     source = models.CharField(max_length=255, choices=SOURCE_CHOICES)
     timestamp = models.DateTimeField(default=timezone.now, db_index=True)
     created_by = models.CharField(max_length=255, blank=True, default="")
@@ -602,7 +604,9 @@ class HCSStudyBRandomization(models.Model):
 
     def get_random_study_b_arm(self):
         target_total = HCS_STUDY_B_TARGETS[self.source][self.province]["total"]
-        target_percentage = HCS_STUDY_B_TARGETS[self.source][self.province]["percentage"]
+        target_percentage = HCS_STUDY_B_TARGETS[self.source][self.province][
+            "percentage"
+        ]
 
         actual_total, actual_percentage = self.get_study_totals_per_province()
 

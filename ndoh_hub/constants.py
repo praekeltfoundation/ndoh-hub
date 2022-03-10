@@ -65,7 +65,7 @@ HCS_STUDY_B_TARGETS = {
         "ZA-WC": {"total": 1024, "percentage": 5},
         "ZA-FS": {"total": 448, "percentage": 2},
         "ZA-NC": {"total": 128, "percentage": 1},
-        "ZA-GT": {"total": 1792, "percentage": 9}
+        "ZA-GT": {"total": 1792, "percentage": 9},
     },
     "USSD": {
         "ZA-LP": {"total": 2448, "percentage": 4},
@@ -76,6 +76,6 @@ HCS_STUDY_B_TARGETS = {
         "ZA-WC": {"total": 2176, "percentage": 11},
         "ZA-FS": {"total": 952, "percentage": 5},
         "ZA-NC": {"total": 272, "percentage": 1},
-        "ZA-GT": {"total": 3808, "percentage": 19}
-    }
+        "ZA-GT": {"total": 3808, "percentage": 19},
+    },
 }
