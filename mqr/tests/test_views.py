@@ -61,6 +61,7 @@ class NextMessageViewTests(APITestCase):
                 "mom_name": "Test",
                 "contact_uuid": contact_uuid,
                 "run_uuid": run_uuid,
+                "sequence": "",
             },
         )
 
@@ -83,7 +84,7 @@ class NextMessageViewTests(APITestCase):
         }
 
         mock_get_next_message.assert_called_with(
-            datetime.date(2022, 7, 12), "PRE", "BCM", None, "Test", mock_tracking_data
+            datetime.date(2022, 7, 12), "PRE", "BCM", "", "Test", mock_tracking_data
         )
 
     @patch("mqr.views.get_next_message")
