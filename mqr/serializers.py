@@ -17,7 +17,7 @@ class NextMessageSerializer(BaseMessageSerializer):
     subscription_type = serializers.CharField(required=True)
     arm = serializers.CharField(required=True)
     mom_name = serializers.CharField(required=True)
-    sequence = serializers.CharField(required=False)
+    sequence = serializers.CharField(required=False, allow_blank=True)
 
 
 class FaqSerializer(BaseMessageSerializer):
