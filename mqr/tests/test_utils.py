@@ -115,6 +115,20 @@ class TestGetMessageDetails(TestCase):
         self.assertEqual(details, {"error": "no message found"})
 
     @responses.activate
+    def test_get_message_details_not_found_arm(self):
+        tag = "arm_week_post3"
+        responses.add(
+            responses.GET,
+            f"http://contentrepo/api/v2/pages?tag={tag}",
+            json={"results": []},
+            status=200,
+        )
+
+        details = utils.get_message_details(tag, {})
+
+        self.assertEqual(details, {"warning": "no message found"})
+
+    @responses.activate
     def test_get_message_details_too_many(self):
         tag = "bcm_week_post3"
         responses.add(
