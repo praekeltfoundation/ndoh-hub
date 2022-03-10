@@ -49,7 +49,9 @@ def get_message_details(tag, tracking_data, mom_name=None):
             "has_parameters": has_parameters,
             "message": message,
         }
-    if len(response.json()["results"]) == 0:
+    if len(response.json()["results"]) == 0 and tag.startswith("arm"):
+        return {"warning": "no message found"}
+    elif len(response.json()["results"]) == 0:
         return {"error": "no message found"}
     elif len(response.json()["results"]) > 1:
         return {"error": "multiple message found"}
