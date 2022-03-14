@@ -24,6 +24,7 @@ from eventstore.views import (
     EddSwitchViewSet,
     FeedbackViewSet,
     ForgetContactView,
+    HCSStudyBRandomizationViewSet,
     HealthCheckUserProfileViewSet,
     IdentificationSwitchViewSet,
     LanguageSwitchViewSet,
@@ -47,6 +48,7 @@ v2router.register("babyswitches", BabySwitchViewSet)
 v2router.register("channelswitches", ChannelSwitchViewSet)
 v2router.register("covid19triage", Covid19TriageViewSet)
 v2router.register("covid19triagestart", Covid19TriageStartViewSet)
+v2router.register("hcsstudybrandomarm", HCSStudyBRandomizationViewSet)
 v2router.register("msisdnswitches", MSISDNSwitchViewSet)
 v2router.register("languageswitches", LanguageSwitchViewSet)
 v2router.register("identificationswitches", IdentificationSwitchViewSet)

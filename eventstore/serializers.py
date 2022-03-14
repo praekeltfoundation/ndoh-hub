@@ -15,6 +15,7 @@ from eventstore.models import (
     DBEOnBehalfOfProfile,
     EddSwitch,
     Feedback,
+    HCSStudyBRandomization,
     HealthCheckUserProfile,
     IdentificationSwitch,
     LanguageSwitch,
@@ -310,6 +311,22 @@ class Covid19TriageV4Serializer(BaseEventSerializer):
     def get_profile(self, obj):
         profile = HealthCheckUserProfile.objects.get_or_prefill(msisdn=obj.msisdn)
         return HealthCheckUserProfileSerializer(profile, many=False).data
+
+
+class HCSStudyBRandomizationSerializer(BaseEventSerializer):
+    msisdn = MSISDNField(country="ZA")
+
+    class Meta:
+        model = HCSStudyBRandomization
+        fields = (
+            "msisdn",
+            "source",
+            "timestamp",
+            "created_by",
+            "province",
+            "study_b_arm",
+        )
+        read_only_fields = ("msisdn", "created_by")
 
 
 class Covid19TriageStartSerializer(BaseEventSerializer):

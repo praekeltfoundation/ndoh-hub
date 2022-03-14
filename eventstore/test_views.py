@@ -34,6 +34,7 @@ from eventstore.models import (
     EddSwitch,
     Event,
     Feedback,
+    HCSStudyBRandomization,
     HealthCheckUserProfile,
     IdentificationSwitch,
     LanguageSwitch,
@@ -2387,6 +2388,92 @@ class Covid19TriageStartViewSetTests(APITestCase, BaseEventTestCase):
         self.assertEqual(
             r, {"msisdn": "+27820001001", "source": "USSD", "created_by": ""}
         )
+
+
+class HCSStudyBRandomizationViewSetTests(APITestCase, BaseEventTestCase):
+    url = reverse("hcsstudybrandomization-list")
+
+    def create_authed_user(self):
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_hcsstudybrandomization")
+        )
+        self.client.force_authenticate(user)
+        return user
+
+    def test_data_validation(self):
+        """
+        The supplied data must be validated, and any errors returned
+        """
+        user = self.create_authed_user()
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {
+                "msisdn": ["This field is required."],
+                "source": ["This field is required."],
+                "province": ["This field is required."],
+            },
+        )
+
+    def test_successful_request(self):
+        """
+        Should create a new HCSStudyBRandomization object in the database
+        """
+        user = self.create_authed_user()
+        response = self.client.post(
+            self.url,
+            {
+                "msisdn": "+27820001001",
+                "source": "WhatsApp",
+                "province": "ZA-WC",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [rand] = HCSStudyBRandomization.objects.all()
+        self.assertEqual(rand.msisdn, "+27820001001")
+        self.assertEqual(rand.source, "WhatsApp")
+        self.assertEqual(rand.province, "ZA-WC")
+        self.assertEqual(rand.created_by, user.username)
+
+    def test_repeat_request(self):
+        """
+        Should update an existing HCSStudyBRandomization object in the database
+        """
+        user = self.create_authed_user()
+        # Create obj
+        response = self.client.post(
+            self.url,
+            {
+                "msisdn": "+27820001001",
+                "source": "WhatsApp",
+                "province": "ZA-WC",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [rand] = HCSStudyBRandomization.objects.all()
+        self.assertEqual(rand.msisdn, "+27820001001")
+        self.assertEqual(rand.source, "WhatsApp")
+        self.assertEqual(rand.province, "ZA-WC")
+        self.assertEqual(rand.created_by, user.username)
+
+        # Update obj
+        response = self.client.post(
+            self.url,
+            {
+                "msisdn": "+27820001001",
+                "source": "WhatsApp",
+                "province": "ZA-EC",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        [rand] = HCSStudyBRandomization.objects.all()
+        self.assertEqual(rand.msisdn, "+27820001001")
+        self.assertEqual(rand.source, "WhatsApp")
+        self.assertEqual(rand.province, "ZA-EC")
+        self.assertEqual(rand.created_by, user.username)
 
 
 class HealthCheckUserProfileViewSetTests(APITestCase, BaseEventTestCase):

@@ -17,7 +17,7 @@ from eventstore.validators import (
     validate_sa_id_number,
     validate_true,
 )
-from ndoh_hub.constants import HCS_STUDY_A_TARGETS
+from ndoh_hub.constants import HCS_STUDY_A_TARGETS, HCS_STUDY_B_TARGETS
 from ndoh_hub.utils import is_valid_edd_date
 
 from .validators import geographic_coordinate, za_phone_number
@@ -559,6 +559,77 @@ class Covid19TriageStart(models.Model):
     source = models.CharField(max_length=255)
     timestamp = models.DateTimeField(default=timezone.now, db_index=True)
     created_by = models.CharField(max_length=255, blank=True, default="")
+
+
+class HCSStudyBRandomization(models.Model):
+    ARM_CONTROL = "C"
+    ARM_TREATMENT_1 = "T1"
+    ARM_TREATMENT_2 = "T2"
+    ARM_TREATMENT_3 = "T3"
+
+    STUDY_ARM_B_CHOICES = (
+        (ARM_CONTROL, "Control"),
+        (ARM_TREATMENT_1, "Treatment 1"),
+        (ARM_TREATMENT_2, "Treatment 2"),
+        (ARM_TREATMENT_3, "Treatment 3"),
+    )
+
+    SOURCE_CHOICES = (
+        ("WhatsApp", "WhatsApp"),
+        ("USSD", "USSD"),
+    )
+
+    msisdn = models.CharField(
+        primary_key=True, max_length=255, validators=[za_phone_number]
+    )
+    source = models.CharField(max_length=255, choices=SOURCE_CHOICES)
+    timestamp = models.DateTimeField(default=timezone.now, db_index=True)
+    created_by = models.CharField(max_length=255, blank=True, default="")
+    province = models.CharField(max_length=6, choices=Covid19Triage.PROVINCE_CHOICES)
+    study_b_arm = models.CharField(
+        max_length=3, choices=STUDY_ARM_B_CHOICES, null=True, default=None
+    )
+
+    def process_study_b(self):
+        if self.msisdn not in settings.HCS_STUDY_B_WHITELIST:
+            if not settings.HCS_STUDY_B_ACTIVE:
+                return
+        if self.created_by in settings.HCS_STUDY_B_CREATED_BY and not self.study_b_arm:
+            self.study_b_arm = self.get_random_study_b_arm()
+
+            if self.study_b_arm:
+                update_turn_contact.delay(
+                    self.msisdn, "hcs_study_b_arm", self.study_b_arm
+                )
+
+    def get_random_study_b_arm(self):
+        target_total = HCS_STUDY_B_TARGETS[self.source][self.province]["total"]
+        target_percentage = HCS_STUDY_B_TARGETS[self.source][self.province][
+            "percentage"
+        ]
+
+        actual_total, actual_percentage = self.get_study_totals_per_province()
+
+        if actual_total < target_total or actual_percentage < target_percentage:
+            return random.choice(self.STUDY_ARM_B_CHOICES)[0]
+
+    def get_study_totals_per_province(self):
+        all_provinces = HCSStudyBRandomization.objects.filter(
+            study_b_arm__isnull=False
+        ).values("province")
+
+        all_total = all_provinces.count()
+        province_total = all_provinces.filter(province=self.province).count()
+
+        province_percentage = 0
+        if all_total > 0:
+            province_percentage = province_total * 100 / all_total
+
+        return province_total, province_percentage
+
+    def save(self, *args, **kwargs):
+        self.process_study_b()
+        super().save(*args, **kwargs)
 
 
 class HealthCheckUserProfileManager(models.Manager):
