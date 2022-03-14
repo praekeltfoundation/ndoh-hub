@@ -2469,7 +2469,6 @@ class HCSStudyBRandomizationViewSetTests(APITestCase, BaseEventTestCase):
             },
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        print(response.json())
         [rand] = HCSStudyBRandomization.objects.all()
         self.assertEqual(rand.msisdn, "+27820001001")
         self.assertEqual(rand.source, "WhatsApp")

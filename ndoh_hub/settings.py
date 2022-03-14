@@ -359,7 +359,8 @@ HCS_STUDY_A_CREATED_BY = env.str("HCS_STUDY_A_CREATED_BY", "whatsapp_healthcheck
 HCS_STUDY_B_ACTIVE = env.bool("HCS_STUDY_B_ACTIVE", True)
 HCS_STUDY_B_WHITELIST = env.list("HCS_STUDY_B_WHITELIST", default=["*"])
 HCS_STUDY_B_CREATED_BY = env.list(
-    "HCS_STUDY_B_CREATED_BY", default=["whatsapp_healthcheck", "ussd_healthcheck"]
+    "HCS_STUDY_B_CREATED_BY",
+    default=["whatsapp_higherhealth_healthcheck", "ussd_higherhealth_healthcheck"]
 )
 HCS_STUDY_C_ACTIVE = env.bool("HCS_STUDY_C_ACTIVE", False)
 HCS_STUDY_C_REGISTRATION_FLOW_ID = env.str("HCS_STUDY_C_REGISTRATION_FLOW_ID", None)
