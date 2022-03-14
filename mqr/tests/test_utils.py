@@ -194,6 +194,70 @@ class TestGetNextMessage(TestCase):
             },
         )
 
+    @responses.activate
+    @patch("mqr.utils.get_message_details")
+    def test_get_next_message_with_sequence(self, mock_get_message_details):
+
+        mock_get_message_details.return_value = {
+            "is_template": False,
+            "has_parameters": False,
+            "message": "Test Message Mom",
+        }
+
+        responses.add(
+            responses.GET,
+            "http://contentrepo/api/v2/pages?tag=rcm_week_pre17_b",
+            json={"results": [{"id": 1111}]},
+            status=200,
+        )
+
+        edd = datetime.strptime("20220701", "%Y%m%d").date()
+        response = utils.get_next_message(edd, "pre", "RCM", "a", "Mom", {})
+
+        message_prompt = "To get another helpful message tomorrow, reply *YES*."
+
+        self.assertEqual(
+            response,
+            {
+                "has_next_message": True,
+                "is_template": False,
+                "has_parameters": False,
+                "message": f"Test Message Mom\n\n{message_prompt}",
+            },
+        )
+
+    @responses.activate
+    @patch("mqr.utils.get_message_details")
+    def test_get_next_message_with_sequence_last(self, mock_get_message_details):
+
+        mock_get_message_details.return_value = {
+            "is_template": False,
+            "has_parameters": False,
+            "message": "Test Message Mom",
+        }
+
+        responses.add(
+            responses.GET,
+            "http://contentrepo/api/v2/pages?tag=rcm_week_pre17_b",
+            json={"results": []},
+            status=200,
+        )
+
+        edd = datetime.strptime("20220701", "%Y%m%d").date()
+        response = utils.get_next_message(edd, "pre", "RCM", "a", "Mom", {})
+
+        message_prompt = "-----\nReply:\n*MENU* for the main menu 📌"
+
+        self.assertEqual(
+            response,
+            {
+                "has_next_message": False,
+                "is_template": False,
+                "has_parameters": False,
+                "message": f"Test Message Mom\n\n{message_prompt}",
+            },
+        )
+
 
 class TestGetFaqMessage(TestCase):
     @patch("mqr.utils.get_faq_menu")

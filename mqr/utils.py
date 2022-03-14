@@ -64,8 +64,25 @@ def get_next_message(
 
     response = get_message_details(tag, tracking_data, mom_name)
 
-    response["next_send_date"] = get_next_send_date()
-    response["tag"] = tag
+    if sequence:
+        next_sequence = chr(ord(sequence) + 1)
+        next_tag = get_tag(arm, subscription_type, edd_or_dob_date, next_sequence)
+        url = urljoin(settings.MQR_CONTENTREPO_URL, f"api/v2/pages?tag={next_tag}")
+        contentrepo_response = requests.get(url)
+        contentrepo_response.raise_for_status()
+
+        if len(contentrepo_response.json()["results"]) == 1:
+            prompt_message = "To get another helpful message tomorrow, reply *YES*."
+            response["has_next_message"] = True
+        else:
+            prompt_message = "-----\nReply:\n*MENU* for the main menu 📌"
+            response["has_next_message"] = False
+
+        base_message = response["message"]
+        response["message"] = f"{base_message}\n\n{prompt_message}"
+    else:
+        response["next_send_date"] = get_next_send_date()
+        response["tag"] = tag
 
     return response
 
