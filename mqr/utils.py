@@ -94,6 +94,8 @@ def get_next_message(
 
 
 def get_faq_message(tag, faq_number, viewed, tracking_data):
+    tag = tag.replace("_bcm_", "_")
+
     faq_tag = f"{tag}_faq{faq_number}"
     response = get_message_details(faq_tag, tracking_data)
 

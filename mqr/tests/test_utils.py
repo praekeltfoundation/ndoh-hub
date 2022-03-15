@@ -318,6 +318,30 @@ class TestGetFaqMessage(TestCase):
             },
         )
 
+    @patch("mqr.utils.get_faq_menu")
+    @patch("mqr.utils.get_message_details")
+    def test_get_faq_message_rcm_bcm(self, mock_get_message_details, mock_get_faq_menu):
+        mock_get_message_details.return_value = {
+            "is_template": False,
+            "has_parameters": False,
+            "message": "Test Message Mom",
+        }
+        mock_get_faq_menu.return_value = ("*1* question1?\n*2* question 2?", "1,3")
+
+        response = utils.get_faq_message("rcm_bcm_week_pre21", 2, [], {})
+
+        self.assertEqual(
+            response,
+            {
+                "is_template": False,
+                "has_parameters": False,
+                "message": "Test Message Mom",
+                "faq_menu": "*1* question1?\n*2* question 2?",
+                "faq_numbers": "1,3",
+                "viewed": ["rcm_week_pre21_faq2"],
+            },
+        )
+
 
 class TestGetFaqMenu(TestCase):
     @responses.activate
