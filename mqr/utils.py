@@ -111,7 +111,7 @@ def get_faq_message(tag, faq_number, viewed, tracking_data):
     return response
 
 
-def get_faq_menu(tag, viewed, bcm):
+def get_faq_menu(tag, viewed, bcm, menu_offset=0):
     viewed_filter = ",".join(viewed)
     url = urljoin(
         settings.MQR_CONTENTREPO_URL, f"/faqmenu?viewed={viewed_filter}&tag={tag}"
@@ -128,10 +128,10 @@ def get_faq_menu(tag, viewed, bcm):
         title = page["title"].replace("*", "")
 
         faq_numbers.append(order)
-        menu.append(f"*{i+1}* - {title}")
+        menu.append(f"*{i+1+menu_offset}* - {title}")
 
     if bcm:
-        option = len(menu) + 1
+        option = len(menu) + 1 + menu_offset
         menu.append(f"*{option}* - *FIND* more topics 🔎")
 
     return "\n".join(menu), ",".join(faq_numbers)

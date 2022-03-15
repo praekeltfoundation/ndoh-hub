@@ -3,10 +3,11 @@ import random
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 
-from mqr.serializers import FaqSerializer, NextMessageSerializer
+from mqr.serializers import FaqMenuSerializer, FaqSerializer, NextMessageSerializer
 from mqr.utils import (
     get_age_bucket,
     get_facility_province,
+    get_faq_menu,
     get_faq_message,
     get_next_message,
     get_weeks_pregnant,
@@ -115,7 +116,7 @@ class FaqView(BaseMessageView):
         serializer = FaqSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        tag = serializer.validated_data.get("tag")
+        tag = serializer.validated_data.get("tag").lower()
         faq_number = serializer.validated_data.get("faq_number")
         viewed = serializer.validated_data.get("viewed", [])
 
@@ -125,5 +126,28 @@ class FaqView(BaseMessageView):
             viewed,
             self.get_tracking_data(serializer, "faq"),
         )
+
+        return Response(response, status=status.HTTP_200_OK)
+
+
+class FaqMenuView(generics.GenericAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        """
+        Get FAQ MENU from content repo based on tag
+        """
+        serializer = FaqMenuSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        tag = serializer.validated_data.get("tag").lower()
+        menu_offset = serializer.validated_data.get("menu_offset", 0)
+
+        bcm = "_bcm_" in tag
+        tag = tag.replace("_bcm_", "_")
+
+        menu, faq_numbers = get_faq_menu(tag, [], bcm, menu_offset)
+
+        response = {"menu": menu, "faq_numbers": faq_numbers}
 
         return Response(response, status=status.HTTP_200_OK)

@@ -180,8 +180,49 @@ class FaqViewTests(APITestCase):
         }
 
         mock_get_faq_message.assert_called_with(
-            "BCM_week_pre22", 1, ["test"], mock_tracking_data
+            "bcm_week_pre22", 1, ["test"], mock_tracking_data
         )
+
+
+class FaqMenuViewTests(APITestCase):
+    url = reverse("mqr-faq-menu")
+
+    def test_unauthenticated(self):
+        response = self.client.post(self.url, {})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_invalid_data(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url, {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {"tag": ["This field is required."]},
+        )
+
+    @patch("mqr.views.get_faq_menu")
+    def test_faq_menu(self, mock_get_faq_menu):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        mock_get_faq_menu.return_value = ("2 - menu1, 3 - Menu2", "1,2")
+
+        response = self.client.post(
+            self.url,
+            {"tag": "RCM_BCM_week_pre22", "menu_offset": 1},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.json(),
+            {
+                "menu": "2 - menu1, 3 - Menu2",
+                "faq_numbers": "1,2",
+            },
+        )
+
+        mock_get_faq_menu.assert_called_with("rcm_week_pre22", [], True, 1)
 
 
 def override_get_today():
