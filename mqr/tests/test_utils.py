@@ -318,6 +318,10 @@ class TestGetFaqMessage(TestCase):
             },
         )
 
+        mock_get_faq_menu.assert_called_with(
+            "rcm_week_pre21", ["rcm_week_pre21_faq2"], False
+        )
+
     @patch("mqr.utils.get_faq_menu")
     @patch("mqr.utils.get_message_details")
     def test_get_faq_message_rcm_bcm(self, mock_get_message_details, mock_get_faq_menu):
@@ -342,6 +346,10 @@ class TestGetFaqMessage(TestCase):
             },
         )
 
+        mock_get_faq_menu.assert_called_with(
+            "rcm_week_pre21", ["rcm_week_pre21_faq2"], True
+        )
+
 
 class TestGetFaqMenu(TestCase):
     @responses.activate
@@ -357,7 +365,7 @@ class TestGetFaqMenu(TestCase):
             status=200,
         )
 
-        menu, faq_numbers = utils.get_faq_menu(tag, [])
+        menu, faq_numbers = utils.get_faq_menu(tag, [], False)
 
         self.assertEqual(menu, "*1* - Question 1?\n*2* - Question 3?")
         self.assertEqual(faq_numbers, "1,3")
@@ -375,9 +383,33 @@ class TestGetFaqMenu(TestCase):
             status=200,
         )
 
-        menu, faq_numbers = utils.get_faq_menu(tag, [f"{tag}_faq1"])
+        menu, faq_numbers = utils.get_faq_menu(tag, [f"{tag}_faq1"], False)
 
         self.assertEqual(menu, "*1* - Question 1?\n*2* - Question 3?")
+        self.assertEqual(faq_numbers, "1,3")
+
+    @responses.activate
+    def test_get_faq_menu_bcm(self):
+        tag = "rcm_week_pre21"
+        responses.add(
+            responses.GET,
+            f"http://contentrepo/faqmenu?viewed=&tag={tag}",
+            json=[
+                {"order": 1, "title": "Question 1?"},
+                {"order": 3, "title": "Question 3?"},
+            ],
+            status=200,
+        )
+
+        menu, faq_numbers = utils.get_faq_menu(tag, [], True)
+
+        test_menu = [
+            "*1* - Question 1?",
+            "*2* - Question 3?",
+            "*3* - *FIND* more topics 🔎",
+        ]
+
+        self.assertEqual(menu, "\n".join(test_menu))
         self.assertEqual(faq_numbers, "1,3")
 
 
