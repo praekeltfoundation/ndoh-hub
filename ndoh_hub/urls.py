@@ -37,7 +37,7 @@ from eventstore.views import (
     PublicRegistrationViewSet,
     ResearchOptinSwitchViewSet,
 )
-from mqr.views import FaqView, FaqMenuView, NextMessageView, RandomStrataArmView
+from mqr.views import FaqMenuView, FaqView, NextMessageView, RandomStrataArmView
 from ndoh_hub.decorators import internal_only
 
 admin.site.site_header = os.environ.get("HUB_TITLE", "NDOH Hub Admin")
