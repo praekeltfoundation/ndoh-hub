@@ -71,6 +71,11 @@ def get_next_message(
         contentrepo_response = requests.get(url)
         contentrepo_response.raise_for_status()
 
+        add_prompt = True
+
+        if "*yes*" in response["message"].split("\n")[-1].lower():
+            add_prompt = False
+
         if len(contentrepo_response.json()["results"]) == 1:
             prompt_message = "To get another helpful message tomorrow, reply *YES*."
             response["has_next_message"] = True
@@ -78,8 +83,9 @@ def get_next_message(
             prompt_message = "-----\nReply:\n*MENU* for the main menu 📌"
             response["has_next_message"] = False
 
-        base_message = response["message"]
-        response["message"] = f"{base_message}\n\n{prompt_message}"
+        if add_prompt:
+            base_message = response["message"]
+            response["message"] = f"{base_message}\n\n{prompt_message}"
     else:
         response["next_send_date"] = get_next_send_date()
         response["tag"] = tag
