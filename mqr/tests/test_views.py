@@ -198,9 +198,7 @@ class FaqMenuViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
             response.json(),
-            {
-                "tag": ["This field is required."]
-            },
+            {"tag": ["This field is required."]},
         )
 
     @patch("mqr.views.get_faq_menu")
@@ -212,10 +210,7 @@ class FaqMenuViewTests(APITestCase):
 
         response = self.client.post(
             self.url,
-            {
-                "tag": "RCM_BCM_week_pre22",
-                "menu_offset": 1
-            },
+            {"tag": "RCM_BCM_week_pre22", "menu_offset": 1},
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)

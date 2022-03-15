@@ -3,7 +3,7 @@ import random
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 
-from mqr.serializers import FaqSerializer, FaqMenuSerializer, NextMessageSerializer
+from mqr.serializers import FaqMenuSerializer, FaqSerializer, NextMessageSerializer
 from mqr.utils import (
     get_age_bucket,
     get_facility_province,
@@ -148,9 +148,6 @@ class FaqMenuView(generics.GenericAPIView):
 
         menu, faq_numbers = get_faq_menu(tag, [], bcm, menu_offset)
 
-        response = {
-            "menu": menu,
-            "faq_numbers": faq_numbers
-        }
+        response = {"menu": menu, "faq_numbers": faq_numbers}
 
         return Response(response, status=status.HTTP_200_OK)
