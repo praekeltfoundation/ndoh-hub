@@ -180,7 +180,7 @@ class FaqViewTests(APITestCase):
         }
 
         mock_get_faq_message.assert_called_with(
-            "BCM_week_pre22", 1, ["test"], mock_tracking_data
+            "bcm_week_pre22", 1, ["test"], mock_tracking_data
         )
 
 
