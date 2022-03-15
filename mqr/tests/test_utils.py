@@ -412,6 +412,24 @@ class TestGetFaqMenu(TestCase):
         self.assertEqual(menu, "\n".join(test_menu))
         self.assertEqual(faq_numbers, "1,3")
 
+    @responses.activate
+    def test_get_faq_menu_with_menu_offset(self):
+        tag = "rcm_week_pre21"
+        responses.add(
+            responses.GET,
+            f"http://contentrepo/faqmenu?viewed=&tag={tag}",
+            json=[
+                {"order": 1, "title": "Question 1?"},
+                {"order": 3, "title": "Question 3?"},
+            ],
+            status=200,
+        )
+
+        menu, faq_numbers = utils.get_faq_menu(tag, [], False, 3)
+
+        self.assertEqual(menu, "*4* - Question 1?\n*5* - Question 3?")
+        self.assertEqual(faq_numbers, "1,3")
+
 
 class TestGetNextSendDate(TestCase):
     def setUp(self):

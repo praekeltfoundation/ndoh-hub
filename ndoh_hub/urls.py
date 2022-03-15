@@ -37,7 +37,7 @@ from eventstore.views import (
     PublicRegistrationViewSet,
     ResearchOptinSwitchViewSet,
 )
-from mqr.views import FaqView, NextMessageView, RandomStrataArmView
+from mqr.views import FaqView, FaqMenuView, NextMessageView, RandomStrataArmView
 from ndoh_hub.decorators import internal_only
 
 admin.site.site_header = os.environ.get("HUB_TITLE", "NDOH Hub Admin")
@@ -94,6 +94,7 @@ urlpatterns = [
         name="mqr_randomstrataarm",
     ),
     url(r"^api/v1/mqr-faq/", FaqView.as_view(), name="mqr-faq"),
+    url(r"^api/v1/mqr-faq-menu/", FaqMenuView.as_view(), name="mqr-faq-menu"),
     url(r"^api/v1/mqr-nextmessage/", NextMessageView.as_view(), name="mqr-nextmessage"),
     path("api/v2/", include(v2router.urls)),
     path("api/v3/", include(v3router.urls)),

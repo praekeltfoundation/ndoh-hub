@@ -24,3 +24,8 @@ class FaqSerializer(BaseMessageSerializer):
     tag = serializers.CharField(required=True)
     faq_number = serializers.IntegerField(required=True)
     viewed = serializers.ListField(required=False)
+
+
+class FaqMenuSerializer(serializers.Serializer):
+    tag = serializers.CharField(required=True)
+    menu_offset = serializers.IntegerField(required=False)
