@@ -249,7 +249,7 @@ class StrataRandomization(APITestCase):
             weeks_pregnant_bucket="26-30",
             age_bucket="31+",
             next_index=1,
-            order="ARM,RCM_BCM,RCM,RCM_SMS,BCM",
+            order="ARM,BCM_RCM,RCM,RCM_SMS,BCM",
         )
 
         response = self.client.post(
@@ -262,7 +262,7 @@ class StrataRandomization(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.data, {"random_arm": "RCM_BCM"})
+        self.assertEqual(response.data, {"random_arm": "BCM_RCM"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_out_of_index_arm(self):
@@ -282,7 +282,7 @@ class StrataRandomization(APITestCase):
             weeks_pregnant_bucket="26-30",
             age_bucket="18-30",
             next_index=4,
-            order="ARM,RCM,RCM_SMS,BCM,RCM_BCM",
+            order="ARM,RCM,RCM_SMS,BCM,BCM_RCM",
         )
 
         # This api call will delete the existing arm
@@ -301,5 +301,5 @@ class StrataRandomization(APITestCase):
         )
 
         self.assertEqual(strata_arm.count(), 0)
-        self.assertEqual(response.data.get("random_arm"), "RCM_BCM")
+        self.assertEqual(response.data.get("random_arm"), "BCM_RCM")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
