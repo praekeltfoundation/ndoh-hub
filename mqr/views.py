@@ -15,7 +15,7 @@ from mqr.utils import (
 from .models import MqrStrata
 from .serializers import MqrStrataSerializer
 
-STUDY_ARMS = ["ARM", "RCM", "BCM", "BCM_RCM", "RCM_SMS"]
+STUDY_ARMS = ["ARM", "RCM", "BCM", "RCM_BCM", "RCM_SMS"]
 
 
 class RandomStrataArmView(generics.GenericAPIView):
