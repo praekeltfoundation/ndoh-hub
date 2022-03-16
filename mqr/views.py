@@ -143,10 +143,9 @@ class FaqMenuView(generics.GenericAPIView):
         tag = serializer.validated_data.get("tag").lower()
         menu_offset = serializer.validated_data.get("menu_offset", 0)
 
-        bcm = "_bcm_" in tag
         tag = tag.replace("_bcm_", "_")
 
-        menu, faq_numbers = get_faq_menu(tag, [], bcm, menu_offset)
+        menu, faq_numbers = get_faq_menu(tag, [], False, menu_offset)
 
         response = {"menu": menu, "faq_numbers": faq_numbers}
 
