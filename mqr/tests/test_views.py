@@ -222,7 +222,7 @@ class FaqMenuViewTests(APITestCase):
             },
         )
 
-        mock_get_faq_menu.assert_called_with("rcm_week_pre22", [], True, 1)
+        mock_get_faq_menu.assert_called_with("rcm_week_pre22", [], False, 1)
 
 
 def override_get_today():
