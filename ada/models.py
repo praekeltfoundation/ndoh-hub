@@ -46,3 +46,13 @@ class RedirectUrlsEntry(models.Model):
                 f"{self.symptom_check_url.parameter} \n"
                 f"was visited at {self.time_stamp}"
             )
+
+
+class AdaAssessment(models.Model):
+    user_uuid = models.CharField(max_length=255)
+    step = models.IntegerField(null=True)
+    optionId = models.IntegerField(null=True, blank=True)
+    user_input = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return self.user_uuid

@@ -23,4 +23,9 @@ urlpatterns = [
         views.RapidProStartTopupFlowView.as_view(),
         name="rapidpro_topup_flow",
     ),
+    path(
+        "api/v2/ada/startassessment",
+        views.PresentationLayerView.as_view(),
+        name="ada-start-assessment",
+    ),
 ]
