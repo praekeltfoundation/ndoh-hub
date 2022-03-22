@@ -1,5 +1,14 @@
 from rest_framework import serializers
 
+from mqr.models import BaselineSurveyResult
+
+
+class BaselineSurveyResultSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BaselineSurveyResult
+        fields = "__all__"
+        read_only_fields = ("id", "created_by")
+
 
 class MqrStrataSerializer(serializers.Serializer):
     facility_code = serializers.CharField(required=True)

@@ -1,8 +1,14 @@
 import random
 
+from django.http import JsonResponse
+from django.utils import timezone
+from django_filters import rest_framework as filters
 from rest_framework import generics, permissions, status
+from rest_framework.mixins import CreateModelMixin, ListModelMixin
 from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet
 
+from eventstore.views import CursorPaginationFactory
 from mqr.serializers import FaqMenuSerializer, FaqSerializer, NextMessageSerializer
 from mqr.utils import (
     get_age_bucket,
@@ -13,8 +19,8 @@ from mqr.utils import (
     get_weeks_pregnant,
 )
 
-from .models import MqrStrata
-from .serializers import MqrStrataSerializer
+from .models import BaselineSurveyResult, MqrStrata
+from .serializers import BaselineSurveyResultSerializer, MqrStrataSerializer
 
 STUDY_ARMS = ["ARM", "RCM", "BCM", "RCM_BCM", "RCM_SMS"]
 
@@ -150,3 +156,40 @@ class FaqMenuView(generics.GenericAPIView):
         response = {"menu": menu, "faq_numbers": faq_numbers}
 
         return Response(response, status=status.HTTP_200_OK)
+
+
+class BaselineSurveyResultFilter(filters.FilterSet):
+    updated_at_gt = filters.IsoDateTimeFilter(field_name="updated_at", lookup_expr="gt")
+
+    class Meta:
+        model = BaselineSurveyResult
+        fields: list = ["msisdn"]
+
+
+class BaselineSurveyResultViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
+    queryset = BaselineSurveyResult.objects.all()
+    serializer_class = BaselineSurveyResultSerializer
+    pagination_class = CursorPaginationFactory("updated_at")
+    filter_backends = [filters.DjangoFilterBackend]
+    filterset_class = BaselineSurveyResultFilter
+
+    def create(self, request):
+
+        serializer = BaselineSurveyResultSerializer(
+            data=request.data, context={"request": request}
+        )
+
+        if serializer.is_valid():
+            data = serializer.validated_data.copy()
+            data["created_by"] = request.user.username
+
+            if data["airtime_sent"]:
+                data["airtime_sent_at"] = timezone.now()
+
+            obj, created = BaselineSurveyResult.objects.update_or_create(
+                msisdn=data["msisdn"], defaults=data
+            )
+            code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+            return JsonResponse(BaselineSurveyResultSerializer(obj).data, status=code)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
