@@ -509,3 +509,63 @@ class HCSStudyBRandomizationTests(TestCase):
         study.process_study_b()
 
         self.assertIsNotNone(study.study_b_arm)
+
+    def test_get_study_b_totals_per_province(self):
+        HCSStudyBRandomization.objects.create(
+            msisdn="+27820001001",
+            province="ZA-WC",
+            source="WhatsApp",
+            study_b_arm=HCSStudyBRandomization.ARM_CONTROL,
+        )
+        rand_wa_wc = HCSStudyBRandomization.objects.create(
+            msisdn="+27820001002",
+            province="ZA-WC",
+            source="WhatsApp",
+            study_b_arm=HCSStudyBRandomization.ARM_CONTROL,
+        )
+        rand_wa_ec = HCSStudyBRandomization.objects.create(
+            msisdn="+27820001003",
+            province="ZA-EC",
+            source="WhatsApp",
+            study_b_arm=HCSStudyBRandomization.ARM_CONTROL,
+        )
+        rand_ussd_wc = HCSStudyBRandomization.objects.create(
+            msisdn="+27820001004",
+            province="ZA-WC",
+            source="USSD",
+            study_b_arm=HCSStudyBRandomization.ARM_CONTROL,
+        )
+        rand_ussd_ec = HCSStudyBRandomization.objects.create(
+            msisdn="+27820001005",
+            province="ZA-EC",
+            source="USSD",
+            study_b_arm=HCSStudyBRandomization.ARM_CONTROL,
+        )
+
+        total, percentage = rand_wa_wc.get_study_totals_per_province()
+        self.assertEqual(total, 2)
+        self.assertEqual(int(percentage), 40)
+
+        total, percentage = rand_wa_ec.get_study_totals_per_province()
+        self.assertEqual(total, 1)
+        self.assertEqual(int(percentage), 20)
+
+        total, percentage = rand_ussd_wc.get_study_totals_per_province()
+        self.assertEqual(total, 1)
+        self.assertEqual(int(percentage), 20)
+
+        total, percentage = rand_ussd_ec.get_study_totals_per_province()
+        self.assertEqual(total, 1)
+        self.assertEqual(int(percentage), 20)
+
+    @patch("eventstore.models.HCSStudyBRandomization.get_study_totals_per_province")
+    def test_get_random_study_b_arm(self, mock_get_study_totals_per_province):
+        rand = HCSStudyBRandomization(
+            msisdn="+27820001001", province="ZA-WC", source="WhatsApp"
+        )
+
+        mock_get_study_totals_per_province.return_value = (500, 3)
+        self.assertIsNotNone(rand.get_random_study_b_arm())
+
+        mock_get_study_totals_per_province.return_value = (2000, 10)
+        self.assertIsNone(rand.get_random_study_b_arm())
