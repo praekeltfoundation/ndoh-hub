@@ -616,10 +616,12 @@ class HCSStudyBRandomization(models.Model):
     def get_study_totals_per_province(self):
         all_provinces = HCSStudyBRandomization.objects.filter(
             study_b_arm__isnull=False
-        ).values("province")
+        ).values("province", "source")
 
         all_total = all_provinces.count()
-        province_total = all_provinces.filter(province=self.province).count()
+        province_total = all_provinces.filter(
+            province=self.province, source=self.source
+        ).count()
 
         province_percentage = 0
         if all_total > 0:
