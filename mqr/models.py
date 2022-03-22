@@ -90,7 +90,20 @@ class BaselineSurveyResult(models.Model):
             (SKIP, "Skip"),
         )
 
-    class DangerSign:
+    class DangerSign1:
+        WEIGHT_GAIN = "weight_gain"
+        VAGINAL_BLEED = "vaginal_bleeding"
+        NOSE_BLEED = "nose_bleeds"
+        SKIP = "skip"
+
+        choices = (
+            (WEIGHT_GAIN, "Weight gain of 4-5 kilograms"),
+            (VAGINAL_BLEED, "Vaginal bleeding"),
+            (NOSE_BLEED, "Nose bleeds"),
+            (SKIP, "Skip"),
+        )
+
+    class DangerSign2:
         SWOLLEN = "swollen_feet_legs"
         BLOAT = "bloating"
         GAS = "gas"
@@ -166,8 +179,11 @@ class BaselineSurveyResult(models.Model):
     liver_frequency = models.CharField(
         max_length=20, choices=LiverFrequency.choices, null=True, default=None
     )
-    danger_sign = models.CharField(
-        max_length=20, choices=DangerSign.choices, null=True, default=None
+    danger_sign1 = models.CharField(
+        max_length=20, choices=DangerSign1.choices, null=True, default=None
+    )
+    danger_sign2 = models.CharField(
+        max_length=20, choices=DangerSign2.choices, null=True, default=None
     )
     marital_status = models.CharField(
         max_length=20, choices=MaritalStatus.choices, null=True, default=None
