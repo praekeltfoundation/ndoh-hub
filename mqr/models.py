@@ -161,7 +161,7 @@ class BaselineSurveyResult(models.Model):
     vaccine_importance = models.CharField(
         max_length=20, choices=AgreeDisagree.choices, null=True, default=None
     )
-    vaccine_benifits = models.CharField(
+    vaccine_benefits = models.CharField(
         max_length=20, choices=AgreeDisagree.choices, null=True, default=None
     )
     clinic_visit_frequency = models.CharField(
