@@ -366,24 +366,25 @@ class BaselineSurveyResultViewTests(APITestCase):
     def test_successful_create(self):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
-        response = self.client.post(
-            self.url,
-            {
-                "msisdn": "27831231234",
-                "breastfeed": BaselineSurveyResult.YesNoSkip.YES,
-                "breastfeed_period": BaselineSurveyResult.BreastfeedPeriod.MONTHS_0_3,
-                "vaccine_importance": BaselineSurveyResult.AgreeDisagree.AGREE,
-                "vaccine_benifits": BaselineSurveyResult.AgreeDisagree.DISAGREE,
-                "clinic_visit_frequency": BaselineSurveyResult.ClinicVisitFrequency.NEVER,
-                "vegetables": BaselineSurveyResult.YesNoSkip.SKIP,
-                "fruit": BaselineSurveyResult.YesNoSkip.NO,
-                "dairy": BaselineSurveyResult.YesNoSkip.SKIP,
-                "liver_frequency": BaselineSurveyResult.LiverFrequency.LESS_ONCE_MONTH,
-                "danger_sign": BaselineSurveyResult.DangerSign.BLOAT,
-                "marital_status": BaselineSurveyResult.MaritalStatus.MARRIED,
-                "education_level": BaselineSurveyResult.EducationLevel.DEGREE_OR_HIGHER,
-            },
-        )
+
+        data = {
+            "msisdn": "27831231234",
+            "breastfeed": BaselineSurveyResult.YesNoSkip.YES,
+            "breastfeed_period": BaselineSurveyResult.BreastfeedPeriod.MONTHS_0_3,
+            "vaccine_importance": BaselineSurveyResult.AgreeDisagree.AGREE,
+            "vaccine_benifits": BaselineSurveyResult.AgreeDisagree.DISAGREE,
+            "clinic_visit_frequency": BaselineSurveyResult.ClinicVisitFrequency.NEVER,
+            "vegetables": BaselineSurveyResult.YesNoSkip.SKIP,
+            "fruit": BaselineSurveyResult.YesNoSkip.NO,
+            "dairy": BaselineSurveyResult.YesNoSkip.SKIP,
+            "liver_frequency": BaselineSurveyResult.LiverFrequency.LESS_ONCE_MONTH,
+            "danger_sign": BaselineSurveyResult.DangerSign.BLOAT,
+            "marital_status": BaselineSurveyResult.MaritalStatus.MARRIED,
+            "education_level": BaselineSurveyResult.EducationLevel.DEGREE_OR_HIGHER,
+        }
+
+        response = self.client.post(self.url, data)
+
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         data = response.json()
