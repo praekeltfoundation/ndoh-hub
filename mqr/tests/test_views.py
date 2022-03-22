@@ -7,7 +7,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from mqr.models import MqrStrata
+from mqr.models import BaselineSurveyResult, MqrStrata
 from ndoh_hub import utils
 from registrations.models import ClinicCode
 
@@ -344,3 +344,124 @@ class StrataRandomization(APITestCase):
         self.assertEqual(strata_arm.count(), 0)
         self.assertEqual(response.data.get("random_arm"), "RCM_BCM")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class BaselineSurveyResultViewTests(APITestCase):
+    url = reverse("baselinesurveyresult-list")
+
+    def test_unauthenticated(self):
+        response = self.client.post(self.url, {})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_invalid_data(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url, {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {"msisdn": ["This field is required."]},
+        )
+
+    def test_successful_create(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "msisdn": "27831231234",
+                "breastfeed": BaselineSurveyResult.YesNoSkip.YES,
+                "breastfeed_period": BaselineSurveyResult.BreastfeedPeriod.MONTHS_0_3,
+                "vaccine_importance": BaselineSurveyResult.AgreeDisagree.AGREE,
+                "vaccine_benifits": BaselineSurveyResult.AgreeDisagree.DISAGREE,
+                "clinic_visit_frequency": BaselineSurveyResult.ClinicVisitFrequency.NEVER,
+                "vegetables": BaselineSurveyResult.YesNoSkip.SKIP,
+                "fruit": BaselineSurveyResult.YesNoSkip.NO,
+                "dairy": BaselineSurveyResult.YesNoSkip.SKIP,
+                "liver_frequency": BaselineSurveyResult.LiverFrequency.LESS_ONCE_MONTH,
+                "danger_sign": BaselineSurveyResult.DangerSign.BLOAT,
+                "marital_status": BaselineSurveyResult.MaritalStatus.MARRIED,
+                "education_level": BaselineSurveyResult.EducationLevel.DEGREE_OR_HIGHER,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        data = response.json()
+        self.assertIsNotNone(data.pop("created_at"))
+        self.assertIsNotNone(data.pop("updated_at"))
+        self.assertIsNone(data.pop("airtime_sent_at"))
+        self.assertEqual(
+            data,
+            {
+                "id": 1,
+                "msisdn": "27831231234",
+                "created_by": "test",
+                "breastfeed": "yes",
+                "breastfeed_period": "0_3_months",
+                "vaccine_importance": "agree",
+                "vaccine_benifits": "disagree",
+                "clinic_visit_frequency": "never",
+                "vegetables": "skip",
+                "fruit": "no",
+                "dairy": "skip",
+                "liver_frequency": "less_once_a_month",
+                "danger_sign": "bloating",
+                "marital_status": "married",
+                "education_level": "degree_or_higher",
+                "airtime_sent": False,
+            },
+        )
+
+    def test_successful_update(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        result = BaselineSurveyResult.objects.create(
+            **{
+                "msisdn": "27831231234",
+                "breastfeed": BaselineSurveyResult.YesNoSkip.SKIP,
+            }
+        )
+
+        response = self.client.post(
+            self.url,
+            {
+                "msisdn": "27831231234",
+                "breastfeed": BaselineSurveyResult.YesNoSkip.YES,
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        result.refresh_from_db()
+
+        self.assertEqual(response.json()["id"], result.id)
+        self.assertEqual(result.breastfeed, BaselineSurveyResult.YesNoSkip.YES)
+        self.assertIsNone(result.airtime_sent_at)
+
+    def test_successful_update_airtime(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        result = BaselineSurveyResult.objects.create(
+            **{
+                "msisdn": "27831231234",
+                "breastfeed": BaselineSurveyResult.YesNoSkip.SKIP,
+            }
+        )
+
+        response = self.client.post(
+            self.url,
+            {
+                "msisdn": "27831231234",
+                "airtime_sent": True,
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        result.refresh_from_db()
+
+        self.assertEqual(response.json()["id"], result.id)
+        self.assertTrue(result.airtime_sent)
+        self.assertIsNotNone(result.airtime_sent_at)

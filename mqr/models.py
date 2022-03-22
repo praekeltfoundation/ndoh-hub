@@ -137,8 +137,8 @@ class BaselineSurveyResult(models.Model):
 
     msisdn = models.CharField(max_length=255, validators=[za_phone_number])
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     created_by = models.CharField(max_length=255, blank=True, default="")
+    updated_at = models.DateTimeField(auto_now=True)
     breastfeed = models.CharField(
         max_length=4, choices=YesNoSkip.choices, null=True, default=None
     )
@@ -175,3 +175,5 @@ class BaselineSurveyResult(models.Model):
     education_level = models.CharField(
         max_length=20, choices=EducationLevel.choices, null=True, default=None
     )
+    airtime_sent = models.BooleanField(default=False)
+    airtime_sent_at = models.DateTimeField(null=True)
