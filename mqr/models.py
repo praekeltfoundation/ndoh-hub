@@ -165,7 +165,7 @@ class BaselineSurveyResult(models.Model):
         max_length=20, choices=AgreeDisagree.choices, null=True, default=None
     )
     clinic_visit_frequency = models.CharField(
-        max_length=20, choices=ClinicVisitFrequency.choices, null=True, default=None
+        max_length=25, choices=ClinicVisitFrequency.choices, null=True, default=None
     )
     vegetables = models.CharField(
         max_length=4, choices=YesNoSkip.choices, null=True, default=None
