@@ -183,7 +183,7 @@ class BaselineSurveyResultViewSet(GenericViewSet, CreateModelMixin, ListModelMix
             data = serializer.validated_data.copy()
             data["created_by"] = request.user.username
 
-            if data["airtime_sent"]:
+            if data.get("airtime_sent"):
                 data["airtime_sent_at"] = timezone.now()
 
             obj, created = BaselineSurveyResult.objects.update_or_create(
