@@ -1,10 +1,14 @@
 import random
 
 from django.http import JsonResponse
-from django.utils import timezone
 from django_filters import rest_framework as filters
 from rest_framework import generics, permissions, status
-from rest_framework.mixins import CreateModelMixin, ListModelMixin
+from rest_framework.mixins import (
+    CreateModelMixin,
+    ListModelMixin,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+)
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
@@ -166,7 +170,13 @@ class BaselineSurveyResultFilter(filters.FilterSet):
         fields: list = ["msisdn"]
 
 
-class BaselineSurveyResultViewSet(GenericViewSet, CreateModelMixin, ListModelMixin):
+class BaselineSurveyResultViewSet(
+    GenericViewSet,
+    CreateModelMixin,
+    ListModelMixin,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+):
     queryset = BaselineSurveyResult.objects.all()
     serializer_class = BaselineSurveyResultSerializer
     pagination_class = CursorPaginationFactory("updated_at")
@@ -174,7 +184,6 @@ class BaselineSurveyResultViewSet(GenericViewSet, CreateModelMixin, ListModelMix
     filterset_class = BaselineSurveyResultFilter
 
     def create(self, request):
-
         serializer = BaselineSurveyResultSerializer(
             data=request.data, context={"request": request}
         )
@@ -182,9 +191,6 @@ class BaselineSurveyResultViewSet(GenericViewSet, CreateModelMixin, ListModelMix
         if serializer.is_valid():
             data = serializer.validated_data.copy()
             data["created_by"] = request.user.username
-
-            if data.get("airtime_sent"):
-                data["airtime_sent_at"] = timezone.now()
 
             obj, created = BaselineSurveyResult.objects.update_or_create(
                 msisdn=data["msisdn"], defaults=data

@@ -148,7 +148,9 @@ class BaselineSurveyResult(models.Model):
             (SKIP, "Skip"),
         )
 
-    msisdn = models.CharField(max_length=255, validators=[za_phone_number])
+    msisdn = models.CharField(
+        primary_key=True, max_length=255, validators=[za_phone_number]
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.CharField(max_length=255, blank=True, default="")
     updated_at = models.DateTimeField(auto_now=True)
