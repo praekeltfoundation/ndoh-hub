@@ -395,7 +395,6 @@ class BaselineSurveyResultViewTests(APITestCase):
         self.assertEqual(
             data,
             {
-                "id": 1,
                 "msisdn": "27831231234",
                 "created_by": "test",
                 "breastfeed": "yes",
@@ -419,17 +418,18 @@ class BaselineSurveyResultViewTests(APITestCase):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
+        msisdn = "27831231234"
         result = BaselineSurveyResult.objects.create(
             **{
-                "msisdn": "27831231234",
+                "msisdn": msisdn,
                 "breastfeed": BaselineSurveyResult.YesNoSkip.SKIP,
             }
         )
 
-        response = self.client.post(
-            self.url,
+        url = reverse("baselinesurveyresult-detail", args=(msisdn,))
+        response = self.client.patch(
+            url,
             {
-                "msisdn": "27831231234",
                 "breastfeed": BaselineSurveyResult.YesNoSkip.YES,
             },
         )
@@ -438,7 +438,7 @@ class BaselineSurveyResultViewTests(APITestCase):
 
         result.refresh_from_db()
 
-        self.assertEqual(response.json()["id"], result.id)
+        self.assertEqual(response.json()["msisdn"], result.msisdn)
         self.assertEqual(result.breastfeed, BaselineSurveyResult.YesNoSkip.YES)
         self.assertIsNone(result.airtime_sent_at)
 
@@ -446,17 +446,18 @@ class BaselineSurveyResultViewTests(APITestCase):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
+        msisdn = "27831231234"
         result = BaselineSurveyResult.objects.create(
             **{
-                "msisdn": "27831231234",
+                "msisdn": msisdn,
                 "breastfeed": BaselineSurveyResult.YesNoSkip.SKIP,
             }
         )
 
-        response = self.client.post(
-            self.url,
+        url = reverse("baselinesurveyresult-detail", args=(msisdn,))
+        response = self.client.patch(
+            url,
             {
-                "msisdn": "27831231234",
                 "airtime_sent": True,
             },
         )
@@ -465,6 +466,46 @@ class BaselineSurveyResultViewTests(APITestCase):
 
         result.refresh_from_db()
 
-        self.assertEqual(response.json()["id"], result.id)
+        self.assertEqual(response.json()["msisdn"], result.msisdn)
         self.assertTrue(result.airtime_sent)
         self.assertIsNotNone(result.airtime_sent_at)
+
+    def test_get_result_by_msisdn(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        msisdn = "27831231234"
+
+        BaselineSurveyResult.objects.create(
+            **{
+                "msisdn": msisdn,
+                "breastfeed": BaselineSurveyResult.YesNoSkip.SKIP,
+            }
+        )
+        BaselineSurveyResult.objects.create(
+            **{
+                "msisdn": "27831112222",
+                "breastfeed": BaselineSurveyResult.YesNoSkip.SKIP,
+            }
+        )
+
+        response = self.client.get(
+            self.url,
+            params={"msisdn": msisdn},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        result = response.json()["results"][0]
+        self.assertEqual(result["msisdn"], msisdn)
+
+    def test_get_result_by_msisdn_not_found(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        response = self.client.get(
+            self.url,
+            params={"msisdn": "27831231234"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.json()["results"]), 0)

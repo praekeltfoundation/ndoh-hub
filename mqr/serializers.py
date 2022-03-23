@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 from mqr.models import BaselineSurveyResult
@@ -8,6 +9,12 @@ class BaselineSurveyResultSerializer(serializers.ModelSerializer):
         model = BaselineSurveyResult
         fields = "__all__"
         read_only_fields = ("id", "created_by")
+
+    def update(self, instance, validated_data):
+        if validated_data.get("airtime_sent"):
+            validated_data["airtime_sent_at"] = timezone.now()
+        super().update(instance, validated_data)
+        return instance
 
 
 class MqrStrataSerializer(serializers.Serializer):
