@@ -6,13 +6,26 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('mqr', '0005_auto_20220322_1350'),
+        ("mqr", "0005_auto_20220322_1350"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='baselinesurveyresult',
-            name='clinic_visit_frequency',
-            field=models.CharField(choices=[('more_than_once_a_month', 'More than once a month'), ('once_a_month', 'Once a month'), ('once_2_3_months', 'Once every  2 to 3 months'), ('once_4_5_months', 'Once every  4 to 5 months'), ('once_6_9_months', 'Once every 6 to 9 months'), ('never', 'Never'), ('skip', 'Skip')], default=None, max_length=25, null=True),
+            model_name="baselinesurveyresult",
+            name="clinic_visit_frequency",
+            field=models.CharField(
+                choices=[
+                    ("more_than_once_a_month", "More than once a month"),
+                    ("once_a_month", "Once a month"),
+                    ("once_2_3_months", "Once every  2 to 3 months"),
+                    ("once_4_5_months", "Once every  4 to 5 months"),
+                    ("once_6_9_months", "Once every 6 to 9 months"),
+                    ("never", "Never"),
+                    ("skip", "Skip"),
+                ],
+                default=None,
+                max_length=25,
+                null=True,
+            ),
         ),
     ]
