@@ -45,3 +45,7 @@ class FaqSerializer(BaseMessageSerializer):
 class FaqMenuSerializer(serializers.Serializer):
     tag = serializers.CharField(required=True)
     menu_offset = serializers.IntegerField(required=False)
+
+
+class FirstSendDateSerializer(serializers.Serializer):
+    edd_or_dob_date = serializers.DateField(required=True)

@@ -20,5 +20,10 @@ urlpatterns = [
         views.NextMessageView.as_view(),
         name="mqr-nextmessage",
     ),
+    url(
+        r"^api/v1/mqr-firstsenddate",
+        views.FirstSendDateView.as_view(),
+        name="mqr-firstsenddate",
+    ),
     url(r"^api/v1/", include(router.urls)),
 ]

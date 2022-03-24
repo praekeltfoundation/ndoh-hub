@@ -138,9 +138,16 @@ def get_faq_menu(tag, viewed, bcm, menu_offset=0):
 
 
 def get_next_send_date():
-    # TODO: maybe this should be smarter
-    # calculate date based on edd_or_dob and next week, incase message failed?
     return get_today() + timedelta(weeks=1)
+
+
+def get_first_send_date(edd_or_dob_date):
+    if edd_or_dob_date < get_today():
+        full_weeks = (edd_or_dob_date - get_today()).days // 7
+        return edd_or_dob_date - timedelta(weeks=full_weeks)
+    else:
+        full_weeks = ((get_today() - edd_or_dob_date).days // 7) + 1
+        return edd_or_dob_date + timedelta(weeks=full_weeks)
 
 
 def get_facility_province(facility_code):
