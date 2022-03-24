@@ -79,7 +79,7 @@ class RandomStrataArmView(generics.GenericAPIView):
                 strata.save()
 
             return Response({"random_arm": arm})
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response({"Excluded": True})
 
 
 class BaseMessageView(generics.GenericAPIView):
