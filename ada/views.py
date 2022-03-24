@@ -1,4 +1,3 @@
-from urllib import response
 from urllib.parse import urlencode
 
 from django.conf import settings
@@ -10,14 +9,13 @@ from rest_framework.response import Response
 from ada.serializers import (
     AdaChoiceTypeSerializer,
     AdaInputTypeSerializer,
-    AdaTandCTypeSerializer,
     AdaTextTypeSerializer,
     SymptomCheckSerializer,
 )
 
 from .models import RedirectUrl, RedirectUrlsEntry
 from .tasks import post_to_topup_endpoint, start_prototype_survey_flow, start_topup_flow
-from .utils import abort_assessment, get_message, get_report, previous_question
+from .utils import get_message
 
 
 class RapidProStartFlowView(generics.GenericAPIView):
@@ -87,19 +85,17 @@ def topuprequest(request: HttpRequest) -> HttpResponse:
 
 
 class PresentationLayerView(generics.GenericAPIView):
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
         body = request.data
         cardType = body["cardType"]
-        if cardType == "TERMS_CONDITIONS":
-            serializer = AdaTandCTypeSerializer(body)
-        elif cardType == "CHOICE":
+        if cardType == "CHOICE":
             serializer = AdaChoiceTypeSerializer(body)
         elif cardType == "TEXT":
             serializer = AdaTextTypeSerializer(body)
         elif cardType == "INPUT":
             serializer = AdaInputTypeSerializer(body)
         validated_body = serializer.validate_value(body)
-        get_message(validated_body)
-        return Response({}, status=status.HTTP_200_OK)
+        response = get_message(validated_body)
+        return Response(response, status=status.HTTP_200_OK)

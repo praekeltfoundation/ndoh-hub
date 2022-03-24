@@ -10,7 +10,7 @@ from rest_framework.test import APITestCase
 
 from ada import utils
 
-from .models import RedirectUrl
+from .models import AdaAssessment, RedirectUrl
 
 
 class TestViews(TestCase):
@@ -32,7 +32,7 @@ class TestViews(TestCase):
 
     def test_no_whatsapp_value(self):
         """
-        Should check that the right template is used if there's no whatsapp value
+        Should check that the right template is used if no whatsapp value
         """
         qs = "?whatsapp="
         url = urljoin(reverse("ada_hook", args=["1"]), qs)
@@ -41,7 +41,7 @@ class TestViews(TestCase):
 
     def test_no_query_string(self):
         """
-        Should check that the right template is used if there's no whatsapp value
+        Should check that the right template is used if no whatsapp value
         """
         qs = "?"
         url = urljoin(reverse("ada_hook", args=["1"]), qs)
@@ -159,19 +159,30 @@ class AdaSymptomCheckEndpointTests(APITestCase):
         mock_start_rapidpro_topup_flow.delay.assert_called_once_with(whatsappid)
 
 
-class StartAssessmentViewTests(APITestCase):
+class AdaValidationViewTests(APITestCase):
     # Return validation error if user input > 100 characters for an input cardType
     def test_input_type(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
         response = self.client.post(
             reverse("ada-start-assessment"),
             json.dumps(
                 {
-                    "message": "Please type in the symptom that is troubling you, only one symptom at a time. Reply back to go to the previous question or abort to end the assessment",
+                    "message": (
+                        "Please type in the symptom that is troubling you, "
+                        "only one symptom at a time. Reply back to go to the "
+                        "previous question or abort to end the assessment"
+                    ),
                     "step": 4,
-                    "value": "This is some rubbish text to see what happens when a user submits an input with a length that is greater than 100",
+                    "value": (
+                        "This is some rubbish text to see what happens when a "
+                        "user submits an input with a length that is "
+                        "greater than 100"
+                    ),
                     "optionId": 8,
                     "path": "/assessments/assessment-id/dialog/next",
                     "cardType": "INPUT",
+                    "title": "SYMPTOM",
                 }
             ),
             content_type="application/json",
@@ -179,30 +190,53 @@ class StartAssessmentViewTests(APITestCase):
         self.assertEqual(
             response.json(),
             {
-                "message": "Please type in the symptom that is troubling you, only one symptom at a time. Reply back to go to the previous question or abort to end the assessment",
+                "message": (
+                    "Please type in the symptom that is troubling you, "
+                    "only one symptom at a time. Reply back to go to the "
+                    "previous question or abort to end the assessment"
+                ),
                 "step": "4",
-                "value": "This is some rubbish text to see what happens when a user submits an input with a length that is greater than 100",
+                "value": (
+                    "This is some rubbish text to see what happens "
+                    "when a user submits an input with a length that"
+                    " is greater than 100"
+                ),
                 "optionId": "8",
                 "path": "/assessments/assessment-id/dialog/next",
                 "cardType": "INPUT",
-                "error": "We are sorry, your reply should be between 1 and 100 characters. Please try again.",
+                "title": "SYMPTOM",
+                "error": (
+                    "We are sorry, your reply should be between "
+                    "1 and 100 characters. Please try again."
+                ),
             },
             response.json(),
         )
 
     # Return validation error for invalid choice for CHOICE cardType
     def test_choice_type(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
         response = self.client.post(
             reverse("ada-start-assessment"),
             json.dumps(
                 {
                     "choices": 3,
-                    "message": 'What is the issue?\n\nAbdominal pain\nHeadache\nNone of these\n\nChoose the option that matches your answer. Eg, 1 for Abdominal pain\n\nEnter "back" to go to the previous question or "abort" to end the assessment',
+                    "message": (
+                        "What is the issue?\n\nAbdominal pain\n"
+                        "Headache"
+                        "\nNone of these\n\nChoose the option that matches "
+                        "your answer. "
+                        "Eg, 1 for Abdominal pain\n\nEnter *back* to go "
+                        "to the previous question or *abort* "
+                        "to end the assessment"
+                    ),
                     "step": 4,
                     "value": 9,
                     "optionId": 0,
                     "path": "/assessments/assessment-id/dialog/next",
                     "cardType": "CHOICE",
+                    "title": "SYMPTOM",
                 }
             ),
             content_type="application/json",
@@ -211,13 +245,85 @@ class StartAssessmentViewTests(APITestCase):
             response.json(),
             {
                 "choices": "3",
-                "message": 'What is the issue?\n\nAbdominal pain\nHeadache\nNone of these\n\nChoose the option that matches your answer. Eg, 1 for Abdominal pain\n\nEnter "back" to go to the previous question or "abort" to end the assessment',
+                "message": (
+                    "What is the issue?\n\nAbdominal pain\nHeadache"
+                    "\nNone of these\n\nChoose the option that "
+                    "matches your answer. "
+                    "Eg, 1 for Abdominal pain\n\nEnter *back* to go "
+                    "to the previous question or *abort* "
+                    "to end the assessment"
+                ),
                 "step": "4",
                 "value": "9",
                 "optionId": "0",
                 "path": "/assessments/assessment-id/dialog/next",
                 "cardType": "CHOICE",
-                "error": "Something seems to have gone wrong. You entered 9 but there are only 3 options.",
+                "title": "SYMPTOM",
+                "error": (
+                    "Something seems to have gone wrong. "
+                    "You entered 9 but there are only 3 options."
+                ),
             },
             response,
         )
+
+
+class AdaReportViewTests(APITestCase):
+    report_reponse = {"pdf sent"}
+
+    @patch.object(AdaAssessment, "save")
+    @patch("ada.utils.get_report", return_value=report_reponse)
+    @patch("ada.utils.post_to_ada")
+    @patch("ada.utils.get_rp_payload")
+    def test_choice_type_valid(
+        self, mock_get_rp_payload, mock_post_response, mock_get_report, mock_save_mock
+    ):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            reverse("ada-start-assessment"),
+            json.dumps(
+                {
+                    "contact_uuid": "49548747-48888043",
+                    "choices": 3,
+                    "message": ("What is the issue?\n\nAbdominal pain"
+                                "\nHeadache\nNone of these\n\n"
+                                "Choose the option that matches your answer. "
+                                "Eg, 1 for Abdominal pain\n\nEnter *back* to go to "
+                                "the previous question or *abort* to "
+                                "end the assessment"),
+                    "step": 6,
+                    "value": 2,
+                    "optionId": 0,
+                    "path": "/assessments/assessment-id/dialog/next",
+                    "cardType": "CHOICE",
+                    "title": "SYMPTOM",
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200, response)
+
+        mock_post_response.return_value = {
+            "cardType": "CHOICE",
+            "step": 40,
+            "title": {"en-US": "YOUR REPORT"},
+            "description": {"en-US": ""},
+            "options": [
+                {"optionId": 0, "text": {"en-US": "Ask momconnect"}},
+                {"optionId": 1, "text": {"en-US": "Phone a nurse"}},
+                {"optionId": 2, "text": {"en-US": "Download full report"}},
+            ],
+            "_links": {
+                "self": {
+                    "method": "GET",
+                    "href": "/assessments/898d915e-229f-48f2-9b98-cfd760ba8965",
+                },
+                "report": {
+                    "method": "GET",
+                    "href": "/reports/17340f51604cb35bd2c6b7b9b16f3aec",
+                },
+            },
+        }
+        response = utils.get_message(mock_get_rp_payload.return_value)
+        self.assertEqual(response, mock_get_report.return_value, response)

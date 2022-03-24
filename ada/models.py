@@ -49,10 +49,12 @@ class RedirectUrlsEntry(models.Model):
 
 
 class AdaAssessment(models.Model):
-    user_uuid = models.CharField(max_length=255)
+    contact_uuid = models.CharField(max_length=255)
     step = models.IntegerField(null=True)
     optionId = models.IntegerField(null=True, blank=True)
-    user_input = models.IntegerField(null=True, blank=True)
+    user_input = models.TextField(null=True, blank=True)
+    title = models.TextField(null=True, blank=True)
+    # description = models.TextField(null=True, blank=True)
 
     def __str__(self):
-        return self.user_uuid
+        return self.contact_uuid

@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division
 
-
 import requests
 from django.conf import settings
 from temba_client.v2 import TembaClient
@@ -26,24 +25,22 @@ def build_rp_request(body):
         step = body["step"]
     else:
         step = ""
-    if "options" in body.keys():
-        optionId = body["options"][0]["optionId"]
-    else:
-        optionId = ""
     if "value" in body.keys():
         value = body["value"]
     else:
         value = ""
 
-    if cardType != "":
+    if cardType != "" and value != "back":
         if cardType == "TEXT":
             payload = {"step": step}
-        elif cardType == "TERMS_CONDITIONS":
-            payload = {"step": step, ":answer": {"optionId": optionId}}
         elif cardType == "INPUT":
-            payload = {"step": step, "answer": {"value": value}}
+            payload = {"step": step, "value": value}
         elif cardType == "CHOICE":
-            payload = {"step": step, "answer": {"optionId": {"optionId": value - 1}}}
+            payload = {"step": step, "optionId": int(value) - 1}
+    elif cardType == "" and step == 0:
+        payload = {"step": 0}
+    elif value == "back":
+        payload = {"step": step}
     else:
         payload = {}
 
@@ -52,8 +49,8 @@ def build_rp_request(body):
 
 def post_to_ada(body, path):
     head = {
-        "x-ada-clientId": "praekelt ",
-        "x-ada-userId": "whatsapp-id",
+        "x-ada-clientId": "xxxxx ",
+        "x-ada-userId": "xxxx",
         "Accept-Language": "en-GB",
         "Accept": "application/json",
     }
@@ -71,7 +68,7 @@ def post_to_ada_start_assessment(body):
         "Accept-Language": "en-GB",
         "Accept": "application/json",
     }
-    path = "/assessments"
+    path = settings.ADA_START_ASSESSMENT_URL
     response = requests.request("POST", path, json=body, headers=head)
     response.raise_for_status()
     response = response.json()
@@ -108,28 +105,32 @@ def get_from_ada(body):
 
 
 def format_message(body):
-    description = body["description"]["en-GB"]
+    description = body["description"]["en-US"]
+    title = body["title"]["en-US"]
     back = (
         "Enter *back* to go to the previous question or *abort* to end the assessment"
     )
     cardType = body["cardType"]
-    optionId = body["options"][0]["optionId"]
+    if "options" in body.keys() and cardType != "CHOICE":
+        optionId = body["options"][0]["optionId"]
+    else:
+        optionId = ""
     path = body["_links"]["next"]["href"]
     if "step" in body.keys():
         step = body["step"]
     else:
         step = ""
     if cardType == "CHOICE":
-        options = body["options"][0]["value"]
+        option = body["options"][0]["text"]["en-US"]
         optionslist = []
         index = 0
         length = len(body["options"])
         while index < length:
-            optionslist.append(body["options"][index]["value"])
+            optionslist.append(body["options"][index]["text"]["en-US"])
             index += 1
         choices = "\n".join(optionslist)
         extra_message = (
-            f"Choose the option that matches your answer. Eg, 1 for {options}"
+            f"Choose the option that matches your answer. Eg, 1 for {option}"
         )
         message = f"{description}\n\n{choices}\n\n{extra_message}\n\n{back}"
         body = {}
@@ -143,12 +144,18 @@ def format_message(body):
     body["optionId"] = optionId
     body["path"] = path
     body["cardType"] = cardType
+    body["title"] = title
     return body
 
 
 def get_message(payload):
-    if payload["value"] != "":
-        if payload["value"] == "back":
+    # cardType = payload["cardType"]
+    contact_uuid = (payload["contact_uuid"],)
+    step = payload["step"]
+    value = payload["value"]
+    optionId = payload["optionId"]
+    if value != "":
+        if value == "back":
             path = get_path(payload)
             request = build_rp_request(payload)
             ada_response = previous_question(request, path)
@@ -159,11 +166,17 @@ def get_message(payload):
     elif payload["value"] == "":
         request = build_rp_request(payload)
         response = post_to_ada_start_assessment(request)
-        ada_response = get_from_ada(response)
+        path = get_path(response)
+        step = get_step(response)
+        payload["path"] = path
+        payload["step"] = step
+        request = build_rp_request(payload)
+        ada_response = post_to_ada(request, path)
 
         # TODO: save to DB here
-        # response_data = AdaAssessment(uuid, step, value, optionId)
-        # response_data.save()
+    if value != "" and value != "back":
+        response_data = AdaAssessment(contact_uuid, step, value, optionId)
+        response_data.save()
     try:
         report = ada_response["_links"]["report"]
         response = get_report(report)
@@ -175,8 +188,16 @@ def get_message(payload):
 
 
 def get_path(body):
-    path = body["path"]
+    if "path" in body.keys():
+        path = body["path"]
+    else:
+        path = body["_links"]["startAssessment"]["href"]
     return path
+
+
+def get_step(body):
+    step = body["step"]
+    return step
 
 
 # This returns the report of the assessment
@@ -192,7 +213,8 @@ def get_report(body):
     response = requests.request("GET", path, json=payload, headers=head)
     return response
 
-#Go back to previous question
+
+# Go back to previous question
 def previous_question(body, path):
     head = {
         "x-ada-clientId": "praekelt ",
@@ -205,6 +227,7 @@ def previous_question(body, path):
     response = requests.request("POST", path, json=body, headers=head)
     response = response.json()
     return response
+
 
 # Abort assessment
 def abort_assessment(body):
