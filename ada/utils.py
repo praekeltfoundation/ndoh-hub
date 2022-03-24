@@ -11,10 +11,6 @@ if settings.RAPIDPRO_URL and settings.RAPIDPRO_TOKEN:
     rapidpro = TembaClient(settings.RAPIDPRO_URL, settings.RAPIDPRO_TOKEN)
 
 
-def get_rp_payload(body):
-    return body
-
-
 def build_rp_request(body):
     # The cardType value is used to build the request to ADA
     if "cardType" in body.keys():
@@ -149,7 +145,6 @@ def format_message(body):
 
 
 def get_message(payload):
-    # cardType = payload["cardType"]
     contact_uuid = (payload["contact_uuid"],)
     step = payload["step"]
     value = payload["value"]
