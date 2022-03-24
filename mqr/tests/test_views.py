@@ -272,6 +272,29 @@ class StrataRandomization(APITestCase):
         self.assertContains(response, strata_arm.order.split(",")[0])
         self.assertEqual(strata_arm.next_index, 1)
 
+    def test_random_arm_exclude(self):
+        """
+        Exclude if person doesn't qualify for study
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        ClinicCode.objects.create(
+            code="123456", value=1, uid=1, name="test", province="EC"
+        )
+
+        response = self.client.post(
+            self.url,
+            data={
+                "estimated_delivery_date": "2022-04-30",
+                "facility_code": "123456",
+                "mom_age": "38",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.json(), {"Excluded": True})
+
     def test_get_random_starta_arm(self):
         """
         Check the next arm from the existing data
