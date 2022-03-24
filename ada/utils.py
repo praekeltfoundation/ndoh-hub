@@ -208,7 +208,7 @@ def get_report(body):
         "Accept-Language": "en-GB",
         "Accept": "application/json",
     }
-    path = ["_links"]["report"]["href"]
+    path = body["_links"]["report"]["href"]
     payload = {}
     response = requests.request("GET", path, json=payload, headers=head)
     return response
