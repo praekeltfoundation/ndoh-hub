@@ -286,12 +286,14 @@ class AdaReportViewTests(APITestCase):
                 {
                     "contact_uuid": "49548747-48888043",
                     "choices": 3,
-                    "message": ("What is the issue?\n\nAbdominal pain"
-                                "\nHeadache\nNone of these\n\n"
-                                "Choose the option that matches your answer. "
-                                "Eg, 1 for Abdominal pain\n\nEnter *back* to go to "
-                                "the previous question or *abort* to "
-                                "end the assessment"),
+                    "message": (
+                        "What is the issue?\n\nAbdominal pain"
+                        "\nHeadache\nNone of these\n\n"
+                        "Choose the option that matches your answer. "
+                        "Eg, 1 for Abdominal pain\n\nEnter *back* to go to "
+                        "the previous question or *abort* to "
+                        "end the assessment"
+                    ),
                     "step": 6,
                     "value": 2,
                     "optionId": 0,

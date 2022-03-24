@@ -24,10 +24,12 @@ class TestStartAssessment(TestCase):
         "step": 1,
         "title": {"en-US": "WELCOME TO ADA"},
         "description": {
-            "en-US": ("Welcome to the MomConnect Symptom Checker in "
-                      "partnership with Ada. Let's start with some questions "
-                      "about the symptoms. Then, we will help you "
-                      "decide what to do next.")
+            "en-US": (
+                "Welcome to the MomConnect Symptom Checker in "
+                "partnership with Ada. Let's start with some questions "
+                "about the symptoms. Then, we will help you "
+                "decide what to do next."
+            )
         },
         "label": {"en-US": "Continue"},
         "_links": {
@@ -41,8 +43,10 @@ class TestStartAssessment(TestCase):
             },
             "previous": {
                 "method": "POST",
-                "href": ("/assessments/"
-                         "654f856d-c602-4347-8713-8f8196d66be3/dialog/previous"),
+                "href": (
+                    "/assessments/"
+                    "654f856d-c602-4347-8713-8f8196d66be3/dialog/previous"
+                ),
             },
             "abort": {
                 "method": "PUT",
@@ -81,12 +85,14 @@ class TestStartAssessment(TestCase):
             response,
             {
                 "choices": "",
-                "message": ("Welcome to the MomConnect Symptom Checker "
-                            "in partnership with Ada. Let's start with some "
-                            "questions about the symptoms. Then, we will help "
-                            "you decide what to do next.\n\nEnter *back* to go "
-                            "to the previous question or *abort* "
-                            "to end the assessment"),
+                "message": (
+                    "Welcome to the MomConnect Symptom Checker "
+                    "in partnership with Ada. Let's start with some "
+                    "questions about the symptoms. Then, we will help "
+                    "you decide what to do next.\n\nEnter *back* to go "
+                    "to the previous question or *abort* "
+                    "to end the assessment"
+                ),
                 "step": 1,
                 "optionId": "",
                 "path": "/assessments/654f856d-c602-4347-8713-8f8196d66be3/dialog/next",
@@ -113,9 +119,11 @@ class TestMultipleChoiceQuestion(TestCase):
         "step": 3,
         "title": {"en-US": "PATIENT INFORMATION"},
         "description": {
-            "en-US": ("What is John’s biological sex?\nBiological "
-                      "sex is a risk factor for some conditions. "
-                      "Your answer is necessary for an accurate assessment.")
+            "en-US": (
+                "What is John’s biological sex?\nBiological "
+                "sex is a risk factor for some conditions. "
+                "Your answer is necessary for an accurate assessment."
+            )
         },
         "options": [
             {"optionId": 0, "text": {"en-US": "Female"}},
@@ -132,8 +140,10 @@ class TestMultipleChoiceQuestion(TestCase):
             },
             "previous": {
                 "method": "POST",
-                "href": ("/assessments/"
-                         "654f856d-c602-4347-8713-8f8196d66be3/dialog/previous"),
+                "href": (
+                    "/assessments/"
+                    "654f856d-c602-4347-8713-8f8196d66be3/dialog/previous"
+                ),
             },
             "abort": {
                 "method": "PUT",
@@ -157,13 +167,15 @@ class TestMultipleChoiceQuestion(TestCase):
             response,
             {
                 "choices": 2,
-                "message": ("What is John’s biological sex?\nBiological "
-                            "sex is a risk factor for some conditions. "
-                            "Your answer is necessary for an accurate "
-                            "assessment.\n\nFemale\nMale\n\nChoose the "
-                            "option that matches your answer. Eg, 1 for "
-                            "Female\n\nEnter *back* to go to the previous "
-                            "question or *abort* to end the assessment"),
+                "message": (
+                    "What is John’s biological sex?\nBiological "
+                    "sex is a risk factor for some conditions. "
+                    "Your answer is necessary for an accurate "
+                    "assessment.\n\nFemale\nMale\n\nChoose the "
+                    "option that matches your answer. Eg, 1 for "
+                    "Female\n\nEnter *back* to go to the previous "
+                    "question or *abort* to end the assessment"
+                ),
                 "step": 3,
                 "optionId": "",
                 "path": "/assessments/654f856d-c602-4347-8713-8f8196d66be3/dialog/next",
@@ -190,10 +202,12 @@ class TestPreviousMessage(TestCase):
         "step": 3,
         "title": {"en-US": "PATIENT INFORMATION"},
         "description": {
-            "en-US": ("What is John’s biological sex?\nBiological "
-                      "sex is a risk factor for some conditions. "
-                      "Your answer is necessary for an accurate "
-                      "assessment.")
+            "en-US": (
+                "What is John’s biological sex?\nBiological "
+                "sex is a risk factor for some conditions. "
+                "Your answer is necessary for an accurate "
+                "assessment."
+            )
         },
         "options": [
             {"optionId": 0, "text": {"en-US": "Female"}},
@@ -206,18 +220,20 @@ class TestPreviousMessage(TestCase):
             },
             "next": {
                 "method": "POST",
-                "href": ("/assessments/"
-                         "654f856d-c602-4347-8713-8f8196d66be3/dialog/next"),
+                "href": (
+                    "/assessments/" "654f856d-c602-4347-8713-8f8196d66be3/dialog/next"
+                ),
             },
             "previous": {
                 "method": "POST",
-                "href": ("/assessments/"
-                         "654f856d-c602-4347-8713-8f8196d66be3/dialog/previous"),
+                "href": (
+                    "/assessments/"
+                    "654f856d-c602-4347-8713-8f8196d66be3/dialog/previous"
+                ),
             },
             "abort": {
                 "method": "PUT",
-                "href": ("/assessments/"
-                         "654f856d-c602-4347-8713-8f8196d66be3/abort"),
+                "href": ("/assessments/" "654f856d-c602-4347-8713-8f8196d66be3/abort"),
             },
         },
     }
@@ -236,13 +252,15 @@ class TestPreviousMessage(TestCase):
             response,
             {
                 "choices": 2,
-                "message": ("What is John’s biological sex?\nBiological "
-                            "sex is a risk factor for some conditions. "
-                            "Your answer is necessary for an accurate "
-                            "assessment.\n\nFemale\nMale\n\nChoose the "
-                            "option that matches your answer. Eg, 1 for "
-                            "Female\n\nEnter *back* to go to the previous "
-                            "question or *abort* to end the assessment"),
+                "message": (
+                    "What is John’s biological sex?\nBiological "
+                    "sex is a risk factor for some conditions. "
+                    "Your answer is necessary for an accurate "
+                    "assessment.\n\nFemale\nMale\n\nChoose the "
+                    "option that matches your answer. Eg, 1 for "
+                    "Female\n\nEnter *back* to go to the previous "
+                    "question or *abort* to end the assessment"
+                ),
                 "step": 3,
                 "optionId": "",
                 "path": "/assessments/654f856d-c602-4347-8713-8f8196d66be3/dialog/next",
