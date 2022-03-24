@@ -509,3 +509,45 @@ class BaselineSurveyResultViewTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.json()["results"]), 0)
+
+
+class FirstSendDateViewTests(APITestCase):
+    url = reverse("mqr-firstsenddate")
+
+    def test_unauthenticated(self):
+        response = self.client.post(self.url, {})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_invalid_data(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url, {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {"edd_or_dob_date": ["This field is required."]},
+        )
+
+    @patch("mqr.views.get_first_send_date")
+    def test_faq_message(self, mock_get_first_send_date):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        mock_get_first_send_date.return_value = datetime.date(2022, 7, 15)
+
+        response = self.client.post(
+            self.url,
+            {
+                "edd_or_dob_date": "2022-07-12",
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.json(),
+            {
+                "first_send_date": "2022-07-15",
+            },
+        )
+
+        mock_get_first_send_date.assert_called_with(datetime.date(2022, 7, 12))

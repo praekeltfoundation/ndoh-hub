@@ -438,3 +438,16 @@ class TestGetNextSendDate(TestCase):
     def test_get_next_send_date(self):
         next_date = utils.get_next_send_date()
         self.assertEqual(next_date, date(2022, 3, 8))
+
+
+class TestGetFirstSendDate(TestCase):
+    def setUp(self):
+        utils.get_today = override_get_today
+
+    def test_get_first_send_date_prebirth(self):
+        first_send_date = utils.get_first_send_date(date(2022, 5, 13))
+        self.assertEqual(first_send_date, date(2022, 3, 4))
+
+    def test_get_first_send_date_postbirth(self):
+        first_send_date = utils.get_first_send_date(date(2022, 2, 13))
+        self.assertEqual(first_send_date, date(2022, 3, 6))

@@ -13,12 +13,18 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from eventstore.views import CursorPaginationFactory
-from mqr.serializers import FaqMenuSerializer, FaqSerializer, NextMessageSerializer
+from mqr.serializers import (
+    FaqMenuSerializer,
+    FaqSerializer,
+    FirstSendDateSerializer,
+    NextMessageSerializer,
+)
 from mqr.utils import (
     get_age_bucket,
     get_facility_province,
     get_faq_menu,
     get_faq_message,
+    get_first_send_date,
     get_next_message,
     get_weeks_pregnant,
 )
@@ -199,3 +205,22 @@ class BaselineSurveyResultViewSet(
             return JsonResponse(BaselineSurveyResultSerializer(obj).data, status=code)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FirstSendDateView(generics.GenericAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        """
+        Get First send date based on EDD or baby DOB date
+        """
+        serializer = FirstSendDateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        edd_or_dob_date = serializer.validated_data.get("edd_or_dob_date")
+
+        first_send_date = get_first_send_date(edd_or_dob_date)
+
+        response = {"first_send_date": first_send_date}
+
+        return Response(response, status=status.HTTP_200_OK)
