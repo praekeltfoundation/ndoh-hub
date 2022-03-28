@@ -11,6 +11,10 @@ if settings.RAPIDPRO_URL and settings.RAPIDPRO_TOKEN:
     rapidpro = TembaClient(settings.RAPIDPRO_URL, settings.RAPIDPRO_TOKEN)
 
 
+def get_rp_payload(body):
+    return body
+
+
 def build_rp_request(body):
     # The cardType value is used to build the request to ADA
     if "cardType" in body.keys():
@@ -45,9 +49,9 @@ def build_rp_request(body):
 
 def post_to_ada(body, path):
     head = {
-        "x-ada-clientId": "xxxxx ",
-        "x-ada-userId": "xxxx",
-        "Accept-Language": "en-GB",
+        "x-ada-clientId": settings.X_ADA_CLIENTID,
+        "x-ada-userId": settings.X_ADA_USERID,
+        "Accept-Language": "en-US",
         "Accept": "application/json",
     }
     path = path
@@ -59,9 +63,9 @@ def post_to_ada(body, path):
 
 def post_to_ada_start_assessment(body):
     head = {
-        "x-ada-clientId": "praekelt ",
-        "x-ada-userId": "whatsapp-id",
-        "Accept-Language": "en-GB",
+        "x-ada-clientId": settings.X_ADA_CLIENTID,
+        "x-ada-userId": settings.X_ADA_USERID,
+        "Accept-Language": "en-US",
         "Accept": "application/json",
     }
     path = settings.ADA_START_ASSESSMENT_URL
@@ -73,9 +77,9 @@ def post_to_ada_start_assessment(body):
 
 def post_to_ada_next_dialog(body):
     head = {
-        "x-ada-clientId": "praekelt ",
-        "x-ada-userId": "whatsapp-id",
-        "Accept-Language": "en-GB",
+        "x-ada-clientId": settings.X_ADA_CLIENTID,
+        "x-ada-userId": settings.X_ADA_USERID,
+        "Accept-Language": "en-US",
         "Accept": "application/json",
     }
     path = body["_links"]["startAssessment"]["href"]
@@ -89,9 +93,9 @@ def get_from_ada(body):
     # Use assessementid to get first question
     path = body["_links"]["startAssessment"]["href"]
     head = {
-        "x-ada-clientId": "praekelt ",
-        "x-ada-userId": "whatsapp-id",
-        "Accept-Language": "en-GB",
+        "x-ada-clientId": settings.X_ADA_CLIENTID,
+        "x-ada-userId": settings.X_ADA_USERID,
+        "Accept-Language": "en-US",
         "Accept": "application/json",
     }
 
@@ -198,9 +202,9 @@ def get_step(body):
 # This returns the report of the assessment
 def get_report(body):
     head = {
-        "x-ada-clientId": "praekelt ",
-        "x-ada-userId": "whatsapp-id",
-        "Accept-Language": "en-GB",
+        "x-ada-clientId": settings.X_ADA_CLIENTID,
+        "x-ada-userId": settings.X_ADA_USERID,
+        "Accept-Language": "en-US",
         "Accept": "application/json",
     }
     path = body["_links"]["report"]["href"]
@@ -212,9 +216,9 @@ def get_report(body):
 # Go back to previous question
 def previous_question(body, path):
     head = {
-        "x-ada-clientId": "praekelt ",
-        "x-ada-userId": "whatsapp-id",
-        "Accept-Language": "en-GB",
+        "x-ada-clientId": settings.X_ADA_CLIENTID,
+        "x-ada-userId": settings.X_ADA_USERID,
+        "Accept-Language": "en-US",
         "Accept": "application/json",
     }
     path = path
@@ -227,9 +231,9 @@ def previous_question(body, path):
 # Abort assessment
 def abort_assessment(body):
     head = {
-        "x-ada-clientId": "praekelt ",
-        "x-ada-userId": "whatsapp-id",
-        "Accept-Language": "en-GB",
+        "x-ada-clientId": settings.X_ADA_CLIENTID,
+        "x-ada-userId": settings.X_ADA_USERID,
+        "Accept-Language": "en-US",
         "Accept": "application/json",
     }
     path = body["path"]
