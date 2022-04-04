@@ -121,7 +121,7 @@ class BaselineSurveyResult(models.Model):
         MARRIED = "married"
         SEPARATED = "separated_or_divorced"
         WIDOWED = "widowed"
-        PARTNER = "parter_or_boyfriend"
+        PARTNER = "partner_or_boyfriend"
         SKIP = "skip"
         choices = (
             (NEVER_MARRIED, "Never married"),
