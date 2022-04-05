@@ -47,12 +47,13 @@ class TestGetMessage(TestCase):
             json={"body": {"text": {"value": {"message": "Test Message"}}}},
             status=200,
         )
-        is_template, has_parameters, message = utils.get_message(
+        is_template, has_parameters, message, template_name = utils.get_message(
             1111, {"tracking": "yes"}
         )
         self.assertFalse(is_template)
         self.assertFalse(has_parameters)
         self.assertEqual(message, "Test Message")
+        self.assertIsNone(template_name)
 
     @responses.activate
     def test_get_message_template(self):
@@ -64,17 +65,17 @@ class TestGetMessage(TestCase):
             "http://contentrepo/api/v2/pages/1111/?whatsapp=True&tracking=yes",
             json={
                 "body": {"text": {"value": {"message": "Test Message"}}},
-                "is_whatsapp_template": True,
+                "tags": ["whatsapp_template"],
                 "title": "bcm_week_post3_123123",
             },
             status=200,
         )
-        is_template, has_parameters, message = utils.get_message(
+        is_template, has_parameters, message, template_name = utils.get_message(
             1111, {"tracking": "yes"}
         )
         self.assertTrue(is_template)
         self.assertFalse(has_parameters)
-        self.assertEqual(message, "bcm_week_post3_123123")
+        self.assertEqual(template_name, "bcm_week_post3_123123")
 
     @responses.activate
     def test_get_message_template_with_parameters(self):
@@ -86,17 +87,17 @@ class TestGetMessage(TestCase):
             "http://contentrepo/api/v2/pages/1111/?whatsapp=True&tracking=yes",
             json={
                 "body": {"text": {"value": {"message": "Test Message {{1}}"}}},
-                "is_whatsapp_template": True,
+                "tags": ["whatsapp_template"],
                 "title": "bcm_week_post3_123123",
             },
             status=200,
         )
-        is_template, has_parameters, message = utils.get_message(
+        is_template, has_parameters, message, template_name = utils.get_message(
             1111, {"tracking": "yes"}
         )
         self.assertTrue(is_template)
         self.assertTrue(has_parameters)
-        self.assertEqual(message, "bcm_week_post3_123123")
+        self.assertEqual(template_name, "bcm_week_post3_123123")
 
 
 class TestGetMessageDetails(TestCase):
@@ -145,7 +146,7 @@ class TestGetMessageDetails(TestCase):
     @responses.activate
     @patch("mqr.utils.get_message")
     def test_get_message_details(self, mock_get_message):
-        mock_get_message.return_value = (False, False, "Test Message {{1}}")
+        mock_get_message.return_value = (False, False, "Test Message {{1}}", None)
 
         tag = "bcm_week_post3"
         responses.add(
@@ -163,6 +164,7 @@ class TestGetMessageDetails(TestCase):
                 "is_template": False,
                 "has_parameters": False,
                 "message": "Test Message Mom",
+                "template_name": None,
             },
         )
 
