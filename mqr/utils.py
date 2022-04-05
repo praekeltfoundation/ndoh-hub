@@ -26,10 +26,10 @@ def get_message(page_id, tracking_data):
     page = response.json()
     message = page["body"]["text"]["value"]["message"]
 
-    if page.get("is_whatsapp_template"):
-        return True, "{{1}}" in message, page["title"]
+    if "whatsapp_template" in page.get("tags", []):
+        return True, "{{1}}" in message, message, page["title"]
 
-    return False, False, message
+    return False, False, message, None
 
 
 def get_message_details(tag, tracking_data, mom_name=None):
@@ -39,7 +39,9 @@ def get_message_details(tag, tracking_data, mom_name=None):
 
     if len(response.json()["results"]) == 1:
         page_id = response.json()["results"][0]["id"]
-        is_template, has_parameters, message = get_message(page_id, tracking_data)
+        is_template, has_parameters, message, template_name = get_message(
+            page_id, tracking_data
+        )
 
         if not is_template and mom_name:
             message = message.replace("{{1}}", mom_name)
@@ -48,6 +50,7 @@ def get_message_details(tag, tracking_data, mom_name=None):
             "is_template": is_template,
             "has_parameters": has_parameters,
             "message": message,
+            "template_name": template_name,
         }
     if len(response.json()["results"]) == 0 and tag.startswith("arm"):
         return {"warning": "no message found"}
