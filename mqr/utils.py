@@ -43,7 +43,7 @@ def get_message_details(tag, tracking_data, mom_name=None):
             page_id, tracking_data
         )
 
-        if not is_template and mom_name:
+        if mom_name:
             message = message.replace("{{1}}", mom_name)
 
         return {
