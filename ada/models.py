@@ -59,8 +59,8 @@ class AdaAssessment(models.Model):
 
     def __str__(self):
         return (
-            ("Contact_ID: {self.contact_id} | Step: {self.step} "
-                "| OptionID: {self.optionId} \n"
-                "| User_Input: {self.user_input} | Title: {self.title} \n"
-                "| Created_at: {self.created_at}")
+            "Contact_ID: {self.contact_id} | Step: {self.step} "
+            "| OptionID: {self.optionId} \n"
+            "| User_Input: {self.user_input} | Title: {self.title} \n"
+            "| Created_at: {self.created_at}"
         )

@@ -385,8 +385,10 @@ class AdaAssessmentDialog(APITestCase):
             "_links": {
                 "startAssessment": {
                     "method": "POST",
-                    "href": ("/assessments/"
-                             "976663c1-aa5e-4d3b-8455-9980fc3f26ca/dialog/next"),
+                    "href": (
+                        "/assessments/"
+                        "976663c1-aa5e-4d3b-8455-9980fc3f26ca/dialog/next"
+                    ),
                 }
             },
         }
@@ -411,8 +413,10 @@ class AdaAssessmentDialog(APITestCase):
                 },
                 "next": {
                     "method": "POST",
-                    "href": ("/assessments/"
-                             "976663c1-aa5e-4d3b-8455-9980fc3f26ca/dialog/next"),
+                    "href": (
+                        "/assessments/"
+                        "976663c1-aa5e-4d3b-8455-9980fc3f26ca/dialog/next"
+                    ),
                 },
                 "abort": {
                     "method": "PUT",
@@ -473,9 +477,11 @@ class AdaAssessmentDialog(APITestCase):
                 {
                     "label": {"en-GB": "What does this mean?"},
                     "text": {
-                        "en-GB": ("The status of a current pregnancy, "
-                                  "typically confirmed through a blood "
-                                  "or urine test.")
+                        "en-GB": (
+                            "The status of a current pregnancy, "
+                            "typically confirmed through a blood "
+                            "or urine test."
+                        )
                     },
                 }
             ],
