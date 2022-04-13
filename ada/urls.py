@@ -24,8 +24,23 @@ urlpatterns = [
         name="rapidpro_topup_flow",
     ),
     path(
-        "api/v2/ada/startassessment",
+        "api/v2/ada/assessments",
         views.PresentationLayerView.as_view(),
+        name="ada-assessments",
+    ),
+    path(
+        "api/v2/ada/startassessment",
+        views.StartAssessment.as_view(),
         name="ada-start-assessment",
     ),
+    path("api/v2/ada/nextdialog", views.NextDialog.as_view(), name="ada-next-dialog"),
+    path(
+        "api/v2/ada/previousdialog",
+        views.PreviousDialog.as_view(),
+        name="ada-previous-dialog",
+    ),
+    path("api/v2/ada/reports", views.Reports.as_view(), name="ada-reports"),
+    path("api/v2/ada/abort", views.Abort.as_view(), name="ada-abort"),
+    path("api/v2/ada/send", views.sendView.as_view(), name="ada-send"),
+    path("api/v2/ada/receive", views.receiveView.as_view(), name="ada-receive"),
 ]

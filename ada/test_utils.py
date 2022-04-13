@@ -1,326 +1,289 @@
 from unittest import TestCase
-from unittest.mock import patch
-
-from django.test import override_settings
 
 from ada import utils
 
-from .models import AdaAssessment
 
-
-class TestStartAssessment(TestCase):
-    get_rp_payload = {
-        "contact_uuid": "49548747-48888043",
-        "choices": "",
-        "value": "",
-        "cardType": "",
-        "step": "",
-        "optionId": "",
-        "path": "",
-        "title": "",
-    }
-    next_dialog_response = {
-        "cardType": "TEXT",
-        "step": 1,
-        "title": {"en-US": "WELCOME TO ADA"},
-        "description": {
-            "en-US": (
-                "Welcome to the MomConnect Symptom Checker in "
-                "partnership with Ada. Let's start with some questions "
-                "about the symptoms. Then, we will help you "
-                "decide what to do next."
-            )
-        },
-        "label": {"en-US": "Continue"},
-        "_links": {
-            "self": {
-                "method": "GET",
-                "href": "/assessments/654f856d-c602-4347-8713-8f8196d66be3",
+class TestQuestionsPayload(TestCase):
+    def test_text_type_question(self):
+        rapidpro_data = {
+            "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
+            "choices": None,
+            "value": "",
+            "cardType": "",
+            "step": None,
+            "optionId": None,
+            "path": "",
+            "title": "",
+        }
+        ada_response = {
+            "cardType": "TEXT",
+            "step": 1,
+            "title": {"en-GB": "WELCOME TO ADA"},
+            "description": {
+                "en-GB": (
+                    "Welcome to the MomConnect Symptom Checker in "
+                    "partnership with Ada. Let's start with some questions "
+                    "about the symptoms. Then, we will help you "
+                    "decide what to do next."
+                )
             },
-            "next": {
-                "method": "POST",
-                "href": "/assessments/654f856d-c602-4347-8713-8f8196d66be3/dialog/next",
+            "label": {"en-GB": "Continue"},
+            "_links": {
+                "self": {
+                    "method": "GET",
+                    "href": "/assessments/654f856d-c602-4347-8713-8f8196d66be3",
+                },
+                "next": {
+                    "method": "POST",
+                    "href": (
+                        "/assessments/"
+                        "654f856d-c602-4347-8713-8f8196d66be3/dialog/next"
+                    ),
+                },
+                "previous": {
+                    "method": "POST",
+                    "href": (
+                        "/assessments/"
+                        "654f856d-c602-4347-8713-8f8196d66be3/dialog/previous"
+                    ),
+                },
+                "abort": {
+                    "method": "PUT",
+                    "href": "/assessments/654f856d-c602-4347-8713-8f8196d66be3/abort",
+                },
             },
-            "previous": {
-                "method": "POST",
-                "href": (
-                    "/assessments/"
-                    "654f856d-c602-4347-8713-8f8196d66be3/dialog/previous"
-                ),
-            },
-            "abort": {
-                "method": "PUT",
-                "href": "/assessments/654f856d-c602-4347-8713-8f8196d66be3/abort",
-            },
-        },
-    }
+        }
 
-    post_response = {
-        "id": "654f856d-c602-4347-8713-8f8196d66be3",
-        "step": 0,
-        "onboardingFactors": [],
-        "assessmentStarted": False,
-        "locked": False,
-        "_links": {
-            "startAssessment": {
-                "method": "POST",
-                "href": "/assessments/654f856d-c602-4347-8713-8f8196d66be3/dialog/next",
-            }
-        },
-    }
-
-    @override_settings(ADA_START_ASSESSMENT_URL="/assessments")
-    @patch("ada.utils.post_to_ada", return_value=next_dialog_response)
-    @patch("ada.utils.post_to_ada_start_assessment", return_value=post_response)
-    @patch("ada.utils.get_rp_payload", return_value=get_rp_payload)
-    def test_start_assessment(
-        self, mock_get_rp_payload, mock_post_response, mock_get_response
-    ):
-
-        request_to_ada = utils.build_rp_request(mock_get_rp_payload.return_value)
+        request_to_ada = utils.build_rp_request(rapidpro_data)
         self.assertEqual(request_to_ada, {})
 
-        response = utils.get_message(mock_get_rp_payload.return_value)
+        response = utils.format_message(ada_response)
         self.assertEqual(
             response,
             {
-                "choices": "",
                 "message": (
-                    "Welcome to the MomConnect Symptom Checker "
-                    "in partnership with Ada. Let's start with some "
-                    "questions about the symptoms. Then, we will help "
-                    "you decide what to do next.\n\nEnter *back* to go "
-                    "to the previous question or *abort* "
-                    "to end the assessment"
+                    "Welcome to the MomConnect Symptom "
+                    "Checker in partnership with Ada. Let's "
+                    "start with some questions about the symptoms. "
+                    "Then, we will help you decide what to do next."
+                    "\n\nReply '0' to continue."
+                    "\n\nReply *back* to go to the previous question "
+                    "or *abort* to end the assessment"
                 ),
+                "explanations": "",
                 "step": 1,
-                "optionId": "",
+                "optionId": None,
                 "path": "/assessments/654f856d-c602-4347-8713-8f8196d66be3/dialog/next",
                 "cardType": "TEXT",
                 "title": "WELCOME TO ADA",
+                "description": (
+                    "Welcome to the MomConnect Symptom "
+                    "Checker in partnership with Ada. "
+                    "Let's start with some questions about "
+                    "the symptoms. Then, we will help you "
+                    "decide what to do next."
+                ),
             },
             response,
         )
 
-
-class TestMultipleChoiceQuestion(TestCase):
-    get_rp_payload = {
-        "contact_uuid": "49548747-48888043",
-        "choices": "",
-        "path": "/assessments/assessment-id/dialog/next",
-        "optionId": 0,
-        "cardType": "INPUT",
-        "step": 2,
-        "value": "John",
-        "title": "Your name",
-    }
-    get_from_ada = {
-        "cardType": "CHOICE",
-        "step": 3,
-        "title": {"en-US": "PATIENT INFORMATION"},
-        "description": {
-            "en-US": (
-                "What is John’s biological sex?\nBiological "
-                "sex is a risk factor for some conditions. "
-                "Your answer is necessary for an accurate assessment."
-            )
-        },
-        "options": [
-            {"optionId": 0, "text": {"en-US": "Female"}},
-            {"optionId": 1, "text": {"en-US": "Male"}},
-        ],
-        "_links": {
-            "self": {
-                "method": "GET",
-                "href": "/assessments/654f856d-c602-4347-8713-8f8196d66be3",
+    def test_choice_type_question(self):
+        rapidpro_data = {
+            "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
+            "choices": "",
+            "path": "/assessments/assessment-id/dialog/next",
+            "optionId": 0,
+            "cardType": "INPUT",
+            "step": 3,
+            "value": "John",
+            "title": "Your name",
+        }
+        ada_response = {
+            "cardType": "CHOICE",
+            "step": 4,
+            "title": {"en-GB": "Patient Information"},
+            "description": {
+                "en-GB": (
+                    "Hi John, what is your biological sex?\nBiological "
+                    "sex is a risk factor for some conditions. "
+                    "Your answer is necessary for an accurate assessment."
+                )
             },
-            "next": {
-                "method": "POST",
-                "href": "/assessments/654f856d-c602-4347-8713-8f8196d66be3/dialog/next",
+            "explanations": [
+                {
+                    "label": {"en-GB": "Why only these 2?"},
+                    "text": {
+                        "en-GB": (
+                            "We are investigating a solution "
+                            "to provide a more inclusive health assessment "
+                            "for people beyond the binary options of female "
+                            "or male.\n&nbsp;\nYour feedback can help. "
+                            "Please share how this assessment could support "
+                            "your needs better by emailing support@ada.com"
+                            "\n&nbsp;\nFor now, unfortunately, a medically "
+                            "accurate assessment can only be provided if "
+                            "you select female or male."
+                        )
+                    },
+                }
+            ],
+            "options": [
+                {"optionId": 0, "text": {"en-GB": "Female"}},
+                {"optionId": 1, "text": {"en-GB": "Male"}},
+            ],
+            "_links": {
+                "self": {
+                    "method": "GET",
+                    "href": "/assessments/f9d4be32-78fa-48e0-b9a3-e12e305e73ce",
+                },
+                "next": {
+                    "method": "POST",
+                    "href": (
+                        "/assessments/"
+                        "f9d4be32-78fa-48e0-b9a3-e12e305e73ce/dialog/next"
+                    ),
+                },
+                "previous": {
+                    "method": "POST",
+                    "href": (
+                        "/assessments/"
+                        "f9d4be32-78fa-48e0-b9a3-e12e305e73ce/dialog/previous"
+                    ),
+                },
+                "abort": {
+                    "method": "PUT",
+                    "href": "/assessments/f9d4be32-78fa-48e0-b9a3-e12e305e73ce/abort",
+                },
             },
-            "previous": {
-                "method": "POST",
-                "href": (
-                    "/assessments/"
-                    "654f856d-c602-4347-8713-8f8196d66be3/dialog/previous"
-                ),
-            },
-            "abort": {
-                "method": "PUT",
-                "href": "/assessments/654f856d-c602-4347-8713-8f8196d66be3/abort",
-            },
-        },
-    }
+        }
 
-    @patch.object(AdaAssessment, "save")
-    @patch("ada.utils.post_to_ada", return_value=get_from_ada)
-    @patch("ada.utils.get_rp_payload", return_value=get_rp_payload)
-    def test_submit_and_get_next_question(
-        self, mock_get_rp_payload, mock_post_to_ada, mock_save_mock
-    ):
+        request_to_ada = utils.build_rp_request(rapidpro_data)
+        self.assertEqual(request_to_ada, {"step": 3, "value": "John"})
 
-        request_to_ada = utils.build_rp_request(mock_get_rp_payload.return_value)
-        self.assertEqual(request_to_ada, {"step": 2, "value": "John"})
-
-        response = utils.get_message(mock_get_rp_payload.return_value)
+        response = utils.format_message(ada_response)
         self.assertEqual(
             response,
             {
                 "choices": 2,
                 "message": (
-                    "What is John’s biological sex?\nBiological "
-                    "sex is a risk factor for some conditions. "
-                    "Your answer is necessary for an accurate "
-                    "assessment.\n\nFemale\nMale\n\nChoose the "
-                    "option that matches your answer. Eg, 1 for "
-                    "Female\n\nEnter *back* to go to the previous "
+                    "Hi John, what is your biological sex?"
+                    "\nBiological sex is a risk factor for some "
+                    "conditions. Your answer is necessary for an "
+                    "accurate assessment.\n\nFemale\nMale\n\nChoose "
+                    "the option that matches your answer. Eg, 1 for "
+                    "Female\n\nReply *back* to go to the previous "
                     "question or *abort* to end the assessment"
                 ),
-                "step": 3,
-                "optionId": "",
-                "path": "/assessments/654f856d-c602-4347-8713-8f8196d66be3/dialog/next",
+                "explanations": (
+                    "We are investigating a solution "
+                    "to provide a more inclusive health assessment "
+                    "for people beyond the binary options of female "
+                    "or male.\n&nbsp;\nYour feedback can help. Please "
+                    "share how this assessment could support your needs "
+                    "better by emailing support@ada.com\n&nbsp;\nFor "
+                    "now, unfortunately, a medically accurate assessment "
+                    "can only be provided if you select female or male."
+                ),
+                "step": 4,
+                "optionId": None,
+                "path": "/assessments/f9d4be32-78fa-48e0-b9a3-e12e305e73ce/dialog/next",
                 "cardType": "CHOICE",
-                "title": "PATIENT INFORMATION",
+                "title": "Patient Information",
+                "description": (
+                    "Hi John, what is your biological sex?\n"
+                    "Biological sex is a risk factor for "
+                    "some conditions. Your answer is necessary "
+                    "for an accurate assessment."
+                ),
             },
             response,
         )
 
-
-class TestPreviousMessage(TestCase):
-    get_rp_payload = {
-        "contact_uuid": "49548747-48888043",
-        "choices": "",
-        "path": "/assessments/assessment-id/dialog/next",
-        "optionId": 1,
-        "cardType": "CHOICE",
-        "step": 4,
-        "value": "back",
-        "title": "What symptom",
-    }
-    previous_dialog_response = {
-        "cardType": "CHOICE",
-        "step": 3,
-        "title": {"en-US": "PATIENT INFORMATION"},
-        "description": {
-            "en-US": (
-                "What is John’s biological sex?\nBiological "
-                "sex is a risk factor for some conditions. "
-                "Your answer is necessary for an accurate "
-                "assessment."
-            )
-        },
-        "options": [
-            {"optionId": 0, "text": {"en-US": "Female"}},
-            {"optionId": 1, "text": {"en-US": "Male"}},
-        ],
-        "_links": {
-            "self": {
-                "method": "GET",
-                "href": "/assessments/654f856d-c602-4347-8713-8f8196d66be3",
+    def test_input_type_question(self):
+        rapidpro_data = {
+            "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
+            "choices": "",
+            "path": "/assessments/assessment-id/dialog/next",
+            "optionId": 0,
+            "cardType": "INPUT",
+            "step": 4,
+            "value": "John",
+            "title": "Your name",
+        }
+        ada_response = {
+            "cardType": "INPUT",
+            "step": 5,
+            "title": {"en-GB": "Patient Information"},
+            "description": {"en-GB": "How old are you?"},
+            "cardAttributes": {
+                "format": "integer",
+                "maximum": {
+                    "value": 120,
+                    "message": (
+                        "Age must be 120 years or younger " "to assess the symptoms"
+                    ),
+                },
+                "minimum": {
+                    "value": 16,
+                    "message": (
+                        "Age must be 16 years or older " "to assess your symptoms"
+                    ),
+                },
+                "pattern": {
+                    "value": "^\\d+$",
+                    "message": (
+                        "Age must only include numbers. "
+                        'Please enter a correct value, for example "20"'
+                    ),
+                },
+                "placeholder": {"en-GB": 'Enter age in years, for example "20"'},
             },
-            "next": {
-                "method": "POST",
-                "href": (
-                    "/assessments/" "654f856d-c602-4347-8713-8f8196d66be3/dialog/next"
-                ),
+            "_links": {
+                "self": {
+                    "method": "GET",
+                    "href": "/assessments/f9d4be32-78fa-48e0-b9a3-e12e305e73ce",
+                },
+                "next": {
+                    "method": "POST",
+                    "href": (
+                        "/assessments/"
+                        "f9d4be32-78fa-48e0-b9a3-e12e305e73ce/dialog/next"
+                    ),
+                },
+                "previous": {
+                    "method": "POST",
+                    "href": (
+                        "/assessments/"
+                        "f9d4be32-78fa-48e0-b9a3-e12e305e73ce/dialog/previous"
+                    ),
+                },
+                "abort": {
+                    "method": "PUT",
+                    "href": "/assessments/f9d4be32-78fa-48e0-b9a3-e12e305e73ce/abort",
+                },
             },
-            "previous": {
-                "method": "POST",
-                "href": (
-                    "/assessments/"
-                    "654f856d-c602-4347-8713-8f8196d66be3/dialog/previous"
-                ),
-            },
-            "abort": {
-                "method": "PUT",
-                "href": ("/assessments/" "654f856d-c602-4347-8713-8f8196d66be3/abort"),
-            },
-        },
-    }
+        }
 
-    @patch("ada.utils.previous_question", return_value=previous_dialog_response)
-    @patch("ada.utils.get_rp_payload", return_value=get_rp_payload)
-    def test_submit_and_get_previous_question(
-        self, mock_get_rp_payload, mock_post_to_ada
-    ):
+        request_to_ada = utils.build_rp_request(rapidpro_data)
+        self.assertEqual(request_to_ada, {"step": 4, "value": "John"})
 
-        request_to_ada = utils.build_rp_request(mock_get_rp_payload.return_value)
-        self.assertEqual(request_to_ada, {"step": 4})
-
-        response = utils.get_message(mock_get_rp_payload.return_value)
+        response = utils.format_message(ada_response)
         self.assertEqual(
             response,
             {
-                "choices": 2,
+                "choices": None,
                 "message": (
-                    "What is John’s biological sex?\nBiological "
-                    "sex is a risk factor for some conditions. "
-                    "Your answer is necessary for an accurate "
-                    "assessment.\n\nFemale\nMale\n\nChoose the "
-                    "option that matches your answer. Eg, 1 for "
-                    "Female\n\nEnter *back* to go to the previous "
-                    "question or *abort* to end the assessment"
+                    "How old are you?\n\nReply *back* to go to "
+                    "the previous question or *abort* to "
+                    "end the assessment"
                 ),
-                "step": 3,
-                "optionId": "",
-                "path": "/assessments/654f856d-c602-4347-8713-8f8196d66be3/dialog/next",
-                "cardType": "CHOICE",
-                "title": "PATIENT INFORMATION",
+                "explanations": "",
+                "step": 5,
+                "optionId": None,
+                "path": "/assessments/f9d4be32-78fa-48e0-b9a3-e12e305e73ce/dialog/next",
+                "cardType": "INPUT",
+                "title": "Patient Information",
+                "description": "How old are you?",
             },
             response,
         )
-
-
-class TestReturnReport(TestCase):
-    get_rp_payload = {
-        "contact_uuid": "49548747-48888043",
-        "choices": "",
-        "path": "/assessments/assessment-id/dialog/next",
-        "optionId": 0,
-        "cardType": "TEXT",
-        "step": 15,
-        "value": "1",
-    }
-    get_from_ada = {
-        "cardType": "TEXT",
-        "title": {"en-GB": "End of assessment", "de-DE": "Foobar de-DE Text"},
-        "description": {"en-GB": "Assessment complete", "de-DE": "Foobar de-DE Text"},
-        "options": [
-            {
-                "intent": "string",
-                "optionId": 0,
-                "text": {"en-GB": "Assessment complete", "de-DE": "Foobar de-DE Text"},
-                "additional": {},
-            }
-        ],
-        "cardAttributes": {
-            "format": "integer",
-            "maximum": 0,
-            "minimum": 0,
-            "maxLength": 0,
-            "minLength": 0,
-            "pattern": "string",
-        },
-        "_links": {
-            "next": {"href": "/assessments/assessment-id/dialog/next", "method": "GET"},
-            "abort": {
-                "href": "/assessments/assessment-id/dialog/abort",
-                "method": "GET",
-            },
-            "report": {"href": "/reports/assessment-id", "method": "GET"},
-        },
-    }
-    report_reponse = {"pdf sent"}
-
-    @patch.object(AdaAssessment, "save")
-    @patch("ada.utils.get_report", return_value=report_reponse)
-    @patch("ada.utils.post_to_ada", return_value=get_from_ada)
-    @patch("ada.utils.get_rp_payload", return_value=get_rp_payload)
-    def test_get_report(
-        self, mock_get_rp_payload, mock_post_response, mock_get_report, mock_save_mock
-    ):
-
-        request_to_ada = utils.build_rp_request(mock_get_rp_payload.return_value)
-        self.assertEqual(request_to_ada, {"step": 15})
-        response = utils.get_message(mock_get_rp_payload.return_value)
-        self.assertEqual(response, {"pdf sent"}, response)

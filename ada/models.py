@@ -49,12 +49,18 @@ class RedirectUrlsEntry(models.Model):
 
 
 class AdaAssessment(models.Model):
-    contact_uuid = models.CharField(max_length=255)
+    contact_id = models.UUIDField()
     step = models.IntegerField(null=True)
     optionId = models.IntegerField(null=True, blank=True)
     user_input = models.TextField(null=True, blank=True)
     title = models.TextField(null=True, blank=True)
-    # description = models.TextField(null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.contact_uuid
+        return (
+            ("Contact_ID: {self.contact_id} | Step: {self.step} "
+                "| OptionID: {self.optionId} \n"
+                "| User_Input: {self.user_input} | Title: {self.title} \n"
+                "| Created_at: {self.created_at}")
+        )

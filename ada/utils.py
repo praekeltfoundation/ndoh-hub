@@ -1,18 +1,29 @@
 from __future__ import absolute_import, division
 
+import json
+
 import requests
 from django.conf import settings
+from django.urls import reverse
 from temba_client.v2 import TembaClient
-
-from .models import AdaAssessment
 
 rapidpro = None
 if settings.RAPIDPRO_URL and settings.RAPIDPRO_TOKEN:
     rapidpro = TembaClient(settings.RAPIDPRO_URL, settings.RAPIDPRO_TOKEN)
 
 
-def get_rp_payload(body):
-    return body
+def get_from_send(payload):
+    head = {
+        "x-ada-clientId": settings.X_ADA_CLIENTID,
+        "x-ada-userId": settings.X_ADA_USERID,
+        "Accept-Language": "en-GB",
+        "Accept": "application/json",
+    }
+    cardType = payload["cardType"]
+    body = {"cardType": cardType}
+    url = reverse("ada-receive")
+    response = requests.post(url, data=json.dumps(body), headers=head)
+    return response
 
 
 def build_rp_request(body):
@@ -51,11 +62,11 @@ def post_to_ada(body, path):
     head = {
         "x-ada-clientId": settings.X_ADA_CLIENTID,
         "x-ada-userId": settings.X_ADA_USERID,
-        "Accept-Language": "en-US",
+        "Accept-Language": "en-GB",
         "Accept": "application/json",
     }
-    path = path
-    response = requests.request("POST", path, json=body, headers=head)
+    path = f"{settings.ADA_START_ASSESSMENT_URL}{path}"
+    response = requests.post(path, json=body, headers=head)
     response.raise_for_status()
     response = response.json()
     return response
@@ -65,11 +76,11 @@ def post_to_ada_start_assessment(body):
     head = {
         "x-ada-clientId": settings.X_ADA_CLIENTID,
         "x-ada-userId": settings.X_ADA_USERID,
-        "Accept-Language": "en-US",
+        "Accept-Language": "en-GB",
         "Accept": "application/json",
     }
-    path = settings.ADA_START_ASSESSMENT_URL
-    response = requests.request("POST", path, json=body, headers=head)
+    path = f"{settings.ADA_START_ASSESSMENT_URL}/assessments"
+    response = requests.post(path, body, headers=head)
     response.raise_for_status()
     response = response.json()
     return response
@@ -79,7 +90,7 @@ def post_to_ada_next_dialog(body):
     head = {
         "x-ada-clientId": settings.X_ADA_CLIENTID,
         "x-ada-userId": settings.X_ADA_USERID,
-        "Accept-Language": "en-US",
+        "Accept-Language": "en-GB",
         "Accept": "application/json",
     }
     path = body["_links"]["startAssessment"]["href"]
@@ -95,7 +106,7 @@ def get_from_ada(body):
     head = {
         "x-ada-clientId": settings.X_ADA_CLIENTID,
         "x-ada-userId": settings.X_ADA_USERID,
-        "Accept-Language": "en-US",
+        "Accept-Language": "en-GB",
         "Accept": "application/json",
     }
 
@@ -105,28 +116,33 @@ def get_from_ada(body):
 
 
 def format_message(body):
-    description = body["description"]["en-US"]
-    title = body["title"]["en-US"]
+    description = body["description"]["en-GB"]
+    title = body["title"]["en-GB"]
     back = (
-        "Enter *back* to go to the previous question or *abort* to end the assessment"
+        "Reply *back* to go to the previous question or *abort* to end the assessment"
     )
+    textcontinue = "Reply '0' to continue."
     cardType = body["cardType"]
+    if "explanations" in body.keys():
+        explanations = body["explanations"][0]["text"]["en-GB"]
+    else:
+        explanations = ""
     if "options" in body.keys() and cardType != "CHOICE":
         optionId = body["options"][0]["optionId"]
     else:
-        optionId = ""
+        optionId = None
     path = body["_links"]["next"]["href"]
     if "step" in body.keys():
         step = body["step"]
     else:
         step = ""
     if cardType == "CHOICE":
-        option = body["options"][0]["text"]["en-US"]
+        option = body["options"][0]["text"]["en-GB"]
         optionslist = []
         index = 0
         length = len(body["options"])
         while index < length:
-            optionslist.append(body["options"][index]["text"]["en-US"])
+            optionslist.append(body["options"][index]["text"]["en-GB"])
             index += 1
         choices = "\n".join(optionslist)
         extra_message = (
@@ -135,55 +151,45 @@ def format_message(body):
         message = f"{description}\n\n{choices}\n\n{extra_message}\n\n{back}"
         body = {}
         body["choices"] = length
+    elif cardType == "TEXT":
+        message = f"{description}\n\n{textcontinue}\n\n{back}"
+        body = {}
     else:
         message = f"{description}\n\n{back}"
         body = {}
-        body["choices"] = ""
+        body["choices"] = None
     body["message"] = message
+    body["explanations"] = explanations
     body["step"] = step
     body["optionId"] = optionId
     body["path"] = path
     body["cardType"] = cardType
     body["title"] = title
+    body["description"] = description
     return body
 
 
-def get_message(payload):
-    contact_uuid = (payload["contact_uuid"],)
-    step = payload["step"]
+def get_endpoint(payload):
+    head = {"Content-Type": "application/json"}
     value = payload["value"]
-    optionId = payload["optionId"]
     if value != "":
         if value == "back":
-            path = get_path(payload)
-            request = build_rp_request(payload)
-            ada_response = previous_question(request, path)
+            url = reverse("ada-previous-dialog")
+            response = requests.post(url, data=json.dumps(payload))
+            return response
+        elif value == "abort":
+            url = reverse("ada-abort")
+            response = requests.post(url, data=json.dumps(payload))
+            return response
         else:
-            path = get_path(payload)
-            request = build_rp_request(payload)
-            ada_response = post_to_ada(request, path)
-    elif payload["value"] == "":
-        request = build_rp_request(payload)
-        response = post_to_ada_start_assessment(request)
-        path = get_path(response)
-        step = get_step(response)
-        payload["path"] = path
-        payload["step"] = step
-        request = build_rp_request(payload)
-        ada_response = post_to_ada(request, path)
-
-        # TODO: save to DB here
-    if value != "" and value != "back":
-        response_data = AdaAssessment(contact_uuid, step, value, optionId)
-        response_data.save()
-    try:
-        report = ada_response["_links"]["report"]
-        response = get_report(report)
+            url = reverse("ada-next-dialog")
+            response = requests.post(url, data=json.dumps(payload), headers=head)
+            return response
+    elif value == "":
+        url = reverse("ada-start-assessment")
+        data = json.dumps(payload)
+        response = requests.post(url, data, headers=head)
         return response
-    except KeyError:
-        pass
-    message = format_message(ada_response)
-    return message
 
 
 def get_path(body):
@@ -199,17 +205,33 @@ def get_step(body):
     return step
 
 
+def pdf_ready(data):
+    try:
+        data["_links"]["report"]["href"]
+        return True
+    except KeyError:
+        return False
+
+
+def pdf_endpoint(data):
+    head = {"Content-Type": "application/json"}
+    url = reverse("ada-reports")
+    response = requests.post(url, data=json.dumps(data), headers=head)
+    return response
+
+
 # This returns the report of the assessment
-def get_report(body):
+def get_report(data):
     head = {
         "x-ada-clientId": settings.X_ADA_CLIENTID,
         "x-ada-userId": settings.X_ADA_USERID,
-        "Accept-Language": "en-US",
+        "Accept-Language": "en-GB",
         "Accept": "application/json",
     }
-    path = body["_links"]["report"]["href"]
+    path = data["_links"]["report"]["href"]
     payload = {}
-    response = requests.request("GET", path, json=payload, headers=head)
+    path = f"{settings.ADA_START_ASSESSMENT_URL}{path}"
+    response = requests.get(path, json=payload, headers=head)
     return response
 
 
@@ -218,12 +240,13 @@ def previous_question(body, path):
     head = {
         "x-ada-clientId": settings.X_ADA_CLIENTID,
         "x-ada-userId": settings.X_ADA_USERID,
-        "Accept-Language": "en-US",
+        "Accept-Language": "en-GB",
         "Accept": "application/json",
     }
-    path = path
+
+    path = f"{settings.ADA_START_ASSESSMENT_URL}{path}"
     path = path.replace("/next", "/previous")
-    response = requests.request("POST", path, json=body, headers=head)
+    response = requests.post(path, json=body, headers=head)
     response = response.json()
     return response
 
@@ -233,11 +256,13 @@ def abort_assessment(body):
     head = {
         "x-ada-clientId": settings.X_ADA_CLIENTID,
         "x-ada-userId": settings.X_ADA_USERID,
-        "Accept-Language": "en-US",
+        "Accept-Language": "en-GB",
         "Accept": "application/json",
     }
+
     path = body["path"]
+    path = f"{settings.ADA_START_ASSESSMENT_URL}{path}"
     path = path.replace("dialog/next", "/abort")
     payload = {}
-    response = requests.request("PUT", path, json=payload, headers=head).json()
+    response = requests.put(path, json=payload, headers=head).json()
     return response
