@@ -46,3 +46,22 @@ class RedirectUrlsEntry(models.Model):
                 f"{self.symptom_check_url.parameter} \n"
                 f"was visited at {self.time_stamp}"
             )
+
+
+class AdaAssessment(models.Model):
+    contact_id = models.UUIDField()
+    assessment_id = models.UUIDField()
+    step = models.IntegerField(null=True)
+    optionId = models.IntegerField(null=True, blank=True)
+    user_input = models.TextField(null=True, blank=True)
+    title = models.TextField(null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return (
+            "Contact_ID: {self.contact_id} | Step: {self.step} "
+            "| AssessmentID: {self.assessment_id} \n"
+            "| User_Input: {self.user_input} | Title: {self.title} \n"
+            "| Created_at: {self.created_at}"
+        )
