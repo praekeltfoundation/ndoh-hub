@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division
 
 import json
+from urllib.parse import urljoin
 
 import requests
 from django.conf import settings
@@ -13,12 +14,7 @@ if settings.RAPIDPRO_URL and settings.RAPIDPRO_TOKEN:
 
 
 def get_from_send(payload):
-    head = {
-        "x-ada-clientId": settings.X_ADA_CLIENTID,
-        "x-ada-userId": settings.X_ADA_USERID,
-        "Accept-Language": "en-GB",
-        "Accept": "application/json",
-    }
+    head = header()
     cardType = payload["cardType"]
     body = {"cardType": cardType}
     url = reverse("ada-receive")
@@ -59,13 +55,8 @@ def build_rp_request(body):
 
 
 def post_to_ada(body, path):
-    head = {
-        "x-ada-clientId": settings.X_ADA_CLIENTID,
-        "x-ada-userId": settings.X_ADA_USERID,
-        "Accept-Language": "en-GB",
-        "Accept": "application/json",
-    }
-    path = f"{settings.ADA_START_ASSESSMENT_URL}{path}"
+    head = header()
+    path = urljoin(settings.ADA_START_ASSESSMENT_URL, path)
     response = requests.post(path, json=body, headers=head)
     response.raise_for_status()
     response = response.json()
@@ -73,12 +64,7 @@ def post_to_ada(body, path):
 
 
 def post_to_ada_start_assessment(body):
-    head = {
-        "x-ada-clientId": settings.X_ADA_CLIENTID,
-        "x-ada-userId": settings.X_ADA_USERID,
-        "Accept-Language": "en-GB",
-        "Accept": "application/json",
-    }
+    head = header()
     path = f"{settings.ADA_START_ASSESSMENT_URL}/assessments"
     response = requests.post(path, body, headers=head)
     response.raise_for_status()
@@ -87,12 +73,7 @@ def post_to_ada_start_assessment(body):
 
 
 def post_to_ada_next_dialog(body):
-    head = {
-        "x-ada-clientId": settings.X_ADA_CLIENTID,
-        "x-ada-userId": settings.X_ADA_USERID,
-        "Accept-Language": "en-GB",
-        "Accept": "application/json",
-    }
+    head = header()
     path = body["_links"]["startAssessment"]["href"]
     response = requests.request("POST", path, json=body, headers=head)
     response.raise_for_status()
@@ -103,13 +84,7 @@ def post_to_ada_next_dialog(body):
 def get_from_ada(body):
     # Use assessementid to get first question
     path = body["_links"]["startAssessment"]["href"]
-    head = {
-        "x-ada-clientId": settings.X_ADA_CLIENTID,
-        "x-ada-userId": settings.X_ADA_USERID,
-        "Accept-Language": "en-GB",
-        "Accept": "application/json",
-    }
-
+    head = header()
     payload = {}
     response = requests.request("GET", path, json=payload, headers=head).json()
     return response
@@ -222,12 +197,7 @@ def pdf_endpoint(data):
 
 # This returns the report of the assessment
 def get_report(data):
-    head = {
-        "x-ada-clientId": settings.X_ADA_CLIENTID,
-        "x-ada-userId": settings.X_ADA_USERID,
-        "Accept-Language": "en-GB",
-        "Accept": "application/json",
-    }
+    head = header()
     path = data["_links"]["report"]["href"]
     payload = {}
     path = f"{settings.ADA_START_ASSESSMENT_URL}{path}"
@@ -237,14 +207,8 @@ def get_report(data):
 
 # Go back to previous question
 def previous_question(body, path):
-    head = {
-        "x-ada-clientId": settings.X_ADA_CLIENTID,
-        "x-ada-userId": settings.X_ADA_USERID,
-        "Accept-Language": "en-GB",
-        "Accept": "application/json",
-    }
-
-    path = f"{settings.ADA_START_ASSESSMENT_URL}{path}"
+    head = header()
+    path = urljoin(settings.ADA_START_ASSESSMENT_URL, path)
     path = path.replace("/next", "/previous")
     response = requests.post(path, json=body, headers=head)
     response = response.json()
@@ -253,16 +217,20 @@ def previous_question(body, path):
 
 # Abort assessment
 def abort_assessment(body):
+    head = header()
+    path = body["path"]
+    path = urljoin(settings.ADA_START_ASSESSMENT_URL, path)
+    path = path.replace("dialog/next", "/abort")
+    payload = {}
+    response = requests.put(path, json=payload, headers=head).json()
+    return response
+
+
+def header():
     head = {
         "x-ada-clientId": settings.X_ADA_CLIENTID,
         "x-ada-userId": settings.X_ADA_USERID,
         "Accept-Language": "en-GB",
         "Accept": "application/json",
     }
-
-    path = body["path"]
-    path = f"{settings.ADA_START_ASSESSMENT_URL}{path}"
-    path = path.replace("dialog/next", "/abort")
-    payload = {}
-    response = requests.put(path, json=payload, headers=head).json()
-    return response
+    return head

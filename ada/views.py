@@ -150,10 +150,12 @@ class NextDialog(generics.GenericAPIView):
         else:
             optionId = data["optionId"]
         path = get_path(data)
+        assessment_id = path.split("/")[-3]
         request = build_rp_request(data)
         ada_response = post_to_ada(request, path)
         store_url_entry = AdaAssessment(
             contact_id=contact_uuid,
+            assessment_id=assessment_id,
             title=title,
             description=description,
             step=step,
