@@ -14,7 +14,7 @@ if settings.RAPIDPRO_URL and settings.RAPIDPRO_TOKEN:
 
 
 def get_from_send(payload):
-    head = header()
+    head = get_header()
     cardType = payload["cardType"]
     body = {"cardType": cardType}
     url = reverse("ada-receive")
@@ -55,7 +55,7 @@ def build_rp_request(body):
 
 
 def post_to_ada(body, path):
-    head = header()
+    head = get_header()
     path = urljoin(settings.ADA_START_ASSESSMENT_URL, path)
     response = requests.post(path, json=body, headers=head)
     response.raise_for_status()
@@ -64,7 +64,7 @@ def post_to_ada(body, path):
 
 
 def post_to_ada_start_assessment(body):
-    head = header()
+    head = get_header()
     path = f"{settings.ADA_START_ASSESSMENT_URL}/assessments"
     response = requests.post(path, body, headers=head)
     response.raise_for_status()
@@ -73,7 +73,7 @@ def post_to_ada_start_assessment(body):
 
 
 def post_to_ada_next_dialog(body):
-    head = header()
+    head = get_header()
     path = body["_links"]["startAssessment"]["href"]
     response = requests.request("POST", path, json=body, headers=head)
     response.raise_for_status()
@@ -84,7 +84,7 @@ def post_to_ada_next_dialog(body):
 def get_from_ada(body):
     # Use assessementid to get first question
     path = body["_links"]["startAssessment"]["href"]
-    head = header()
+    head = get_header()
     payload = {}
     response = requests.request("GET", path, json=payload, headers=head).json()
     return response
@@ -197,7 +197,7 @@ def pdf_endpoint(data):
 
 # This returns the report of the assessment
 def get_report(data):
-    head = header()
+    head = get_header()
     path = data["_links"]["report"]["href"]
     payload = {}
     path = urljoin(settings.ADA_START_ASSESSMENT_URL, path)
@@ -207,7 +207,7 @@ def get_report(data):
 
 # Go back to previous question
 def previous_question(body, path):
-    head = header()
+    head = get_header()
     path = urljoin(settings.ADA_START_ASSESSMENT_URL, path)
     path = path.replace("/next", "/previous")
     response = requests.post(path, json=body, headers=head)
@@ -217,7 +217,7 @@ def previous_question(body, path):
 
 # Abort assessment
 def abort_assessment(body):
-    head = header()
+    head = get_header()
     path = body["path"]
     path = urljoin(settings.ADA_START_ASSESSMENT_URL, path)
     path = path.replace("dialog/next", "/abort")
@@ -226,7 +226,7 @@ def abort_assessment(body):
     return response
 
 
-def header():
+def get_header():
     head = {
         "x-ada-clientId": settings.X_ADA_CLIENTID,
         "x-ada-userId": settings.X_ADA_USERID,
