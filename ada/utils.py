@@ -200,7 +200,7 @@ def get_report(data):
     head = header()
     path = data["_links"]["report"]["href"]
     payload = {}
-    path = f"{settings.ADA_START_ASSESSMENT_URL}{path}"
+    path = urljoin(settings.ADA_START_ASSESSMENT_URL, path)
     response = requests.get(path, json=payload, headers=head)
     return response
 
