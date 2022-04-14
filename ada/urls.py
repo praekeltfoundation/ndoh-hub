@@ -41,6 +41,4 @@ urlpatterns = [
     ),
     path("api/v2/ada/reports", views.Reports.as_view(), name="ada-reports"),
     path("api/v2/ada/abort", views.Abort.as_view(), name="ada-abort"),
-    path("api/v2/ada/send", views.sendView.as_view(), name="ada-send"),
-    path("api/v2/ada/receive", views.receiveView.as_view(), name="ada-receive"),
 ]

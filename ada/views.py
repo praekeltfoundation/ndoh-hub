@@ -21,7 +21,6 @@ from .utils import (
     build_rp_request,
     format_message,
     get_endpoint,
-    get_from_send,
     get_path,
     get_report,
     get_step,
@@ -199,22 +198,4 @@ class Reports(generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
         data = request.data
         response = get_report(data)
-        return Response(response, status=status.HTTP_200_OK)
-
-
-class sendView(generics.GenericAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def post(self, request, *args, **kwargs):
-        body = request.data
-        response = get_from_send(body)
-        return Response(response, status=status.HTTP_200_OK)
-
-
-class receiveView(generics.GenericAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def post(self, request, *args, **kwargs):
-        body = request.data
-        response = body["cardType"]
         return Response(response, status=status.HTTP_200_OK)
