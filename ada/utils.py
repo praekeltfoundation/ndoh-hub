@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division
 
 import json
-from urllib.parse import urljoin
+from urllib.parse import urlencode, urljoin
 
 import requests
 from django.conf import settings
@@ -145,26 +145,23 @@ def format_message(body):
 
 
 def get_endpoint(payload):
-    head = {"Content-Type": "application/json"}
     value = payload["value"]
     if value != "":
         if value == "back":
             url = reverse("ada-previous-dialog")
-            response = requests.post(url, data=json.dumps(payload))
-            return response
         elif value == "abort":
             url = reverse("ada-abort")
-            response = requests.post(url, data=json.dumps(payload))
-            return response
         else:
             url = reverse("ada-next-dialog")
-            response = requests.post(url, data=json.dumps(payload), headers=head)
-            return response
     elif value == "":
         url = reverse("ada-start-assessment")
-        data = json.dumps(payload)
-        response = requests.post(url, data, headers=head)
-        return response
+    return url
+
+
+def encodeurl(payload, url):
+    qs = "?" + urlencode(payload, safe="")
+    reverse_url = url + qs
+    return reverse_url
 
 
 def get_path(body):
@@ -189,16 +186,19 @@ def pdf_ready(data):
 
 
 def pdf_endpoint(data):
-    head = {"Content-Type": "application/json"}
+    # head = get_header()
+    report_id = data["_links"]["report"]["href"]
+    qs = "?report_id=" + report_id
     url = reverse("ada-reports")
-    response = requests.post(url, data=json.dumps(data), headers=head)
-    return response
+    reverse_url = url + qs
+    # response = requests.post(url, data=json.dumps(data), headers=head)
+    return reverse_url
 
 
 # This returns the report of the assessment
-def get_report(data):
+def get_report(path):
     head = get_header()
-    path = data["_links"]["report"]["href"]
+    # path = data["_links"]["report"]["href"]
     payload = {}
     path = urljoin(settings.ADA_START_ASSESSMENT_URL, path)
     response = requests.get(path, json=payload, headers=head)

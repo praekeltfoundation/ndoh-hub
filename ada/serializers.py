@@ -20,7 +20,7 @@ class AdaInputTypeSerializer(serializers.Serializer):
 class AdaTextTypeSerializer(serializers.Serializer):
     def validate_value(self, data):
         user_input = data["value"]
-        if user_input != "1" and user_input != "accept" and user_input != "continue":
+        if user_input != "0" and user_input != "accept" and user_input != "continue":
             error = "Please enter 'continue', '0' or 'accept' to continue."
             data["message"] = f"{error} {data['message']}"
             raise serializers.ValidationError(data)
@@ -39,8 +39,8 @@ class AdaChoiceTypeSerializer(serializers.Serializer):
         try:
             int(user_input)
         except ValueError:
-            message = "Please enter the number that matches your answer"
-            data["error"] = message
+            error = "Please enter the number that matches your answer"
+            data["message"] = f"{error} {data['message']}"
             raise serializers.ValidationError(data)
         if not (0 <= int(user_input) <= choices):
             error = (

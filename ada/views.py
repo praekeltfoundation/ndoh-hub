@@ -14,11 +14,12 @@ from ada.serializers import (
     SymptomCheckSerializer,
 )
 
-from .models import AdaAssessment, RedirectUrl, RedirectUrlsEntry
+from .models import AdaAssessments, RedirectUrl, RedirectUrlsEntry
 from .tasks import post_to_topup_endpoint, start_prototype_survey_flow, start_topup_flow
 from .utils import (
     abort_assessment,
     build_rp_request,
+    encodeurl,
     format_message,
     get_endpoint,
     get_path,
@@ -113,15 +114,17 @@ class PresentationLayerView(generics.GenericAPIView):
         else:
             serializer = StartAssessmentSerializer(body)
         validated_body = serializer.validate_value(body)
-        response = get_endpoint(validated_body)
-        return Response(response, status=status.HTTP_200_OK)
+        url = get_endpoint(validated_body)
+        reverse_url = encodeurl(body, url)
+        return HttpResponseRedirect(reverse_url)
 
 
 class StartAssessment(generics.GenericAPIView):
     permission_classes = (permissions.AllowAny,)
 
-    def post(self, request, *args, **kwargs):
-        data = request.data
+    def get(self, request, *args, **kwargs):
+        result = request.GET
+        data = result.dict()
         request = build_rp_request(data)
         response = post_to_ada_start_assessment(request)
         path = get_path(response)
@@ -137,13 +140,15 @@ class StartAssessment(generics.GenericAPIView):
 class NextDialog(generics.GenericAPIView):
     permission_classes = (permissions.AllowAny,)
 
-    def post(self, request, *args, **kwargs):
-        data = request.data
+    def get(self, request, *args, **kwargs):
+        result = request.GET
+        data = result.dict()
         contact_uuid = data["contact_uuid"]
         step = data["step"]
         value = data["value"]
         description = data["description"]
         title = data["title"]
+
         if data["cardType"] == "CHOICE":
             optionId = int(value) - 1
         else:
@@ -152,20 +157,23 @@ class NextDialog(generics.GenericAPIView):
         assessment_id = path.split("/")[-3]
         request = build_rp_request(data)
         ada_response = post_to_ada(request, path)
-        store_url_entry = AdaAssessment(
-            contact_id=contact_uuid,
-            assessment_id=assessment_id,
-            title=title,
-            description=description,
-            step=step,
-            user_input=value,
-            optionId=optionId,
-        )
-        store_url_entry.save()
+        if data["cardType"] != "TEXT":
+            if data["cardType"] == "INPUT":
+                optionId = None
+            store_url_entry = AdaAssessments(
+                contact_id=contact_uuid,
+                assessment_id=assessment_id,
+                title=title,
+                description=description,
+                step=step,
+                user_input=value,
+                optionId=optionId,
+            )
+            store_url_entry.save()
         pdf = pdf_ready(ada_response)
         if pdf:
             response = pdf_endpoint(ada_response)
-            return Response(response, status=status.HTTP_200_OK)
+            return HttpResponseRedirect(response)
         else:
             message = format_message(ada_response)
             return Response(message, status=status.HTTP_200_OK)
@@ -174,10 +182,11 @@ class NextDialog(generics.GenericAPIView):
 class PreviousDialog(generics.GenericAPIView):
     permission_classes = (permissions.AllowAny,)
 
-    def post(self, request, *args, **kwargs):
-        body = request.data
-        path = get_path(body)
-        request = build_rp_request(body)
+    def get(self, request, *args, **kwargs):
+        result = request.GET
+        data = result.dict()
+        path = get_path(data)
+        request = build_rp_request(data)
         ada_response = previous_question(request, path)
         message = format_message(ada_response)
         return Response(message, status=status.HTTP_200_OK)
@@ -186,8 +195,9 @@ class PreviousDialog(generics.GenericAPIView):
 class Abort(generics.GenericAPIView):
     permission_classes = (permissions.AllowAny,)
 
-    def post(self, request, *args, **kwargs):
-        data = request.data
+    def get(self, request, *args, **kwargs):
+        result = request.GET
+        data = result.dict()
         response = abort_assessment(data)
         return Response(response, status=status.HTTP_200_OK)
 
@@ -195,7 +205,7 @@ class Abort(generics.GenericAPIView):
 class Reports(generics.GenericAPIView):
     permission_classes = (permissions.AllowAny,)
 
-    def post(self, request, *args, **kwargs):
-        data = request.data
-        response = get_report(data)
+    def get(self, request, *args, **kwargs):
+        report_id = request.GET.get("report_id")
+        response = get_report(report_id)
         return Response(response, status=status.HTTP_200_OK)

@@ -283,7 +283,7 @@ class AdaValidationViewTests(APITestCase):
                     ),
                     "step": 4,
                     "value": None,
-                    "optionId": 0,
+                    "optionId": None,
                     "path": "/assessments/assessment-id/dialog/next",
                     "cardType": "TEXT",
                     "title": "WELCOME",
@@ -304,7 +304,7 @@ class AdaValidationViewTests(APITestCase):
                 ),
                 "step": "4",
                 "value": "None",
-                "optionId": "0",
+                "optionId": "None",
                 "path": "/assessments/assessment-id/dialog/next",
                 "cardType": "TEXT",
                 "title": "WELCOME",
@@ -326,15 +326,77 @@ class StartAssessment(APITestCase):
         "title": "",
     }
     url = reverse("ada-assessments")
+    url_start_assessment = reverse("ada-start-assessment")
+    destination_url = (
+        "/api/v2/ada/startassessment?contact_uuid"
+        "=67460e74-02e3-11e8-b443-00163e990bdb&choices"
+        "=None&message=&step=None&value=&optionId"
+        "=None&path=&cardType=&title="
+    )
 
+    @patch("ada.views.post_to_ada")
+    @patch("ada.views.post_to_ada_start_assessment")
     @patch("ada.views.get_endpoint")
-    def test_start_assessment(self, mock_get_endpoint):
+    def test_start_assessment(
+        self, mock_get_endpoint, mock_post_to_ada_start_assessment, mock_post_to_ada
+    ):
+
+        mock_post_to_ada_start_assessment.return_value = {
+            "id": "052a482d-8b77-4e48-b198-ade28485bf3f",
+            "step": 0,
+            "isPrimaryUser": "true",
+            "onboardingFactors": [],
+            "assessmentStarted": "false",
+            "locked": "false",
+            "_links": {
+                "startAssessment": {
+                    "method": "POST",
+                    "href": (
+                        "/assessments/"
+                        "052a482d-8b77-4e48-b198-ade28485bf3f/dialog/next"
+                    ),
+                }
+            },
+        }
+
+        mock_post_to_ada.return_value = {
+            "cardType": "TEXT",
+            "step": 1,
+            "title": {"en-GB": "Welcome to Ada"},
+            "description": {
+                "en-GB": (
+                    "Welcome to the MomConnect Symptom "
+                    "Checker in partnership with Ada. "
+                    "Let's start with some questions "
+                    "about the symptoms. Then, we will "
+                    "help you decide what to do next."
+                )
+            },
+            "label": {"en-GB": "Continue"},
+            "_links": {
+                "self": {
+                    "method": "GET",
+                    "href": "/assessments/880c70ca-0bf7-40e7-826d-db6ccfcc6b37",
+                },
+                "next": {
+                    "method": "POST",
+                    "href": (
+                        "/assessments/"
+                        "880c70ca-0bf7-40e7-826d-db6ccfcc6b37/dialog/next"
+                    ),
+                },
+                "abort": {
+                    "method": "PUT",
+                    "href": "/assessments/880c70ca-0bf7-40e7-826d-db6ccfcc6b37/abort",
+                },
+            },
+        }
+
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
-        mock_get_endpoint.return_value = self.data
+        mock_get_endpoint.return_value = self.url_start_assessment
         response = self.client.post(self.url, self.data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json(), self.data, response.json())
+        self.assertRedirects(response, self.destination_url)
 
 
 class AdaAssessmentDialog(APITestCase):
@@ -368,6 +430,7 @@ class AdaAssessmentDialog(APITestCase):
         "description": "How old are you?",
     }
 
+    entry_url = reverse("ada-assessments")
     url = reverse("ada-next-dialog")
 
     @patch("ada.views.post_to_ada_start_assessment")
@@ -516,55 +579,33 @@ class AdaAssessmentDialog(APITestCase):
             },
         }
 
-        data = {
-            "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
-            "choices": 3,
-            "value": "2",
-            "cardType": "TEXT",
-            "step": 6,
-            "optionId": None,
-            "path": (
-                "/assessments/" "e120703e-2079-4e5f-8420-3924f9e0b9c8/dialog/next"
-            ),
-            "title": "Patient Information",
-            "description": "",
-        }
-
-        message = {
-            "choices": 3,
-            "message": (
-                "Are you pregnant?\n\nYes\nNo\nI'm "
-                "not sure\n\nChoose the option that "
-                "matches your answer. Eg, 1 for Yes"
-                "\n\nReply *back* to go to the previous "
-                "question or *abort* to end the assessment"
-            ),
-            "explanations": (
-                "The status of a current pregnancy, "
-                "typically confirmed through a blood "
-                "or urine test."
-            ),
-            "step": 6,
-            "optionId": None,
-            "path": (
-                "/assessments/" "7c7fd68f-c7be-4553-add6-49bfdce22979/dialog/next"
-            ),
-            "cardType": "CHOICE",
-            "title": "Patient Information",
-            "description": "Are you pregnant?",
-        }
-
         pdf = utils.pdf_ready(mock_post_to_ada.return_value)
         self.assertEqual(pdf, False)
-
-        response = self.client.post(self.url, data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json(), message, response.json())
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.entry_url, self.data_next_dialog, format="json"
+        )
+        self.assertRedirects(
+            response,
+            (
+                "/api/v2/ada/nextdialog?"
+                "contact_uuid=67460e74-02e3-11e8-b443"
+                "-00163e990bdb&choices=None&message="
+                "How+old+are+you%3F%0A%0AReply+%2Aback%2A+"
+                "to+go+to+the+previous+question+or+%2Aabort%2A+"
+                "to+end+the+assessment&explanations=&step=5&value="
+                "27&optionId=None&path=%2Fassessments%2F"
+                "f9d4be32-78fa-48e0-b9a3-e12e305e73ce%2Fdialog%2F"
+                "next&cardType=INPUT&title=Patient+Information&"
+                "description=How+old+are+you%3F"
+            ),
+        )
 
 
 class AdaAssessmentReport(APITestCase):
-    data_next_dialog = {
-        "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
+    data = {
+        "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdd",
         "choices": None,
         "message": (
             "How old are you?\n\nReply *back* to go to "
@@ -572,7 +613,7 @@ class AdaAssessmentReport(APITestCase):
             "end the assessment"
         ),
         "explanations": "",
-        "step": 5,
+        "step": 39,
         "value": "27",
         "optionId": None,
         "path": "/assessments/f9d4be32-78fa-48e0-b9a3-e12e305e73ce/dialog/next",
@@ -581,14 +622,23 @@ class AdaAssessmentReport(APITestCase):
         "description": "How old are you?",
     }
 
-    url = reverse("ada-reports")
+    start_url = reverse("ada-assessments")
+    destination_url = (
+        "/api/v2/ada/nextdialog?contact_uuid="
+        "67460e74-02e3-11e8-b443-00163e990bdd&"
+        "choices=None&message=How+old+are+you%3F"
+        "%0A%0AReply+%2Aback%2A+to+go+to+the+"
+        "previous+question+or+%2Aabort%2A+to+end"
+        "+the+assessment&explanations=&step="
+        "39&value=27&optionId=None&path=%2F"
+        "assessments%2Ff9d4be32-78fa-48e0-b9a3"
+        "-e12e305e73ce%2Fdialog%2Fnext&cardType"
+        "=INPUT&title=Patient+Information&"
+        "description=How+old+are+you%3F"
+    )
 
-    @patch("ada.views.get_report")
     @patch("ada.views.post_to_ada")
-    def test_report(self, mock_post_to_ada, mock_get_report):
-        request = utils.build_rp_request(self.data_next_dialog)
-        self.assertEqual(request, {"step": 5, "value": "27"})
-
+    def test_assessment_report(self, mock_post_to_ada):
         mock_post_to_ada.return_value = {
             "cardType": "CHOICE",
             "step": 40,
@@ -610,12 +660,8 @@ class AdaAssessmentReport(APITestCase):
                 },
             },
         }
-
-        mock_get_report.return_value = {"pdf downloaded"}
-
-        pdf = utils.pdf_ready(mock_post_to_ada.return_value)
-        self.assertEqual(pdf, True)
-        response = self.client.post(
-            self.url, mock_post_to_ada.return_value, format="json"
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(self.start_url, self.data, format="json")
+        # self.assertRedirects(response, self.destination_url)
+        self.assertEqual(response.status_code, 302)

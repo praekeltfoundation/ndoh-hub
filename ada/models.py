@@ -48,7 +48,7 @@ class RedirectUrlsEntry(models.Model):
             )
 
 
-class AdaAssessment(models.Model):
+class AdaAssessments(models.Model):
     contact_id = models.UUIDField()
     assessment_id = models.UUIDField()
     step = models.IntegerField(null=True)
