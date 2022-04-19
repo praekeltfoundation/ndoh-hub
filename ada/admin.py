@@ -1,8 +1,8 @@
 from django.contrib import admin
 
-from .models import AdaAssessment, RedirectUrl, RedirectUrlsEntry
+from .models import AdaAssessments, RedirectUrl, RedirectUrlsEntry
 
 # Register your models here.
 admin.site.register(RedirectUrl)
 admin.site.register(RedirectUrlsEntry)
-admin.site.register(AdaAssessment)
+admin.site.register(AdaAssessments)
