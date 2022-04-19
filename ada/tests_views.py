@@ -623,6 +623,11 @@ class AdaAssessmentReport(APITestCase):
     }
 
     start_url = reverse("ada-assessments")
+    next_dialog_url = reverse("ada-next-dialog")
+    pdf_url = (
+        "/api/v2/ada/reports?report_id=" "/reports/17340f51604cb35bd2c6b7b9b16f3aec"
+    )
+
     destination_url = (
         "/api/v2/ada/nextdialog?contact_uuid="
         "67460e74-02e3-11e8-b443-00163e990bdd&"
@@ -637,8 +642,10 @@ class AdaAssessmentReport(APITestCase):
         "description=How+old+are+you%3F"
     )
 
+    @patch("ada.views.get_report")
+    @patch("ada.views.pdf_ready")
     @patch("ada.views.post_to_ada")
-    def test_assessment_report(self, mock_post_to_ada):
+    def test_assessment_report(self, mock_post_to_ada, mock_pdf_ready, mock_get_report):
         mock_post_to_ada.return_value = {
             "cardType": "CHOICE",
             "step": 40,
@@ -660,8 +667,15 @@ class AdaAssessmentReport(APITestCase):
                 },
             },
         }
+
+        mock_get_report.return_value = {"PDF download"}
+
+        mock_pdf_ready.return_value = utils.pdf_ready(mock_post_to_ada.return_value)
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
         response = self.client.post(self.start_url, self.data, format="json")
-        # self.assertRedirects(response, self.destination_url)
-        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, self.destination_url, target_status_code=302)
+        response = self.client.get(self.destination_url)
+        pdf_url = utils.pdf_endpoint(mock_post_to_ada.return_value)
+        response = self.client.get(pdf_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
