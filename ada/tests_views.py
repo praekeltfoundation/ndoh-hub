@@ -676,5 +676,7 @@ class AdaAssessmentReport(APITestCase):
         response = self.client.post(self.start_url, self.data, format="json")
         self.assertRedirects(response, self.destination_url, target_status_code=302)
         response = self.client.get(self.destination_url)
-        response = self.client.get(self.pdf_url)
+        pdf_url = utils.pdf_endpoint(mock_post_to_ada.return_value)
+        print(pdf_url)
+        response = self.client.get(pdf_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
