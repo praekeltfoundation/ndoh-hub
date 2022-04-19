@@ -65,7 +65,7 @@ def post_to_ada(body, path):
 
 def post_to_ada_start_assessment(body):
     head = get_header()
-    path = f"{settings.ADA_START_ASSESSMENT_URL}/assessments"
+    path = urljoin(settings.ADA_START_ASSESSMENT_URL, "/assessments")
     response = requests.post(path, body, headers=head)
     response.raise_for_status()
     response = response.json()
@@ -186,19 +186,16 @@ def pdf_ready(data):
 
 
 def pdf_endpoint(data):
-    # head = get_header()
     report_id = data["_links"]["report"]["href"]
     qs = "?report_id=" + report_id
     url = reverse("ada-reports")
     reverse_url = url + qs
-    # response = requests.post(url, data=json.dumps(data), headers=head)
     return reverse_url
 
 
 # This returns the report of the assessment
 def get_report(path):
     head = get_header()
-    # path = data["_links"]["report"]["href"]
     payload = {}
     path = urljoin(settings.ADA_START_ASSESSMENT_URL, path)
     response = requests.get(path, json=payload, headers=head)
