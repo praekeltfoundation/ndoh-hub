@@ -14,7 +14,7 @@ from ada.serializers import (
     SymptomCheckSerializer,
 )
 
-from .models import AdaAssessments, RedirectUrl, RedirectUrlsEntry
+from .models import AdaSymptomAssessment, RedirectUrl, RedirectUrlsEntry
 from .tasks import post_to_topup_endpoint, start_prototype_survey_flow, start_topup_flow
 from .utils import (
     abort_assessment,
@@ -148,9 +148,11 @@ class NextDialog(generics.GenericAPIView):
         value = data["value"]
         description = data["description"]
         title = data["title"]
+        choiceContext = data["choiceContext"]
 
         if data["cardType"] == "CHOICE":
             optionId = int(value) - 1
+            choiceContext = choiceContext[optionId]
         else:
             optionId = data["optionId"]
         path = get_path(data)
@@ -160,7 +162,7 @@ class NextDialog(generics.GenericAPIView):
         if data["cardType"] != "TEXT":
             if data["cardType"] == "INPUT":
                 optionId = None
-            store_url_entry = AdaAssessments(
+            store_url_entry = AdaSymptomAssessment(
                 contact_id=contact_uuid,
                 assessment_id=assessment_id,
                 title=title,
@@ -168,6 +170,7 @@ class NextDialog(generics.GenericAPIView):
                 step=step,
                 user_input=value,
                 optionId=optionId,
+                choice=choiceContext,
             )
             store_url_entry.save()
         pdf = pdf_ready(ada_response)
@@ -199,7 +202,7 @@ class Abort(generics.GenericAPIView):
         result = request.GET
         data = result.dict()
         response = abort_assessment(data)
-        return Response(response, status=status.HTTP_200_OK)
+        return Response({"menu"}, status=status.HTTP_200_OK)
 
 
 class Reports(generics.GenericAPIView):
@@ -208,4 +211,4 @@ class Reports(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         report_id = request.GET.get("report_id")
         response = get_report(report_id)
-        return Response(response, status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

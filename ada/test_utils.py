@@ -7,6 +7,7 @@ class TestQuestionsPayload(TestCase):
     def test_text_type_question(self):
         rapidpro_data = {
             "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
+            "choiceContext": "",
             "choices": None,
             "value": "",
             "cardType": "",
@@ -66,9 +67,9 @@ class TestQuestionsPayload(TestCase):
                     "Checker in partnership with Ada. Let's "
                     "start with some questions about the symptoms. "
                     "Then, we will help you decide what to do next."
-                    "\n\nReply '0' to continue."
+                    "\n\nReply *0* to continue."
                     "\n\nReply *back* to go to the previous question "
-                    "or *abort* to end the assessment"
+                    "or *menu* to end the assessment."
                 ),
                 "explanations": "",
                 "step": 1,
@@ -90,6 +91,7 @@ class TestQuestionsPayload(TestCase):
     def test_choice_type_question(self):
         rapidpro_data = {
             "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
+            "choiceContext": "",
             "choices": "",
             "path": "/assessments/assessment-id/dialog/next",
             "optionId": 0,
@@ -165,14 +167,15 @@ class TestQuestionsPayload(TestCase):
             response,
             {
                 "choices": 2,
+                "choiceContext": ["Female", "Male"],
                 "message": (
                     "Hi John, what is your biological sex?"
                     "\nBiological sex is a risk factor for some "
                     "conditions. Your answer is necessary for an "
-                    "accurate assessment.\n\nFemale\nMale\n\nChoose "
-                    "the option that matches your answer. Eg, 1 for "
-                    "Female\n\nReply *back* to go to the previous "
-                    "question or *abort* to end the assessment"
+                    "accurate assessment.\n\n1.Female\n2.Male\n\nChoose "
+                    "the option that matches your answer. Eg, *1* for "
+                    "*Female*\n\nReply *back* to go to the previous "
+                    "question or *menu* to end the assessment."
                 ),
                 "explanations": (
                     "We are investigating a solution "
@@ -202,6 +205,7 @@ class TestQuestionsPayload(TestCase):
     def test_input_type_question(self):
         rapidpro_data = {
             "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
+            "choiceContext": "",
             "choices": "",
             "path": "/assessments/assessment-id/dialog/next",
             "optionId": 0,
@@ -274,8 +278,8 @@ class TestQuestionsPayload(TestCase):
                 "choices": None,
                 "message": (
                     "How old are you?\n\nReply *back* to go to "
-                    "the previous question or *abort* to "
-                    "end the assessment"
+                    "the previous question or *menu* to "
+                    "end the assessment."
                 ),
                 "explanations": "",
                 "step": 5,

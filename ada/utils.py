@@ -37,7 +37,7 @@ def build_rp_request(body):
     else:
         value = ""
 
-    if cardType != "" and value != "back":
+    if cardType != "" and value.upper() != "BACK":
         if cardType == "TEXT":
             payload = {"step": step}
         elif cardType == "INPUT":
@@ -46,7 +46,7 @@ def build_rp_request(body):
             payload = {"step": step, "optionId": int(value) - 1}
     elif cardType == "" and step == 0:
         payload = {"step": 0}
-    elif value == "back":
+    elif value.upper() == "BACK":
         payload = {"step": step}
     else:
         payload = {}
@@ -94,9 +94,9 @@ def format_message(body):
     description = body["description"]["en-GB"]
     title = body["title"]["en-GB"]
     back = (
-        "Reply *back* to go to the previous question or *abort* to end the assessment"
+        "Reply *back* to go to the previous question or *menu* to end the assessment."
     )
-    textcontinue = "Reply '0' to continue."
+    textcontinue = "Reply *0* to continue."
     cardType = body["cardType"]
     if "explanations" in body.keys():
         explanations = body["explanations"][0]["text"]["en-GB"]
@@ -119,13 +119,18 @@ def format_message(body):
         while index < length:
             optionslist.append(body["options"][index]["text"]["en-GB"])
             index += 1
+        choiceContext = optionslist[:]
+        for i in range(len(optionslist)):
+            optionslist[i] = f"{i+1}.{optionslist[i]}"
+        
         choices = "\n".join(optionslist)
         extra_message = (
-            f"Choose the option that matches your answer. Eg, 1 for {option}"
+            f"Choose the option that matches your answer. Eg, *1* for *{option}*"
         )
         message = f"{description}\n\n{choices}\n\n{extra_message}\n\n{back}"
         body = {}
         body["choices"] = length
+        body["choiceContext"] = choiceContext
     elif cardType == "TEXT":
         message = f"{description}\n\n{textcontinue}\n\n{back}"
         body = {}
@@ -146,10 +151,11 @@ def format_message(body):
 
 def get_endpoint(payload):
     value = payload["value"]
+    value = value.upper()
     if value != "":
-        if value == "back":
+        if value == "BACK":
             url = reverse("ada-previous-dialog")
-        elif value == "abort":
+        elif value == "MENU":
             url = reverse("ada-abort")
         else:
             url = reverse("ada-next-dialog")
@@ -198,7 +204,8 @@ def get_report(path):
     head = get_header()
     payload = {}
     path = urljoin(settings.ADA_START_ASSESSMENT_URL, path)
-    response = requests.get(path, json=payload, headers=head)
+    response = requests.get(path, json=payload, headers=head, stream=True)
+    response.raise_for_status()
     return response
 
 
@@ -220,6 +227,7 @@ def abort_assessment(body):
     path = path.replace("dialog/next", "/abort")
     payload = {}
     response = requests.put(path, json=payload, headers=head).json()
+    response.raise_for_status()
     return response
 
 
@@ -228,6 +236,6 @@ def get_header():
         "x-ada-clientId": settings.X_ADA_CLIENTID,
         "x-ada-userId": settings.X_ADA_USERID,
         "Accept-Language": "en-GB",
-        "Accept": "application/json",
+        "Content-Type": "application/json",
     }
     return head

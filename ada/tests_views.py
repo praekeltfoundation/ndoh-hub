@@ -171,7 +171,7 @@ class AdaValidationViewTests(APITestCase):
                     "message": (
                         "Please type in the symptom that is troubling you, "
                         "only one symptom at a time. Reply back to go to the "
-                        "previous question or abort to end the assessment"
+                        "previous question or menu to end the assessment."
                     ),
                     "step": 4,
                     "value": (
@@ -192,10 +192,10 @@ class AdaValidationViewTests(APITestCase):
             {
                 "message": (
                     "We are sorry, your reply should be "
-                    "between 1 and 100 characters. "
+                    "between *1* and *100* characters.\n\n"
                     "Please type in the symptom that is troubling you, "
                     "only one symptom at a time. Reply back to go to the "
-                    "previous question or abort to end the assessment"
+                    "previous question or menu to end the assessment."
                 ),
                 "step": "4",
                 "value": (
@@ -222,14 +222,15 @@ class AdaValidationViewTests(APITestCase):
             json.dumps(
                 {
                     "choices": 3,
+                    "choiceContext": ["Abdominal pain", "Headache"],
                     "message": (
                         "What is the issue?\n\nAbdominal pain\n"
                         "Headache"
                         "\nNone of these\n\nChoose the option that matches "
                         "your answer. "
-                        "Eg, 1 for Abdominal pain\n\nEnter *back* to go "
-                        "to the previous question or *abort* "
-                        "to end the assessment"
+                        "Eg, *1* for *Abdominal pain*\n\nEnter *back* to go "
+                        "to the previous question or *menu* "
+                        "to end the assessment."
                     ),
                     "step": 4,
                     "value": 9,
@@ -245,16 +246,17 @@ class AdaValidationViewTests(APITestCase):
             response.json(),
             {
                 "choices": "3",
+                'choiceContext': ["Abdominal pain", "Headache"],
                 "message": (
                     "Something seems to have gone wrong. You "
                     "entered 9 but there are only 3 options. "
-                    "Please enter a number less than 3. "
+                    "Please reply with a number between 1 and 3. "
                     "What is the issue?\n\nAbdominal pain\nHeadache"
                     "\nNone of these\n\nChoose the option that "
                     "matches your answer. "
-                    "Eg, 1 for Abdominal pain\n\nEnter *back* to go "
-                    "to the previous question or *abort* "
-                    "to end the assessment"
+                    "Eg, *1* for *Abdominal pain*\n\nEnter *back* to go "
+                    "to the previous question or *menu* "
+                    "to end the assessment."
                 ),
                 "step": "4",
                 "value": "9",
@@ -282,7 +284,7 @@ class AdaValidationViewTests(APITestCase):
                         "decide what to do next."
                     ),
                     "step": 4,
-                    "value": None,
+                    "value": "",
                     "optionId": None,
                     "path": "/assessments/assessment-id/dialog/next",
                     "cardType": "TEXT",
@@ -296,14 +298,14 @@ class AdaValidationViewTests(APITestCase):
             {
                 "choices": "None",
                 "message": (
-                    "Please enter 'continue', '0' or 'accept' to continue. "
+                    "Please reply *continue*, *0* or *accept* to continue.\n\n"
                     "Welcome to the MomConnect Symptom Checker in "
                     "partnership with Ada. Let's start with some questions "
                     "about the symptoms. Then, we will help you "
                     "decide what to do next."
                 ),
                 "step": "4",
-                "value": "None",
+                "value": "",
                 "optionId": "None",
                 "path": "/assessments/assessment-id/dialog/next",
                 "cardType": "TEXT",
@@ -316,6 +318,7 @@ class AdaValidationViewTests(APITestCase):
 class StartAssessment(APITestCase):
     data = {
         "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
+        "choiceContext": "",
         "choices": "None",
         "message": "",
         "step": "None",
@@ -402,6 +405,7 @@ class StartAssessment(APITestCase):
 class AdaAssessmentDialog(APITestCase):
     data = {
         "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
+        "choiceContext": "",
         "choices": None,
         "message": "",
         "step": None,
@@ -414,10 +418,11 @@ class AdaAssessmentDialog(APITestCase):
 
     data_next_dialog = {
         "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
+        "choiceContext": "",
         "choices": None,
         "message": (
             "How old are you?\n\nReply *back* to go to "
-            "the previous question or *abort* to "
+            "the previous question or *menu* to "
             "end the assessment"
         ),
         "explanations": "",
@@ -504,9 +509,9 @@ class AdaAssessmentDialog(APITestCase):
                     "in partnership with Ada. Let's start with "
                     "some questions about the symptoms. Then, "
                     "we will help you decide what to do next."
-                    "\n\nReply '0' to continue.\n\nReply "
+                    "\n\nReply *0* to continue.\n\nReply "
                     "*back* to go to the previous question "
-                    "or *abort* to end the assessment"
+                    "or *menu* to end the assessment."
                 ),
                 "explanations": "",
                 "step": 1,
@@ -593,7 +598,7 @@ class AdaAssessmentDialog(APITestCase):
                 "contact_uuid=67460e74-02e3-11e8-b443"
                 "-00163e990bdb&choices=None&message="
                 "How+old+are+you%3F%0A%0AReply+%2Aback%2A+"
-                "to+go+to+the+previous+question+or+%2Aabort%2A+"
+                "to+go+to+the+previous+question+or+%2Amenu%2A+"
                 "to+end+the+assessment&explanations=&step=5&value="
                 "27&optionId=None&path=%2Fassessments%2F"
                 "f9d4be32-78fa-48e0-b9a3-e12e305e73ce%2Fdialog%2F"
@@ -606,10 +611,11 @@ class AdaAssessmentDialog(APITestCase):
 class AdaAssessmentReport(APITestCase):
     data = {
         "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdd",
+        "choiceContext": "",
         "choices": None,
         "message": (
             "How old are you?\n\nReply *back* to go to "
-            "the previous question or *abort* to "
+            "the previous question or *menu* to "
             "end the assessment"
         ),
         "explanations": "",
@@ -624,16 +630,13 @@ class AdaAssessmentReport(APITestCase):
 
     start_url = reverse("ada-assessments")
     next_dialog_url = reverse("ada-next-dialog")
-    pdf_url = (
-        "/api/v2/ada/reports?report_id=" "/reports/17340f51604cb35bd2c6b7b9b16f3aec"
-    )
 
     destination_url = (
         "/api/v2/ada/nextdialog?contact_uuid="
         "67460e74-02e3-11e8-b443-00163e990bdd&"
-        "choices=None&message=How+old+are+you%3F"
+        "choiceContext=&choices=None&message=How+old+are+you%3F"
         "%0A%0AReply+%2Aback%2A+to+go+to+the+"
-        "previous+question+or+%2Aabort%2A+to+end"
+        "previous+question+or+%2Amenu%2A+to+end"
         "+the+assessment&explanations=&step="
         "39&value=27&optionId=None&path=%2F"
         "assessments%2Ff9d4be32-78fa-48e0-b9a3"
