@@ -612,6 +612,8 @@ def post_random_contacts_to_slack_channel():
                     f"{contact_number} - <{rapidpro_link}|RapidPro>"
                     f" <{turn_profile_link}|Turn>"
                 )
+            else:
+                pass
 
         if contact_details:
             sent = send_slack_message(
@@ -641,6 +643,8 @@ def get_turn_profile_link(contact_number):
             if profile:
                 # Get turn message link
                 return profile.json().get("chat", {}).get("permalink")
+            return None
+    return None
 
 
 def get_random_contact():
@@ -666,6 +670,7 @@ def get_random_contact():
 
                     if profile_link:
                         return profile_link, contact_uuid
+                    return None, None
     return None, None
 
 

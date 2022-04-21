@@ -881,6 +881,27 @@ class GetTurnContactProfileTests(TestCase):
 
         self.assertEqual(response, None)
 
+    @responses.activate
+    @override_settings(TURN_URL="http://turn/", TURN_TOKEN="token")
+    def test_get_turn_profile_link_none_response(self):
+        responses.add(
+            responses.GET,
+            "http://turn/v1/contacts/27781234560/messages",
+            json={
+                "chat": {
+                    "assigned_to": None,
+                    "owner": "+27836378500",
+                    "state": "OPEN",
+                    "state_reason": "Re-opened by inbound message.",
+                    "unread_count": 0,
+                }
+            },
+            status=200,
+        )
+        response = tasks.get_turn_profile_link("27781234560")
+
+        self.assertEqual(response, None)
+
 
 class SendSlackMessageTests(TestCase):
     def setUp(self):
