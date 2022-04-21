@@ -670,7 +670,6 @@ def get_random_contact():
 
                     if profile_link:
                         return profile_link, contact_uuid
-                    return None, None
     return None, None
 
 
