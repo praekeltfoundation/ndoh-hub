@@ -188,7 +188,7 @@ class BaselineSurveyResult(models.Model):
         max_length=20, choices=DangerSign2.choices, null=True, default=None
     )
     marital_status = models.CharField(
-        max_length=20, choices=MaritalStatus.choices, null=True, default=None
+        max_length=25, choices=MaritalStatus.choices, null=True, default=None
     )
     education_level = models.CharField(
         max_length=20, choices=EducationLevel.choices, null=True, default=None
