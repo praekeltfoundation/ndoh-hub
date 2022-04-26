@@ -64,9 +64,12 @@ class TestGetMessage(TestCase):
             responses.GET,
             "http://contentrepo/api/v2/pages/1111/?whatsapp=True&tracking=yes",
             json={
-                "body": {"text": {"value": {"message": "Test Message"}}},
+                "body": {
+                    "text": {"value": {"message": "Test Message"}},
+                    "revision": 123123,
+                },
                 "tags": ["whatsapp_template"],
-                "title": "bcm_week_post3_123123",
+                "title": "bcm_week_post3",
             },
             status=200,
         )
@@ -86,9 +89,12 @@ class TestGetMessage(TestCase):
             responses.GET,
             "http://contentrepo/api/v2/pages/1111/?whatsapp=True&tracking=yes",
             json={
-                "body": {"text": {"value": {"message": "Test Message {{1}}"}}},
+                "body": {
+                    "text": {"value": {"message": "Test Message {{1}}"}},
+                    "revision": 123123,
+                },
                 "tags": ["whatsapp_template"],
-                "title": "bcm_week_post3_123123",
+                "title": "bcm_week_post3",
             },
             status=200,
         )

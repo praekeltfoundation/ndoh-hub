@@ -27,7 +27,10 @@ def get_message(page_id, tracking_data):
     message = page["body"]["text"]["value"]["message"]
 
     if "whatsapp_template" in page.get("tags", []):
-        return True, "{{1}}" in message, message, page["title"]
+        page_title = page["title"]
+        latest_revision_id = page["body"]["revision"]
+        template_name = f"{page_title}_{latest_revision_id}"
+        return True, "{{1}}" in message, message, template_name
 
     return False, False, message, None
 
