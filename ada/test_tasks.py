@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from ada.tasks import (
     post_to_topup_endpoint,
+    start_pdf_flow,
     start_prototype_survey_flow,
     start_topup_flow,
 )
@@ -51,3 +52,19 @@ class HandleSubmitShatsappidToRapidpro(DjangoTestCase):
         url = reverse("rapidpro_topup_flow")
         post_to_topup_endpoint(whatsappid)
         mock_post.assert_called_with(url, data=json.dumps(payload), headers=head)
+
+    @override_settings(ADA_ASSESSMENT_FLOW_ID="test-flow-uuid")
+    def test_start_pdf_flow(self):
+        """
+        Triggers the topup flow with the correct details
+        """
+        msisdn = "27820001001"
+        pdf_media_id = "media-uuid"
+
+        with patch("ada.tasks.rapidpro") as p:
+            start_pdf_flow(msisdn, pdf_media_id)
+        p.create_flow_start.assert_called_once_with(
+            extra={"pdf": pdf_media_id},
+            flow="test-flow-uuid",
+            urns=["whatsapp:27820001001"],
+        )

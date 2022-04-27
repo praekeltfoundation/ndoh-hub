@@ -37,7 +37,7 @@ def build_rp_request(body):
     else:
         value = ""
 
-    if cardType != "" and value != "back":
+    if cardType != "" and value.upper() != "BACK":
         if cardType == "TEXT":
             payload = {"step": step}
         elif cardType == "INPUT":
@@ -46,7 +46,7 @@ def build_rp_request(body):
             payload = {"step": step, "optionId": int(value) - 1}
     elif cardType == "" and step == 0:
         payload = {"step": 0}
-    elif value == "back":
+    elif value.upper() == "BACK":
         payload = {"step": step}
     else:
         payload = {}
@@ -94,9 +94,9 @@ def format_message(body):
     description = body["description"]["en-GB"]
     title = body["title"]["en-GB"]
     back = (
-        "Reply *back* to go to the previous question or *abort* to end the assessment"
+        "Reply *back* to go to the previous question or *menu* to end the assessment."
     )
-    textcontinue = "Reply '0' to continue."
+    textcontinue = "Reply *0* to continue."
     cardType = body["cardType"]
     if "explanations" in body.keys():
         explanations = body["explanations"][0]["text"]["en-GB"]
@@ -119,20 +119,28 @@ def format_message(body):
         while index < length:
             optionslist.append(body["options"][index]["text"]["en-GB"])
             index += 1
+        choiceContext = optionslist[:]
+        for i in range(len(optionslist)):
+            optionslist[i] = f"{i+1}.{optionslist[i]}"
+
         choices = "\n".join(optionslist)
         extra_message = (
-            f"Choose the option that matches your answer. Eg, 1 for {option}"
+            f"Choose the option that matches your answer. Eg, *1* for *{option}*"
         )
         message = f"{description}\n\n{choices}\n\n{extra_message}\n\n{back}"
         body = {}
         body["choices"] = length
+        body["choiceContext"] = choiceContext
     elif cardType == "TEXT":
         message = f"{description}\n\n{textcontinue}\n\n{back}"
         body = {}
     else:
         message = f"{description}\n\n{back}"
+        format = body["cardAttributes"]["format"]
         body = {}
         body["choices"] = None
+        body["formatType"] = format
+
     body["message"] = message
     body["explanations"] = explanations
     body["step"] = step
@@ -146,10 +154,11 @@ def format_message(body):
 
 def get_endpoint(payload):
     value = payload["value"]
+    value = value.upper()
     if value != "":
-        if value == "back":
+        if value == "BACK":
             url = reverse("ada-previous-dialog")
-        elif value == "abort":
+        elif value == "MENU":
             url = reverse("ada-abort")
         else:
             url = reverse("ada-next-dialog")
@@ -186,8 +195,8 @@ def pdf_ready(data):
 
 
 def pdf_endpoint(data):
-    report_id = data["_links"]["report"]["href"]
-    qs = "?report_id=" + report_id
+    report_path = data["_links"]["report"]["href"]
+    qs = "?report_path=" + report_path
     url = reverse("ada-reports")
     reverse_url = url + qs
     return reverse_url
@@ -195,11 +204,24 @@ def pdf_endpoint(data):
 
 # This returns the report of the assessment
 def get_report(path):
-    head = get_header()
+    head = get_header_pdf()
     payload = {}
     path = urljoin(settings.ADA_START_ASSESSMENT_URL, path)
     response = requests.get(path, json=payload, headers=head)
-    return response
+    response.raise_for_status()
+    return response.content
+
+
+def upload_turn_media(media, content_type="application/pdf"):
+    headers = {
+        "Authorization": "Bearer {}".format(settings.ADA_TURN_TOKEN),
+        "Content-Type": content_type,
+    }
+    response = requests.post(
+        urljoin(settings.ADA_TURN_URL, "v1/media"), headers=headers, data=media
+    )
+    response.raise_for_status()
+    return response.json()["media"][0]["id"]
 
 
 # Go back to previous question
@@ -220,6 +242,7 @@ def abort_assessment(body):
     path = path.replace("dialog/next", "/abort")
     payload = {}
     response = requests.put(path, json=payload, headers=head).json()
+    response.raise_for_status()
     return response
 
 
@@ -228,6 +251,16 @@ def get_header():
         "x-ada-clientId": settings.X_ADA_CLIENTID,
         "x-ada-userId": settings.X_ADA_USERID,
         "Accept-Language": "en-GB",
-        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+    return head
+
+
+def get_header_pdf():
+    head = {
+        "x-ada-clientId": settings.X_ADA_CLIENTID,
+        "x-ada-userId": settings.X_ADA_USERID,
+        "Accept-Language": "en-GB",
+        "Content-Type": "application/pdf",
     }
     return head
