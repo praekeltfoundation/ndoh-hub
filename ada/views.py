@@ -182,6 +182,8 @@ class NextDialog(generics.GenericAPIView):
         if data["cardType"] != "TEXT" or pdf_media_id != "":
             if data["cardType"] == "INPUT":
                 optionId = None
+            if pdf_media_id != "":
+                optionId = None
             store_url_entry = AdaSelfAssessment(
                 contact_id=contact_uuid,
                 msisdn=msisdn,
