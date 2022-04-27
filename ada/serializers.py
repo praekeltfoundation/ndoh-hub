@@ -7,13 +7,33 @@ class SymptomCheckSerializer(serializers.Serializer):
 
 class AdaInputTypeSerializer(serializers.Serializer):
     def validate_value(self, data):
+        input = data["value"]
         length = len(data["value"])
+        format = data["formatType"]
         if length < 1 or length > 100:
             error = (
-                "We are sorry, your reply should be between " "*1* and *100* characters.\n\n"
+                "We are sorry, your reply should be between "
+                "*1* and *100* characters.\n\n"
             )
             data["message"] = f"{error}{data['message']}"
             raise serializers.ValidationError(data)
+        has_numbers = any(i.isdigit() for i in input)
+        if format == "string":  # and has_numbers == True:
+            has_numbers = any(i.isdigit() for i in input)
+            if has_numbers:
+                error = (
+                    "We are sorry, you entered a number. " "Please reply with text.\n\n"
+                )
+                data["message"] = f"{error}{data['message']}"
+                raise serializers.ValidationError(data)
+        elif format == "integer":  # and has_numbers == False:
+            only_numbers = input.isdecimal()
+            if not only_numbers:
+                error = (
+                    "We are sorry, you entered text. " "Please reply with a number.\n\n"
+                )
+                data["message"] = f"{error}{data['message']}"
+                raise serializers.ValidationError(data)
         return data
 
 

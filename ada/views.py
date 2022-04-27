@@ -14,8 +14,13 @@ from ada.serializers import (
     SymptomCheckSerializer,
 )
 
-from .models import AdaSymptomAssessment, RedirectUrl, RedirectUrlsEntry
-from .tasks import post_to_topup_endpoint, start_prototype_survey_flow, start_topup_flow
+from .models import AdaSelfAssessment, RedirectUrl, RedirectUrlsEntry
+from .tasks import (
+    post_to_topup_endpoint,
+    start_pdf_flow,
+    start_prototype_survey_flow,
+    start_topup_flow,
+)
 from .utils import (
     abort_assessment,
     build_rp_request,
@@ -30,6 +35,7 @@ from .utils import (
     post_to_ada,
     post_to_ada_start_assessment,
     previous_question,
+    upload_turn_media,
 )
 
 
@@ -148,7 +154,12 @@ class NextDialog(generics.GenericAPIView):
         value = data["value"]
         description = data["description"]
         title = data["title"]
+        msisdn = data["msisdn"]
         choiceContext = data["choiceContext"]
+        choiceContext = str(choiceContext)[1:-1]
+        choiceContext = choiceContext.replace("'", "")
+        choiceContext = list(choiceContext.split(","))
+        choiceContext = [i.lstrip() for i in choiceContext]
 
         if data["cardType"] == "CHOICE":
             optionId = int(value) - 1
@@ -159,11 +170,21 @@ class NextDialog(generics.GenericAPIView):
         assessment_id = path.split("/")[-3]
         request = build_rp_request(data)
         ada_response = post_to_ada(request, path)
+        pdf = pdf_ready(ada_response)
+        if pdf:
+            report_path = ada_response["_links"]["report"]["href"]
+            # report_id = report_path.split('/')[-1]
+            pdf_content = get_report(report_path)
+            pdf_media_id = upload_turn_media(pdf_content)
+        else:
+            pdf_media_id = ""
+
         if data["cardType"] != "TEXT":
             if data["cardType"] == "INPUT":
                 optionId = None
-            store_url_entry = AdaSymptomAssessment(
+            store_url_entry = AdaSelfAssessment(
                 contact_id=contact_uuid,
+                msisdn=msisdn,
                 assessment_id=assessment_id,
                 title=title,
                 description=description,
@@ -171,10 +192,11 @@ class NextDialog(generics.GenericAPIView):
                 user_input=value,
                 optionId=optionId,
                 choice=choiceContext,
+                pdf_media_id=pdf_media_id,
             )
             store_url_entry.save()
-        pdf = pdf_ready(ada_response)
         if pdf:
+            start_pdf_flow.delay(msisdn, pdf_media_id)
             response = pdf_endpoint(ada_response)
             return HttpResponseRedirect(response)
         else:
@@ -202,13 +224,11 @@ class Abort(generics.GenericAPIView):
         result = request.GET
         data = result.dict()
         response = abort_assessment(data)
-        return Response({"menu"}, status=status.HTTP_200_OK)
+        return Response(response, status=status.HTTP_200_OK)
 
 
 class Reports(generics.GenericAPIView):
     permission_classes = (permissions.AllowAny,)
 
     def get(self, request, *args, **kwargs):
-        report_id = request.GET.get("report_id")
-        response = get_report(report_id)
-        return Response({}, status=status.HTTP_200_OK)
+        return Response({"PDF assessment has been sent."}, status=status.HTTP_200_OK)

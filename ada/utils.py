@@ -122,7 +122,7 @@ def format_message(body):
         choiceContext = optionslist[:]
         for i in range(len(optionslist)):
             optionslist[i] = f"{i+1}.{optionslist[i]}"
-        
+
         choices = "\n".join(optionslist)
         extra_message = (
             f"Choose the option that matches your answer. Eg, *1* for *{option}*"
@@ -136,8 +136,11 @@ def format_message(body):
         body = {}
     else:
         message = f"{description}\n\n{back}"
+        format = body["cardAttributes"]["format"]
         body = {}
         body["choices"] = None
+        body["formatType"] = format
+
     body["message"] = message
     body["explanations"] = explanations
     body["step"] = step
@@ -192,8 +195,8 @@ def pdf_ready(data):
 
 
 def pdf_endpoint(data):
-    report_id = data["_links"]["report"]["href"]
-    qs = "?report_id=" + report_id
+    report_path = data["_links"]["report"]["href"]
+    qs = "?report_path=" + report_path
     url = reverse("ada-reports")
     reverse_url = url + qs
     return reverse_url
@@ -201,12 +204,24 @@ def pdf_endpoint(data):
 
 # This returns the report of the assessment
 def get_report(path):
-    head = get_header()
+    head = get_header_pdf()
     payload = {}
     path = urljoin(settings.ADA_START_ASSESSMENT_URL, path)
-    response = requests.get(path, json=payload, headers=head, stream=True)
+    response = requests.get(path, json=payload, headers=head)
     response.raise_for_status()
-    return response
+    return response.content
+
+
+def upload_turn_media(media, content_type="application/pdf"):
+    headers = {
+        "Authorization": "Bearer {}".format(settings.ADA_TURN_TOKEN),
+        "Content-Type": content_type,
+    }
+    response = requests.post(
+        urljoin(settings.ADA_TURN_URL, f"v1/media"), headers=headers, data=media
+    )
+    response.raise_for_status()
+    return response.json()["media"][0]["id"]
 
 
 # Go back to previous question
@@ -237,5 +252,15 @@ def get_header():
         "x-ada-userId": settings.X_ADA_USERID,
         "Accept-Language": "en-GB",
         "Content-Type": "application/json",
+    }
+    return head
+
+
+def get_header_pdf():
+    head = {
+        "x-ada-clientId": settings.X_ADA_CLIENTID,
+        "x-ada-userId": settings.X_ADA_USERID,
+        "Accept-Language": "en-GB",
+        "Content-Type": "application/pdf",
     }
     return head

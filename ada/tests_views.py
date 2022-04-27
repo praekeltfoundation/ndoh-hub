@@ -168,6 +168,7 @@ class AdaValidationViewTests(APITestCase):
             reverse("ada-assessments"),
             json.dumps(
                 {
+                    "msisdn": "27856454612",
                     "message": (
                         "Please type in the symptom that is troubling you, "
                         "only one symptom at a time. Reply back to go to the "
@@ -183,6 +184,7 @@ class AdaValidationViewTests(APITestCase):
                     "path": "/assessments/assessment-id/dialog/next",
                     "cardType": "INPUT",
                     "title": "SYMPTOM",
+                    "formatType": "string",
                 }
             ),
             content_type="application/json",
@@ -190,6 +192,7 @@ class AdaValidationViewTests(APITestCase):
         self.assertEqual(
             response.json(),
             {
+                "msisdn": "27856454612",
                 "message": (
                     "We are sorry, your reply should be "
                     "between *1* and *100* characters.\n\n"
@@ -207,6 +210,93 @@ class AdaValidationViewTests(APITestCase):
                 "path": "/assessments/assessment-id/dialog/next",
                 "cardType": "INPUT",
                 "title": "SYMPTOM",
+                "formatType": "string",
+            },
+            response.json(),
+        )
+
+    def test_input_type_error_string(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            reverse("ada-assessments"),
+            json.dumps(
+                {
+                    "msisdn": "27856454612",
+                    "message": (
+                        "Please type in the symptom that is troubling you, "
+                        "only one symptom at a time. Reply back to go to the "
+                        "previous question or menu to end the assessment."
+                    ),
+                    "step": 4,
+                    "value": ("1998"),
+                    "optionId": 8,
+                    "path": "/assessments/assessment-id/dialog/next",
+                    "cardType": "INPUT",
+                    "title": "SYMPTOM",
+                    "formatType": "string",
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(
+            response.json(),
+            {
+                "msisdn": "27856454612",
+                "message": (
+                    "We are sorry, you entered a number. "
+                    "Please reply with text.\n\nPlease "
+                    "type in the symptom that is troubling "
+                    "you, only one symptom at a time. "
+                    "Reply back to go to the previous "
+                    "question or menu to end the assessment."
+                ),
+                "step": "4",
+                "value": "1998",
+                "optionId": "8",
+                "path": "/assessments/assessment-id/dialog/next",
+                "cardType": "INPUT",
+                "title": "SYMPTOM",
+                "formatType": "string",
+            },
+            response.json(),
+        )
+
+    def test_input_type_error_integer(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            reverse("ada-assessments"),
+            json.dumps(
+                {
+                    "msisdn": "27856454612",
+                    "message": ("Enter age in years"),
+                    "step": 4,
+                    "value": ("I am 18 years old"),
+                    "optionId": 8,
+                    "path": "/assessments/assessment-id/dialog/next",
+                    "cardType": "INPUT",
+                    "title": "SYMPTOM",
+                    "formatType": "integer",
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(
+            response.json(),
+            {
+                "msisdn": "27856454612",
+                "message": (
+                    "We are sorry, you entered text. "
+                    "Please reply with a number.\n\nEnter age in years"
+                ),
+                "step": "4",
+                "value": "I am 18 years old",
+                "optionId": "8",
+                "path": "/assessments/assessment-id/dialog/next",
+                "cardType": "INPUT",
+                "title": "SYMPTOM",
+                "formatType": "integer",
             },
             response.json(),
         )
@@ -221,6 +311,7 @@ class AdaValidationViewTests(APITestCase):
             self.url,
             json.dumps(
                 {
+                    "msisdn": "27856454612",
                     "choices": 3,
                     "choiceContext": ["Abdominal pain", "Headache"],
                     "message": (
@@ -245,8 +336,9 @@ class AdaValidationViewTests(APITestCase):
         self.assertEqual(
             response.json(),
             {
+                "msisdn": "27856454612",
                 "choices": "3",
-                'choiceContext': ["Abdominal pain", "Headache"],
+                "choiceContext": ["Abdominal pain", "Headache"],
                 "message": (
                     "Something seems to have gone wrong. You "
                     "entered 9 but there are only 3 options. "
@@ -276,6 +368,7 @@ class AdaValidationViewTests(APITestCase):
             reverse("ada-assessments"),
             json.dumps(
                 {
+                    "msisdn": "27856454612",
                     "choices": None,
                     "message": (
                         "Welcome to the MomConnect Symptom Checker in "
@@ -296,6 +389,7 @@ class AdaValidationViewTests(APITestCase):
         self.assertEqual(
             response.json(),
             {
+                "msisdn": "27856454612",
                 "choices": "None",
                 "message": (
                     "Please reply *continue*, *0* or *accept* to continue.\n\n"
@@ -318,6 +412,7 @@ class AdaValidationViewTests(APITestCase):
 class StartAssessment(APITestCase):
     data = {
         "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
+        "msisdn": "",
         "choiceContext": "",
         "choices": "None",
         "message": "",
@@ -332,7 +427,8 @@ class StartAssessment(APITestCase):
     url_start_assessment = reverse("ada-start-assessment")
     destination_url = (
         "/api/v2/ada/startassessment?contact_uuid"
-        "=67460e74-02e3-11e8-b443-00163e990bdb&choices"
+        "=67460e74-02e3-11e8-b443-00163e990bdb"
+        "&msisdn=&choiceContext=&choices"
         "=None&message=&step=None&value=&optionId"
         "=None&path=&cardType=&title="
     )
@@ -405,6 +501,7 @@ class StartAssessment(APITestCase):
 class AdaAssessmentDialog(APITestCase):
     data = {
         "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
+        "msisdn": "27856454612",
         "choiceContext": "",
         "choices": None,
         "message": "",
@@ -414,10 +511,12 @@ class AdaAssessmentDialog(APITestCase):
         "path": "",
         "cardType": "",
         "title": "",
+        "formatType": "integer",
     }
 
     data_next_dialog = {
         "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
+        "msisdn": "27856454612",
         "choiceContext": "",
         "choices": None,
         "message": (
@@ -433,6 +532,7 @@ class AdaAssessmentDialog(APITestCase):
         "cardType": "INPUT",
         "title": "Patient Information",
         "description": "How old are you?",
+        "formatType": "integer",
     }
 
     entry_url = reverse("ada-assessments")
@@ -596,14 +696,15 @@ class AdaAssessmentDialog(APITestCase):
             (
                 "/api/v2/ada/nextdialog?"
                 "contact_uuid=67460e74-02e3-11e8-b443"
-                "-00163e990bdb&choices=None&message="
+                "-00163e990bdb&msisdn=27856454612&"
+                "choiceContext=&choices=None&message="
                 "How+old+are+you%3F%0A%0AReply+%2Aback%2A+"
                 "to+go+to+the+previous+question+or+%2Amenu%2A+"
                 "to+end+the+assessment&explanations=&step=5&value="
                 "27&optionId=None&path=%2Fassessments%2F"
                 "f9d4be32-78fa-48e0-b9a3-e12e305e73ce%2Fdialog%2F"
                 "next&cardType=INPUT&title=Patient+Information&"
-                "description=How+old+are+you%3F"
+                "description=How+old+are+you%3F&formatType=integer"
             ),
         )
 
@@ -611,6 +712,7 @@ class AdaAssessmentDialog(APITestCase):
 class AdaAssessmentReport(APITestCase):
     data = {
         "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdd",
+        "msisdn": "27856454612",
         "choiceContext": "",
         "choices": None,
         "message": (
@@ -626,6 +728,7 @@ class AdaAssessmentReport(APITestCase):
         "cardType": "INPUT",
         "title": "Patient Information",
         "description": "How old are you?",
+        "formatType": "integer",
     }
 
     start_url = reverse("ada-assessments")
@@ -634,7 +737,8 @@ class AdaAssessmentReport(APITestCase):
     destination_url = (
         "/api/v2/ada/nextdialog?contact_uuid="
         "67460e74-02e3-11e8-b443-00163e990bdd&"
-        "choiceContext=&choices=None&message=How+old+are+you%3F"
+        "msisdn=27856454612&choiceContext=&"
+        "choices=None&message=How+old+are+you%3F"
         "%0A%0AReply+%2Aback%2A+to+go+to+the+"
         "previous+question+or+%2Amenu%2A+to+end"
         "+the+assessment&explanations=&step="
@@ -642,13 +746,26 @@ class AdaAssessmentReport(APITestCase):
         "assessments%2Ff9d4be32-78fa-48e0-b9a3"
         "-e12e305e73ce%2Fdialog%2Fnext&cardType"
         "=INPUT&title=Patient+Information&"
-        "description=How+old+are+you%3F"
+        "description=How+old+are+you%3F&formatType=integer"
     )
 
+    pdf_url = (
+        "/api/v2/ada/reports?report_path=" "/reports/17340f51604cb35bd2c6b7b9b16f3aec"
+    )
+
+    @patch("ada.views.start_pdf_flow")
+    @patch("ada.views.upload_turn_media")
     @patch("ada.views.get_report")
     @patch("ada.views.pdf_ready")
     @patch("ada.views.post_to_ada")
-    def test_assessment_report(self, mock_post_to_ada, mock_pdf_ready, mock_get_report):
+    def test_assessment_report(
+        self,
+        mock_post_to_ada,
+        mock_pdf_ready,
+        mock_get_report,
+        mock_upload_turn_media,
+        mock_start_pdf_flow,
+    ):
         mock_post_to_ada.return_value = {
             "cardType": "CHOICE",
             "step": 40,
@@ -671,14 +788,17 @@ class AdaAssessmentReport(APITestCase):
             },
         }
 
-        mock_get_report.return_value = {"PDF download"}
-
+        mock_get_report.return_value = "pdf-content"
+        mock_upload_turn_media.return_value = "media-uuid"
         mock_pdf_ready.return_value = utils.pdf_ready(mock_post_to_ada.return_value)
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
         response = self.client.post(self.start_url, self.data, format="json")
         self.assertRedirects(response, self.destination_url, target_status_code=302)
-        response = self.client.get(self.destination_url)
-        pdf_url = utils.pdf_endpoint(mock_post_to_ada.return_value)
-        response = self.client.get(pdf_url)
+        mock_start_pdf_flow.delay.assert_called_once_with(
+            "27856454612", mock_upload_turn_media.return_value
+        )
+        response = self.client.get(self.destination_url, format="json")
+        self.assertRedirects(response, self.pdf_url, target_status_code=200)
+        response = self.client.get(self.pdf_url, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)

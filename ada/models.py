@@ -1,5 +1,7 @@
 from django.db import models
 
+from .validators import za_phone_number
+
 
 class RedirectUrl(models.Model):
 
@@ -48,8 +50,9 @@ class RedirectUrlsEntry(models.Model):
             )
 
 
-class AdaSymptomAssessment(models.Model):
+class AdaSelfAssessment(models.Model):
     contact_id = models.UUIDField()
+    msisdn = models.CharField(max_length=255, validators=[za_phone_number])
     assessment_id = models.UUIDField()
     step = models.IntegerField(null=True)
     optionId = models.IntegerField(null=True, blank=True)
@@ -58,6 +61,7 @@ class AdaSymptomAssessment(models.Model):
     description = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     choice = models.TextField(null=True, blank=True)
+    pdf_media_id = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return (

@@ -60,3 +60,19 @@ def post_to_topup_endpoint(whatsappid):
     url = reverse("rapidpro_topup_flow")
     response = requests.post(url, data=json.dumps(payload), headers=head)
     return response
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def start_pdf_flow(msisdn, pdf_media_id):
+    return rapidpro.create_flow_start(
+        extra={"pdf": pdf_media_id},
+        flow=settings.ADA_ASSESSMENT_FLOW_ID,
+        urns=[f"whatsapp:{msisdn}"],
+    )

@@ -7,6 +7,7 @@ class TestQuestionsPayload(TestCase):
     def test_text_type_question(self):
         rapidpro_data = {
             "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
+            "msisdn": "",
             "choiceContext": "",
             "choices": None,
             "value": "",
@@ -91,6 +92,7 @@ class TestQuestionsPayload(TestCase):
     def test_choice_type_question(self):
         rapidpro_data = {
             "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
+            "msisdn": "27856454612",
             "choiceContext": "",
             "choices": "",
             "path": "/assessments/assessment-id/dialog/next",
@@ -205,6 +207,7 @@ class TestQuestionsPayload(TestCase):
     def test_input_type_question(self):
         rapidpro_data = {
             "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
+            "msisdn": "27856454612",
             "choiceContext": "",
             "choices": "",
             "path": "/assessments/assessment-id/dialog/next",
@@ -276,6 +279,7 @@ class TestQuestionsPayload(TestCase):
             response,
             {
                 "choices": None,
+                "formatType": "integer",
                 "message": (
                     "How old are you?\n\nReply *back* to go to "
                     "the previous question or *menu* to "
