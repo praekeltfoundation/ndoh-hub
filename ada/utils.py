@@ -218,7 +218,7 @@ def upload_turn_media(media, content_type="application/pdf"):
         "Content-Type": content_type,
     }
     response = requests.post(
-        urljoin(settings.ADA_TURN_URL, f"v1/media"), headers=headers, data=media
+        urljoin(settings.ADA_TURN_URL, "v1/media"), headers=headers, data=media
     )
     response.raise_for_status()
     return response.json()["media"][0]["id"]
