@@ -179,7 +179,7 @@ class NextDialog(generics.GenericAPIView):
         else:
             pdf_media_id = ""
 
-        if data["cardType"] != "TEXT":
+        if data["cardType"] != "TEXT" or pdf_media_id != "":
             if data["cardType"] == "INPUT":
                 optionId = None
             store_url_entry = AdaSelfAssessment(
@@ -231,4 +231,4 @@ class Reports(generics.GenericAPIView):
     permission_classes = (permissions.AllowAny,)
 
     def get(self, request, *args, **kwargs):
-        return Response({"PDF assessment has been sent."}, status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

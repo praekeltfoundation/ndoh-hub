@@ -379,7 +379,7 @@ X_ADA_USERID = env.str("X_ADA_USERID", None)
 ADA_TURN_URL = env.str("ADA_TURN_URL", None)
 ADA_TURN_TOKEN = env.str("ADA_TURN_TOKEN", None)
 ADA_ASSESSMENT_FLOW_ID = env.str("ADA_ASSESSMENT_FLOW_ID", None)
-
+ADA_TURN_TOKEN = env.str("ADA_TURN_TOKEN", None)
 SLACK_URL = env.str("SLACK_URL", None)
 SLACK_TOKEN = env.str("SLACK_TOKEN", None)
 SLACK_CHANNEL = env.str("SLACK_CHANNEL", None)
