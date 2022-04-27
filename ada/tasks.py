@@ -71,7 +71,7 @@ def post_to_topup_endpoint(whatsappid):
     time_limit=15,
 )
 def start_pdf_flow(msisdn, pdf_media_id):
-    if rapidpro and settings.ADA_ASSESSMENT_FLOW_ID:     
+    if rapidpro and settings.ADA_ASSESSMENT_FLOW_ID:
         return rapidpro.create_flow_start(
             extra={"pdf": pdf_media_id},
             flow=settings.ADA_ASSESSMENT_FLOW_ID,
