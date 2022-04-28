@@ -324,7 +324,7 @@ class AdaValidationViewTests(APITestCase):
                         "to end the assessment."
                     ),
                     "step": 4,
-                    "value": 9,
+                    "value": "9",
                     "optionId": 0,
                     "path": "/assessments/assessment-id/dialog/next",
                     "cardType": "CHOICE",
