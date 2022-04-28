@@ -601,26 +601,29 @@ def post_random_contacts_to_slack_channel():
 
         contact_details = []
 
-        while len(contact_details) < settings.RANDOM_CONTACT_LIMIT:
-            turn_profile_link, contact_uuid = get_random_contact()
+        try:
+            while len(contact_details) < settings.RANDOM_CONTACT_LIMIT:
+                turn_profile_link, contact_uuid = get_random_contact()
 
-            if turn_profile_link and contact_uuid:
-                rapidpro_link = rapidpro_url.format(contact_uuid)
-                contact_number = len(contact_details) + 1
+                if turn_profile_link and contact_uuid:
+                    rapidpro_link = rapidpro_url.format(contact_uuid)
+                    contact_number = len(contact_details) + 1
 
-                contact_details.append(
-                    f"{contact_number} - <{rapidpro_link}|RapidPro>"
-                    f" <{turn_profile_link}|Turn>"
+                    contact_details.append(
+                        f"{contact_number} - <{rapidpro_link}|RapidPro>"
+                        f" <{turn_profile_link}|Turn>"
+                    )
+                    print('Contact details: ', contact_details)
+
+            if contact_details:
+                sent = send_slack_message(
+                    settings.SLACK_CHANNEL, "\n".join(contact_details)
                 )
-            else:
-                pass
-
-        if contact_details:
-            sent = send_slack_message(
-                settings.SLACK_CHANNEL, "\n".join(contact_details)
-            )
-            return {"success": sent, "results": contact_details}
-        return {"success": False, "results": contact_details}
+                return {"success": sent, "results": contact_details}
+            return {"success": False, "results": contact_details}
+        except SoftTimeLimitExceeded as e:
+            logger.info(f"Profiles does not exist, {e}")
+            return
 
 
 def get_turn_profile_link(contact_number):
