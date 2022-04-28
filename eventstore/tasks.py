@@ -646,8 +646,6 @@ def get_turn_profile_link(contact_number):
             if profile:
                 # Get turn message link
                 return profile.json().get("chat", {}).get("permalink")
-            return None
-    return None
 
 
 def get_random_contact():
