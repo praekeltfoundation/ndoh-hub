@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from .utils import assessmentkeywords
+
 
 class SymptomCheckSerializer(serializers.Serializer):
     whatsappid = serializers.CharField(required=True)
@@ -10,7 +12,7 @@ class AdaInputTypeSerializer(serializers.Serializer):
         user_input = data["value"].upper()
         length = len(data["value"])
         format = data["formatType"]
-        keywords = ["0", "ACCEPT", "CONTINUE", "BACK", "MENU"]
+        keywords = assessmentkeywords()
         if user_input not in keywords:
             if length < 1 or length > 100:
                 error = (
@@ -43,7 +45,7 @@ class AdaInputTypeSerializer(serializers.Serializer):
 
 class AdaTextTypeSerializer(serializers.Serializer):
     def validate_value(self, data):
-        keywords = ["0", "ACCEPT", "CONTINUE", "BACK", "MENU"]
+        keywords = assessmentkeywords()
         user_input = data["value"].upper()
         if user_input not in keywords:
             error = "Please reply *continue*, *0* or *accept* to continue.\n\n"
@@ -61,7 +63,7 @@ class AdaChoiceTypeSerializer(serializers.Serializer):
     def validate_value(self, data):
         user_input = data["value"].upper()
         choices = data["choices"]
-        keywords = ["0", "ACCEPT", "CONTINUE", "BACK", "MENU"]
+        keywords = assessmentkeywords()
         if user_input not in keywords:
             try:
                 int(user_input)

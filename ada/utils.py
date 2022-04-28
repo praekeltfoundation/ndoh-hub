@@ -22,6 +22,11 @@ def get_from_send(payload):
     return response
 
 
+def assessmentkeywords():
+    keywords = ["0", "ACCEPT", "CONTINUE", "BACK", "MENU"]
+    return keywords
+
+
 def build_rp_request(body):
     # The cardType value is used to build the request to ADA
     if "cardType" in body.keys():
