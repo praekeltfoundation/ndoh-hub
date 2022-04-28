@@ -22,6 +22,11 @@ def get_from_send(payload):
     return response
 
 
+def assessmentkeywords():
+    keywords = ["0", "ACCEPT", "CONTINUE", "BACK", "MENU"]
+    return keywords
+
+
 def build_rp_request(body):
     # The cardType value is used to build the request to ADA
     if "cardType" in body.keys():
@@ -96,6 +101,7 @@ def format_message(body):
     back = (
         "Reply *back* to go to the previous question or *menu* to end the assessment."
     )
+    explain = "Reply *EXPLAIN* to see what this means."
     textcontinue = "Reply *0* to continue."
     cardType = body["cardType"]
     if "explanations" in body.keys():
@@ -127,7 +133,12 @@ def format_message(body):
         extra_message = (
             f"Choose the option that matches your answer. Eg, *1* for *{option}*"
         )
-        message = f"{description}\n\n{choices}\n\n{extra_message}\n\n{back}"
+        if explanations != "":
+            message = (
+                f"{description}\n\n{choices}\n\n{extra_message}\n\n{back}\n\n{explain}"
+            )
+        else:
+            message = f"{description}\n\n{choices}\n\n{extra_message}\n\n{back}"
         body = {}
         body["choices"] = length
         body["choiceContext"] = choiceContext

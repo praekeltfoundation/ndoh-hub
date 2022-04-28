@@ -178,6 +178,7 @@ class TestQuestionsPayload(TestCase):
                     "the option that matches your answer. Eg, *1* for "
                     "*Female*\n\nReply *back* to go to the previous "
                     "question or *menu* to end the assessment."
+                    "\n\nReply *EXPLAIN* to see what this means."
                 ),
                 "explanations": (
                     "We are investigating a solution "
