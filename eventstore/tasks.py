@@ -613,7 +613,7 @@ def post_random_contacts_to_slack_channel():
                         f"{contact_number} - <{rapidpro_link}|RapidPro>"
                         f" <{turn_profile_link}|Turn>"
                     )
-                    print('Contact details: ', contact_details)
+                    print("Contact details: ", contact_details)
 
             if contact_details:
                 sent = send_slack_message(
@@ -622,7 +622,7 @@ def post_random_contacts_to_slack_channel():
                 return {"success": sent, "results": contact_details}
             return {"success": False, "results": contact_details}
         except SoftTimeLimitExceeded as e:
-            logger.info(f"Profiles does not exist, {e}")
+            logger.info(f"Turn profiles does not exist, {e}")
             return
 
 
