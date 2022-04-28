@@ -173,7 +173,6 @@ class NextDialog(generics.GenericAPIView):
         pdf = pdf_ready(ada_response)
         if pdf:
             report_path = ada_response["_links"]["report"]["href"]
-            # report_id = report_path.split('/')[-1]
             pdf_content = get_report(report_path)
             pdf_media_id = upload_turn_media(pdf_content)
         else:
@@ -197,13 +196,13 @@ class NextDialog(generics.GenericAPIView):
                 pdf_media_id=pdf_media_id,
             )
             store_url_entry.save()
-        if pdf:
+        if not pdf:
+            message = format_message(ada_response)
+            return Response(message, status=status.HTTP_200_OK)
+        else:
             start_pdf_flow.delay(msisdn, pdf_media_id)
             response = pdf_endpoint(ada_response)
             return HttpResponseRedirect(response)
-        else:
-            message = format_message(ada_response)
-            return Response(message, status=status.HTTP_200_OK)
 
 
 class PreviousDialog(generics.GenericAPIView):
