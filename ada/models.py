@@ -1,5 +1,7 @@
 from django.db import models
 
+from .validators import za_phone_number
+
 
 class RedirectUrl(models.Model):
 
@@ -48,8 +50,9 @@ class RedirectUrlsEntry(models.Model):
             )
 
 
-class AdaAssessments(models.Model):
+class AdaSelfAssessment(models.Model):
     contact_id = models.UUIDField()
+    msisdn = models.CharField(max_length=255, validators=[za_phone_number])
     assessment_id = models.UUIDField()
     step = models.IntegerField(null=True)
     optionId = models.IntegerField(null=True, blank=True)
@@ -57,11 +60,13 @@ class AdaAssessments(models.Model):
     title = models.TextField(null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    choice = models.TextField(null=True, blank=True)
+    pdf_media_id = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return (
-            "Contact_ID: {self.contact_id} | Step: {self.step} "
-            "| AssessmentID: {self.assessment_id} \n"
-            "| User_Input: {self.user_input} | Title: {self.title} \n"
-            "| Created_at: {self.created_at}"
+            f"Contact_ID: {self.contact_id} | Step: {self.step} "
+            f"| AssessmentID: {self.assessment_id} \n"
+            f"| User_Input: {self.user_input} | Title: {self.title} \n"
+            f"| Created_at: {self.created_at}"
         )
