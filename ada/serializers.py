@@ -71,4 +71,12 @@ class AdaChoiceTypeSerializer(serializers.Serializer):
             )
             data["message"] = f"{error} {data['message']}"
             raise serializers.ValidationError(data)
+        if int(user_input) < 1:
+            error = (
+                f"Something seems to have gone wrong. You entered "
+                f"{user_input}. Please select the option that "
+                f"matches your answer."
+            )
+            data["message"] = f"{error} {data['message']}"
+            raise serializers.ValidationError(data)
         return data
