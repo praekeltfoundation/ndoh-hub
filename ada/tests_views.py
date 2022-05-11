@@ -194,8 +194,6 @@ class AdaValidationViewTests(APITestCase):
             {
                 "msisdn": "27856454612",
                 "message": (
-                    "We are sorry, your reply should be "
-                    "between *1* and *100* characters.\n\n"
                     "Please type in the symptom that is troubling you, "
                     "only one symptom at a time. Reply back to go to the "
                     "previous question or menu to end the assessment."
@@ -211,6 +209,10 @@ class AdaValidationViewTests(APITestCase):
                 "cardType": "INPUT",
                 "title": "SYMPTOM",
                 "formatType": "string",
+                "error": (
+                    "We are sorry, your reply should be "
+                    "between *1* and *100* characters.\n\n"
+                ),
             },
             response.json(),
         )
@@ -244,10 +246,9 @@ class AdaValidationViewTests(APITestCase):
             {
                 "msisdn": "27856454612",
                 "message": (
-                    "We are sorry, you entered a number. "
-                    "Please reply with text.\n\nPlease "
-                    "type in the symptom that is troubling "
-                    "you, only one symptom at a time. "
+                    "Please type in the symptom "
+                    "that is troubling you, "
+                    "only one symptom at a time. "
                     "Reply back to go to the previous "
                     "question or menu to end the assessment."
                 ),
@@ -258,6 +259,9 @@ class AdaValidationViewTests(APITestCase):
                 "cardType": "INPUT",
                 "title": "SYMPTOM",
                 "formatType": "string",
+                "error": (
+                    "We are sorry, you entered a number. " "Please reply with text.\n\n"
+                ),
             },
             response.json(),
         )
@@ -286,10 +290,7 @@ class AdaValidationViewTests(APITestCase):
             response.json(),
             {
                 "msisdn": "27856454612",
-                "message": (
-                    "We are sorry, you entered text. "
-                    "Please reply with a number.\n\nEnter age in years"
-                ),
+                "message": ("Enter age in years"),
                 "step": "4",
                 "value": "I am 18 years old",
                 "optionId": "8",
@@ -297,6 +298,9 @@ class AdaValidationViewTests(APITestCase):
                 "cardType": "INPUT",
                 "title": "SYMPTOM",
                 "formatType": "integer",
+                "error": (
+                    "We are sorry, you entered text. " "Please reply with a number.\n\n"
+                ),
             },
             response.json(),
         )
@@ -340,9 +344,6 @@ class AdaValidationViewTests(APITestCase):
                 "choices": "3",
                 "choiceContext": ["Abdominal pain", "Headache"],
                 "message": (
-                    "Something seems to have gone wrong. You "
-                    "entered 9 but there are only 3 options. "
-                    "Please reply with a number between 1 and 3. "
                     "What is the issue?\n\nAbdominal pain\nHeadache"
                     "\nNone of these\n\nChoose the option that "
                     "matches your answer. "
@@ -356,6 +357,11 @@ class AdaValidationViewTests(APITestCase):
                 "path": "/assessments/assessment-id/dialog/next",
                 "cardType": "CHOICE",
                 "title": "SYMPTOM",
+                "error": (
+                    "Something seems to have gone wrong. You "
+                    "entered 9 but there are only 3 options. "
+                    "Please reply with a number between 1 and 3."
+                ),
             },
             response.json(),
         )
@@ -392,7 +398,6 @@ class AdaValidationViewTests(APITestCase):
                 "msisdn": "27856454612",
                 "choices": "None",
                 "message": (
-                    "Please reply *continue*, *0* or *accept* to continue.\n\n"
                     "Welcome to the MomConnect Symptom Checker in "
                     "partnership with Ada. Let's start with some questions "
                     "about the symptoms. Then, we will help you "
@@ -404,6 +409,7 @@ class AdaValidationViewTests(APITestCase):
                 "path": "/assessments/assessment-id/dialog/next",
                 "cardType": "TEXT",
                 "title": "WELCOME",
+                "error": "Please reply *continue*, *0* or *accept* to continue.\n\n",
             },
             response.json(),
         )

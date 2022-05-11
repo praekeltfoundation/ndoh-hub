@@ -174,7 +174,7 @@ class TestQuestionsPayload(TestCase):
                     "Hi John, what is your biological sex?"
                     "\nBiological sex is a risk factor for some "
                     "conditions. Your answer is necessary for an "
-                    "accurate assessment.\n\n1.Female\n2.Male\n\nChoose "
+                    "accurate assessment.\n\n1. Female\n2. Male\n\nChoose "
                     "the option that matches your answer. Eg, *1* for "
                     "*Female*\n\nReply *back* to go to the previous "
                     "question or *menu* to end the assessment."

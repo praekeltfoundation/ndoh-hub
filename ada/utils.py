@@ -127,7 +127,7 @@ def format_message(body):
             index += 1
         choiceContext = optionslist[:]
         for i in range(len(optionslist)):
-            optionslist[i] = f"{i+1}.{optionslist[i]}"
+            optionslist[i] = f"{i+1}. {optionslist[i]}"
 
         choices = "\n".join(optionslist)
         extra_message = (
