@@ -19,7 +19,7 @@ class AdaInputTypeSerializer(serializers.Serializer):
                     "We are sorry, your reply should be between "
                     "*1* and *100* characters.\n\n"
                 )
-                data["message"] = f"{error}{data['message']}"
+                data["error"] = error
                 raise serializers.ValidationError(data)
             has_numbers = any(i.isdigit() for i in user_input)
             if format == "string":
@@ -29,7 +29,7 @@ class AdaInputTypeSerializer(serializers.Serializer):
                         "We are sorry, you entered a number. "
                         "Please reply with text.\n\n"
                     )
-                    data["message"] = f"{error}{data['message']}"
+                    data["error"] = error
                     raise serializers.ValidationError(data)
             elif format == "integer":
                 only_numbers = user_input.isdecimal()
@@ -38,7 +38,7 @@ class AdaInputTypeSerializer(serializers.Serializer):
                         "We are sorry, you entered text. "
                         "Please reply with a number.\n\n"
                     )
-                    data["message"] = f"{error}{data['message']}"
+                    data["error"] = error
                     raise serializers.ValidationError(data)
         return data
 
@@ -49,7 +49,7 @@ class AdaTextTypeSerializer(serializers.Serializer):
         user_input = data["value"].upper()
         if user_input not in keywords:
             error = "Please reply *continue*, *0* or *accept* to continue.\n\n"
-            data["message"] = f"{error}{data['message']}"
+            data["error"] = error
             raise serializers.ValidationError(data)
         return data
 
@@ -69,22 +69,20 @@ class AdaChoiceTypeSerializer(serializers.Serializer):
                 int(user_input)
             except ValueError:
                 error = "Please reply with the number that matches your answer.\n\n"
-                data["message"] = f"{error}{data['message']}"
-                raise serializers.ValidationError(data)
+                data["error"] = error
             if not (0 <= int(user_input) <= choices):
                 error = (
                     f"Something seems to have gone wrong. You entered "
                     f"{user_input} but there are only {choices} options. "
                     f"Please reply with a number between 1 and {choices}."
                 )
-                data["message"] = f"{error} {data['message']}"
-                raise serializers.ValidationError(data)
+                data["error"] = error
             if int(user_input) < 1:
                 error = (
                     f"Something seems to have gone wrong. You entered "
                     f"{user_input}. Please select the option that "
                     f"matches your answer."
                 )
-                data["message"] = f"{error} {data['message']}"
-                raise serializers.ValidationError(data)
+                data["error"] = error
+            raise serializers.ValidationError(data)
         return data
