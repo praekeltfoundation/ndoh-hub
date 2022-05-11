@@ -17,7 +17,7 @@ class AdaInputTypeSerializer(serializers.Serializer):
             if length < 1 or length > 100:
                 error = (
                     "We are sorry, your reply should be between "
-                    "*1* and *100* characters.\n\n"
+                    "*1* and *100* characters."
                 )
                 data["error"] = error
                 raise serializers.ValidationError(data)
@@ -26,8 +26,7 @@ class AdaInputTypeSerializer(serializers.Serializer):
                 has_numbers = any(i.isdigit() for i in user_input)
                 if has_numbers:
                     error = (
-                        "We are sorry, you entered a number. "
-                        "Please reply with text.\n\n"
+                        "We are sorry, you entered a number. " "Please reply with text."
                     )
                     data["error"] = error
                     raise serializers.ValidationError(data)
@@ -35,8 +34,7 @@ class AdaInputTypeSerializer(serializers.Serializer):
                 only_numbers = user_input.isdecimal()
                 if not only_numbers:
                     error = (
-                        "We are sorry, you entered text. "
-                        "Please reply with a number.\n\n"
+                        "We are sorry, you entered text. " "Please reply with a number."
                     )
                     data["error"] = error
                     raise serializers.ValidationError(data)
@@ -48,7 +46,7 @@ class AdaTextTypeSerializer(serializers.Serializer):
         keywords = assessmentkeywords()
         user_input = data["value"].upper()
         if user_input not in keywords:
-            error = "Please reply *continue*, *0* or *accept* to continue.\n\n"
+            error = "Please reply *continue*, *0* or *accept* to continue."
             data["error"] = error
             raise serializers.ValidationError(data)
         return data
@@ -68,8 +66,9 @@ class AdaChoiceTypeSerializer(serializers.Serializer):
             try:
                 int(user_input)
             except ValueError:
-                error = "Please reply with the number that matches your answer.\n\n"
+                error = "Please reply with the number that matches your answer."
                 data["error"] = error
+                raise serializers.ValidationError(data)
             if not (0 <= int(user_input) <= choices):
                 error = (
                     f"Something seems to have gone wrong. You entered "
@@ -77,6 +76,7 @@ class AdaChoiceTypeSerializer(serializers.Serializer):
                     f"Please reply with a number between 1 and {choices}."
                 )
                 data["error"] = error
+                raise serializers.ValidationError(data)
             if int(user_input) < 1:
                 error = (
                     f"Something seems to have gone wrong. You entered "
@@ -84,5 +84,5 @@ class AdaChoiceTypeSerializer(serializers.Serializer):
                     f"matches your answer."
                 )
                 data["error"] = error
-            raise serializers.ValidationError(data)
+                raise serializers.ValidationError(data)
         return data

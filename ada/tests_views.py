@@ -211,7 +211,7 @@ class AdaValidationViewTests(APITestCase):
                 "formatType": "string",
                 "error": (
                     "We are sorry, your reply should be "
-                    "between *1* and *100* characters.\n\n"
+                    "between *1* and *100* characters."
                 ),
             },
             response.json(),
@@ -260,7 +260,7 @@ class AdaValidationViewTests(APITestCase):
                 "title": "SYMPTOM",
                 "formatType": "string",
                 "error": (
-                    "We are sorry, you entered a number. " "Please reply with text.\n\n"
+                    "We are sorry, you entered a number. " "Please reply with text."
                 ),
             },
             response.json(),
@@ -299,7 +299,7 @@ class AdaValidationViewTests(APITestCase):
                 "title": "SYMPTOM",
                 "formatType": "integer",
                 "error": (
-                    "We are sorry, you entered text. " "Please reply with a number.\n\n"
+                    "We are sorry, you entered text. " "Please reply with a number."
                 ),
             },
             response.json(),
@@ -409,7 +409,7 @@ class AdaValidationViewTests(APITestCase):
                 "path": "/assessments/assessment-id/dialog/next",
                 "cardType": "TEXT",
                 "title": "WELCOME",
-                "error": "Please reply *continue*, *0* or *accept* to continue.\n\n",
+                "error": "Please reply *continue*, *0* or *accept* to continue.",
             },
             response.json(),
         )
