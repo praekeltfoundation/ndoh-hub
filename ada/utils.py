@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division
 
-import json
 from urllib.parse import urlencode, urljoin
 
 import requests
@@ -11,15 +10,6 @@ from temba_client.v2 import TembaClient
 rapidpro = None
 if settings.RAPIDPRO_URL and settings.RAPIDPRO_TOKEN:
     rapidpro = TembaClient(settings.RAPIDPRO_URL, settings.RAPIDPRO_TOKEN)
-
-
-def get_from_send(payload):
-    head = get_header()
-    cardType = payload["cardType"]
-    body = {"cardType": cardType}
-    url = reverse("ada-receive")
-    response = requests.post(url, data=json.dumps(body), headers=head)
-    return response
 
 
 def assessmentkeywords():
@@ -59,8 +49,8 @@ def build_rp_request(body):
     return payload
 
 
-def post_to_ada(body, path):
-    head = get_header()
+def post_to_ada(body, path, contact_uuid):
+    head = get_header(contact_uuid)
     path = urljoin(settings.ADA_START_ASSESSMENT_URL, path)
     response = requests.post(path, json=body, headers=head)
     response.raise_for_status()
@@ -68,30 +58,12 @@ def post_to_ada(body, path):
     return response
 
 
-def post_to_ada_start_assessment(body):
-    head = get_header()
+def post_to_ada_start_assessment(body, contact_uuid):
+    head = get_header(contact_uuid)
     path = urljoin(settings.ADA_START_ASSESSMENT_URL, "/assessments")
     response = requests.post(path, body, headers=head)
     response.raise_for_status()
     response = response.json()
-    return response
-
-
-def post_to_ada_next_dialog(body):
-    head = get_header()
-    path = body["_links"]["startAssessment"]["href"]
-    response = requests.request("POST", path, json=body, headers=head)
-    response.raise_for_status()
-    response = response.json()
-    return response
-
-
-def get_from_ada(body):
-    # Use assessementid to get first question
-    path = body["_links"]["startAssessment"]["href"]
-    head = get_header()
-    payload = {}
-    response = requests.request("GET", path, json=payload, headers=head).json()
     return response
 
 
@@ -214,8 +186,8 @@ def pdf_endpoint(data):
 
 
 # This returns the report of the assessment
-def get_report(path):
-    head = get_header_pdf()
+def get_report(path, contact_uuid):
+    head = get_header_pdf(contact_uuid)
     payload = {}
     path = urljoin(settings.ADA_START_ASSESSMENT_URL, path)
     response = requests.get(path, json=payload, headers=head)
@@ -236,8 +208,8 @@ def upload_turn_media(media, content_type="application/pdf"):
 
 
 # Go back to previous question
-def previous_question(body, path):
-    head = get_header()
+def previous_question(body, path, contact_uuid):
+    head = get_header(contact_uuid)
     path = urljoin(settings.ADA_START_ASSESSMENT_URL, path)
     path = path.replace("/next", "/previous")
     response = requests.post(path, json=body, headers=head)
@@ -247,7 +219,8 @@ def previous_question(body, path):
 
 # Abort assessment
 def abort_assessment(body):
-    head = get_header()
+    contact_uuid = body["contact_uuid"]
+    head = get_header(contact_uuid)
     path = body["path"]
     path = urljoin(settings.ADA_START_ASSESSMENT_URL, path)
     path = path.replace("dialog/next", "/abort")
@@ -257,20 +230,20 @@ def abort_assessment(body):
     return response
 
 
-def get_header():
+def get_header(contact_uuid):
     head = {
         "x-ada-clientId": settings.X_ADA_CLIENTID,
-        "x-ada-userId": settings.X_ADA_USERID,
+        "x-ada-userId": contact_uuid,
         "Accept-Language": "en-GB",
         "Content-Type": "application/json",
     }
     return head
 
 
-def get_header_pdf():
+def get_header_pdf(contact_uuid):
     head = {
         "x-ada-clientId": settings.X_ADA_CLIENTID,
-        "x-ada-userId": settings.X_ADA_USERID,
+        "x-ada-userId": contact_uuid,
         "Accept-Language": "en-GB",
         "Content-Type": "application/pdf",
     }

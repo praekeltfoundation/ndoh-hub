@@ -131,14 +131,15 @@ class StartAssessment(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         result = request.GET
         data = result.dict()
+        contact_uuid = data["contact_uuid"]
         request = build_rp_request(data)
-        response = post_to_ada_start_assessment(request)
+        response = post_to_ada_start_assessment(request, contact_uuid)
         path = get_path(response)
         step = get_step(response)
         data["path"] = path
         data["step"] = step
         request = build_rp_request(data)
-        ada_response = post_to_ada(request, path)
+        ada_response = post_to_ada(request, path, contact_uuid)
         message = format_message(ada_response)
         return Response(message, status=status.HTTP_200_OK)
 
@@ -169,11 +170,11 @@ class NextDialog(generics.GenericAPIView):
         path = get_path(data)
         assessment_id = path.split("/")[-3]
         request = build_rp_request(data)
-        ada_response = post_to_ada(request, path)
+        ada_response = post_to_ada(request, path, contact_uuid)
         pdf = pdf_ready(ada_response)
         if pdf:
             report_path = ada_response["_links"]["report"]["href"]
-            pdf_content = get_report(report_path)
+            pdf_content = get_report(report_path, contact_uuid)
             pdf_media_id = upload_turn_media(pdf_content)
         else:
             pdf_media_id = ""
@@ -211,9 +212,10 @@ class PreviousDialog(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         result = request.GET
         data = result.dict()
+        contact_uuid = data["contact_uuid"]
         path = get_path(data)
         request = build_rp_request(data)
-        ada_response = previous_question(request, path)
+        ada_response = previous_question(request, path, contact_uuid)
         message = format_message(ada_response)
         return Response(message, status=status.HTTP_200_OK)
 
