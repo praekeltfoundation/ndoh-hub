@@ -282,7 +282,9 @@ class TestQuestionsPayload(TestCase):
                 "choices": None,
                 "formatType": "integer",
                 "message": (
-                    "How old are you?\n\nReply *back* to go to "
+                    "How old are you?\n\n"
+                    'Enter age in years, for example "20"\n\n'
+                    "Reply *back* to go to "
                     "the previous question or *menu* to "
                     "end the assessment."
                 ),

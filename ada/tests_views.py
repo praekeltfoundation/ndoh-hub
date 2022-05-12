@@ -366,6 +366,61 @@ class AdaValidationViewTests(APITestCase):
             response.json(),
         )
 
+        response = self.client.post(
+            self.url,
+            json.dumps(
+                {
+                    "msisdn": "27856454612",
+                    "choices": 3,
+                    "choiceContext": ["Abdominal pain", "Headache"],
+                    "message": (
+                        "What is the issue?\n\nAbdominal pain\n"
+                        "Headache"
+                        "\nNone of these\n\nChoose the option that matches "
+                        "your answer. "
+                        "Eg, *1* for *Abdominal pain*\n\nEnter *back* to go "
+                        "to the previous question or *menu* "
+                        "to end the assessment."
+                    ),
+                    "step": 4,
+                    "value": "0",
+                    "optionId": 0,
+                    "path": "/assessments/assessment-id/dialog/next",
+                    "cardType": "CHOICE",
+                    "title": "SYMPTOM",
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(
+            response.json(),
+            {
+                "msisdn": "27856454612",
+                "choices": "3",
+                "choiceContext": ["Abdominal pain", "Headache"],
+                "message": (
+                    "What is the issue?\n\nAbdominal pain\nHeadache"
+                    "\nNone of these\n\nChoose the option that "
+                    "matches your answer. "
+                    "Eg, *1* for *Abdominal pain*\n\nEnter *back* to go "
+                    "to the previous question or *menu* "
+                    "to end the assessment."
+                ),
+                "step": "4",
+                "value": "0",
+                "optionId": "0",
+                "path": "/assessments/assessment-id/dialog/next",
+                "cardType": "CHOICE",
+                "title": "SYMPTOM",
+                "error": (
+                    "Something seems to have gone wrong. You "
+                    "entered 0 but there are only 3 options. "
+                    "Please reply with a number between 1 and 3."
+                ),
+            },
+            response.json(),
+        )
+
     # Return validation error for invalid choice for text cardType
     def test_text_type(self):
         user = get_user_model().objects.create_user("test")

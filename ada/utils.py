@@ -118,7 +118,8 @@ def format_message(body):
         message = f"{description}\n\n{textcontinue}\n\n{back}"
         body = {}
     else:
-        message = f"{description}\n\n{back}"
+        placeholder = body["cardAttributes"]["placeholder"]["en-GB"]
+        message = f"{description}\n\n{placeholder}\n\n{back}"
         format = body["cardAttributes"]["format"]
         body = {}
         body["choices"] = None

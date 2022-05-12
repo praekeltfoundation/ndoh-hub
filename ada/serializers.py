@@ -59,17 +59,18 @@ class StartAssessmentSerializer(serializers.Serializer):
 
 class AdaChoiceTypeSerializer(serializers.Serializer):
     def validate_value(self, data):
+
         user_input = data["value"].upper()
         choices = data["choices"]
         keywords = assessmentkeywords()
-        if user_input not in keywords:
+        if user_input not in keywords or data["cardType"] != "TEXT":
             try:
                 int(user_input)
             except ValueError:
                 error = "Please reply with the number that matches your answer."
                 data["error"] = error
                 raise serializers.ValidationError(data)
-            if not (0 <= int(user_input) <= choices):
+            if not (0 < int(user_input) <= choices):
                 error = (
                     f"Something seems to have gone wrong. You entered "
                     f"{user_input} but there are only {choices} options. "
