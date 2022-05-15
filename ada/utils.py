@@ -119,7 +119,7 @@ def format_message(body):
         body = {}
     else:
         placeholder = body["cardAttributes"]["placeholder"]["en-GB"]
-        message = f"{description}\n\n{placeholder}\n\n{back}"
+        message = f"{description}\n\n_{placeholder}_\n\n{back}"
         format = body["cardAttributes"]["format"]
         body = {}
         body["choices"] = None
