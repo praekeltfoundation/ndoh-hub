@@ -72,7 +72,7 @@ class AdaChoiceTypeSerializer(serializers.Serializer):
             if not (0 < int(user_input) <= choices):
                 error = (
                     f"Something seems to have gone wrong. You entered "
-                    f"{user_input} but there are only {choices} options. "
+                    f"{user_input} but there are {choices} options. "
                     f"Please reply with a number between 1 and {choices}."
                 )
                 data["error"] = error
