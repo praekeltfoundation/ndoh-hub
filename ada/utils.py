@@ -17,6 +17,11 @@ def assessmentkeywords():
     return keywords
 
 
+def choiceTypeKeywords():
+    keywords = ["BACK", "MENU"]
+    return keywords
+
+
 def build_rp_request(body):
     # The cardType value is used to build the request to ADA
     if "cardType" in body.keys():

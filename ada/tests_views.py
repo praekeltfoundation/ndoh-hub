@@ -359,7 +359,7 @@ class AdaValidationViewTests(APITestCase):
                 "title": "SYMPTOM",
                 "error": (
                     "Something seems to have gone wrong. You "
-                    "entered 9 but there are only 3 options. "
+                    "entered 9 but there are 3 options. "
                     "Please reply with a number between 1 and 3."
                 ),
             },
@@ -414,7 +414,7 @@ class AdaValidationViewTests(APITestCase):
                 "title": "SYMPTOM",
                 "error": (
                     "Something seems to have gone wrong. You "
-                    "entered 0 but there are only 3 options. "
+                    "entered 0 but there are 3 options. "
                     "Please reply with a number between 1 and 3."
                 ),
             },
