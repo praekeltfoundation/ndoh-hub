@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .utils import assessmentkeywords
+from .utils import assessmentkeywords, choiceTypeKeywords
 
 
 class SymptomCheckSerializer(serializers.Serializer):
@@ -59,11 +59,10 @@ class StartAssessmentSerializer(serializers.Serializer):
 
 class AdaChoiceTypeSerializer(serializers.Serializer):
     def validate_value(self, data):
-
         user_input = data["value"].upper()
         choices = data["choices"]
-        keywords = assessmentkeywords()
-        if user_input not in keywords or data["cardType"] != "TEXT":
+        keywords = choiceTypeKeywords()
+        if user_input not in keywords:
             try:
                 int(user_input)
             except ValueError:
