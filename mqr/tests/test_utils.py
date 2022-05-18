@@ -11,28 +11,67 @@ def override_get_today():
     return datetime.strptime("20220301", "%Y%m%d").date()
 
 
+def get_date(d):
+    return datetime.strptime(d, "%Y-%m-%d").date()
+
+
+class TestGetWeek(TestCase):
+    def setUp(self):
+        utils.get_today = override_get_today
+
+    def test_get_weeks(self):
+        # While today = 2022-03-01
+
+        # Prebirth: when EDD is today (2022-03-01) = 40 weeks pregnant
+        edd = get_date("2022-03-01")
+        self.assertEqual(utils.get_week("pre", edd), 40)
+
+        # Prebirth: when EDD is today + 28 days (2022-03-29) = 36 weeks pregnant
+        edd = get_date("2022-03-29")
+        self.assertEqual(utils.get_week("pre", edd), 36)
+
+        # Prebirth: when EDD is today + 245 days (2022-11-01) = 5 weeks pregnant
+        edd = get_date("2022-11-01")
+        self.assertEqual(utils.get_week("pre", edd), 5)
+
+        # Postbirth: when baby DOB is today (2022-03-01) = 0 weeks
+        baby_dob = get_date("2022-03-01")
+        self.assertEqual(utils.get_week("post", baby_dob), 0)
+
+        # Postbirth: when baby  DOB is today + 4 weeks (2022-03-29) = 4 weeks
+        baby_dob = get_date("2022-03-29")
+        self.assertEqual(utils.get_week("post", baby_dob), 4)
+
+        # Postbirth: when baby  DOB is today + 8 weeks (2022-04-26) = 8 weeks
+        baby_dob = get_date("2022-04-26")
+        self.assertEqual(utils.get_week("post", baby_dob), 8)
+
+
 class TestGetTag(TestCase):
+    def setUp(self):
+        utils.get_today = override_get_today
+
     def test_get_tag(self):
         """
         Returns the correct tag
         """
-        self.assertEqual(
-            utils.get_tag("RCM", "pre", datetime.today().date()), "rcm_week_pre0"
-        )
+        edd = get_date("2022-11-01")
+        self.assertEqual(utils.get_tag("RCM", "pre", edd), "rcm_week_pre5")
 
         few_weeks_ago = datetime.today().date() - timedelta(days=23)
-        self.assertEqual(utils.get_tag("BCM", "post", few_weeks_ago), "bcm_week_post3")
+        self.assertEqual(utils.get_tag("BCM", "post", few_weeks_ago), "bcm_week_post7")
 
     def test_get_tag_with_sequence(self):
         """
         Returns the correct tag with a sequence
         """
         self.assertEqual(
-            utils.get_tag("RCM", "pre", datetime.today().date(), "a"), "rcm_week_pre0_a"
+            utils.get_tag("RCM", "pre", datetime.today().date(), "a"),
+            "rcm_week_pre29_a",
         )
 
         few_weeks_ago = datetime.today().date() - timedelta(days=23)
-        self.assertEqual(utils.get_tag("BCM", "post", few_weeks_ago), "bcm_week_post3")
+        self.assertEqual(utils.get_tag("BCM", "post", few_weeks_ago), "bcm_week_post7")
 
 
 class TestGetMessage(TestCase):
@@ -184,7 +223,7 @@ class TestGetNextMessage(TestCase):
                 "has_parameters": False,
                 "message": "Test Message Mom",
                 "next_send_date": utils.get_next_send_date(),
-                "tag": "rcm_week_pre17",
+                "tag": "rcm_week_pre23",
             },
         )
 
@@ -200,7 +239,7 @@ class TestGetNextMessage(TestCase):
 
         responses.add(
             responses.GET,
-            "http://contentrepo/api/v2/pages?tag=rcm_week_pre17_b",
+            "http://contentrepo/api/v2/pages?tag=rcm_week_pre23_b",
             json={"results": [{"id": 1111}]},
             status=200,
         )
@@ -232,7 +271,7 @@ class TestGetNextMessage(TestCase):
 
         responses.add(
             responses.GET,
-            "http://contentrepo/api/v2/pages?tag=rcm_week_pre17_b",
+            "http://contentrepo/api/v2/pages?tag=rcm_week_pre23_b",
             json={"results": []},
             status=200,
         )
@@ -267,7 +306,7 @@ class TestGetNextMessage(TestCase):
 
         responses.add(
             responses.GET,
-            "http://contentrepo/api/v2/pages?tag=rcm_week_pre17_b",
+            "http://contentrepo/api/v2/pages?tag=rcm_week_pre23_b",
             json={"results": [{"id": 1111}]},
             status=200,
         )
