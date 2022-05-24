@@ -596,6 +596,27 @@ class AdaAssessmentDialog(APITestCase):
         "formatType": "integer",
     }
 
+    roadblock_dialog = {
+        "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
+        "msisdn": "27856454612",
+        "choiceContext": "",
+        "choices": None,
+        "message": (
+            "Are you sure you want to end?\n\nReply *back* to go to "
+            "the previous question or *menu* to "
+            "end the assessment"
+        ),
+        "explanations": "",
+        "step": 25,
+        "value": "Yes",
+        "optionId": None,
+        "path": "/assessments/f9d4be32-78fa-48e0-b9a3-e12e305e73ce/dialog/next",
+        "cardType": "INPUT",
+        "title": "Roadblock warning",
+        "description": "Roadblock warning",
+        "formatType": "string",
+    }
+
     entry_url = reverse("ada-assessments")
     url = reverse("ada-next-dialog")
 
@@ -767,6 +788,65 @@ class AdaAssessmentDialog(APITestCase):
                 "next&cardType=INPUT&title=Patient+Information&"
                 "description=How+old+are+you%3F&formatType=integer"
             ),
+        )
+
+    @patch("ada.views.post_to_ada")
+    def test_roadblock(self, mock_post_to_ada):
+        request = utils.build_rp_request(self.data_next_dialog)
+        self.assertEqual(request, {"step": 5, "value": "27"})
+
+        mock_post_to_ada.return_value = {
+            "cardType": "ROADBLOCK",
+            "step": 28,
+            "title": {"en-GB": "End of Assessment"},
+            "description": {
+                "en-GB": "MomConnect is here if you need immediate support"
+            },
+            "label": {"en-GB": "Return to MomConnect"},
+            "_links": {
+                "self": {
+                    "method": "GET",
+                    "href": "/assessments/1b2e19d9-1414-47d2-9d15-21e64fb0b357",
+                }
+            },
+        }
+        pdf = utils.pdf_ready(mock_post_to_ada.return_value)
+        self.assertEqual(pdf, False)
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.entry_url, self.roadblock_dialog, format="json"
+        )
+        self.assertRedirects(
+            response,
+            (
+                "/api/v2/ada/nextdialog?"
+                "contact_uuid=67460e74-02e3-11e8-b443"
+                "-00163e990bdb&msisdn=27856454612&"
+                "choiceContext=&choices=None&message="
+                "Are+you+sure+you+want+to+end%3F%0A%0AReply+%2Aback%2A+"
+                "to+go+to+the+previous+question+or+%2Amenu%2A+"
+                "to+end+the+assessment&explanations=&step=25&value="
+                "Yes&optionId=None&path=%2Fassessments%2F"
+                "f9d4be32-78fa-48e0-b9a3-e12e305e73ce%2Fdialog%2F"
+                "next&cardType=INPUT&title=Roadblock+warning&"
+                "description=Roadblock+warning&formatType=string"
+            ),
+        )
+        message = utils.format_message(mock_post_to_ada.return_value)
+        self.assertEqual(
+            message,
+            {
+                "message": ("MomConnect is here if you " "need immediate support"),
+                "explanations": "",
+                "step": 28,
+                "optionId": None,
+                "path": ("/assessments/" "1b2e19d9-1414-47d2-9d15-21e64fb0b357"),
+                "cardType": "ROADBLOCK",
+                "title": "End of Assessment",
+                "description": ("MomConnect is here if you need " "immediate support"),
+            },
+            message,
         )
 
 
