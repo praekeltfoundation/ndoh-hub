@@ -8,8 +8,15 @@ from ndoh_hub.utils import get_today
 from registrations.models import ClinicCode
 
 
+def get_week(subscription_type, edd_or_dob_date):
+    if subscription_type == "pre":
+        return 40 - (abs(get_today() - edd_or_dob_date).days // 7)
+    else:
+        return abs(get_today() - edd_or_dob_date).days // 7
+
+
 def get_tag(arm, subscription_type, edd_or_dob_date, sequence=None):
-    week = abs(get_today() - edd_or_dob_date).days // 7
+    week = get_week(subscription_type, edd_or_dob_date)
 
     label = f"{arm}_week_{subscription_type}{week}"
     if sequence:
