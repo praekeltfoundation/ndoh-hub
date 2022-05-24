@@ -5,14 +5,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('ada', '0015_adaselfassessment_roadblock'),
-    ]
+    dependencies = [("ada", "0015_adaselfassessment_roadblock")]
 
     operations = [
         migrations.AlterField(
-            model_name='adaselfassessment',
-            name='roadblock',
+            model_name="adaselfassessment",
+            name="roadblock",
             field=models.CharField(blank=True, max_length=255, null=True),
-        ),
+        )
     ]
