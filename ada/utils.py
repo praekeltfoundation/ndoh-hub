@@ -89,7 +89,10 @@ def format_message(body):
         optionId = body["options"][0]["optionId"]
     else:
         optionId = None
-    path = body["_links"]["next"]["href"]
+    if cardType == "ROADBLOCK":
+        path = body["_links"]["self"]["href"]
+    else:
+        path = body["_links"]["next"]["href"]
     if "step" in body.keys():
         step = body["step"]
     else:
@@ -121,6 +124,9 @@ def format_message(body):
         body["choiceContext"] = choiceContext
     elif cardType == "TEXT":
         message = f"{description}\n\n{textcontinue}\n\n{back}"
+        body = {}
+    elif cardType == "ROADBLOCK":
+        message = f"{description}"
         body = {}
     else:
         placeholder = body["cardAttributes"]["placeholder"]["en-GB"]

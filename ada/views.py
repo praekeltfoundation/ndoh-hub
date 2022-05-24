@@ -161,6 +161,7 @@ class NextDialog(generics.GenericAPIView):
         choiceContext = choiceContext.replace("'", "")
         choiceContext = list(choiceContext.split(","))
         choiceContext = [i.lstrip() for i in choiceContext]
+        roadblock = ""
 
         if data["cardType"] == "CHOICE":
             optionId = int(value) - 1
@@ -178,6 +179,8 @@ class NextDialog(generics.GenericAPIView):
             pdf_media_id = upload_turn_media(pdf_content)
         else:
             pdf_media_id = ""
+            if ada_response["cardType"] == "ROADBLOCK":
+                roadblock = "ROADBLOCK"
 
         if data["cardType"] != "TEXT" or pdf_media_id != "":
             if data["cardType"] == "INPUT":
@@ -195,6 +198,7 @@ class NextDialog(generics.GenericAPIView):
                 optionId=optionId,
                 choice=choiceContext,
                 pdf_media_id=pdf_media_id,
+                roadblock=roadblock,
             )
             store_url_entry.save()
         if not pdf:

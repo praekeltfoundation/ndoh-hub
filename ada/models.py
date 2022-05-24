@@ -62,6 +62,7 @@ class AdaSelfAssessment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     choice = models.TextField(null=True, blank=True)
     pdf_media_id = models.CharField(max_length=255, null=True, blank=True)
+    roadblock = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return (
