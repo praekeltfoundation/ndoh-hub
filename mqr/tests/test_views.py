@@ -3,12 +3,13 @@ import uuid
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from mqr.models import BaselineSurveyResult, MqrStrata
-from ndoh_hub import utils
+from mqr import utils
 from registrations.models import ClinicCode
 
 
@@ -226,12 +227,12 @@ class FaqMenuViewTests(APITestCase):
 
 
 def override_get_today():
-    return datetime.datetime.strptime("20200308", "%Y%m%d").date()
+    return datetime.datetime.strptime("20220308", "%Y%m%d").date()
 
 
 class StrataRandomization(APITestCase):
     def setUp(self):
-        utils.get_today = override_get_today()
+        utils.get_today = override_get_today
 
     url = reverse("mqr_randomstrataarm")
 
@@ -289,6 +290,30 @@ class StrataRandomization(APITestCase):
                 "estimated_delivery_date": "2022-04-30",
                 "facility_code": "123456",
                 "mom_age": "38",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.json(), {"Excluded": True})
+
+    @override_settings(MQR_STUDY_START_DATE="2022-01-03")
+    def test_random_arm_exclude_study_limit(self):
+        """
+        Exclude if person doesn't qualify for study based on min study pregnancy weeks
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        ClinicCode.objects.create(
+            code="123456", value=1, uid=1, name="test", province="EC"
+        )
+
+        response = self.client.post(
+            self.url,
+            data={
+                "facility_code": "123456",
+                "estimated_delivery_date": datetime.date(2022, 8, 17),
+                "mom_age": 32,
             },
             format="json",
         )
