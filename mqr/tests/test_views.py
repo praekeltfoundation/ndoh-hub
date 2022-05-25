@@ -8,8 +8,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from mqr.models import BaselineSurveyResult, MqrStrata
 from mqr import utils
+from mqr.models import BaselineSurveyResult, MqrStrata
 from registrations.models import ClinicCode
 
 
