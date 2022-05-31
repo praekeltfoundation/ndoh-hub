@@ -170,6 +170,7 @@ class TestQuestionsPayload(TestCase):
             {
                 "choices": 2,
                 "choiceContext": ["Female", "Male"],
+                "resource": "",
                 "message": (
                     "Hi John, what is your biological sex?"
                     "\nBiological sex is a risk factor for some "
@@ -295,6 +296,66 @@ class TestQuestionsPayload(TestCase):
                 "cardType": "INPUT",
                 "title": "Patient Information",
                 "description": "How old are you?",
+            },
+            response,
+        )
+
+    def test_report_cardtype(self):
+        ada_response = {
+            "cardType": "REPORT",
+            "step": 43,
+            "title": {"en-GB": "Results"},
+            "description": {
+                "en-GB": (
+                    "People with symptoms similar to yours do not "
+                    "usually require urgent medical care. "
+                    "You should seek advice from a doctor though, "
+                    "within the next 2-3 days. If your symptoms "
+                    "get worse, or if you notice new symptoms, "
+                    "you may need to consult a doctor sooner."
+                )
+            },
+            "_links": {
+                "self": {
+                    "method": "GET",
+                    "href": "/assessments/5581bfeb-2803-4beb-b627-9f9d2a5651d8",
+                },
+                "report": {
+                    "method": "GET",
+                    "href": "/reports/5581bfeb-2803-4beb-b627-9f9d2a5651d8",
+                },
+                "abort": {
+                    "method": "PUT",
+                    "href": "/assessments/5581bfeb-2803-4beb-b627-9f9d2a5651d8/abort",
+                },
+            },
+        }
+
+        response = utils.format_message(ada_response)
+        self.assertEqual(
+            response,
+            {
+                "message": (
+                    "People with symptoms similar to "
+                    "yours do not usually require urgent "
+                    "medical care. You should seek advice "
+                    "from a doctor though, within the next 2-3 days. "
+                    "If your symptoms get worse, or if you notice "
+                    "new symptoms, you may need to consult a doctor sooner."
+                ),
+                "explanations": "",
+                "step": 43,
+                "optionId": None,
+                "path": "",
+                "cardType": "REPORT",
+                "title": "Results",
+                "description": (
+                    "People with symptoms similar to yours do not usually "
+                    "require urgent medical care. You should seek advice "
+                    "from a doctor though, within the next 2-3 days. If "
+                    "your symptoms get worse, or if you notice new "
+                    "symptoms, you may need to consult a doctor sooner."
+                ),
             },
             response,
         )

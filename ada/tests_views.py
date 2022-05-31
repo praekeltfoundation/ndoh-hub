@@ -891,8 +891,52 @@ class AdaAssessmentReport(APITestCase):
     )
 
     pdf_url = (
-        "/api/v2/ada/reports?report_path=" "/reports/17340f51604cb35bd2c6b7b9b16f3aec"
+        "/api/v2/ada/reports?payload=%7B%22cardType%22%3A"
+        "%20%22REPORT%22%2C%20%22step%22%3A%2043%2C%20%22"
+        "title%22%3A%20%7B%22en-GB%22%3A%20%22Results%22%"
+        "7D%2C%20%22description%22%3A%20%7B%22en-GB%22%3A"
+        "%20%22People%20with%20symptoms%20similar%20to%20"
+        "yours%20do%20not%20usually%20require%20urgent%20"
+        "medical%20care.%20You%20should%20seek%20advice%20"
+        "from%20a%20doctor%20though%2C%20within%20the%20"
+        "next%202-3%20days.%20If%20your%20symptoms%20get%20"
+        "worse%2C%20or%20if%20you%20notice%20new%20symptoms"
+        "%2C%20you%20may%20need%20to%20consult%20a%20doctor"
+        "%20sooner.%22%7D%2C%20%22_links%22%3A%20%7B%22self"
+        "%22%3A%20%7B%22method%22%3A%20%22GET%22%2C%20%22"
+        "href%22%3A%20%22/assessments/5581bfeb-2803-4beb"
+        "-b627-9f9d2a5651d8%22%7D%2C%20%22report%22%3A"
+        "%20%7B%22method%22%3A%20%22GET%22%2C%20%22href"
+        "%22%3A%20%22/reports/5581bfeb-2803-4beb-b627"
+        "-9f9d2a5651d8%22%7D%2C%20%22abort%22%3A%20%7B"
+        "%22method%22%3A%20%22PUT%22%2C%20%22href%22%3A"
+        "%20%22/assessments/5581bfeb-2803-4beb-b627"
+        "-9f9d2a5651d8/abort%22%7D%7D%7D"
     )
+
+    pdf_data = {
+        "message": (
+            "People with symptoms similar to "
+            "yours do not usually require urgent "
+            "medical care. You should seek advice "
+            "from a doctor though, within the next 2-3 days. "
+            "If your symptoms get worse, or if you notice "
+            "new symptoms, you may need to consult a doctor sooner."
+        ),
+        "explanations": "",
+        "step": 43,
+        "optionId": None,
+        "path": "",
+        "cardType": "REPORT",
+        "title": "Results",
+        "description": (
+            "People with symptoms similar to yours do not usually "
+            "require urgent medical care. You should seek advice "
+            "from a doctor though, within the next 2-3 days. If "
+            "your symptoms get worse, or if you notice new "
+            "symptoms, you may need to consult a doctor sooner."
+        ),
+    }
 
     @patch("ada.views.start_pdf_flow")
     @patch("ada.views.upload_turn_media")
@@ -908,23 +952,31 @@ class AdaAssessmentReport(APITestCase):
         mock_start_pdf_flow,
     ):
         mock_post_to_ada.return_value = {
-            "cardType": "CHOICE",
-            "step": 40,
-            "title": {"en-US": "YOUR REPORT"},
-            "description": {"en-US": ""},
-            "options": [
-                {"optionId": 0, "text": {"en-US": "Ask momconnect"}},
-                {"optionId": 1, "text": {"en-US": "Phone a nurse"}},
-                {"optionId": 2, "text": {"en-US": "Download full report"}},
-            ],
+            "cardType": "REPORT",
+            "step": 43,
+            "title": {"en-GB": "Results"},
+            "description": {
+                "en-GB": (
+                    "People with symptoms similar to yours do not "
+                    "usually require urgent medical care. "
+                    "You should seek advice from a doctor though, "
+                    "within the next 2-3 days. If your symptoms "
+                    "get worse, or if you notice new symptoms, "
+                    "you may need to consult a doctor sooner."
+                )
+            },
             "_links": {
                 "self": {
                     "method": "GET",
-                    "href": "/assessments/898d915e-229f-48f2-9b98-cfd760ba8965",
+                    "href": "/assessments/5581bfeb-2803-4beb-b627-9f9d2a5651d8",
                 },
                 "report": {
                     "method": "GET",
-                    "href": "/reports/17340f51604cb35bd2c6b7b9b16f3aec",
+                    "href": "/reports/5581bfeb-2803-4beb-b627-9f9d2a5651d8",
+                },
+                "abort": {
+                    "method": "PUT",
+                    "href": "/assessments/5581bfeb-2803-4beb-b627-9f9d2a5651d8/abort",
                 },
             },
         }
@@ -942,4 +994,5 @@ class AdaAssessmentReport(APITestCase):
         response = self.client.get(self.destination_url, format="json")
         self.assertRedirects(response, self.pdf_url, target_status_code=200)
         response = self.client.get(self.pdf_url, format="json")
+        self.assertEqual(response.json(), self.pdf_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)

@@ -1,3 +1,5 @@
+import json
+import urllib.parse
 from urllib.parse import urlencode
 
 from django.conf import settings
@@ -238,4 +240,8 @@ class Reports(generics.GenericAPIView):
     permission_classes = (permissions.AllowAny,)
 
     def get(self, request, *args, **kwargs):
-        return Response({}, status=status.HTTP_200_OK)
+        payload = request.GET.get("payload")
+        urldecoded = urllib.parse.unquote(payload)
+        data = json.loads(urldecoded)
+        message = format_message(data)
+        return Response(message, status=status.HTTP_200_OK)
