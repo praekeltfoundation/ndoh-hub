@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division
 
+import json
+import urllib.parse
 from urllib.parse import urlencode, urljoin
 
 import requests
@@ -73,6 +75,11 @@ def post_to_ada_start_assessment(body, contact_uuid):
 
 
 def format_message(body):
+    try:
+        body["_links"]["next"]["href"]
+        next_question = True
+    except KeyError:
+        next_question = False
     description = body["description"]["en-GB"]
     title = body["title"]["en-GB"]
     back = (
@@ -91,6 +98,8 @@ def format_message(body):
         optionId = None
     if cardType == "ROADBLOCK":
         path = body["_links"]["self"]["href"]
+    elif not next_question:
+        path = ""
     else:
         path = body["_links"]["next"]["href"]
     if "step" in body.keys():
@@ -98,6 +107,7 @@ def format_message(body):
     else:
         step = ""
     if cardType == "CHOICE":
+        resource = pdf_resource(body)
         option = body["options"][0]["text"]["en-GB"]
         optionslist = []
         index = 0
@@ -122,10 +132,14 @@ def format_message(body):
         body = {}
         body["choices"] = length
         body["choiceContext"] = choiceContext
+        body["resource"] = resource
     elif cardType == "TEXT":
         message = f"{description}\n\n{textcontinue}\n\n{back}"
         body = {}
     elif cardType == "ROADBLOCK":
+        message = f"{description}"
+        body = {}
+    elif cardType == "REPORT":
         message = f"{description}"
         body = {}
     else:
@@ -189,11 +203,19 @@ def pdf_ready(data):
         return False
 
 
+def pdf_resource(data):
+    try:
+        content_url = data["_links"]["resources"][0]["href"]
+        return content_url
+    except KeyError:
+        return ""
+
+
 def pdf_endpoint(data):
-    report_path = data["_links"]["report"]["href"]
-    qs = "?report_path=" + report_path
+    json_string = json.dumps(data)
+    encoded = urllib.parse.quote(json_string.encode("utf-8"))
     url = reverse("ada-reports")
-    reverse_url = url + qs
+    reverse_url = f"{url}?payload={encoded}"
     return reverse_url
 
 
