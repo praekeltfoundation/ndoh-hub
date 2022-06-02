@@ -159,9 +159,9 @@ def format_message(body):
         body = {}
     elif cardType == "REPORT":
         CTA = (
-            f"Reply:\n\n*1* - *CHECK* to check another symptom\n\n"
-            f"*2* - *ASK* to ask the helpdesk a question\n\n"
-            f"*3* - *MENU* for the MomConnect menu 📌"
+            "Reply:\n\n*1* - *CHECK* to check another symptom\n\n"
+            "*2* - *ASK* to ask the helpdesk a question\n\n"
+            "*3* - *MENU* for the MomConnect menu 📌"
         )
         message = f"{description}\n\n{CTA}"
         body = {}
