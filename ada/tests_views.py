@@ -185,6 +185,10 @@ class AdaValidationViewTests(APITestCase):
                     "cardType": "INPUT",
                     "title": "SYMPTOM",
                     "formatType": "string",
+                    "max": None,
+                    "max_error": "",
+                    "min": None,
+                    "min_error": "",
                 }
             ),
             content_type="application/json",
@@ -213,6 +217,10 @@ class AdaValidationViewTests(APITestCase):
                     "We are sorry, your reply should be "
                     "between *1* and *100* characters."
                 ),
+                "max": "None",
+                "max_error": "",
+                "min": "None",
+                "min_error": "",
             },
             response.json(),
         )
@@ -237,6 +245,10 @@ class AdaValidationViewTests(APITestCase):
                     "cardType": "INPUT",
                     "title": "SYMPTOM",
                     "formatType": "string",
+                    "max": None,
+                    "max_error": "",
+                    "min": None,
+                    "min_error": "",
                 }
             ),
             content_type="application/json",
@@ -259,8 +271,13 @@ class AdaValidationViewTests(APITestCase):
                 "cardType": "INPUT",
                 "title": "SYMPTOM",
                 "formatType": "string",
+                "max": "None",
+                "max_error": "",
+                "min": "None",
+                "min_error": "",
                 "error": (
-                    "We are sorry, you entered a number. " "Please reply with text."
+                    "Sorry, we didn't understand your answer. "
+                    "Your reply must only include text."
                 ),
             },
             response.json(),
@@ -282,6 +299,14 @@ class AdaValidationViewTests(APITestCase):
                     "cardType": "INPUT",
                     "title": "SYMPTOM",
                     "formatType": "integer",
+                    "max": 120,
+                    "max_error": (
+                        "Age must be 120 years or younger " "to assess the symptoms"
+                    ),
+                    "min": 1,
+                    "min_error": (
+                        "Age in years must be greater than " "0 to assess the symptoms"
+                    ),
                 }
             ),
             content_type="application/json",
@@ -299,7 +324,14 @@ class AdaValidationViewTests(APITestCase):
                 "title": "SYMPTOM",
                 "formatType": "integer",
                 "error": (
-                    "We are sorry, you entered text. " "Please reply with a number."
+                    "Sorry, we didn't understand your answer. "
+                    "Your reply must only include numbers."
+                ),
+                "max": "120",
+                "max_error": "Age must be 120 years or younger to assess the symptoms",
+                "min": "1",
+                "min_error": (
+                    "Age in years must be greater than 0 " "to assess the symptoms"
                 ),
             },
             response.json(),
@@ -323,8 +355,8 @@ class AdaValidationViewTests(APITestCase):
                         "Headache"
                         "\nNone of these\n\nChoose the option that matches "
                         "your answer. "
-                        "Eg, *1* for *Abdominal pain*\n\nEnter *back* to go "
-                        "to the previous question or *menu* "
+                        "Eg, *1* for *Abdominal pain*\n\nEnter *BACK* to go "
+                        "to the previous question or *MENU* "
                         "to end the assessment."
                     ),
                     "step": 4,
@@ -347,8 +379,8 @@ class AdaValidationViewTests(APITestCase):
                     "What is the issue?\n\nAbdominal pain\nHeadache"
                     "\nNone of these\n\nChoose the option that "
                     "matches your answer. "
-                    "Eg, *1* for *Abdominal pain*\n\nEnter *back* to go "
-                    "to the previous question or *menu* "
+                    "Eg, *1* for *Abdominal pain*\n\nEnter *BACK* to go "
+                    "to the previous question or *MENU* "
                     "to end the assessment."
                 ),
                 "step": "4",
@@ -378,8 +410,8 @@ class AdaValidationViewTests(APITestCase):
                         "Headache"
                         "\nNone of these\n\nChoose the option that matches "
                         "your answer. "
-                        "Eg, *1* for *Abdominal pain*\n\nEnter *back* to go "
-                        "to the previous question or *menu* "
+                        "Eg, *1* for *Abdominal pain*\n\nEnter *BACK* to go "
+                        "to the previous question or *MENU* "
                         "to end the assessment."
                     ),
                     "step": 4,
@@ -402,8 +434,8 @@ class AdaValidationViewTests(APITestCase):
                     "What is the issue?\n\nAbdominal pain\nHeadache"
                     "\nNone of these\n\nChoose the option that "
                     "matches your answer. "
-                    "Eg, *1* for *Abdominal pain*\n\nEnter *back* to go "
-                    "to the previous question or *menu* "
+                    "Eg, *1* for *Abdominal pain*\n\nEnter *BACK* to go "
+                    "to the previous question or *MENU* "
                     "to end the assessment."
                 ),
                 "step": "4",
@@ -581,8 +613,8 @@ class AdaAssessmentDialog(APITestCase):
         "choiceContext": "",
         "choices": None,
         "message": (
-            "How old are you?\n\nReply *back* to go to "
-            "the previous question or *menu* to "
+            "How old are you?\n\nReply *BACK* to go to "
+            "the previous question or *MENU* to "
             "end the assessment"
         ),
         "explanations": "",
@@ -594,6 +626,10 @@ class AdaAssessmentDialog(APITestCase):
         "title": "Patient Information",
         "description": "How old are you?",
         "formatType": "integer",
+        "max": 120,
+        "max_error": "Age must be 120 years or younger to assess the symptoms",
+        "min": 1,
+        "min_error": "Age in years must be greater than 0 to assess the symptoms",
     }
 
     roadblock_dialog = {
@@ -602,8 +638,8 @@ class AdaAssessmentDialog(APITestCase):
         "choiceContext": "",
         "choices": None,
         "message": (
-            "Are you sure you want to end?\n\nReply *back* to go to "
-            "the previous question or *menu* to "
+            "Are you sure you want to end?\n\nReply *BACK* to go to "
+            "the previous question or *MENU* to "
             "end the assessment"
         ),
         "explanations": "",
@@ -615,6 +651,10 @@ class AdaAssessmentDialog(APITestCase):
         "title": "Roadblock warning",
         "description": "Roadblock warning",
         "formatType": "string",
+        "max": None,
+        "max_error": "",
+        "min": None,
+        "min_error": "",
     }
 
     entry_url = reverse("ada-assessments")
@@ -692,8 +732,8 @@ class AdaAssessmentDialog(APITestCase):
                     "some questions about the symptoms. Then, "
                     "we will help you decide what to do next."
                     "\n\nReply *0* to continue.\n\nReply "
-                    "*back* to go to the previous question "
-                    "or *menu* to end the assessment."
+                    "*BACK* to go to the previous question "
+                    "or *MENU* to end the assessment."
                 ),
                 "explanations": "",
                 "step": 1,
@@ -780,13 +820,17 @@ class AdaAssessmentDialog(APITestCase):
                 "contact_uuid=67460e74-02e3-11e8-b443"
                 "-00163e990bdb&msisdn=27856454612&"
                 "choiceContext=&choices=None&message="
-                "How+old+are+you%3F%0A%0AReply+%2Aback%2A+"
-                "to+go+to+the+previous+question+or+%2Amenu%2A+"
+                "How+old+are+you%3F%0A%0AReply+%2ABACK%2A+"
+                "to+go+to+the+previous+question+or+%2AMENU%2A+"
                 "to+end+the+assessment&explanations=&step=5&value="
                 "27&optionId=None&path=%2Fassessments%2F"
                 "f9d4be32-78fa-48e0-b9a3-e12e305e73ce%2Fdialog%2F"
                 "next&cardType=INPUT&title=Patient+Information&"
                 "description=How+old+are+you%3F&formatType=integer"
+                "&max=120&max_error=Age+must+be+120+years+or+"
+                "younger+to+assess+the+symptoms&min=1&min_error="
+                "Age+in+years+must+be+greater+than+0+to+"
+                "assess+the+symptoms"
             ),
         )
 
@@ -824,13 +868,14 @@ class AdaAssessmentDialog(APITestCase):
                 "contact_uuid=67460e74-02e3-11e8-b443"
                 "-00163e990bdb&msisdn=27856454612&"
                 "choiceContext=&choices=None&message="
-                "Are+you+sure+you+want+to+end%3F%0A%0AReply+%2Aback%2A+"
-                "to+go+to+the+previous+question+or+%2Amenu%2A+"
+                "Are+you+sure+you+want+to+end%3F%0A%0AReply+%2ABACK%2A+"
+                "to+go+to+the+previous+question+or+%2AMENU%2A+"
                 "to+end+the+assessment&explanations=&step=25&value="
                 "Yes&optionId=None&path=%2Fassessments%2F"
                 "f9d4be32-78fa-48e0-b9a3-e12e305e73ce%2Fdialog%2F"
                 "next&cardType=INPUT&title=Roadblock+warning&"
                 "description=Roadblock+warning&formatType=string"
+                "&max=None&max_error=&min=None&min_error="
             ),
         )
         message = utils.format_message(mock_post_to_ada.return_value)
@@ -851,14 +896,15 @@ class AdaAssessmentDialog(APITestCase):
 
 
 class AdaAssessmentReport(APITestCase):
+    maxDiff = None
     data = {
         "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdd",
         "msisdn": "27856454612",
         "choiceContext": "",
         "choices": None,
         "message": (
-            "How old are you?\n\nReply *back* to go to "
-            "the previous question or *menu* to "
+            "How old are you?\n\nReply *BACK* to go to "
+            "the previous question or *MENU* to "
             "end the assessment"
         ),
         "explanations": "",
@@ -870,6 +916,10 @@ class AdaAssessmentReport(APITestCase):
         "title": "Patient Information",
         "description": "How old are you?",
         "formatType": "integer",
+        "max": 120,
+        "max_error": "Age must be 120 years or younger to assess the symptoms",
+        "min": 1,
+        "min_error": "Age in years must be greater than 0 to assess the symptoms",
     }
 
     start_url = reverse("ada-assessments")
@@ -880,14 +930,17 @@ class AdaAssessmentReport(APITestCase):
         "67460e74-02e3-11e8-b443-00163e990bdd&"
         "msisdn=27856454612&choiceContext=&"
         "choices=None&message=How+old+are+you%3F"
-        "%0A%0AReply+%2Aback%2A+to+go+to+the+"
-        "previous+question+or+%2Amenu%2A+to+end"
+        "%0A%0AReply+%2ABACK%2A+to+go+to+the+"
+        "previous+question+or+%2AMENU%2A+to+end"
         "+the+assessment&explanations=&step="
         "39&value=27&optionId=None&path=%2F"
         "assessments%2Ff9d4be32-78fa-48e0-b9a3"
         "-e12e305e73ce%2Fdialog%2Fnext&cardType"
         "=INPUT&title=Patient+Information&"
         "description=How+old+are+you%3F&formatType=integer"
+        "&max=120&max_error=Age+must+be+120+years+or+younger"
+        "+to+assess+the+symptoms&min=1&min_error=Age+in+"
+        "years+must+be+greater+than+0+to+assess+the+symptoms"
     )
 
     pdf_url = (
@@ -922,6 +975,9 @@ class AdaAssessmentReport(APITestCase):
             "from a doctor though, within the next 2-3 days. "
             "If your symptoms get worse, or if you notice "
             "new symptoms, you may need to consult a doctor sooner."
+            "\n\nReply:\n\n*1* - *CHECK* to check another symptom\n\n"
+            "*2* - *ASK* to ask the helpdesk a question\n\n"
+            "*3* - *MENU* for the MomConnect menu 📌"
         ),
         "explanations": "",
         "step": 43,

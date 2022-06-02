@@ -69,8 +69,8 @@ class TestQuestionsPayload(TestCase):
                     "start with some questions about the symptoms. "
                     "Then, we will help you decide what to do next."
                     "\n\nReply *0* to continue."
-                    "\n\nReply *back* to go to the previous question "
-                    "or *menu* to end the assessment."
+                    "\n\nReply *BACK* to go to the previous question "
+                    "or *MENU* to end the assessment."
                 ),
                 "explanations": "",
                 "step": 1,
@@ -177,8 +177,8 @@ class TestQuestionsPayload(TestCase):
                     "conditions. Your answer is necessary for an "
                     "accurate assessment.\n\n1. Female\n2. Male\n\nChoose "
                     "the option that matches your answer. Eg, *1* for "
-                    "*Female*\n\nReply *back* to go to the previous "
-                    "question or *menu* to end the assessment."
+                    "*Female*\n\nReply *BACK* to go to the previous "
+                    "question or *MENU* to end the assessment."
                     "\n\nReply *EXPLAIN* to see what this means."
                 ),
                 "explanations": (
@@ -282,11 +282,15 @@ class TestQuestionsPayload(TestCase):
             {
                 "choices": None,
                 "formatType": "integer",
+                "max": 120,
+                "max_error": "Age must be 120 years or younger to assess the symptoms",
+                "min": 16,
+                "min_error": "Age must be 16 years or older to assess your symptoms",
                 "message": (
                     "How old are you?\n\n"
                     '_Enter age in years, for example "20"_\n\n'
-                    "Reply *back* to go to "
-                    "the previous question or *menu* to "
+                    "Reply *BACK* to go to "
+                    "the previous question or *MENU* to "
                     "end the assessment."
                 ),
                 "explanations": "",
@@ -342,6 +346,9 @@ class TestQuestionsPayload(TestCase):
                     "from a doctor though, within the next 2-3 days. "
                     "If your symptoms get worse, or if you notice "
                     "new symptoms, you may need to consult a doctor sooner."
+                    "\n\nReply:\n\n*1* - *CHECK* to check another symptom\n\n"
+                    "*2* - *ASK* to ask the helpdesk a question\n\n"
+                    "*3* - *MENU* for the MomConnect menu 📌"
                 ),
                 "explanations": "",
                 "step": 43,

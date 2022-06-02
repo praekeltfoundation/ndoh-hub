@@ -12,6 +12,10 @@ class AdaInputTypeSerializer(serializers.Serializer):
         user_input = data["value"].upper()
         length = len(data["value"])
         format = data["formatType"]
+        max = data["max"]
+        max_error = data["max_error"]
+        min = data["min"]
+        min_error = data["min_error"]
         keywords = assessmentkeywords()
         if user_input not in keywords:
             if length < 1 or length > 100:
@@ -26,7 +30,8 @@ class AdaInputTypeSerializer(serializers.Serializer):
                 has_numbers = any(i.isdigit() for i in user_input)
                 if has_numbers:
                     error = (
-                        "We are sorry, you entered a number. " "Please reply with text."
+                        "Sorry, we didn't understand your answer. "
+                        "Your reply must only include text."
                     )
                     data["error"] = error
                     raise serializers.ValidationError(data)
@@ -34,10 +39,20 @@ class AdaInputTypeSerializer(serializers.Serializer):
                 only_numbers = user_input.isdecimal()
                 if not only_numbers:
                     error = (
-                        "We are sorry, you entered text. " "Please reply with a number."
+                        "Sorry, we didn't understand your answer. "
+                        "Your reply must only include numbers."
                     )
                     data["error"] = error
                     raise serializers.ValidationError(data)
+                elif only_numbers:
+                    if int(user_input) > max:
+                        error = max_error
+                        data["error"] = error
+                        raise serializers.ValidationError(data)
+                    elif int(user_input) < min:
+                        error = min_error
+                        data["error"] = error
+                        raise serializers.ValidationError(data)
         return data
 
 
