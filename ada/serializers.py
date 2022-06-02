@@ -1,10 +1,6 @@
 from rest_framework import serializers
 
-from .utils import (
-    assessmentkeywords, 
-    choiceTypeKeywords,
-    inputTypeKeywords
-)
+from .utils import assessmentkeywords, choiceTypeKeywords, inputTypeKeywords
 
 
 class SymptomCheckSerializer(serializers.Serializer):
