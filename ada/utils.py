@@ -19,6 +19,24 @@ def assessmentkeywords():
     return keywords
 
 
+def get_max(payload):
+    try:
+        max = payload["cardAttributes"]["maximum"]["value"]
+        error = payload["cardAttributes"]["maximum"]["message"]
+        return max, error
+    except KeyError:
+        return None
+
+
+def get_min(payload):
+    try:
+        min = payload["cardAttributes"]["minimum"]["value"]
+        error = payload["cardAttributes"]["minimum"]["message"]
+        return min, error
+    except KeyError:
+        return None
+
+
 def choiceTypeKeywords():
     keywords = ["BACK", "MENU"]
     return keywords
@@ -83,7 +101,7 @@ def format_message(body):
     description = body["description"]["en-GB"]
     title = body["title"]["en-GB"]
     back = (
-        "Reply *back* to go to the previous question or *menu* to end the assessment."
+        "Reply *BACK* to go to the previous question or *MENU* to end the assessment."
     )
     explain = "Reply *EXPLAIN* to see what this means."
     textcontinue = "Reply *0* to continue."
@@ -140,15 +158,32 @@ def format_message(body):
         message = f"{description}"
         body = {}
     elif cardType == "REPORT":
-        message = f"{description}"
+        CTA = (
+            f"Reply:\n\n*1* - *CHECK* to check another symptom\n\n"
+            f"*2* - *ASK* to ask the helpdesk a question\n\n"
+            f"*3* - *MENU* for the MomConnect menu 📌"
+        )
+        message = f"{description}\n\n{CTA}"
         body = {}
     else:
         placeholder = body["cardAttributes"]["placeholder"]["en-GB"]
         message = f"{description}\n\n_{placeholder}_\n\n{back}"
         format = body["cardAttributes"]["format"]
+        if format == "integer":
+            max = get_max(body)[0]
+            max_error = get_max(body)[1]
+            min = get_min(body)[0]
+            min_error = get_min(body)[1]
+        else:
+            max = min = None
+            max_error = min_error = ""
         body = {}
         body["choices"] = None
         body["formatType"] = format
+        body["max"] = max
+        body["max_error"] = max_error
+        body["min"] = min
+        body["min_error"] = min_error
 
     body["message"] = message
     body["explanations"] = explanations
