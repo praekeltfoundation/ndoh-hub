@@ -1,6 +1,10 @@
 from rest_framework import serializers
 
-from .utils import assessmentkeywords, choiceTypeKeywords
+from .utils import (
+    assessmentkeywords, 
+    choiceTypeKeywords,
+    inputTypeKeywords
+)
 
 
 class SymptomCheckSerializer(serializers.Serializer):
@@ -16,7 +20,7 @@ class AdaInputTypeSerializer(serializers.Serializer):
         max_error = data["max_error"]
         min = data["min"]
         min_error = data["min_error"]
-        keywords = assessmentkeywords()
+        keywords = inputTypeKeywords()
         if user_input not in keywords:
             if length < 1 or length > 100:
                 error = (

@@ -19,6 +19,16 @@ def assessmentkeywords():
     return keywords
 
 
+def inputTypeKeywords():
+    keywords = ["BACK", "MENU"]
+    return keywords
+
+
+def choiceTypeKeywords():
+    keywords = ["BACK", "MENU"]
+    return keywords
+
+
 def get_max(payload):
     try:
         max = payload["cardAttributes"]["maximum"]["value"]
@@ -35,11 +45,6 @@ def get_min(payload):
         return min, error
     except KeyError:
         return None
-
-
-def choiceTypeKeywords():
-    keywords = ["BACK", "MENU"]
-    return keywords
 
 
 def build_rp_request(body):
