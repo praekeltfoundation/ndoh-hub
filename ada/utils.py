@@ -42,7 +42,15 @@ def get_min(payload):
     try:
         min = payload["cardAttributes"]["minimum"]["value"]
         error = payload["cardAttributes"]["minimum"]["message"]
-        return min, error
+        type = "number"
+        return min, error, type
+    except KeyError:
+        pass
+    try:
+        pattern = payload["cardAttributes"]["pattern"]["value"]
+        error = payload["cardAttributes"]["pattern"]["message"]
+        type = "regex"
+        return pattern, error, type
     except KeyError:
         return None
 
@@ -103,6 +111,10 @@ def format_message(body):
         next_question = True
     except KeyError:
         next_question = False
+    try:
+        pdf_media_id = body["pdf_media_id"]
+    except KeyError:
+        pdf_media_id = ""
     description = body["description"]["en-GB"]
     title = body["title"]["en-GB"]
     back = (
@@ -179,9 +191,14 @@ def format_message(body):
             max_error = get_max(body)[1]
             min = get_min(body)[0]
             min_error = get_min(body)[1]
+            if get_min(body)[2] == "regex":
+                pattern = min
+            else:
+                pattern = ""
         else:
             max = min = None
             max_error = min_error = ""
+            pattern = ""
         body = {}
         body["choices"] = None
         body["formatType"] = format
@@ -189,6 +206,7 @@ def format_message(body):
         body["max_error"] = max_error
         body["min"] = min
         body["min_error"] = min_error
+        body["pattern"] = pattern
 
     body["message"] = message
     body["explanations"] = explanations
@@ -198,6 +216,7 @@ def format_message(body):
     body["cardType"] = cardType
     body["title"] = title
     body["description"] = description
+    body["pdf_media_id"] = pdf_media_id
     return body
 
 
