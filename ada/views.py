@@ -17,12 +17,7 @@ from ada.serializers import (
 )
 
 from .models import AdaSelfAssessment, RedirectUrl, RedirectUrlsEntry
-from .tasks import (
-    post_to_topup_endpoint,
-    start_pdf_flow,
-    start_prototype_survey_flow,
-    start_topup_flow,
-)
+from .tasks import post_to_topup_endpoint, start_prototype_survey_flow, start_topup_flow
 from .utils import (
     abort_assessment,
     build_rp_request,
@@ -207,7 +202,7 @@ class NextDialog(generics.GenericAPIView):
             message = format_message(ada_response)
             return Response(message, status=status.HTTP_200_OK)
         else:
-            start_pdf_flow.delay(msisdn, pdf_media_id)
+            ada_response["pdf_media_id"] = pdf_media_id
             response = pdf_endpoint(ada_response)
             return HttpResponseRedirect(response)
 

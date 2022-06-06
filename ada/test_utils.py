@@ -85,6 +85,7 @@ class TestQuestionsPayload(TestCase):
                     "the symptoms. Then, we will help you "
                     "decide what to do next."
                 ),
+                "pdf_media_id": "",
             },
             response,
         )
@@ -202,6 +203,7 @@ class TestQuestionsPayload(TestCase):
                     "some conditions. Your answer is necessary "
                     "for an accurate assessment."
                 ),
+                "pdf_media_id": "",
             },
             response,
         )
@@ -218,6 +220,7 @@ class TestQuestionsPayload(TestCase):
             "step": 4,
             "value": "John",
             "title": "Your name",
+            "pattern": "",
         }
         ada_response = {
             "cardType": "INPUT",
@@ -286,6 +289,7 @@ class TestQuestionsPayload(TestCase):
                 "max_error": "Age must be 120 years or younger to assess the symptoms",
                 "min": 16,
                 "min_error": "Age must be 16 years or older to assess your symptoms",
+                "pattern": "",
                 "message": (
                     "How old are you?\n\n"
                     '_Enter age in years, for example "20"_\n\n'
@@ -300,6 +304,104 @@ class TestQuestionsPayload(TestCase):
                 "cardType": "INPUT",
                 "title": "Patient Information",
                 "description": "How old are you?",
+                "pdf_media_id": "",
+            },
+            response,
+        )
+
+    def test_input_type_regex(self):
+        rapidpro_data = {
+            "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
+            "msisdn": "27856454612",
+            "choiceContext": "",
+            "choices": "",
+            "path": "/assessments/assessment-id/dialog/next",
+            "optionId": 0,
+            "cardType": "INPUT",
+            "step": 5,
+            "value": "John",
+            "title": "Your name",
+            "pattern": "",
+        }
+        ada_response = {
+            "cardType": "INPUT",
+            "step": 9,
+            "title": {"en-GB": "Patient Information"},
+            "description": {"en-GB": "How old is ChimaC?"},
+            "cardAttributes": {
+                "format": "integer",
+                "maximum": {
+                    "value": 13,
+                    "message": (
+                        "Age must be 13 days or " "younger to assess the symptoms."
+                    ),
+                },
+                "pattern": {
+                    "value": "^\\d+$",
+                    "message": (
+                        "Age must only include numbers. Please "
+                        "enter a correct value, for example '3'."
+                    ),
+                },
+                "placeholder": {"en-GB": 'Please type age in days, for example "3".'},
+            },
+            "_links": {
+                "self": {
+                    "method": "GET",
+                    "href": "/assessments/a225966f-40c8-45e3-b597-e1a45f0dd751",
+                },
+                "next": {
+                    "method": "POST",
+                    "href": (
+                        "/assessments/a225966f-40c8-45e3"
+                        "-b597-e1a45f0dd751/dialog/next"
+                    ),
+                },
+                "previous": {
+                    "method": "POST",
+                    "href": (
+                        "/assessments/a225966f-40c8-45e3"
+                        "-b597-e1a45f0dd751/dialog/previous"
+                    ),
+                },
+                "abort": {
+                    "method": "PUT",
+                    "href": "/assessments/a225966f-40c8-45e3-b597-e1a45f0dd751/abort",
+                },
+            },
+        }
+
+        request_to_ada = utils.build_rp_request(rapidpro_data)
+        self.assertEqual(request_to_ada, {"step": 5, "value": "John"})
+
+        response = utils.format_message(ada_response)
+        self.assertEqual(
+            response,
+            {
+                "choices": None,
+                "formatType": "integer",
+                "max": 13,
+                "max_error": "Age must be 13 days or younger to assess the symptoms.",
+                "min": "^\\d+$",
+                "min_error": (
+                    "Age must only include numbers. Please enter a correct value, "
+                    "for example '3'."
+                ),
+                "pattern": "^\\d+$",
+                "message": (
+                    "How old is ChimaC?\n\n_Please "
+                    'type age in days, for example "3"._\n\n'
+                    "Reply *BACK* to go to the previous "
+                    "question or *MENU* to end the assessment."
+                ),
+                "explanations": "",
+                "step": 9,
+                "optionId": None,
+                "path": "/assessments/a225966f-40c8-45e3-b597-e1a45f0dd751/dialog/next",
+                "cardType": "INPUT",
+                "title": "Patient Information",
+                "description": "How old is ChimaC?",
+                "pdf_media_id": "",
             },
             response,
         )
@@ -363,6 +465,7 @@ class TestQuestionsPayload(TestCase):
                     "your symptoms get worse, or if you notice new "
                     "symptoms, you may need to consult a doctor sooner."
                 ),
+                "pdf_media_id": "",
             },
             response,
         )

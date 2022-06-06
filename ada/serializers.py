@@ -1,3 +1,5 @@
+import re
+
 from rest_framework import serializers
 
 from .utils import assessmentkeywords, choiceTypeKeywords, inputTypeKeywords
@@ -16,6 +18,7 @@ class AdaInputTypeSerializer(serializers.Serializer):
         max_error = data["max_error"]
         min = data["min"]
         min_error = data["min_error"]
+        pattern = data["pattern"]
         keywords = inputTypeKeywords()
         if user_input not in keywords:
             if length < 1 or length > 100:
@@ -35,7 +38,16 @@ class AdaInputTypeSerializer(serializers.Serializer):
                     )
                     data["error"] = error
                     raise serializers.ValidationError(data)
-            elif format == "integer":
+            elif format == "integer" and pattern != "":
+                if not re.match(pattern, user_input):
+                    error = min_error
+                    data["error"] = error
+                    raise serializers.ValidationError(data)
+                elif int(user_input) > max:
+                    error = max_error
+                    data["error"] = error
+                    raise serializers.ValidationError(data)
+            elif format == "integer" and pattern == "":
                 only_numbers = user_input.isdecimal()
                 if not only_numbers:
                     error = (

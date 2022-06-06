@@ -189,6 +189,7 @@ class AdaValidationViewTests(APITestCase):
                     "max_error": "",
                     "min": None,
                     "min_error": "",
+                    "pattern": "",
                 }
             ),
             content_type="application/json",
@@ -221,6 +222,7 @@ class AdaValidationViewTests(APITestCase):
                 "max_error": "",
                 "min": "None",
                 "min_error": "",
+                "pattern": "",
             },
             response.json(),
         )
@@ -249,6 +251,7 @@ class AdaValidationViewTests(APITestCase):
                     "max_error": "",
                     "min": None,
                     "min_error": "",
+                    "pattern": "",
                 }
             ),
             content_type="application/json",
@@ -279,6 +282,7 @@ class AdaValidationViewTests(APITestCase):
                     "Sorry, we didn't understand your answer. "
                     "Your reply must only include text."
                 ),
+                "pattern": "",
             },
             response.json(),
         )
@@ -307,6 +311,7 @@ class AdaValidationViewTests(APITestCase):
                     "min_error": (
                         "Age in years must be greater than " "0 to assess the symptoms"
                     ),
+                    "pattern": "",
                 }
             ),
             content_type="application/json",
@@ -332,6 +337,82 @@ class AdaValidationViewTests(APITestCase):
                 "min": "1",
                 "min_error": (
                     "Age in years must be greater than 0 " "to assess the symptoms"
+                ),
+                "pattern": "",
+            },
+            response.json(),
+        )
+
+    def test_input_type_error_regex(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            reverse("ada-assessments"),
+            json.dumps(
+                {
+                    "choices": None,
+                    "msisdn": "27856454612",
+                    "message": (
+                        "How old is ChimaC?\n\n_Please "
+                        'type age in days, for example "3"._\n\n'
+                        "Reply *BACK* to go to the previous "
+                        "question or *MENU* to end the assessment."
+                    ),
+                    "step": 9,
+                    "value": "He is 25 years old",
+                    "optionId": None,
+                    "path": "/assessments/assessment-id/dialog/next",
+                    "cardType": "INPUT",
+                    "title": "Patient Information",
+                    "formatType": "integer",
+                    "max": 13,
+                    "max_error": (
+                        "Age must be 13 days or younger to assess the symptoms."
+                    ),
+                    "min": "^\\d+$",
+                    "min_error": (
+                        "Age must only include numbers. Please enter a correct value, "
+                        "for example '3'."
+                    ),
+                    "pattern": "^\\d+$",
+                    "explanations": "",
+                    "title": "Patient Information",
+                    "description": "How old is ChimaC?",
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(
+            response.json(),
+            {
+                "choices": "None",
+                "msisdn": "27856454612",
+                "message": (
+                    "How old is ChimaC?\n\n_Please "
+                    'type age in days, for example "3"._\n\n'
+                    "Reply *BACK* to go to the previous "
+                    "question or *MENU* to end the assessment."
+                ),
+                "step": "9",
+                "value": "He is 25 years old",
+                "optionId": "None",
+                "path": "/assessments/assessment-id/dialog/next",
+                "cardType": "INPUT",
+                "title": "Patient Information",
+                "formatType": "integer",
+                "max": "13",
+                "max_error": "Age must be 13 days or younger to assess the symptoms.",
+                "min": "^\\d+$",
+                "min_error": (
+                    "Age must only include numbers. Please enter a correct value, "
+                    "for example '3'."
+                ),
+                "pattern": "^\\d+$",
+                "explanations": "",
+                "description": "How old is ChimaC?",
+                "error": (
+                    "Age must only include numbers. "
+                    "Please enter a correct value, for example '3'."
                 ),
             },
             response.json(),
@@ -630,6 +711,7 @@ class AdaAssessmentDialog(APITestCase):
         "max_error": "Age must be 120 years or younger to assess the symptoms",
         "min": 1,
         "min_error": "Age in years must be greater than 0 to assess the symptoms",
+        "pattern": "",
     }
 
     roadblock_dialog = {
@@ -655,6 +737,7 @@ class AdaAssessmentDialog(APITestCase):
         "max_error": "",
         "min": None,
         "min_error": "",
+        "pattern": "",
     }
 
     entry_url = reverse("ada-assessments")
@@ -749,6 +832,7 @@ class AdaAssessmentDialog(APITestCase):
                     "Let's start with some questions about the symptoms. "
                     "Then, we will help you decide what to do next."
                 ),
+                "pdf_media_id": "",
             },
             message,
         )
@@ -890,6 +974,7 @@ class AdaAssessmentDialog(APITestCase):
                 "cardType": "ROADBLOCK",
                 "title": "End of Assessment",
                 "description": ("MomConnect is here if you need " "immediate support"),
+                "pdf_media_id": "",
             },
             message,
         )
@@ -920,6 +1005,7 @@ class AdaAssessmentReport(APITestCase):
         "max_error": "Age must be 120 years or younger to assess the symptoms",
         "min": 1,
         "min_error": "Age in years must be greater than 0 to assess the symptoms",
+        "pattern": "",
     }
 
     start_url = reverse("ada-assessments")
@@ -964,7 +1050,8 @@ class AdaAssessmentReport(APITestCase):
         "-9f9d2a5651d8%22%7D%2C%20%22abort%22%3A%20%7B"
         "%22method%22%3A%20%22PUT%22%2C%20%22href%22%3A"
         "%20%22/assessments/5581bfeb-2803-4beb-b627"
-        "-9f9d2a5651d8/abort%22%7D%7D%7D"
+        "-9f9d2a5651d8/abort%22%7D%7D%2C+%22"
+        "pdf_media_id%22%3A+%22media-uuid%22%7D"
     )
 
     pdf_data = {
@@ -992,20 +1079,15 @@ class AdaAssessmentReport(APITestCase):
             "your symptoms get worse, or if you notice new "
             "symptoms, you may need to consult a doctor sooner."
         ),
+        "pdf_media_id": "media-uuid",
     }
 
-    @patch("ada.views.start_pdf_flow")
     @patch("ada.views.upload_turn_media")
     @patch("ada.views.get_report")
     @patch("ada.views.pdf_ready")
     @patch("ada.views.post_to_ada")
     def test_assessment_report(
-        self,
-        mock_post_to_ada,
-        mock_pdf_ready,
-        mock_get_report,
-        mock_upload_turn_media,
-        mock_start_pdf_flow,
+        self, mock_post_to_ada, mock_pdf_ready, mock_get_report, mock_upload_turn_media
     ):
         mock_post_to_ada.return_value = {
             "cardType": "REPORT",
@@ -1044,9 +1126,9 @@ class AdaAssessmentReport(APITestCase):
         self.client.force_authenticate(user)
         response = self.client.post(self.start_url, self.data, format="json")
         self.assertRedirects(response, self.destination_url, target_status_code=302)
-        mock_start_pdf_flow.delay.assert_called_once_with(
-            "27856454612", mock_upload_turn_media.return_value
-        )
+        # mock_start_pdf_flow.delay.assert_called_once_with(
+        #    "27856454612", mock_upload_turn_media.return_value
+        # )
         response = self.client.get(self.destination_url, format="json")
         self.assertRedirects(response, self.pdf_url, target_status_code=200)
         response = self.client.get(self.pdf_url, format="json")
