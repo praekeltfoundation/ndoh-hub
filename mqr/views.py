@@ -27,6 +27,7 @@ from mqr.utils import (
     get_first_send_date,
     get_next_message,
     get_weeks_pregnant,
+    is_study_active_for_weeks_pregnant,
 )
 
 from .models import BaselineSurveyResult, MqrStrata
@@ -49,6 +50,9 @@ class RandomStrataArmView(generics.GenericAPIView):
             "estimated_delivery_date"
         )
         mom_age = serializer.validated_data.get("mom_age")
+
+        if not is_study_active_for_weeks_pregnant(estimated_delivery_date):
+            return Response({"Excluded": True})
 
         clinic_code = get_facility_province(facility_code)
         weeks_pregnant_bucket = get_weeks_pregnant(estimated_delivery_date)

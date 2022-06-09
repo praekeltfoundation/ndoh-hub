@@ -484,3 +484,26 @@ class TestGetFirstSendDate(TestCase):
     def test_get_first_send_date_postbirth(self):
         first_send_date = utils.get_first_send_date(date(2022, 2, 13))
         self.assertEqual(first_send_date, date(2022, 3, 6))
+
+
+class TestIsStudyActiveForWeeksPregnant(TestCase):
+    def test_is_study_active_for_weeks_pregnant(self):
+        utils.get_today = lambda: date(2022, 5, 25)
+
+        edd = date(2022, 10, 25)  # 19 weeks
+        study_active = utils.is_study_active_for_weeks_pregnant(edd)
+        self.assertFalse(study_active)
+
+        edd = date(2022, 10, 18)  # 20 weeks
+        study_active = utils.is_study_active_for_weeks_pregnant(edd)
+        self.assertTrue(study_active)
+
+        utils.get_today = lambda: date(2022, 5, 31)
+
+        edd = date(2022, 10, 19)  # 20 weeks
+        study_active = utils.is_study_active_for_weeks_pregnant(edd)
+        self.assertFalse(study_active)
+
+        edd = date(2022, 10, 25)  # 21 weeks
+        study_active = utils.is_study_active_for_weeks_pregnant(edd)
+        self.assertFalse(study_active)

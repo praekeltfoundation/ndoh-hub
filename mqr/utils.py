@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from urllib.parse import urljoin
 
 import requests
@@ -159,6 +159,17 @@ def get_first_send_date(edd_or_dob_date):
     else:
         full_weeks = ((get_today() - edd_or_dob_date).days // 7) + 1
         return edd_or_dob_date + timedelta(weeks=full_weeks)
+
+
+def is_study_active_for_weeks_pregnant(estimated_delivery_date):
+    study_start_date = datetime.strptime(
+        settings.MQR_STUDY_START_DATE, "%Y-%m-%d"
+    ).date()
+
+    weeks_pregnant = get_week("pre", estimated_delivery_date)
+    study_min_weeks = ((get_today() - study_start_date).days // 7) + 18
+
+    return weeks_pregnant >= study_min_weeks
 
 
 def get_facility_province(facility_code):
