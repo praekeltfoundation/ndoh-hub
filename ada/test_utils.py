@@ -69,8 +69,7 @@ class TestQuestionsPayload(TestCase):
                     "start with some questions about the symptoms. "
                     "Then, we will help you decide what to do next."
                     "\n\nReply *0* to continue."
-                    "\n\nReply *BACK* to go to the previous question "
-                    "or *MENU* to end the assessment."
+                    "\n\nReply *BACK* to go to the previous question."
                 ),
                 "explanations": "",
                 "step": 1,
@@ -176,11 +175,11 @@ class TestQuestionsPayload(TestCase):
                     "Hi John, what is your biological sex?"
                     "\nBiological sex is a risk factor for some "
                     "conditions. Your answer is necessary for an "
-                    "accurate assessment.\n\n1. Female\n2. Male\n\nChoose "
+                    "accurate assessment.\n\n*1*. Female\n*2*. Male\n\nChoose "
                     "the option that matches your answer. Eg, *1* for "
                     "*Female*\n\nReply *BACK* to go to the previous "
-                    "question or *MENU* to end the assessment."
-                    "\n\nReply *EXPLAIN* to see what this means."
+                    "question."
+                    "\nReply *EXPLAIN* to see what this means."
                 ),
                 "explanations": (
                     "We are investigating a solution "
@@ -294,8 +293,7 @@ class TestQuestionsPayload(TestCase):
                     "How old are you?\n\n"
                     '_Enter age in years, for example "20"_\n\n'
                     "Reply *BACK* to go to "
-                    "the previous question or *MENU* to "
-                    "end the assessment."
+                    "the previous question."
                 ),
                 "explanations": "",
                 "step": 5,
@@ -392,7 +390,7 @@ class TestQuestionsPayload(TestCase):
                     "How old is ChimaC?\n\n_Please "
                     'type age in days, for example "3"._\n\n'
                     "Reply *BACK* to go to the previous "
-                    "question or *MENU* to end the assessment."
+                    "question."
                 ),
                 "explanations": "",
                 "step": 9,
