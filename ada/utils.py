@@ -117,9 +117,7 @@ def format_message(body):
         pdf_media_id = ""
     description = body["description"]["en-GB"]
     title = body["title"]["en-GB"]
-    back = (
-        "Reply *BACK* to go to the previous question."
-    )
+    back = "Reply *BACK* to go to the previous question."
     explain = "Reply *EXPLAIN* to see what this means."
     textcontinue = "Reply *0* to continue."
     cardType = body["cardType"]
