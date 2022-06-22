@@ -69,7 +69,7 @@ class TestQuestionsPayload(TestCase):
                     "start with some questions about the symptoms. "
                     "Then, we will help you decide what to do next."
                     "\n\nReply *0* to continue."
-                    "\n\nReply *BACK* to go to the previous question."
+                    "\nReply *BACK* to go to the previous question."
                 ),
                 "explanations": "",
                 "step": 1,
@@ -175,9 +175,8 @@ class TestQuestionsPayload(TestCase):
                     "Hi John, what is your biological sex?"
                     "\nBiological sex is a risk factor for some "
                     "conditions. Your answer is necessary for an "
-                    "accurate assessment.\n\n*1*. Female\n*2*. Male\n\nChoose "
-                    "the option that matches your answer. Eg, *1* for "
-                    "*Female*\n\nReply *BACK* to go to the previous "
+                    "accurate assessment.\n\n*1*. Female\n*2*. Male"
+                    "\n\nReply *BACK* to go to the previous "
                     "question."
                     "\nReply *EXPLAIN* to see what this means."
                 ),
