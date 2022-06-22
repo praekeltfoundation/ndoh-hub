@@ -152,9 +152,7 @@ def format_message(body):
             optionslist[i] = f"*{i+1}*. {optionslist[i]}"
         choices = "\n".join(optionslist)
         if explanations != "":
-            message = (
-                f"{description}\n\n{choices}\n\n{back}\n{explain}"
-            )
+            message = f"{description}\n\n{choices}\n\n{back}\n{explain}"
         else:
             message = f"{description}\n\n{choices}\n\n{back}"
         body = {}
