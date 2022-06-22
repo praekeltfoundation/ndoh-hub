@@ -21,6 +21,7 @@ from .tasks import post_to_topup_endpoint, start_prototype_survey_flow, start_to
 from .utils import (
     abort_assessment,
     build_rp_request,
+    check_timeout,
     encodeurl,
     format_message,
     get_endpoint,
@@ -169,6 +170,7 @@ class NextDialog(generics.GenericAPIView):
         assessment_id = path.split("/")[-3]
         request = build_rp_request(data)
         ada_response = post_to_ada(request, path, contact_uuid)
+        timeout = check_timeout(ada_response)
         pdf = pdf_ready(ada_response)
         if pdf:
             report_path = ada_response["_links"]["report"]["href"]
@@ -179,7 +181,7 @@ class NextDialog(generics.GenericAPIView):
             if ada_response["cardType"] == "ROADBLOCK":
                 roadblock = "ROADBLOCK"
 
-        if data["cardType"] != "TEXT" or pdf_media_id != "":
+        if data["cardType"] != "TEXT" or pdf_media_id != "" or not timeout:
             if data["cardType"] == "INPUT":
                 optionId = None
             if pdf_media_id != "":
@@ -198,13 +200,15 @@ class NextDialog(generics.GenericAPIView):
                 roadblock=roadblock,
             )
             store_url_entry.save()
-        if not pdf:
+        if not pdf and not timeout:
             message = format_message(ada_response)
             return Response(message, status=status.HTTP_200_OK)
-        else:
+        elif pdf and not timeout:
             ada_response["pdf_media_id"] = pdf_media_id
             response = pdf_endpoint(ada_response)
             return HttpResponseRedirect(response)
+        else:
+            return Response(ada_response, status=status.HTTP_200_OK)
 
 
 class PreviousDialog(generics.GenericAPIView):
