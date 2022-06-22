@@ -141,7 +141,6 @@ def format_message(body):
         step = ""
     if cardType == "CHOICE":
         resource = pdf_resource(body)
-        option = body["options"][0]["text"]["en-GB"]
         optionslist = []
         index = 0
         length = len(body["options"])
@@ -152,21 +151,16 @@ def format_message(body):
         for i in range(len(optionslist)):
             optionslist[i] = f"*{i+1}*. {optionslist[i]}"
         choices = "\n".join(optionslist)
-        extra_message = (
-            f"Choose the option that matches your answer. Eg, *1* for *{option}*"
-        )
         if explanations != "":
-            message = (
-                f"{description}\n\n{choices}\n\n{extra_message}\n\n{back}\n{explain}"
-            )
+            message = f"{description}\n\n{choices}\n\n{back}\n{explain}"
         else:
-            message = f"{description}\n\n{choices}\n\n{extra_message}\n\n{back}"
+            message = f"{description}\n\n{choices}\n\n{back}"
         body = {}
         body["choices"] = length
         body["choiceContext"] = choiceContext
         body["resource"] = resource
     elif cardType == "TEXT":
-        message = f"{description}\n\n{textcontinue}\n\n{back}"
+        message = f"{description}\n\n{textcontinue}\n{back}"
         body = {}
     elif cardType == "ROADBLOCK":
         message = f"{description}"

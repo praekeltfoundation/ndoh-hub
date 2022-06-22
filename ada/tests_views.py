@@ -814,7 +814,7 @@ class AdaAssessmentDialog(APITestCase):
                     "in partnership with Ada. Let's start with "
                     "some questions about the symptoms. Then, "
                     "we will help you decide what to do next."
-                    "\n\nReply *0* to continue.\n\nReply "
+                    "\n\nReply *0* to continue.\nReply "
                     "*BACK* to go to the previous question."
                 ),
                 "explanations": "",
