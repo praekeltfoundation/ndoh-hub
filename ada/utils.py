@@ -117,9 +117,7 @@ def format_message(body):
         pdf_media_id = ""
     description = body["description"]["en-GB"]
     title = body["title"]["en-GB"]
-    back = (
-        "Reply *BACK* to go to the previous question or *MENU* to end the assessment."
-    )
+    back = "Reply *BACK* to go to the previous question."
     explain = "Reply *EXPLAIN* to see what this means."
     textcontinue = "Reply *0* to continue."
     cardType = body["cardType"]
@@ -152,15 +150,14 @@ def format_message(body):
             index += 1
         choiceContext = optionslist[:]
         for i in range(len(optionslist)):
-            optionslist[i] = f"{i+1}. {optionslist[i]}"
-
+            optionslist[i] = f"*{i+1}*. {optionslist[i]}"
         choices = "\n".join(optionslist)
         extra_message = (
             f"Choose the option that matches your answer. Eg, *1* for *{option}*"
         )
         if explanations != "":
             message = (
-                f"{description}\n\n{choices}\n\n{extra_message}\n\n{back}\n\n{explain}"
+                f"{description}\n\n{choices}\n\n{extra_message}\n\n{back}\n{explain}"
             )
         else:
             message = f"{description}\n\n{choices}\n\n{extra_message}\n\n{back}"

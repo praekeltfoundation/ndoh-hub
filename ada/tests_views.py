@@ -815,8 +815,7 @@ class AdaAssessmentDialog(APITestCase):
                     "some questions about the symptoms. Then, "
                     "we will help you decide what to do next."
                     "\n\nReply *0* to continue.\n\nReply "
-                    "*BACK* to go to the previous question "
-                    "or *MENU* to end the assessment."
+                    "*BACK* to go to the previous question."
                 ),
                 "explanations": "",
                 "step": 1,
