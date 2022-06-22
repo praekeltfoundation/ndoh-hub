@@ -180,8 +180,7 @@ class NextDialog(generics.GenericAPIView):
             pdf_media_id = ""
             if ada_response["cardType"] == "ROADBLOCK":
                 roadblock = "ROADBLOCK"
-
-        if data["cardType"] != "TEXT" or pdf_media_id != "" or not timeout:
+        if data["cardType"] != "TEXT" or pdf_media_id != "" or timeout:
             if data["cardType"] == "INPUT":
                 optionId = None
             if pdf_media_id != "":
