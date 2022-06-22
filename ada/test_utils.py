@@ -466,3 +466,50 @@ class TestQuestionsPayload(TestCase):
             },
             response,
         )
+
+    def test_timeout_cardtype(self):
+        ada_response = {
+            "path": (
+                "/assessments/2cce1685" "-b150-4b38-a47f-3e1cdf8b947e/dialog/next"
+            ),
+            "timestamp": "2022-06-21T14:15:29.912Z",
+            "requestId": "4e008c07-6a3f-440b-9d36-1c6ae250cf3f",
+            "error": {
+                "status": 410,
+                "message": (
+                    "HTTP 410 on POST http://rf-praekelt"
+                    "-stg-assessment-bff/api/next, "
+                    '(body: \'{"path":"/api/next","timestamp'
+                    '":"2022-06-21T14:15:29.888Z","error":'
+                    '{"status":410,"message":"Session is '
+                    "expired or invalid session ID c8dbac08"
+                    "-f618-493e-9dc6-79cfa225a4b9\"}}')"
+                ),
+            },
+        }
+
+        utils.check_timeout(ada_response)
+        self.assertEqual(
+            ada_response,
+            {
+                "path": (
+                    "/assessments/2cce1685" "-b150-4b38-a47f-3e1cdf8b947e/dialog/next"
+                ),
+                "timestamp": "2022-06-21T14:15:29.912Z",
+                "requestId": "4e008c07-6a3f-440b-9d36-1c6ae250cf3f",
+                "error": {
+                    "status": 410,
+                    "message": (
+                        "HTTP 410 on POST http://rf-praekelt"
+                        "-stg-assessment-bff/api/next, "
+                        '(body: \'{"path":"/api/next","timestamp'
+                        '":"2022-06-21T14:15:29.888Z","error":'
+                        '{"status":410,"message":"Session is '
+                        "expired or invalid session ID c8dbac08"
+                        "-f618-493e-9dc6-79cfa225a4b9\"}}')"
+                    ),
+                },
+                "cardType": "TIMEOUT",
+            },
+            ada_response,
+        )
