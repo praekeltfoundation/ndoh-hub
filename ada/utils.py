@@ -332,12 +332,3 @@ def get_header_pdf(contact_uuid):
         "Content-Type": "application/pdf",
     }
     return head
-
-
-def check_timeout(data):
-    try:
-        data["error"]["status"]
-        data["cardType"] = "TIMEOUT"
-        return True
-    except KeyError:
-        return False
