@@ -71,3 +71,12 @@ class AdaSelfAssessment(models.Model):
             f"| User_Input: {self.user_input} | Title: {self.title} \n"
             f"| Created_at: {self.created_at}"
         )
+
+
+class CovidDataLakeEntry(models.Model):
+    resource_id = models.CharField(max_length=255, null=True, blank=True)
+    data = models.TextField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Resource_ID: {self.resource_id} | Created_at: {self.created_at}"
