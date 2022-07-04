@@ -466,3 +466,16 @@ class TestQuestionsPayload(TestCase):
             },
             response,
         )
+
+
+class TestCovidDataLake(TestCase):
+    def test_text_type_question(self):
+        payload = {
+            "payload": {
+                "resourceType": "Bundle",
+                "id": "35e6" "cde9d29e47acda1042def0b10db8",
+                "meta": {"last" "Updated": "2022-07-03T20:28:49.763+00:00"},
+            }
+        }
+        resource_id = payload["payload"]["id"]
+        self.assertEqual(resource_id, "35e6cde9d29e47acda1042def0b10db8")

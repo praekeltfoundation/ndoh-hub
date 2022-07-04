@@ -16,7 +16,12 @@ from ada.serializers import (
     SymptomCheckSerializer,
 )
 
-from .models import AdaSelfAssessment, RedirectUrl, RedirectUrlsEntry
+from .models import (
+    AdaSelfAssessment,
+    CovidDataLakeEntry,
+    RedirectUrl,
+    RedirectUrlsEntry,
+)
 from .tasks import post_to_topup_endpoint, start_prototype_survey_flow, start_topup_flow
 from .utils import (
     abort_assessment,
@@ -100,6 +105,17 @@ def topuprequest(request: HttpRequest) -> HttpResponse:
         context = {"whatsappid": whatsappid}
         post_to_topup_endpoint(str(whatsappid))
         return render(request, "topup_request.html", context)
+
+
+class Covid(generics.GenericAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        body = request.data
+        resource_id = body["payload"]["id"]
+        store_url_entry = CovidDataLakeEntry(resource_id=resource_id, data=body)
+        store_url_entry.save()
+        return Response({}, status=status.HTTP_200_OK)
 
 
 class PresentationLayerView(generics.GenericAPIView):
