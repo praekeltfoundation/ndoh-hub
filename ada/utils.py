@@ -149,7 +149,7 @@ def format_message(body):
             index += 1
         choiceContext = optionslist[:]
         for i in range(len(optionslist)):
-            optionslist[i] = f"*{i+1}*. {optionslist[i]}"
+            optionslist[i] = f"*{i+1} -* {optionslist[i]}"
         choices = "\n".join(optionslist)
         if explanations != "":
             message = f"{description}\n\n{choices}\n\n{back}\n{explain}"
@@ -166,12 +166,7 @@ def format_message(body):
         message = f"{description}"
         body = {}
     elif cardType == "REPORT":
-        CTA = (
-            "Reply:\n\n*1* - *CHECK* to check another symptom\n\n"
-            "*2* - *ASK* to ask the helpdesk a question\n\n"
-            "*3* - *MENU* for the MomConnect menu 📌"
-        )
-        message = f"{description}\n\n{CTA}"
+        message = f"{description}"
         body = {}
     else:
         placeholder = body["cardAttributes"]["placeholder"]["en-GB"]

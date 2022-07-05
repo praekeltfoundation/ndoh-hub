@@ -175,7 +175,7 @@ class TestQuestionsPayload(TestCase):
                     "Hi John, what is your biological sex?"
                     "\nBiological sex is a risk factor for some "
                     "conditions. Your answer is necessary for an "
-                    "accurate assessment.\n\n*1*. Female\n*2*. Male"
+                    "accurate assessment.\n\n*1 -* Female\n*2 -* Male"
                     "\n\nReply *BACK* to go to the previous "
                     "question."
                     "\nReply *EXPLAIN* to see what this means."
@@ -445,9 +445,6 @@ class TestQuestionsPayload(TestCase):
                     "from a doctor though, within the next 2-3 days. "
                     "If your symptoms get worse, or if you notice "
                     "new symptoms, you may need to consult a doctor sooner."
-                    "\n\nReply:\n\n*1* - *CHECK* to check another symptom\n\n"
-                    "*2* - *ASK* to ask the helpdesk a question\n\n"
-                    "*3* - *MENU* for the MomConnect menu 📌"
                 ),
                 "explanations": "",
                 "step": 43,
