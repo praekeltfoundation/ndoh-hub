@@ -1061,9 +1061,6 @@ class AdaAssessmentReport(APITestCase):
             "from a doctor though, within the next 2-3 days. "
             "If your symptoms get worse, or if you notice "
             "new symptoms, you may need to consult a doctor sooner."
-            "\n\nReply:\n\n*1* - *CHECK* to check another symptom\n\n"
-            "*2* - *ASK* to ask the helpdesk a question\n\n"
-            "*3* - *MENU* for the MomConnect menu 📌"
         ),
         "explanations": "",
         "step": 43,

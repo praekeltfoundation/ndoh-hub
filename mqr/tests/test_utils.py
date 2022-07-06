@@ -67,7 +67,7 @@ class TestGetTag(TestCase):
         """
         self.assertEqual(
             utils.get_tag("RCM", "pre", datetime.today().date(), "a"),
-            "rcm_week_pre23_a",
+            "rcm_week_pre22_a",
         )
 
         few_weeks_ago = datetime.today().date() - timedelta(days=23)
