@@ -69,14 +69,13 @@ class TestQuestionsPayload(TestCase):
                     "start with some questions about the symptoms. "
                     "Then, we will help you decide what to do next."
                     "\n\nReply *0* to continue."
-                    "\nReply *BACK* to go to the previous question."
+                    "\nReply *EXIT* to exit the symptom checker."
                 ),
                 "explanations": "",
                 "step": 1,
                 "optionId": None,
                 "path": "/assessments/654f856d-c602-4347-8713-8f8196d66be3/dialog/next",
                 "cardType": "TEXT",
-                "title": "WELCOME TO ADA",
                 "description": (
                     "Welcome to the MomConnect Symptom "
                     "Checker in partnership with Ada. "
@@ -194,7 +193,6 @@ class TestQuestionsPayload(TestCase):
                 "optionId": None,
                 "path": "/assessments/f9d4be32-78fa-48e0-b9a3-e12e305e73ce/dialog/next",
                 "cardType": "CHOICE",
-                "title": "Patient Information",
                 "description": (
                     "Hi John, what is your biological sex?\n"
                     "Biological sex is a risk factor for "
@@ -299,7 +297,6 @@ class TestQuestionsPayload(TestCase):
                 "optionId": None,
                 "path": "/assessments/f9d4be32-78fa-48e0-b9a3-e12e305e73ce/dialog/next",
                 "cardType": "INPUT",
-                "title": "Patient Information",
                 "description": "How old are you?",
                 "pdf_media_id": "",
             },
@@ -396,7 +393,6 @@ class TestQuestionsPayload(TestCase):
                 "optionId": None,
                 "path": "/assessments/a225966f-40c8-45e3-b597-e1a45f0dd751/dialog/next",
                 "cardType": "INPUT",
-                "title": "Patient Information",
                 "description": "How old is ChimaC?",
                 "pdf_media_id": "",
             },
@@ -445,13 +441,14 @@ class TestQuestionsPayload(TestCase):
                     "from a doctor though, within the next 2-3 days. "
                     "If your symptoms get worse, or if you notice "
                     "new symptoms, you may need to consult a doctor sooner."
+                    "\n\nReply:\n*CHECK* if you would like to check "
+                    "another symptom\n*MENU* for the MomConnect menu 📌"
                 ),
                 "explanations": "",
                 "step": 43,
                 "optionId": None,
                 "path": "",
                 "cardType": "REPORT",
-                "title": "Results",
                 "description": (
                     "People with symptoms similar to yours do not usually "
                     "require urgent medical care. You should seek advice "

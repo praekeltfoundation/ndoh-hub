@@ -19,6 +19,25 @@ def assessmentkeywords():
     return keywords
 
 
+def displayTitle(title):
+    text = [
+        "Disclaimer",
+        "Terms & Conditions and Privacy Policy",
+        "Sharing your health data",
+    ]
+    if title in text:
+        return True
+    else:
+        return False
+
+
+def backCTA(step):
+    if step == 1:
+        return "Reply *EXIT* to exit the symptom checker."
+    else:
+        return "Reply *BACK* to go to the previous question."
+
+
 def inputTypeKeywords():
     keywords = ["BACK", "MENU"]
     return keywords
@@ -117,7 +136,7 @@ def format_message(body):
         pdf_media_id = ""
     description = body["description"]["en-GB"]
     title = body["title"]["en-GB"]
-    back = "Reply *BACK* to go to the previous question."
+    title = f"*{title}*"
     explain = "Reply *EXPLAIN* to see what this means."
     textcontinue = "Reply *0* to continue."
     cardType = body["cardType"]
@@ -139,6 +158,7 @@ def format_message(body):
         step = body["step"]
     else:
         step = ""
+    back = backCTA(step)
     if cardType == "CHOICE":
         resource = pdf_resource(body)
         optionslist = []
@@ -166,7 +186,11 @@ def format_message(body):
         message = f"{description}"
         body = {}
     elif cardType == "REPORT":
-        message = f"{description}"
+        CTA = (
+            "Reply:\n*CHECK* if you would like to check another symptom\n"
+            "*MENU* for the MomConnect menu 📌"
+        )
+        message = f"{description}\n\n{CTA}"
         body = {}
     else:
         placeholder = body["cardAttributes"]["placeholder"]["en-GB"]
@@ -193,16 +217,18 @@ def format_message(body):
         body["min"] = min
         body["min_error"] = min_error
         body["pattern"] = pattern
-
     body["message"] = message
     body["explanations"] = explanations
     body["step"] = step
     body["optionId"] = optionId
     body["path"] = path
     body["cardType"] = cardType
-    body["title"] = title
+
     body["description"] = description
     body["pdf_media_id"] = pdf_media_id
+    checkerTitle = displayTitle(title)
+    if checkerTitle:
+        body["title"] = title
     return body
 
 
