@@ -815,7 +815,7 @@ class AdaAssessmentDialog(APITestCase):
                     "some questions about the symptoms. Then, "
                     "we will help you decide what to do next."
                     "\n\nReply *0* to continue.\nReply "
-                    "*BACK* to go to the previous question."
+                    "*EXIT* to exit the symptom checker."
                 ),
                 "explanations": "",
                 "step": 1,
@@ -824,7 +824,6 @@ class AdaAssessmentDialog(APITestCase):
                     "/assessments/" "976663c1-aa5e-4d3b-8455-9980fc3f26ca/dialog/next"
                 ),
                 "cardType": "TEXT",
-                "title": "Welcome to Ada",
                 "description": (
                     "Welcome to the MomConnect Symptom "
                     "Checker in partnership with Ada. "
@@ -971,7 +970,6 @@ class AdaAssessmentDialog(APITestCase):
                 "optionId": None,
                 "path": ("/assessments/" "1b2e19d9-1414-47d2-9d15-21e64fb0b357"),
                 "cardType": "ROADBLOCK",
-                "title": "End of Assessment",
                 "description": ("MomConnect is here if you need " "immediate support"),
                 "pdf_media_id": "",
             },
@@ -1061,13 +1059,14 @@ class AdaAssessmentReport(APITestCase):
             "from a doctor though, within the next 2-3 days. "
             "If your symptoms get worse, or if you notice "
             "new symptoms, you may need to consult a doctor sooner."
+            "\n\nReply:\n*CHECK* if you would like to check "
+            "another symptom\n*MENU* for the MomConnect menu 📌"
         ),
         "explanations": "",
         "step": 43,
         "optionId": None,
         "path": "",
         "cardType": "REPORT",
-        "title": "Results",
         "description": (
             "People with symptoms similar to yours do not usually "
             "require urgent medical care. You should seek advice "
