@@ -461,6 +461,111 @@ class TestQuestionsPayload(TestCase):
             response,
         )
 
+    def test_display_title(self):
+        rapidpro_data = {
+            "contact_uuid": "67460e74-02e3-11e8-b443-00163e990bdb",
+            "msisdn": "27856454612",
+            "choiceContext": "",
+            "choices": "",
+            "path": "",
+            "optionId": None,
+            "cardType": "",
+            "step": None,
+            "value": "",
+            "title": "",
+            "pattern": "",
+        }
+        ada_response = {
+            "cardType": "TEXT",
+            "step": 1,
+            "title": {"en-GB": "Disclaimer"},
+            "description": {
+                "en-GB": (
+                    "If you have any of the following symptoms "
+                    "do NOT complete the assessment. Call your "
+                    "local emergency number now.\n\n- Signs of "
+                    "heart attack (heavy, tight or squeezing "
+                    "pain in your chest)\n- Signs of stroke "
+                    "(face dropping on one side, weakness "
+                    "of the arms / legs, difficulty speaking)"
+                    "\n- Severe difficulty breathing \n- Heavy "
+                    "bleeding\n- Severe injuries such as after "
+                    "an accident\n- A seizure or fit\n- Sudden "
+                    "rapid swelling of eyes, lips, mouth or "
+                    "tongue\n- Fever in a baby less than 3 "
+                    "months old"
+                )
+            },
+            "label": {"en-GB": "Next"},
+            "_links": {
+                "self": {
+                    "method": "GET",
+                    "href": "/assessments/99c4df73-ff27-4b3e-ac40-fcfb15da13ac",
+                },
+                "next": {
+                    "method": "POST",
+                    "href": (
+                        "/assessments/99c4df73-ff27-"
+                        "4b3e-ac40-fcfb15da13ac/dialog/next"
+                    ),
+                },
+                "abort": {
+                    "method": "PUT",
+                    "href": "/assessments/99c4df73-ff27-4b3e-ac40-fcfb15da13ac/abort",
+                },
+            },
+        }
+
+        request_to_ada = utils.build_rp_request(rapidpro_data)
+        self.assertEqual(request_to_ada, {})
+
+        response = utils.format_message(ada_response)
+        self.assertEqual(
+            response,
+            {
+                "message": (
+                    "If you have any of the following "
+                    "symptoms do NOT complete the assessment. "
+                    "Call your local emergency number now.\n\n- "
+                    "Signs of heart attack (heavy, tight or "
+                    "squeezing pain in your chest)\n- Signs of "
+                    "stroke (face dropping on one side, weakness "
+                    "of the arms / legs, difficulty speaking)\n- "
+                    "Severe difficulty breathing \n- Heavy "
+                    "bleeding\n- Severe injuries such as after "
+                    "an accident\n- A seizure or fit\n- Sudden "
+                    "rapid swelling of eyes, lips, mouth or "
+                    "tongue\n- Fever in a baby less than 3 months "
+                    "old\n\nReply *0* to continue.\nReply *EXIT* "
+                    "to exit the symptom checker."
+                ),
+                "explanations": "",
+                "step": 1,
+                "optionId": None,
+                "path": (
+                    "/assessments/99c4df73-ff27-4b3e-ac40" "-fcfb15da13ac/dialog/next"
+                ),
+                "cardType": "TEXT",
+                "description": (
+                    "If you have any of the following "
+                    "symptoms do NOT complete the assessment. "
+                    "Call your local emergency number now."
+                    "\n\n- Signs of heart attack (heavy, tight "
+                    "or squeezing pain in your chest)\n- Signs "
+                    "of stroke (face dropping on one side, "
+                    "weakness of the arms / legs, difficulty "
+                    "speaking)\n- Severe difficulty breathing "
+                    "\n- Heavy bleeding\n- Severe injuries such "
+                    "as after an accident\n- A seizure or fit\n- "
+                    "Sudden rapid swelling of eyes, lips, mouth "
+                    "or tongue\n- Fever in a baby less than 3 "
+                    "months old"
+                ),
+                "pdf_media_id": "",
+                "title": "*Disclaimer*",
+            },
+        )
+
 
 class TestCovidDataLake(TestCase):
     def test_text_type_question(self):
