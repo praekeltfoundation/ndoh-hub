@@ -229,6 +229,8 @@ def format_message(body):
     title = f"*{title}*"
     if checkerTitle:
         body["title"] = title
+    else:
+        body["title"] = ""
     return body
 
 

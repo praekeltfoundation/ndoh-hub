@@ -831,6 +831,7 @@ class AdaAssessmentDialog(APITestCase):
                     "Then, we will help you decide what to do next."
                 ),
                 "pdf_media_id": "",
+                "title": "",
             },
             message,
         )
@@ -972,6 +973,7 @@ class AdaAssessmentDialog(APITestCase):
                 "cardType": "ROADBLOCK",
                 "description": ("MomConnect is here if you need " "immediate support"),
                 "pdf_media_id": "",
+                "title": "",
             },
             message,
         )
@@ -1075,6 +1077,7 @@ class AdaAssessmentReport(APITestCase):
             "symptoms, you may need to consult a doctor sooner."
         ),
         "pdf_media_id": "media-uuid",
+        "title": "",
     }
 
     @patch("ada.views.upload_turn_media")

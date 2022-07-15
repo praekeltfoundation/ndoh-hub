@@ -84,6 +84,7 @@ class TestQuestionsPayload(TestCase):
                     "decide what to do next."
                 ),
                 "pdf_media_id": "",
+                "title": "",
             },
             response,
         )
@@ -200,6 +201,7 @@ class TestQuestionsPayload(TestCase):
                     "for an accurate assessment."
                 ),
                 "pdf_media_id": "",
+                "title": "",
             },
             response,
         )
@@ -299,6 +301,7 @@ class TestQuestionsPayload(TestCase):
                 "cardType": "INPUT",
                 "description": "How old are you?",
                 "pdf_media_id": "",
+                "title": "",
             },
             response,
         )
@@ -395,6 +398,7 @@ class TestQuestionsPayload(TestCase):
                 "cardType": "INPUT",
                 "description": "How old is ChimaC?",
                 "pdf_media_id": "",
+                "title": "",
             },
             response,
         )
@@ -457,6 +461,7 @@ class TestQuestionsPayload(TestCase):
                     "symptoms, you may need to consult a doctor sooner."
                 ),
                 "pdf_media_id": "",
+                "title": "",
             },
             response,
         )
