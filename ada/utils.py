@@ -136,7 +136,6 @@ def format_message(body):
         pdf_media_id = ""
     description = body["description"]["en-GB"]
     title = body["title"]["en-GB"]
-    title = f"*{title}*"
     explain = "Reply *EXPLAIN* to see what this means."
     textcontinue = "Reply *0* to continue."
     cardType = body["cardType"]
@@ -227,6 +226,7 @@ def format_message(body):
     body["description"] = description
     body["pdf_media_id"] = pdf_media_id
     checkerTitle = displayTitle(title)
+    title = f"*{title}*"
     if checkerTitle:
         body["title"] = title
     return body
