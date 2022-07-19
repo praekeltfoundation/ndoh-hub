@@ -168,17 +168,19 @@ class TestQuestionsPayload(TestCase):
         self.assertEqual(
             response,
             {
-                "choices": 2,
-                "choiceContext": ["Female", "Male"],
+                "choices": 3,
+                "choiceContext": (
+                    ["Female", "Male", "I don't understand what this means."]
+                ),
                 "resource": "",
                 "message": (
                     "Hi John, what is your biological sex?"
                     "\nBiological sex is a risk factor for some "
                     "conditions. Your answer is necessary for an "
-                    "accurate assessment.\n\n*1 -* Female\n*2 -* Male"
+                    "accurate assessment.\n\n*1 -* Female\n*2 -* Male\n*3 "
+                    "-* I don't understand what this means."
                     "\n\nReply *BACK* to go to the previous "
                     "question."
-                    "\nReply *EXPLAIN* to see what this means."
                 ),
                 "explanations": (
                     "We are investigating a solution "

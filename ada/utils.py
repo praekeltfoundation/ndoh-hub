@@ -136,7 +136,7 @@ def format_message(body):
         pdf_media_id = ""
     description = body["description"]["en-GB"]
     title = body["title"]["en-GB"]
-    explain = "Reply *EXPLAIN* to see what this means."
+    explain = "I don't understand what this means."
     textcontinue = "Reply *0* to continue."
     cardType = body["cardType"]
     if "explanations" in body.keys():
@@ -166,14 +166,16 @@ def format_message(body):
         while index < length:
             optionslist.append(body["options"][index]["text"]["en-GB"])
             index += 1
+
+        if explanations != "":
+            length += 1
+            optionslist.append(explain)
+
         choiceContext = optionslist[:]
         for i in range(len(optionslist)):
             optionslist[i] = f"*{i+1} -* {optionslist[i]}"
         choices = "\n".join(optionslist)
-        if explanations != "":
-            message = f"{description}\n\n{choices}\n\n{back}\n{explain}"
-        else:
-            message = f"{description}\n\n{choices}\n\n{back}"
+        message = f"{description}\n\n{choices}\n\n{back}"
         body = {}
         body["choices"] = length
         body["choiceContext"] = choiceContext
