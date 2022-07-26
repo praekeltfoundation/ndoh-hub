@@ -127,8 +127,19 @@ class AdaSymptomCheckEndpointTests(APITestCase):
         mock_start_rapidpro_flow.delay.assert_not_called()
 
     @patch("ada.views.start_prototype_survey_flow")
+    def test_unsuccessful_flow_start(self, mock_start_rapidpro_flow):
+        whatsappid = "endToEndTestWhatsappid"
+
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url, {"whatsappid": whatsappid})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        mock_start_rapidpro_flow.delay.assert_not_called()
+
+    @patch("ada.views.start_prototype_survey_flow")
     def test_successful_flow_start(self, mock_start_rapidpro_flow):
-        whatsappid = "12345"
+        whatsappid = "+274844444444"
 
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
