@@ -1,4 +1,5 @@
 import json
+import re
 import urllib.parse
 from urllib.parse import urlencode
 
@@ -49,8 +50,15 @@ class RapidProStartFlowView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
 
         whatsappid = serializer.validated_data.get("whatsappid")
-
-        start_prototype_survey_flow.delay(str(whatsappid))
+        match = re.match(
+            (
+                r"^\s*(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]"
+                r"*(\d{3})[-. ]*(\d{4})(?: *x(\d+))?\s*$"
+            ),
+            whatsappid,
+        )
+        if match:
+            start_prototype_survey_flow.delay(str(whatsappid))
 
         return Response({}, status=status.HTTP_200_OK)
 
