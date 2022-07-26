@@ -53,7 +53,7 @@ class RapidProStartFlowView(generics.GenericAPIView):
         match = re.match(
             (
                 r"^\s*(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]"
-                "*(\d{3})[-. ]*(\d{4})(?: *x(\d+))?\s*$"
+                r"*(\d{3})[-. ]*(\d{4})(?: *x(\d+))?\s*$"
             ),
             whatsappid,
         )
