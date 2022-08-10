@@ -33,6 +33,8 @@ from mqr.utils import (
 from .models import BaselineSurveyResult, MqrStrata
 from .serializers import BaselineSurveyResultSerializer, MqrStrataSerializer
 
+from ndoh_hub.utils import rapidpro
+
 STUDY_ARMS = ["ARM", "RCM", "BCM", "RCM_BCM", "RCM_SMS"]
 
 
@@ -228,3 +230,19 @@ class FirstSendDateView(generics.GenericAPIView):
         response = {"first_send_date": first_send_date}
 
         return Response(response, status=status.HTTP_200_OK)
+
+
+class MqrEndlineChecksViewSet(generics.GenericAPIView):
+
+    # Lookup contact
+
+    # Validate fields
+
+    # Start Airtime flow on recipient
+
+    # Return (Success / not found / not eligible / already paid)
+
+    def post(self, request, *args, **kwargs):
+        contact = rapidpro.get_contacts(urn="whatsapp:27123123").first()
+        return_data = {"uuid":contact.uuid}
+        return Response(return_data, status=status.HTTP_202_ACCEPTED)

@@ -25,5 +25,10 @@ urlpatterns = [
         views.FirstSendDateView.as_view(),
         name="mqr-firstsenddate",
     ),
+    url(
+        r"^api/v1/mqr-endlinechecks",
+        views.MqrEndlineChecksViewSet.as_view(),
+        name="mqr-endlinechecks",
+    ),
     url(r"^api/v1/", include(router.urls)),
 ]

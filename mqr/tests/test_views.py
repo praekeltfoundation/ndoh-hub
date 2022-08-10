@@ -1,4 +1,6 @@
 import datetime
+import responses
+from urllib import request
 import uuid
 from unittest.mock import patch
 
@@ -599,3 +601,38 @@ class FirstSendDateViewTests(APITestCase):
         )
 
         mock_get_first_send_date.assert_called_with(datetime.date(2022, 7, 12))
+
+
+class MqrEndlineChecksViewSetTests(APITestCase):
+    url = reverse("mqr-endlinechecks")
+    @override_settings(
+        EXTERNAL_REGISTRATIONS_V2=True,
+        RAPIDPRO_URL="rapidpro",
+        RAPIDPRO_TOKEN="rapidpro-token",  
+    )
+    @responses.activate
+    def test_mqr_endline_get_contact_not_found(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        responses.add(
+            responses.GET,
+            f"https://rp-test.com/api/v2/contacts.json?urn=whatsapp:27123123",
+            json={"next": None, "previous": None, "results": []},
+        )
+        test_find_contact = self.client.post(self.url)
+        
+        print(test_find_contact.json())
+       
+        
+        self.assertFalse(True)
+
+
+    # def test_mqr_endline_get_contact(self):
+    #     user = get_user_model().objects.create_user("test")
+    #     self.client.force_authenticate(user)
+
+
+    #     self.assertFalse(True)
+
+   
