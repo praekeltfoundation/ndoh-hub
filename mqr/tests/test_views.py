@@ -3,6 +3,7 @@ import responses
 from urllib import request
 import uuid
 from unittest.mock import patch
+from temba_client.v2 import TembaClient
 
 from django.contrib.auth import get_user_model
 from django.test import override_settings
@@ -11,6 +12,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from mqr import utils
+from mqr import views
 from mqr.models import BaselineSurveyResult, MqrStrata
 from registrations.models import ClinicCode
 
@@ -605,11 +607,11 @@ class FirstSendDateViewTests(APITestCase):
 
 class MqrEndlineChecksViewSetTests(APITestCase):
     url = reverse("mqr-endlinechecks")
-    @override_settings(
-        EXTERNAL_REGISTRATIONS_V2=True,
-        RAPIDPRO_URL="rapidpro",
-        RAPIDPRO_TOKEN="rapidpro-token",  
-    )
+
+    def setUp(self):
+        # tasks.get_today = override_get_today
+        views.rapidpro = TembaClient("textit.in", "test-token")
+
     @responses.activate
     def test_mqr_endline_get_contact_not_found(self):
         user = get_user_model().objects.create_user("test")
@@ -617,14 +619,14 @@ class MqrEndlineChecksViewSetTests(APITestCase):
 
         responses.add(
             responses.GET,
-            f"https://rp-test.com/api/v2/contacts.json?urn=whatsapp:27123123",
+            f"https://textit.in/api/v2/contacts.json?urn=whatsapp:27123123",
             json={"next": None, "previous": None, "results": []},
         )
         test_find_contact = self.client.post(self.url)
-        
+
         print(test_find_contact.json())
-       
-        
+
+
         self.assertFalse(True)
 
 
@@ -635,4 +637,4 @@ class MqrEndlineChecksViewSetTests(APITestCase):
 
     #     self.assertFalse(True)
 
-   
+
