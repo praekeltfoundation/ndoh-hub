@@ -605,6 +605,7 @@ class FirstSendDateViewTests(APITestCase):
 
 class MqrEndlineChecksViewSetTests(APITestCase):
     url = reverse("mqr-endlinechecks")
+    
     @override_settings(
         EXTERNAL_REGISTRATIONS_V2=True,
         RAPIDPRO_URL="rapidpro",
