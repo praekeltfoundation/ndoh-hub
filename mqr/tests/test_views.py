@@ -1,3 +1,4 @@
+import json
 import datetime
 import responses
 from urllib import request
@@ -609,34 +610,169 @@ class MqrEndlineChecksViewSetTests(APITestCase):
     url = reverse("mqr-endlinechecks")
 
     def setUp(self):
-        # tasks.get_today = override_get_today
+        """
+        Helper function to create RapidPro connection instance
+        """
         views.rapidpro = TembaClient("textit.in", "test-token")
+
+    def add_get_rapidpro_contact(
+        self, consent="Accepted", arm="RCM_BCM", received=None, optedout=None
+    ):
+        """
+        Helper function to build mock responses
+        """
+        responses.add(
+            responses.GET,
+            "https://textit.in/api/v2/contacts.json?urn=whatsapp%3A27831231234",
+            json={
+                "next": None,
+                "previous": None,
+                "results": [
+                    {
+                        "uuid": "148947f5-a3b6-4b6b-9e9b-25058b1b7800",
+                        "name": "",
+                        "language": "eng",
+                        "groups": [],
+                        "fields": {
+                            "mqr_consent": consent,
+                            "mqr_arm": arm,
+                            "endline_airtime_received": received,
+                            "opted_out": optedout,
+                        },
+                        "blocked": False,
+                        "stopped": False,
+                        "created_on": "2015-11-11T08:30:24.922024+00:00",
+                        "modified_on": "2015-11-11T08:30:25.525936+00:00",
+                        "urns": ["whatsapp:27712345682"],
+                    }
+                ],
+            },
+        )
+
+    @responses.activate
+    def test_mqr_endline_missing_msisdn(self):
+        """
+        Check for an missing msisdn number
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"msisdn": ["This field is required."]})
+
+    @responses.activate
+    def test_mqr_endline_invalid_msisdn(self):
+        """
+        Check for an invalid msisdn number
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        response = self.client.post(self.url, {"msisdn": "invalid"})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json(),
+            {"msisdn": ["(1) The string supplied did not seem to be a phone number."]},
+        )
 
     @responses.activate
     def test_mqr_endline_get_contact_not_found(self):
+        """
+        Check that the contact exists
+        """
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
         responses.add(
             responses.GET,
-            f"https://textit.in/api/v2/contacts.json?urn=whatsapp:27123123",
+            f"https://textit.in/api/v2/contacts.json?urn=whatsapp:27831231234",
             json={"next": None, "previous": None, "results": []},
         )
-        test_find_contact_response = self.client.post(self.url)
-        self.assertEqual(test_find_contact_response.status_code, 404)
+        response = self.client.post(self.url, data={"msisdn": "27831231234"})
+        self.assertEqual(response.status_code, 404)
 
     @responses.activate
-    def test_mqr_endline_validate_contact_fields(self):
+    def test_mqr_endline_get_contact_not_mqr(self):
+        """
+        Check that the contact has not given consent or an arm is not set,
+        i.e. the contact is not part of the study
+        """
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
+        self.add_get_rapidpro_contact(consent="Denied", arm=None)
+        response = self.client.post(self.url, data={"msisdn": "27831231234"})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"error": "Not part of MQR study"})
+
+    @responses.activate
+    def test_mqr_endline_airtime_already_received(self):
+        """
+        Check that the contact has not already received the airtime
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        self.add_get_rapidpro_contact(received="TRUE")
+        response = self.client.post(self.url, data={"msisdn": "27831231234"})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"error": "Airtime already received"})
+
+    @responses.activate
+    def test_mqr_endline_opted_out(self):
+        """
+        Check that the contact has not opted out
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        self.add_get_rapidpro_contact(optedout="TRUE")
+        response = self.client.post(self.url, data={"msisdn": "27831231234"})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"error": "Contact has opted out"})
+
+    @responses.activate
+    def test_mqr_endline_validate_start_flow(self):
+        """
+        Check that we can start the flow
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        self.add_get_rapidpro_contact()
+
         responses.add(
-            responses.GET,
-            f"https://textit.in/api/v2/contacts.json?urn=whatsapp:27123123",
-            json={"next": None, "previous": None, "results": []},
+            responses.POST,
+            "https://textit.in/api/v2/flow_starts.json",
+            json={
+                "uuid": "mqr-send-airtime-flow-uuid",
+                "flow": {
+                    "uuid": "mqr-send-airtime-flow-uuid",
+                    "name": "MQR sent endline airtime",
+                },
+                "groups": [],
+                "contacts": [],
+                "extra": {},
+                "restart_participants": True,
+                "status": "complete",
+                "created_on": datetime.datetime.now().isoformat(),
+                "modified_on": datetime.datetime.now().isoformat(),
+            },
         )
-        test_find_contact_response = self.client.post(self.url)
-        self.assertEqual(test_find_contact_response.status_code, 404)
 
+        response = self.client.post(self.url, data={"msisdn": "27831231234"})
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(
+            response.json(), {"uuid": "148947f5-a3b6-4b6b-9e9b-25058b1b7800"}
+        )
 
-
+        request = responses.calls[1]
+        self.assertEqual(
+            json.loads(request.request.body),
+            {
+                "flow": "mqr-send-airtime-flow-uuid",
+                "urns": ["whatsapp:27831231234"],
+                "extra": {},
+            },
+        )

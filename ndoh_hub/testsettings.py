@@ -25,3 +25,4 @@ HCS_STUDY_C_ACTIVE = True
 HANDLE_EXPIRED_HELPDESK_CONTACTS_ENABLED = True
 
 MQR_CONTENTREPO_URL = "http://contentrepo"
+MQR_SEND_AIRTIME_FLOW_ID = "mqr-send-airtime-flow-uuid"

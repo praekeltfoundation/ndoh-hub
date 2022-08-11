@@ -1,6 +1,7 @@
 import random
 
 from django.http import Http404, JsonResponse
+from django.conf import settings
 from django_filters import rest_framework as filters
 from rest_framework import generics, permissions, status
 from rest_framework.mixins import (
@@ -18,6 +19,7 @@ from mqr.serializers import (
     FaqSerializer,
     FirstSendDateSerializer,
     NextMessageSerializer,
+    MqrEndlineChecksSerializer,
 )
 from mqr.utils import (
     get_age_bucket,
@@ -238,26 +240,45 @@ class MqrEndlineChecksViewSet(generics.GenericAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        contact = rapidpro.get_contacts(urn="whatsapp:27123123").first()
+        serializer = MqrEndlineChecksSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        wa_id = serializer.validated_data.get("msisdn").replace("+", "")
+
+        contact = rapidpro.get_contacts(urn=f"whatsapp:{wa_id}").first()
 
         # Contact not found
         if contact == None:
             raise Http404()
 
+        if (
+            contact.fields["mqr_consent"] != "Accepted"
+            or contact.fields.get("mqr_arm") is None
+        ):
+            return Response(
+                {"error": "Not part of MQR study"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if contact.fields.get("endline_airtime_received", "FALSE") == "TRUE":
+            return Response(
+                {"error": "Airtime already received"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if contact.fields.get("opted_out", "FALSE") == "TRUE":
+            return Response(
+                {"error": "Contact has opted out"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        self.start_topup_flow(wa_id)
+
         return_data = {"uuid": contact.uuid}
         return Response(return_data, status=status.HTTP_202_ACCEPTED)
 
-    # Validate fields
-
-    # Start Airtime flow on recipient
-
-    # def start_topup_flow(whatsappid):
-    #     if rapidpro and settings.MQR_SEND_AIRTIME_FLOW_ID:
-    #         return rapidpro.create_flow_start(
-    #             extra={},
-    #             flow=settings.MQR_SEND_AIRTIME_FLOW_ID,
-    #             urns=[f"whatsapp:{whatsappid.lstrip('+')}"],    
-
-    # Return (Success / not found / not eligible / already paid)
-
-
+    def start_topup_flow(self, whatsapp_id):
+        if rapidpro and settings.MQR_SEND_AIRTIME_FLOW_ID:
+            return rapidpro.create_flow_start(
+                extra={},
+                flow=settings.MQR_SEND_AIRTIME_FLOW_ID,
+                urns=[f"whatsapp:{whatsapp_id.lstrip('+')}"],
+            )
