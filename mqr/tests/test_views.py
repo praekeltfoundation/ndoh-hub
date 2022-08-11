@@ -1,7 +1,6 @@
 import json
 import datetime
 import responses
-from urllib import request
 import uuid
 from unittest.mock import patch
 from temba_client.v2 import TembaClient
@@ -686,7 +685,7 @@ class MqrEndlineChecksViewSetTests(APITestCase):
 
         responses.add(
             responses.GET,
-            f"https://textit.in/api/v2/contacts.json?urn=whatsapp:27831231234",
+            "https://textit.in/api/v2/contacts.json?urn=whatsapp:27831231234",
             json={"next": None, "previous": None, "results": []},
         )
         response = self.client.post(self.url, data={"msisdn": "27831231234"})

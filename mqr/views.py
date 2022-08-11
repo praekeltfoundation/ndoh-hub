@@ -247,7 +247,7 @@ class MqrEndlineChecksViewSet(generics.GenericAPIView):
         contact = rapidpro.get_contacts(urn=f"whatsapp:{wa_id}").first()
 
         # Contact not found
-        if contact == None:
+        if contact is None:
             raise Http404()
 
         if (
