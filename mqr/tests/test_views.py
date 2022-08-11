@@ -1,18 +1,17 @@
-import json
 import datetime
-import responses
+import json
 import uuid
 from unittest.mock import patch
-from temba_client.v2 import TembaClient
 
+import responses
 from django.contrib.auth import get_user_model
 from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
+from temba_client.v2 import TembaClient
 
-from mqr import utils
-from mqr import views
+from mqr import utils, views
 from mqr.models import BaselineSurveyResult, MqrStrata
 from registrations.models import ClinicCode
 
