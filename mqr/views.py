@@ -1,6 +1,6 @@
 import random
 
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django_filters import rest_framework as filters
 from rest_framework import generics, permissions, status
 from rest_framework.mixins import (
@@ -240,9 +240,22 @@ class MqrEndlineChecksViewSet(generics.GenericAPIView):
 
     # Start Airtime flow on recipient
 
+    # def start_topup_flow(whatsappid):
+    #     if rapidpro and settings.MQR_SEND_AIRTIME_FLOW_ID:
+    #         return rapidpro.create_flow_start(
+    #             extra={},
+    #             flow=settings.MQR_SEND_AIRTIME_FLOW_ID,
+    #             urns=[f"whatsapp:{whatsappid.lstrip('+')}"],    
+
     # Return (Success / not found / not eligible / already paid)
 
     def post(self, request, *args, **kwargs):
+
         contact = rapidpro.get_contacts(urn="whatsapp:27123123").first()
-        return_data = {"uuid":contact.uuid}
+
+        # Contact not found
+        if contact == None:
+            raise Http404()
+
+        return_data = {"uuid": contact.uuid}
         return Response(return_data, status=status.HTTP_202_ACCEPTED)

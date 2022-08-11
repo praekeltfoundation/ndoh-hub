@@ -622,19 +622,21 @@ class MqrEndlineChecksViewSetTests(APITestCase):
             f"https://textit.in/api/v2/contacts.json?urn=whatsapp:27123123",
             json={"next": None, "previous": None, "results": []},
         )
-        test_find_contact = self.client.post(self.url)
+        test_find_contact_response = self.client.post(self.url)
+        self.assertEqual(test_find_contact_response.status_code, 404)
 
-        print(test_find_contact.json())
+    @responses.activate
+    def test_mqr_endline_validate_contact_fields(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
 
+        responses.add(
+            responses.GET,
+            f"https://textit.in/api/v2/contacts.json?urn=whatsapp:27123123",
+            json={"next": None, "previous": None, "results": []},
+        )
+        test_find_contact_response = self.client.post(self.url)
+        self.assertEqual(test_find_contact_response.status_code, 404)
 
-        self.assertFalse(True)
-
-
-    # def test_mqr_endline_get_contact(self):
-    #     user = get_user_model().objects.create_user("test")
-    #     self.client.force_authenticate(user)
-
-
-    #     self.assertFalse(True)
 
 
