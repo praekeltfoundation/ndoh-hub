@@ -236,6 +236,17 @@ class MqrEndlineChecksViewSet(generics.GenericAPIView):
 
     # Lookup contact
 
+    def post(self, request, *args, **kwargs):
+
+        contact = rapidpro.get_contacts(urn="whatsapp:27123123").first()
+
+        # Contact not found
+        if contact == None:
+            raise Http404()
+
+        return_data = {"uuid": contact.uuid}
+        return Response(return_data, status=status.HTTP_202_ACCEPTED)
+
     # Validate fields
 
     # Start Airtime flow on recipient
@@ -249,13 +260,4 @@ class MqrEndlineChecksViewSet(generics.GenericAPIView):
 
     # Return (Success / not found / not eligible / already paid)
 
-    def post(self, request, *args, **kwargs):
 
-        contact = rapidpro.get_contacts(urn="whatsapp:27123123").first()
-
-        # Contact not found
-        if contact == None:
-            raise Http404()
-
-        return_data = {"uuid": contact.uuid}
-        return Response(return_data, status=status.HTTP_202_ACCEPTED)
