@@ -1,6 +1,7 @@
 import random
 
-from django.http import JsonResponse
+from django.conf import settings
+from django.http import Http404, JsonResponse
 from django_filters import rest_framework as filters
 from rest_framework import generics, permissions, status
 from rest_framework.mixins import (
@@ -17,6 +18,7 @@ from mqr.serializers import (
     FaqMenuSerializer,
     FaqSerializer,
     FirstSendDateSerializer,
+    MqrEndlineChecksSerializer,
     NextMessageSerializer,
 )
 from mqr.utils import (
@@ -29,6 +31,7 @@ from mqr.utils import (
     get_weeks_pregnant,
     is_study_active_for_weeks_pregnant,
 )
+from ndoh_hub.utils import rapidpro
 
 from .models import BaselineSurveyResult, MqrStrata
 from .serializers import BaselineSurveyResultSerializer, MqrStrataSerializer
@@ -228,3 +231,53 @@ class FirstSendDateView(generics.GenericAPIView):
         response = {"first_send_date": first_send_date}
 
         return Response(response, status=status.HTTP_200_OK)
+
+
+class MqrEndlineChecksViewSet(generics.GenericAPIView):
+
+    # Lookup contact
+
+    def post(self, request, *args, **kwargs):
+
+        serializer = MqrEndlineChecksSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        wa_id = serializer.validated_data.get("msisdn").replace("+", "")
+
+        contact = rapidpro.get_contacts(urn=f"whatsapp:{wa_id}").first()
+
+        # Contact not found
+        if contact is None:
+            raise Http404()
+
+        if (
+            contact.fields["mqr_consent"] != "Accepted"
+            or contact.fields.get("mqr_arm") is None
+        ):
+            return Response(
+                {"error": "Not part of MQR study"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if contact.fields.get("endline_airtime_received", "FALSE") == "TRUE":
+            return Response(
+                {"error": "Airtime already received"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if contact.fields.get("opted_out", "FALSE") == "TRUE":
+            return Response(
+                {"error": "Contact has opted out"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        self.start_topup_flow(wa_id)
+
+        return_data = {"uuid": contact.uuid}
+        return Response(return_data, status=status.HTTP_202_ACCEPTED)
+
+    def start_topup_flow(self, whatsapp_id):
+        if rapidpro and settings.MQR_SEND_AIRTIME_FLOW_ID:
+            return rapidpro.create_flow_start(
+                extra={},
+                flow=settings.MQR_SEND_AIRTIME_FLOW_ID,
+                urns=[f"whatsapp:{whatsapp_id.lstrip('+')}"],
+            )

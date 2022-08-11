@@ -58,20 +58,20 @@ class TestGetTag(TestCase):
         edd = get_date("2022-11-01")
         self.assertEqual(utils.get_tag("RCM", "pre", edd), "rcm_week_pre5")
 
-        few_weeks_ago = datetime.today().date() - timedelta(days=23)
-        self.assertEqual(utils.get_tag("BCM", "post", few_weeks_ago), "bcm_week_post17")
+        few_weeks_ago = override_get_today() - timedelta(days=23)
+        self.assertEqual(utils.get_tag("BCM", "post", few_weeks_ago), "bcm_week_post3")
 
     def test_get_tag_with_sequence(self):
         """
         Returns the correct tag with a sequence
         """
         self.assertEqual(
-            utils.get_tag("RCM", "pre", datetime.today().date(), "a"),
-            "rcm_week_pre19_a",
+            utils.get_tag("RCM", "pre", override_get_today(), "a"),
+            "rcm_week_pre40_a",
         )
 
-        few_weeks_ago = datetime.today().date() - timedelta(days=23)
-        self.assertEqual(utils.get_tag("BCM", "post", few_weeks_ago), "bcm_week_post17")
+        few_weeks_ago = override_get_today() - timedelta(days=23)
+        self.assertEqual(utils.get_tag("BCM", "post", few_weeks_ago), "bcm_week_post3")
 
 
 class TestGetMessage(TestCase):

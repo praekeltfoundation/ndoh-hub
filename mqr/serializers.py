@@ -1,6 +1,7 @@
 from django.utils import timezone
 from rest_framework import serializers
 
+from eventstore.serializers import MSISDNField
 from mqr.models import BaselineSurveyResult
 
 
@@ -49,3 +50,7 @@ class FaqMenuSerializer(serializers.Serializer):
 
 class FirstSendDateSerializer(serializers.Serializer):
     edd_or_dob_date = serializers.DateField(required=True)
+
+
+class MqrEndlineChecksSerializer(serializers.Serializer):
+    msisdn = MSISDNField(country="ZA")
