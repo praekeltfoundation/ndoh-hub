@@ -1,7 +1,7 @@
 import random
 
-from django.http import Http404, JsonResponse
 from django.conf import settings
+from django.http import Http404, JsonResponse
 from django_filters import rest_framework as filters
 from rest_framework import generics, permissions, status
 from rest_framework.mixins import (
@@ -18,8 +18,8 @@ from mqr.serializers import (
     FaqMenuSerializer,
     FaqSerializer,
     FirstSendDateSerializer,
-    NextMessageSerializer,
     MqrEndlineChecksSerializer,
+    NextMessageSerializer,
 )
 from mqr.utils import (
     get_age_bucket,
@@ -31,11 +31,10 @@ from mqr.utils import (
     get_weeks_pregnant,
     is_study_active_for_weeks_pregnant,
 )
+from ndoh_hub.utils import rapidpro
 
 from .models import BaselineSurveyResult, MqrStrata
 from .serializers import BaselineSurveyResultSerializer, MqrStrataSerializer
-
-from ndoh_hub.utils import rapidpro
 
 STUDY_ARMS = ["ARM", "RCM", "BCM", "RCM_BCM", "RCM_SMS"]
 

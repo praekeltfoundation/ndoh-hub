@@ -2,7 +2,6 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from eventstore.serializers import MSISDNField
-
 from mqr.models import BaselineSurveyResult
 
 
