@@ -250,23 +250,10 @@ class MqrEndlineChecksViewSet(generics.GenericAPIView):
         if contact is None:
             raise Http404()
 
-        if (
-            contact.fields["mqr_consent"] != "Accepted"
-            or contact.fields.get("mqr_arm") is None
-        ):
-            return Response(
-                {"error": "Not part of MQR study"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
         if contact.fields.get("endline_airtime_received", "FALSE") == "TRUE":
             return Response(
                 {"error": "Airtime already received"},
                 status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if contact.fields.get("opted_out", "FALSE") == "TRUE":
-            return Response(
-                {"error": "Contact has opted out"}, status=status.HTTP_400_BAD_REQUEST
             )
 
         self.start_topup_flow(wa_id)
