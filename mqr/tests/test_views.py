@@ -691,20 +691,6 @@ class MqrEndlineChecksViewSetTests(APITestCase):
         self.assertEqual(response.status_code, 404)
 
     @responses.activate
-    def test_mqr_endline_get_contact_not_mqr(self):
-        """
-        Check that the contact has not given consent or an arm is not set,
-        i.e. the contact is not part of the study
-        """
-        user = get_user_model().objects.create_user("test")
-        self.client.force_authenticate(user)
-
-        self.add_get_rapidpro_contact(consent="Denied", arm=None)
-        response = self.client.post(self.url, data={"msisdn": "27831231234"})
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "Not part of MQR study"})
-
-    @responses.activate
     def test_mqr_endline_airtime_already_received(self):
         """
         Check that the contact has not already received the airtime
@@ -716,19 +702,6 @@ class MqrEndlineChecksViewSetTests(APITestCase):
         response = self.client.post(self.url, data={"msisdn": "27831231234"})
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"error": "Airtime already received"})
-
-    @responses.activate
-    def test_mqr_endline_opted_out(self):
-        """
-        Check that the contact has not opted out
-        """
-        user = get_user_model().objects.create_user("test")
-        self.client.force_authenticate(user)
-
-        self.add_get_rapidpro_contact(optedout="TRUE")
-        response = self.client.post(self.url, data={"msisdn": "27831231234"})
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"error": "Contact has opted out"})
 
     @responses.activate
     def test_mqr_endline_validate_start_flow(self):
