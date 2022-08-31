@@ -1,1 +1,0 @@
-Check that field "endline_airtime_received" exists on production

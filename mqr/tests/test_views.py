@@ -691,6 +691,18 @@ class MqrEndlineChecksViewSetTests(APITestCase):
         self.assertEqual(response.status_code, 404)
 
     @responses.activate
+    def test_mqr_endline_get_contact_no_arm_found(self):
+        """
+        Check that the contact exists
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        self.add_get_rapidpro_contact(arm="")
+        response = self.client.post(self.url, data={"msisdn": "27831231234"})
+        self.assertEqual(response.status_code, 404)
+
+    @responses.activate
     def test_mqr_endline_airtime_already_received(self):
         """
         Check that the contact has not already received the airtime
