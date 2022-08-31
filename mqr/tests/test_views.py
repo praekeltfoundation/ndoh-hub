@@ -700,7 +700,7 @@ class MqrEndlineChecksViewSetTests(APITestCase):
 
         self.add_get_rapidpro_contact(arm="")
         response = self.client.post(self.url, data={"msisdn": "27831231234"})
-        self.assertEqual(response.status_code, 404)      
+        self.assertEqual(response.status_code, 404)
 
     @responses.activate
     def test_mqr_endline_airtime_already_received(self):

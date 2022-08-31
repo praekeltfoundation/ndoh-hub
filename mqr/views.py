@@ -258,7 +258,6 @@ class MqrEndlineChecksViewSet(generics.GenericAPIView):
 
         if not contact.fields.get("mqr_arm"):
             raise Http404()
-        
 
         self.start_topup_flow(wa_id)
 
