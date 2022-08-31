@@ -256,6 +256,10 @@ class MqrEndlineChecksViewSet(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        if not contact.fields.get("mqr_arm"):
+            raise Http404()
+        
+
         self.start_topup_flow(wa_id)
 
         return_data = {"uuid": contact.uuid}
