@@ -24,6 +24,7 @@ from .models import AaqFaq
 logger = logging.getLogger(__name__)
 
 
+CORE_API_URL = "https://mc-aaq-core-prd.ndoh-k8s.prd-p6t.org"
 
 class AaqFaqViewSet(generics.GenericAPIView):
 
@@ -40,11 +41,10 @@ class AaqFaqViewSet(generics.GenericAPIView):
         return Response(return_data, status=status.HTTP_202_ACCEPTED)
 
     def get(self, request, *args, **kwargs):
-        url = "https://mc-aaq-core-prd.ndoh-k8s.prd-p6t.org/inbound/check"
+        url = f"{CORE_API_URL}/inbound/check"
 
         payload = {
-            "text_to_match": "I am pregnant and out of breath",
-            "return_scoring": "true"
+            "text_to_match": "I am pregnant and out of breath"
         }
         headers = {
             "Authorization": "Bearer aBZLwGVGfU5Tb9vNRtsdV7Gaxo5uxLXJ",
@@ -53,25 +53,8 @@ class AaqFaqViewSet(generics.GenericAPIView):
 
         response = requests.request("POST", url, json=payload, headers=headers)
         top_responses = response.json()["top_responses"]
-        numbers = []
-        message_body = """*Here are some topics that might answer your question*
-            Reply with a number.
 
-            """
-        json_msg = {
-            "message": "1. faq title 1 \n 2. faq title 2",
-            "body": {
-                "1": {"text": "faq body 1", "id": 1},
-                "2": {"text": "faq body 2", "id": 2},
-                "3": {"text": "faq body 3", "id": 3},
-            }
-            }
-      #  message_content =  "1. faq title 1 \n 2. faq title 2"
-      #  body_content = {
-      #          "1": {"text": "faq body 1", "id": 1},
-      #          "2": {"text": "faq body 2", "id": 2},
-      #          "3": {"text": "faq body 3", "id": 3},
-      #      }
+        json_msg = {}
         body_content = {}
         message_titles = []
             
@@ -80,16 +63,65 @@ class AaqFaqViewSet(generics.GenericAPIView):
             counter += 1
             
             body_content[f"{counter}"] = {"text": content, "id": id}
-            message_titles.append(title)
-                        
+            message_titles.append(f"*{counter}* - {title}")
+
+        next_page_url = response.json()["next_page_url"]
+        feedback_secret_key = response.json()["feedback_secret_key"]
+        inbound_secret_key = response.json()["inbound_secret_key"]
+        inbound_id = response.json()["inbound_id"]
+
         json_msg = {
-            "message": "\nhaaaaai".join(message_titles),
+            "message": "\n".join(message_titles),
             "body": body_content,
-            
+            "next_page_url": next_page_url,
+            "feedback_secret_key": feedback_secret_key,
+            "inbound_secret_key": inbound_secret_key,
+            "inbound_id": inbound_id, 
         }
         
-
-        #return_data = body_content
         return_data = json_msg     
         return Response(return_data, status=status.HTTP_202_ACCEPTED)
    
+class PaginatedResponseView(generics.GenericAPIView):
+
+    def get(self, request, inbound_id, page_id):
+        #TODO: check if I can get this URL also part of the definition above
+        inbound_secret_key = request.GET.get('inbound_secret_key')
+        url = f"{CORE_API_URL}/inbound/{inbound_id}/{page_id}?inbound_secret_key={inbound_secret_key}"
+        headers = {
+            "Authorization": "Bearer aBZLwGVGfU5Tb9vNRtsdV7Gaxo5uxLXJ",
+            "Content-Type": "application/json"
+        }
+        
+        
+        response = requests.request("GET", url, headers=headers)
+        top_responses = response.json()["top_responses"]
+
+        json_msg = {}
+        body_content = {}
+        message_titles = []
+            
+        counter = 0
+        for id, title, content in top_responses:
+            counter += 1
+            
+            body_content[f"{counter}"] = {"text": content, "id": id}
+            message_titles.append(f"*{counter}* - {title}")
+
+        next_page_url = response.json()["next_page_url"]
+        feedback_secret_key = response.json()["feedback_secret_key"]
+        inbound_secret_key = response.json()["inbound_secret_key"]
+        inbound_id = response.json()["inbound_id"]
+
+        json_msg = {
+            "message": "\n".join(message_titles),
+            "body": body_content,
+            "next_page_url": next_page_url,
+            "feedback_secret_key": feedback_secret_key,
+            "inbound_secret_key": inbound_secret_key,
+            "inbound_id": inbound_id, 
+        }
+
+        #return_data = body_content
+        return_data = json_msg    
+        return Response(return_data, status=status.HTTP_202_ACCEPTED)
