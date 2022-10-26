@@ -9,16 +9,16 @@ router.trailing_slash = "/?"
 
 urlpatterns = [
     url(
-        r"^apitest/",
-        views.apitest,
-        name="aaq-api-test",
-    ),
-    url(
         r"^api/v1/inbound/check",
         views.get_first_page,
         name="aaq-get-first-page",
     ),
-     url(
+    url(
+        r"^api/v1/add-feedback",
+        views.add_feedback,
+        name="aaq-add-feedback",
+    ),
+    url(
         r"^api/v1/inbound/(?P<inbound_id>\d+)/(?P<page_id>\d+)",
         views.get_second_page,
         name="aaq-get-second-page",
