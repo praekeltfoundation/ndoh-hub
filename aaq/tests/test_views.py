@@ -7,6 +7,9 @@ from rest_framework.test import APITestCase
 
 class CoreInboundCheckTests(APITestCase):
     def PostInboundCheckTest(self):
+        """
+        Check that the format of the response is as expected
+        """
         # POST /inbound/check
 
         mock_payload = {"text_to_match": "I am pregnant and out of breath"}

@@ -392,7 +392,11 @@ MQR_SEND_AIRTIME_FLOW_ID = env.str("MQR_SEND_AIRTIME_FLOW_ID", None)
 #AAQ-Beta
 #AAQ_CORE_API_URL = env.str("AAQ_CORE_API_URL", None)
 #AAQ_CORE_API_TOKEN = env.str("AAQ_CORE_API_TOKEN", None
-AAQ_HUB_APP_API_URL = "https://c1d8-155-93-231-139.eu.ngrok.io"
-AAQ_HUB_APP_API_AUTH = "Token a2a9e3c517cba5169770d627771e6a51e9153894"
-AAQ_CORE_API_URL = "https://mc-aaq-core-prd.ndoh-k8s.prd-p6t.org"
-AAQ_CORE_API_AUTH = "Bearer aBZLwGVGfU5Tb9vNRtsdV7Gaxo5uxLXJ"
+
+AAQ_HUB_APP_API_URL = env.str("AAQ_HUB_APP_API_URL", None)
+AAQ_HUB_APP_API_AUTH = env.str("AAQ_HUB_APP_API_AUTH", None)
+AAQ_CORE_API_URL = env.str("AAQ_CORE_API_URL", None)
+AAQ_CORE_API_AUTH = env.str("AAQ_CORE_API_AUTH", None)
+
+
+
