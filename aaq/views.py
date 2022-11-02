@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 @renderer_classes((JSONRenderer,))
 def get_first_page(request, *args, **kwargs):
     url = f"{settings.AAQ_CORE_API_URL}/inbound/check"
-    #TODO: Replace this hardcoded payload with one from flow
+    # TODO: Replace this hardcoded payload with one from flow
     payload = {"text_to_match": "I am pregnant and out of breath"}
     headers = {
         "Authorization": settings.AAQ_CORE_API_AUTH,

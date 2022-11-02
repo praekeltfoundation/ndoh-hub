@@ -47,11 +47,11 @@ def send_feedback_task(secret_key, inbound_id, feedback_type, **kwargs):
 
             if "faq_id" in kwargs:
                 print("Send Feedback On FAQ")
-                data["feedback"]["faq_id"] = kwargs.get("faq_id")
+                data["feedback"]["faq_id"] = kwargs["faq_id"]
 
             if "page" in kwargs:
                 print("Send Feedback on Page")
-                data["feedback"]["page_number"] = kwargs.get("page")
+                data["feedback"]["page_number"] = kwargs["page"]
 
             print("Running Send Feedback")
             url = f"{settings.AAQ_CORE_API_URL}/inbound/feedback"
