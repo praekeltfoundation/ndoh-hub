@@ -1,3 +1,5 @@
+import re
+
 import responses
 from django.urls import reverse
 from rest_framework.test import APITestCase
@@ -150,8 +152,7 @@ class GetFirstPageViewTests(APITestCase):
         payload = {"text_to_match": "I am pregnant and out of breath"}
 
         response = self.client.post(self.url, data=payload)
-        print(response)
-        print(response.json())
+
         assert response.json() == {
             "message": "*1* - short of breath\n*2* - Fainting in pregnancy\n*3* - Bleeding in pregnancy\n*4* - Sleep in pregnancy\n*5* - Breast pain",
             "body": {
@@ -178,21 +179,73 @@ class GetFirstPageViewTests(APITestCase):
             "inbound_secret_key": "yyy",
             "inbound_id": "iii",
         }
+
+
+class GetSecondPageViewTests(APITestCase):
+    #url = reverse("aaq-get-second-page", kwargs={"inbound_id": 270, "page_id": 2})
+    
+
+    def test_unauthenticated(self):
+        """
+        Unauthenticated users cannot access the API
+        """
+        url = reverse("aaq-get-second-page", kwargs={"inbound_id": 270, "page_id": 2})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # TODO: Test how we handle errors from aaq core?
+
+    @responses.activate
+    def test_get_second_page_view(self):
+        """
+        Check we can get the second page of a given inbound check, with another 5 faqs
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        fakeCoreApi = FakeAaqCoreApi()
+        responses.add_callback(
+            responses.GET,
+            re.compile(r"http://aaqcore/inbound/"),
+            callback=fakeCoreApi.get_paginated_response,
+            content_type="application/json",
+        )
+        url = reverse("aaq-get-second-page", kwargs={"inbound_id": 270, "page_id": 2})
+        response = self.client.get(url)
+
+        print(response)
+        print(response.json())
+        assert response.json() == {
+            "message": "*1* - 2short of breath\n*2* - 2Fainting in pregnancy\n*3* - 2Bleeding in pregnancy\n*4* - 2Sleep in pregnancy\n*5* - 2Breast pain",
+            "body": {
+                "1": {
+                    "text": "*Yes, pregnancy can affect your breathing ",
+                    "id": "221",
+                },
+                "2": {
+                    "text": "*Fainting could mean anemia – visit the clinic to find out",
+                    "id": "226",
+                },
+                "3": {
+                    "text": "*Bleeding during pregnancy*\r\n \r\n*Early pregnancy ",
+                    "id": "2114",
+                },
+                "4": {
+                    "text": "*Get good sleep during pregnancy*\r\n\r\nGood sleep is good",
+                    "id": "2111",
+                },
+                "5": {
+                    "text": "*Sometimes breast pain needs to be checked at the clinic",
+                    "id": "2150",
+                },
+            },
+            "next_page_url": "/inbound/iii/ppp?inbound_secret_key=isk",
+            "feedback_secret_key": "fff",
+            "inbound_secret_key": "iii=",
+            "inbound_id": "iii",
+        }
         
 
 
-# class GetSecondPageViewTests(APITestCase):
-#    url = reverse("aaq-get-second-page", kwargs={"inbound_id": 270, "page_id": 2})
-#
-#    @responses.activate
-#    def test_get_second_page_view(self):
-#        """
-#        Check we can get the second page of a given inbound check, with another 5 faqs
-#        """
-#
-#        self.assertTrue(True)
-#
-#
 # class AddFeedbackViewTests(APITestCase):
 #    url = reverse("aaq-add-feedback")
 #
