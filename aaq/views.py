@@ -1,15 +1,15 @@
 import logging
-from urllib.parse import urljoin
 import requests
 import json
-import time
-from django.http import JsonResponse
+
 from django.conf import settings
-from rest_framework import generics, status
+from rest_framework import status
 from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from .tasks import send_feedback_task
+from aaq.serializers import InboundCheckSerializer
+
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +17,15 @@ logger = logging.getLogger(__name__)
 @api_view(("POST",))
 @renderer_classes((JSONRenderer,))
 def get_first_page(request, *args, **kwargs):
+
+    serializer = InboundCheckSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    question = serializer.validated_data["question"]
+
     url = f"{settings.AAQ_CORE_API_URL}/inbound/check"
     # TODO: Replace this hardcoded payload with one from flow
-    payload = {"text_to_match": "I am pregnant and out of breath"}
+    payload = {"text_to_match": f"{question}"}
     headers = {
         "Authorization": settings.AAQ_CORE_API_AUTH,
         "Content-Type": "application/json",
@@ -35,11 +41,9 @@ def get_first_page(request, *args, **kwargs):
     counter = 0
     for id, title, content in top_responses:
         counter += 1
-
         body_content[f"{counter}"] = {"text": content, "id": id}
         message_titles.append(f"*{counter}* - {title}")
 
-    next_page_url = response.json()["next_page_url"]
     feedback_secret_key = response.json()["feedback_secret_key"]
     inbound_secret_key = response.json()["inbound_secret_key"]
     inbound_id = response.json()["inbound_id"]
@@ -47,11 +51,12 @@ def get_first_page(request, *args, **kwargs):
     json_msg = {
         "message": "\n".join(message_titles),
         "body": body_content,
-        "next_page_url": next_page_url,
         "feedback_secret_key": feedback_secret_key,
         "inbound_secret_key": inbound_secret_key,
         "inbound_id": inbound_id,
     }
+    if "next_page_url" in response.json():
+        json_msg["next_page_url"] = response.json()["next_page_url"]
 
     return_data = json_msg
     return Response(return_data, status=status.HTTP_202_ACCEPTED)
