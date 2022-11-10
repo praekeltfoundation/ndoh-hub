@@ -316,6 +316,33 @@ def upload_turn_media(media, content_type="application/pdf"):
     return response.json()["media"][0]["id"]
 
 
+def get_edc_report(report_id, contact_uuid):
+    head = get_header_pdf(contact_uuid)
+    payload = {}
+    path = urljoin(settings.ADA_EDC_REPORT_URL, report_id)
+    response = requests.get(path, json=payload, headers=head)
+    response.raise_for_status()
+    return response.json()
+
+
+def upload_edc_media(report, study_id, record_id, field_id, token, content_type="application/json"):
+    headers = {
+        "Authorization": "Bearer {}".format(token),
+        "Content-Type": content_type,
+    }
+    response = requests.post(
+        urljoin(
+            settings.ADA_EDC_STUDY_URL, study_id, 
+            "record", record_id, "study-data-point", field_id),
+        headers=headers,
+        data={
+            "upload_file": report
+        }
+    )
+    response.raise_for_status()
+    return response.json()
+
+
 # Go back to previous question
 def previous_question(body, path, contact_uuid):
     head = get_header(contact_uuid)
@@ -354,6 +381,7 @@ def get_header_pdf(contact_uuid):
         "x-ada-clientId": settings.X_ADA_CLIENTID,
         "x-ada-userId": contact_uuid,
         "Accept-Language": "en-GB",
+        "Accept": "application/json",
         "Content-Type": "application/pdf",
     }
     return head

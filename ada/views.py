@@ -32,6 +32,7 @@ from .utils import (
     get_endpoint,
     get_path,
     get_report,
+    get_edc_report,
     get_step,
     pdf_endpoint,
     pdf_ready,
@@ -261,5 +262,22 @@ class Reports(generics.GenericAPIView):
         payload = request.GET.get("payload")
         urldecoded = urllib.parse.unquote(payload)
         data = json.loads(urldecoded)
+        message = format_message(data)
+        return Response(message, status=status.HTTP_200_OK)
+
+
+class EDC_Reports(generics.GenericAPIView):
+    permission_classes = (permissions.AllowAny,)
+ 
+    def get(self, request, *args, **kwargs):
+        result = request.GET
+        data = result.dict()
+        contact_uuid = data["contact_uuid"]
+        report_id = data["report_id"]
+        study_id = data["study_id "]
+        record_id = data["record_id "]
+        field_id = data["field_id"]
+        token = data["token"]
+        pdf_content = get_edc_report(report_id, contact_uuid)
         message = format_message(data)
         return Response(message, status=status.HTTP_200_OK)
