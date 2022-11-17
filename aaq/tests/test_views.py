@@ -1,15 +1,13 @@
-import re
 import json
-import responses
-from django.urls import reverse
-from rest_framework.test import APITestCase
-from django.contrib.auth import get_user_model
-from rest_framework import status
+import re
 
+import responses
+from django.contrib.auth import get_user_model
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase
 
 from .helpers import FakeAaqCoreApi
-
-############  TEST HUB APP API  ############
 
 
 class GetFirstPageViewTests(APITestCase):
@@ -76,7 +74,7 @@ class GetFirstPageViewTests(APITestCase):
     @responses.activate
     def test_get_first_page_view_no_words(self):
         """
-        Check that we get 5 faqs returned with 1st page of inbound check
+        Check that we get a response with an empty list in the top_responses part
         """
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
@@ -104,9 +102,9 @@ class GetFirstPageViewTests(APITestCase):
         }
 
     @responses.activate
-    def test_get_first_page_view_empty(self):
+    def test_get_first_page_view_blank(self):
         """
-        Check that we get 5 faqs returned with 1st page of inbound check
+        Check that we get an error message if a blank question is submitted
         """
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
@@ -125,8 +123,7 @@ class GetFirstPageViewTests(APITestCase):
             self.url, data=payload, content_type="application/json"
         )
 
-        assert response.json() == {'question': ['This field may not be blank.']}
-
+        assert response.json() == {"question": ["This field may not be blank."]}
 
 
 class GetSecondPageViewTests(APITestCase):

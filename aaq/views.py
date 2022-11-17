@@ -1,15 +1,16 @@
-import logging
-import requests
 import json
+import logging
 
+import requests
 from django.conf import settings
 from rest_framework import status
 from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from .tasks import send_feedback_task
+
 from aaq.serializers import InboundCheckSerializer
 
+from .tasks import send_feedback_task
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +25,9 @@ def get_first_page(request, *args, **kwargs):
     question = serializer.validated_data["question"]
 
     url = f"{settings.AAQ_CORE_API_URL}/inbound/check"
-    # TODO: Replace this hardcoded payload with one from flow
     payload = {"text_to_match": f"{question}"}
     headers = {
-        "Authorization": settings.AAQ_CORE_API_AUTH,
+        "Authorization": settings.AAQ_CORE_INBOUND_CHECK_TOKEN,
         "Content-Type": "application/json",
     }
 
@@ -69,7 +69,7 @@ def get_second_page(request, inbound_id, page_id):
     inbound_secret_key = request.GET.get("inbound_secret_key")
     url = f"{settings.AAQ_CORE_API_URL}/inbound/{inbound_id}/{page_id}?inbound_secret_key={inbound_secret_key}"
     headers = {
-        "Authorization": settings.AAQ_CORE_API_AUTH,
+        "Authorization": settings.AAQ_CORE_INBOUND_CHECK_TOKEN,
         "Content-Type": "application/json",
     }
     json_msg = {}
@@ -102,7 +102,6 @@ def get_second_page(request, inbound_id, page_id):
         "inbound_id": inbound_id,
     }
 
-    # return_data = body_content
     return_data = json_msg
     return Response(return_data, status=status.HTTP_202_ACCEPTED)
 
