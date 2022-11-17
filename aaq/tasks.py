@@ -1,23 +1,9 @@
-from urllib.parse import urljoin
-from uuid import UUID
-
 import requests
 from celery.exceptions import SoftTimeLimitExceeded
 from django.conf import settings
-from django.urls import reverse
-from django.utils import dateparse
 from requests.exceptions import RequestException
 from temba_client.exceptions import TembaHttpError
-
-from ada.utils import rapidpro
 from ndoh_hub.celery import app
-from ndoh_hub.utils import (
-    get_mom_age,
-    get_random_date,
-    get_today,
-    rapidpro,
-    send_slack_message,
-)
 
 
 @app.task(
@@ -42,7 +28,8 @@ def send_feedback_task(secret_key, inbound_id, feedback_type, **kwargs):
         data["feedback"]["page_number"] = kwargs["page"]
 
     print(
-        f"Running Send Feedback on URL {settings.AAQ_CORE_API_URL} with token {settings.AAQ_CORE_INBOUND_CHECK_TOKEN}"
+        f"Running Send Feedback on URL {settings.AAQ_CORE_API_URL} with "
+        "token {settings.AAQ_CORE_INBOUND_CHECK_TOKEN}"
     )
     url = f"{settings.AAQ_CORE_API_URL}/inbound/feedback"
     headers = {

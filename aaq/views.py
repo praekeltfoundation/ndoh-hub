@@ -67,7 +67,8 @@ def get_first_page(request, *args, **kwargs):
 def get_second_page(request, inbound_id, page_id):
     # TODO: check if I can get this URL also part of the definition above
     inbound_secret_key = request.GET.get("inbound_secret_key")
-    url = f"{settings.AAQ_CORE_API_URL}/inbound/{inbound_id}/{page_id}?inbound_secret_key={inbound_secret_key}"
+    url = f"{settings.AAQ_CORE_API_URL}/inbound/{inbound_id}/{page_id}?"
+    "inbound_secret_key={inbound_secret_key}"
     headers = {
         "Authorization": settings.AAQ_CORE_INBOUND_CHECK_TOKEN,
         "Content-Type": "application/json",

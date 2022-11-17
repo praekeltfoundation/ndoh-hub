@@ -43,25 +43,29 @@ class GetFirstPageViewTests(APITestCase):
         response = self.client.post(
             self.url, data=payload, content_type="application/json"
         )
-
         assert response.json() == {
-            "message": "*1* - short of breath\n*2* - Fainting in pregnancy\n*3* - Bleeding in pregnancy\n*4* - Sleep in pregnancy\n*5* - Breast pain",
+            "message": "*1* - short of breath\n*2* - Fainting in pregnancy\n"
+            "*3* - Bleeding in pregnancy\n*4* - Sleep in pregnancy\n*5* - "
+            "Breast pain",
             "body": {
-                "1": {"text": "*Yes, pregnancy can affect your breathing ", "id": "21"},
+                "1": {"text": "*Yes, pregnancy can affect your breathing", "id": "21"},
                 "2": {
-                    "text": "*Fainting could mean anemia – visit the clinic to find out",
+                    "text": "*Fainting could mean anemia – visit the clinic to "
+                    "find out",
                     "id": "26",
                 },
                 "3": {
-                    "text": "*Bleeding during pregnancy*\r\n \r\n*Early pregnancy ",
+                    "text": "*Bleeding during pregnancy*\r\n \r\n*Early " "pregnancy",
                     "id": "114",
                 },
                 "4": {
-                    "text": "*Get good sleep during pregnancy*\r\n\r\nGood sleep is good",
+                    "text": "*Get good sleep during pregnancy*\r\n\r\nGood "
+                    "sleep is good",
                     "id": "111",
                 },
                 "5": {
-                    "text": "*Sometimes breast pain needs to be checked at the clinic",
+                    "text": "*Sometimes breast pain needs to be checked at "
+                    "the clinic",
                     "id": "150",
                 },
             },
@@ -159,26 +163,31 @@ class GetSecondPageViewTests(APITestCase):
         print(response)
         print(response.json())
         assert response.json() == {
-            "message": "*1* - 2short of breath\n*2* - 2Fainting in pregnancy\n*3* - 2Bleeding in pregnancy\n*4* - 2Sleep in pregnancy\n*5* - 2Breast pain",
+            "message": "*1* - 2short of breath\n*2* - 2Fainting in pregnancy\n"
+            "*3* - 2Bleeding in pregnancy\n*4* - 2Sleep in pregnancy\n"
+            "*5* - 2Breast pain",
             "body": {
                 "1": {
                     "text": "*Yes, pregnancy can affect your breathing ",
                     "id": "221",
                 },
                 "2": {
-                    "text": "*Fainting could mean anemia – visit the clinic to find out",
+                    "text": "*Fainting could mean anemia – visit the clinic "
+                    "to find out",
                     "id": "226",
                 },
                 "3": {
-                    "text": "*Bleeding during pregnancy*\r\n \r\n*Early pregnancy ",
+                    "text": "*Bleeding during pregnancy*\r\n \r\n*Early " "pregnancy ",
                     "id": "2114",
                 },
                 "4": {
-                    "text": "*Get good sleep during pregnancy*\r\n\r\nGood sleep is good",
+                    "text": "*Get good sleep during pregnancy*\r\n\r\n"
+                    "Good sleep is good",
                     "id": "2111",
                 },
                 "5": {
-                    "text": "*Sometimes breast pain needs to be checked at the clinic",
+                    "text": "*Sometimes breast pain needs to be checked at "
+                    "the clinic",
                     "id": "2150",
                 },
             },

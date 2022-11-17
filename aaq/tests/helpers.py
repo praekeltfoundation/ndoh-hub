@@ -10,7 +10,7 @@ class FakeAaqCoreApi:
                 [
                     "21",
                     "short of breath",
-                    "*Yes, pregnancy can affect your breathing ",
+                    "*Yes, pregnancy can affect your breathing",
                 ],
                 [
                     "26",
@@ -20,7 +20,7 @@ class FakeAaqCoreApi:
                 [
                     "114",
                     "Bleeding in pregnancy",
-                    "*Bleeding during pregnancy*\r\n \r\n*Early pregnancy ",
+                    "*Bleeding during pregnancy*\r\n \r\n*Early pregnancy",
                 ],
                 [
                     "111",
