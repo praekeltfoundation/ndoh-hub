@@ -93,7 +93,7 @@ class RandomStrataArmView(generics.GenericAPIView):
             {
                 "Excluded": True,
                 "reason": f"clinic: {clinic}, weeks: {weeks_pregnant_bucket}, "
-                "age: {mom_age}",
+                f"age: {mom_age}",
             }
         )
 
