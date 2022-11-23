@@ -290,14 +290,17 @@ class StrataRandomization(APITestCase):
         response = self.client.post(
             self.url,
             data={
-                "estimated_delivery_date": "2022-04-30",
+                "estimated_delivery_date": "2022-01-30",
                 "facility_code": "123456",
                 "mom_age": "38",
             },
             format="json",
         )
 
-        self.assertEqual(response.json(), {"Excluded": True})
+        self.assertEqual(
+            response.json(),
+            {"Excluded": True, "reason": "clinic: 123456, weeks: None, age: 38"},
+        )
 
     @override_settings(MQR_STUDY_START_DATE="2022-01-03")
     def test_random_arm_exclude_study_limit(self):
@@ -321,7 +324,10 @@ class StrataRandomization(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.json(), {"Excluded": True})
+        self.assertEqual(
+            response.json(),
+            {"Excluded": True, "reason": "study not active for weeks pregnant"},
+        )
 
     def test_get_random_starta_arm(self):
         """

@@ -55,7 +55,9 @@ class RandomStrataArmView(generics.GenericAPIView):
         mom_age = serializer.validated_data.get("mom_age")
 
         if not is_study_active_for_weeks_pregnant(estimated_delivery_date):
-            return Response({"Excluded": True})
+            return Response(
+                {"Excluded": True, "reason": "study not active for weeks pregnant"}
+            )
 
         clinic_code = get_facility_province(facility_code)
         weeks_pregnant_bucket = get_weeks_pregnant(estimated_delivery_date)
@@ -86,7 +88,14 @@ class RandomStrataArmView(generics.GenericAPIView):
                 strata.save()
 
             return Response({"random_arm": arm})
-        return Response({"Excluded": True})
+        clinic = clinic_code.code if clinic_code else None
+        return Response(
+            {
+                "Excluded": True,
+                "reason": f"clinic: {clinic}, weeks: {weeks_pregnant_bucket}, "
+                "age: {mom_age}",
+            }
+        )
 
 
 class BaseMessageView(generics.GenericAPIView):
