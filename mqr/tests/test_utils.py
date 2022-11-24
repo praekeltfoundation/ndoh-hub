@@ -490,20 +490,20 @@ class TestIsStudyActiveForWeeksPregnant(TestCase):
     def test_is_study_active_for_weeks_pregnant(self):
         utils.get_today = lambda: date(2022, 5, 25)
 
-        edd = date(2022, 10, 25)  # 19 weeks
+        edd = date(2022, 11, 15)  # 16 weeks
         study_active = utils.is_study_active_for_weeks_pregnant(edd)
         self.assertFalse(study_active)
 
-        edd = date(2022, 10, 18)  # 20 weeks
+        edd = date(2022, 11, 8)  # 17 weeks
         study_active = utils.is_study_active_for_weeks_pregnant(edd)
         self.assertTrue(study_active)
 
         utils.get_today = lambda: date(2022, 5, 31)
 
-        edd = date(2022, 10, 19)  # 20 weeks
+        edd = date(2022, 11, 14)  # 17 weeks
         study_active = utils.is_study_active_for_weeks_pregnant(edd)
         self.assertFalse(study_active)
 
-        edd = date(2022, 10, 25)  # 21 weeks
+        edd = date(2022, 11, 1)  # 18 weeks
         study_active = utils.is_study_active_for_weeks_pregnant(edd)
-        self.assertFalse(study_active)
+        self.assertTrue(study_active)

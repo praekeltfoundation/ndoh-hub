@@ -167,7 +167,7 @@ def is_study_active_for_weeks_pregnant(estimated_delivery_date):
     ).date()
 
     weeks_pregnant = get_week("pre", estimated_delivery_date)
-    study_min_weeks = ((get_today() - study_start_date).days // 7) + 18
+    study_min_weeks = ((get_today() - study_start_date).days // 7) + 15
 
     return weeks_pregnant >= study_min_weeks
 
