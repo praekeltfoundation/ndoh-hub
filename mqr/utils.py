@@ -10,7 +10,10 @@ from registrations.models import ClinicCode
 
 def get_week(subscription_type, edd_or_dob_date):
     if subscription_type == "pre":
-        return 40 - (abs(get_today() - edd_or_dob_date).days // 7)
+        if edd_or_dob_date < get_today():
+            return 40 + (abs(get_today() - edd_or_dob_date).days // 7)
+        else:
+            return 40 - (abs(get_today() - edd_or_dob_date).days // 7)
     else:
         return abs(get_today() - edd_or_dob_date).days // 7
 
