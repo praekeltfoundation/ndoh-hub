@@ -26,6 +26,10 @@ class TestGetWeek(TestCase):
         edd = get_date("2022-03-01")
         self.assertEqual(utils.get_week("pre", edd), 40)
 
+        # Prebirth: when EDD is today - 7 days (2022-03-28) = 41 weeks pregnant
+        edd = get_date("2022-02-22")
+        self.assertEqual(utils.get_week("pre", edd), 41)
+
         # Prebirth: when EDD is today + 28 days (2022-03-29) = 36 weeks pregnant
         edd = get_date("2022-03-29")
         self.assertEqual(utils.get_week("pre", edd), 36)
