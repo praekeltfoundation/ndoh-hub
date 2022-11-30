@@ -22,22 +22,14 @@ def send_feedback_task(secret_key, inbound_id, feedback_type, **kwargs):
         "feedback": {"feedback_type": feedback_type},
     }
     if "faq_id" in kwargs:
-        print("Send Feedback On FAQ")
         data["feedback"]["faq_id"] = kwargs["faq_id"]
     if "page" in kwargs:
-        print("Send Feedback on Page")
         data["feedback"]["page_number"] = kwargs["page"]
 
-    print(
-        f"Running Send Feedback on URL {settings.AAQ_CORE_API_URL} with "
-        "token {settings.AAQ_CORE_INBOUND_CHECK_TOKEN}"
-    )
     url = f"{settings.AAQ_CORE_API_URL}/inbound/feedback"
     headers = {
         "Authorization": settings.AAQ_CORE_INBOUND_CHECK_TOKEN,
         "Content-Type": "application/json",
     }
     response = requests.request("PUT", url, json=data, headers=headers)
-    print("Send Feedback Complete")
-    print(f"Response = {response}")
     response.raise_for_status()

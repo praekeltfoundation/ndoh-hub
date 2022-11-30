@@ -11,7 +11,6 @@ from rest_framework.response import Response
 from aaq.serializers import InboundCheckSerializer, UrgencyCheckSerializer
 
 from .tasks import send_feedback_task
-from ndoh_hub.utils import send_slack_message
 
 logger = logging.getLogger(__name__)
 
@@ -99,9 +98,7 @@ def add_feedback(request, *args, **kwargs):
 def check_urgency(request, *args, **kwargs):
     serializer = UrgencyCheckSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-
     question = serializer.validated_data["question"]
-
     url = f"{settings.AAQ_UD_API_URL}/inbound/check"
     payload = {"text_to_match": f"{question}"}
     headers = {
@@ -110,8 +107,6 @@ def check_urgency(request, *args, **kwargs):
     }
 
     response = requests.request("POST", url, json=payload, headers=headers)
-    print(response)
-    send_slack_message("test-mon", "Fritz Test")
     urgency_score = response.json()["urgency_score"]
     json_msg = {
         "urgency_score": urgency_score,
