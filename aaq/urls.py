@@ -1,4 +1,4 @@
-from django.conf.urls import include, url
+from django.conf.urls import url
 from rest_framework import routers
 
 from . import views
@@ -19,9 +19,8 @@ urlpatterns = [
         name="aaq-add-feedback",
     ),
     url(
-        r"^api/v1/inbound/(?P<inbound_id>\d+)/(?P<page_id>\d+)",
-        views.get_second_page,
-        name="aaq-get-second-page",
+        r"^api/v1/check-urgency",
+        views.check_urgency,
+        name="aaq-check-urgency",
     ),
-    url(r"^api/v1/", include(router.urls)),
 ]

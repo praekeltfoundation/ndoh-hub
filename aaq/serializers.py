@@ -5,5 +5,5 @@ class InboundCheckSerializer(serializers.Serializer):
     question = serializers.CharField(required=True)
 
 
-class PaginatedResponseSerializer(serializers.Serializer):
-    inbound_id = serializers.IntegerField(required=True)
+class UrgencyCheckSerializer(serializers.Serializer):
+    question = serializers.CharField(required=True)

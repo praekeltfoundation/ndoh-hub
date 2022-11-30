@@ -8,9 +8,10 @@ from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
-from aaq.serializers import InboundCheckSerializer
+from aaq.serializers import InboundCheckSerializer, UrgencyCheckSerializer
 
 from .tasks import send_feedback_task
+from ndoh_hub.utils import send_slack_message
 
 logger = logging.getLogger(__name__)
 
@@ -62,51 +63,6 @@ def get_first_page(request, *args, **kwargs):
     return Response(return_data, status=status.HTTP_202_ACCEPTED)
 
 
-@api_view(("GET",))
-@renderer_classes((JSONRenderer,))
-def get_second_page(request, inbound_id, page_id):
-    # TODO: check if I can get this URL also part of the definition above
-    inbound_secret_key = request.GET.get("inbound_secret_key")
-    url = f"{settings.AAQ_CORE_API_URL}/inbound/{inbound_id}/{page_id}?"
-    "inbound_secret_key={inbound_secret_key}"
-    headers = {
-        "Authorization": settings.AAQ_CORE_INBOUND_CHECK_TOKEN,
-        "Content-Type": "application/json",
-    }
-    json_msg = {}
-    body_content = {}
-    message_titles = []
-
-    response = requests.request("GET", url, headers=headers)
-    if response.status_code != 200:
-        response.raise_for_status()
-    top_responses = response.json()["top_responses"]
-
-    counter = 0
-    for id, title, content in top_responses:
-        counter += 1
-
-        body_content[f"{counter}"] = {"text": content, "id": id}
-        message_titles.append(f"*{counter}* - {title}")
-
-    next_page_url = response.json()["next_page_url"]
-    feedback_secret_key = response.json()["feedback_secret_key"]
-    inbound_secret_key = response.json()["inbound_secret_key"]
-    inbound_id = response.json()["inbound_id"]
-
-    json_msg = {
-        "message": "\n".join(message_titles),
-        "body": body_content,
-        "next_page_url": next_page_url,
-        "feedback_secret_key": feedback_secret_key,
-        "inbound_secret_key": inbound_secret_key,
-        "inbound_id": inbound_id,
-    }
-
-    return_data = json_msg
-    return Response(return_data, status=status.HTTP_202_ACCEPTED)
-
-
 @api_view(("PUT",))
 @renderer_classes((JSONRenderer,))
 def add_feedback(request, *args, **kwargs):
@@ -136,3 +92,30 @@ def add_feedback(request, *args, **kwargs):
         )
 
     return Response(status=status.HTTP_202_ACCEPTED)
+
+
+@api_view(("POST",))
+@renderer_classes((JSONRenderer,))
+def check_urgency(request, *args, **kwargs):
+    serializer = UrgencyCheckSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    question = serializer.validated_data["question"]
+
+    url = f"{settings.AAQ_UD_API_URL}/inbound/check"
+    payload = {"text_to_match": f"{question}"}
+    headers = {
+        "Authorization": settings.AAQ_UD_INBOUND_CHECK_TOKEN,
+        "Content-Type": "application/json",
+    }
+
+    response = requests.request("POST", url, json=payload, headers=headers)
+    print(response)
+    send_slack_message("test-mon", "Fritz Test")
+    urgency_score = response.json()["urgency_score"]
+    json_msg = {
+        "urgency_score": urgency_score,
+    }
+
+    return_data = json_msg
+    return Response(return_data, status=status.HTTP_202_ACCEPTED)
