@@ -1,14 +1,14 @@
 import requests
+import urllib
 from celery.exceptions import SoftTimeLimitExceeded
 from django.conf import settings
 from requests.exceptions import RequestException
-from temba_client.exceptions import TembaHttpError
 
 from ndoh_hub.celery import app
 
 
 @app.task(
-    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
     retry_backoff=True,
     max_retries=15,
     acks_late=True,
@@ -26,7 +26,7 @@ def send_feedback_task(secret_key, inbound_id, feedback_type, **kwargs):
     if "page" in kwargs:
         data["feedback"]["page_number"] = kwargs["page"]
 
-    url = f"{settings.AAQ_CORE_API_URL}/inbound/feedback"
+    url = urllib.parse.urljoin(settings.AAQ_CORE_API_URL, "/inbound/feedback")
     headers = {
         "Authorization": settings.AAQ_CORE_INBOUND_CHECK_TOKEN,
         "Content-Type": "application/json",

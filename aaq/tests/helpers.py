@@ -3,8 +3,6 @@ import json
 
 class FakeAaqCoreApi:
     def post_inbound_check(self, request):
-        payload = json.loads(request.body)
-        print("payload:", payload)
         resp_body = {
             "top_responses": [
                 [
@@ -42,8 +40,6 @@ class FakeAaqCoreApi:
         return (200, {}, json.dumps(resp_body))
 
     def post_inbound_check_return_empty(self, request):
-        payload = json.loads(request.body)
-        print("payload:", payload)
         resp_body = {
             "top_responses": [],
             "feedback_secret_key": "xxx",

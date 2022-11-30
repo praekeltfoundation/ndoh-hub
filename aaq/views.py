@@ -1,6 +1,6 @@
 import json
 import logging
-
+import urllib
 import requests
 from django.conf import settings
 from rest_framework import status
@@ -23,8 +23,7 @@ def get_first_page(request, *args, **kwargs):
     serializer.is_valid(raise_exception=True)
 
     question = serializer.validated_data["question"]
-
-    url = f"{settings.AAQ_CORE_API_URL}/inbound/check"
+    url = urllib.parse.urljoin(settings.AAQ_CORE_API_URL, "/inbound/check")
     payload = {"text_to_match": f"{question}"}
     headers = {
         "Authorization": settings.AAQ_CORE_INBOUND_CHECK_TOKEN,
@@ -99,7 +98,7 @@ def check_urgency(request, *args, **kwargs):
     serializer = UrgencyCheckSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     question = serializer.validated_data["question"]
-    url = f"{settings.AAQ_UD_API_URL}/inbound/check"
+    url = urllib.parse.urljoin(settings.AAQ_UD_API_URL, "/inbound/check")
     payload = {"text_to_match": f"{question}"}
     headers = {
         "Authorization": settings.AAQ_UD_INBOUND_CHECK_TOKEN,

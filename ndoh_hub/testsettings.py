@@ -27,7 +27,6 @@ HANDLE_EXPIRED_HELPDESK_CONTACTS_ENABLED = True
 MQR_CONTENTREPO_URL = "http://contentrepo"
 MQR_SEND_AIRTIME_FLOW_ID = "mqr-send-airtime-flow-uuid"
 
-# AAQ_HUB_APP_API_URL = env.str("AAQ_HUB_APP_API_URL", None)
-# AAQ_HUB_APP_API_AUTH = env.str("AAQ_HUB_APP_API_AUTH", None)
+
 AAQ_CORE_API_URL = "http://aaqcore"
-# AAQ_CORE_API_AUTH = env.str("AAQ_CORE_API_AUTH", None)
+
