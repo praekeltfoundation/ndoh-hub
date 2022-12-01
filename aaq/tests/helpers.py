@@ -64,3 +64,10 @@ class FakeAaqUdApi:
         }
 
         return (200, {}, json.dumps(resp_body))
+
+class FakeTask:
+    def call_add_feedback_task(self, request):
+        resp_body = {
+            "task_added": "True",
+        }
+        return (202, {}, json.dumps(resp_body))

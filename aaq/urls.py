@@ -14,7 +14,7 @@ urlpatterns = [
         name="aaq-get-first-page",
     ),
     url(
-        r"^api/v1/add-feedback",
+        r"^api/v1/inbound/feedback",
         views.add_feedback,
         name="aaq-add-feedback",
     ),

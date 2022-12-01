@@ -6,7 +6,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .helpers import FakeAaqCoreApi, FakeAaqUdApi
+from .helpers import FakeAaqCoreApi, FakeAaqUdApi, FakeTask
 
 
 class GetFirstPageViewTests(APITestCase):
@@ -129,18 +129,37 @@ class GetFirstPageViewTests(APITestCase):
         assert response.json() == {"question": ["This field may not be blank."]}
 
 
-# class AddFeedbackViewTests(APITestCase):
-#    url = reverse("aaq-add-feedback")
-#
-#    def test_page_feedback(self):
-#        """Test that we can submit feedback on an FAQ"""
-#        response = self.client.post(self.url, {})
-#        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-#
-#    def test_faq_feedback(self):
-#        """Test that we can submit feedback on an FAQ"""
-#        response = self.client.post(self.url, {})
-#        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+class AddFeedbackViewTests(APITestCase):
+    url = reverse("aaq-add-feedback")
+
+    @responses.activate
+    def test_faq_feedback_view(self):
+        """Test that we can submit feedback on an FAQ"""
+        data = {
+            "feedback_secret_key": "dummy_secret",
+            "inbound_id": "dummy_inbound_id",
+            "feedback": {
+                "feedback_type": "dummy_feedback_type",
+                "faq_id": "dummy_faq_id",
+            },
+        }
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        fakeTask = FakeTask()
+        responses.add_callback(
+            responses.PUT,
+            "http://aaqcore/inbound/feedback",
+            callback=fakeTask.call_add_feedback_task,
+            content_type="application/json",
+        )
+
+        payload = json.dumps(data)
+        # test string value, bad question, empty str, emoji, int
+
+        response = self.client.put(
+            self.url, data=payload, content_type="application/json"
+        )
+        assert response.status_code == 202
 
 
 class CheckUrgencyViewTests(APITestCase):
