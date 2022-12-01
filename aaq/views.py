@@ -1,6 +1,7 @@
 import json
 import logging
 import urllib
+
 import requests
 from django.conf import settings
 from rest_framework import status
@@ -71,7 +72,7 @@ def add_feedback(request, *args, **kwargs):
     if "faq_id" in json_data["feedback"]:
         kwargs["faq_id"] = json_data["feedback"]["faq_id"]
     elif "page_number" in json_data["feedback"]:
-        kwargs["page"] = json_data["feedback"]["page_number"]
+        kwargs["page_number"] = json_data["feedback"]["page_number"]
     send_feedback_task.delay(feedback_secret_key, inbound_id, feedback_type, **kwargs)
 
     return Response(status=status.HTTP_202_ACCEPTED)

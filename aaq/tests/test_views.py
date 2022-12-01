@@ -128,18 +128,19 @@ class GetFirstPageViewTests(APITestCase):
 
         assert response.json() == {"question": ["This field may not be blank."]}
 
-#class AddFeedbackViewTests(APITestCase):
+
+# class AddFeedbackViewTests(APITestCase):
 #    url = reverse("aaq-add-feedback")
 #
 #    def test_page_feedback(self):
 #        """Test that we can submit feedback on an FAQ"""
 #        response = self.client.post(self.url, {})
-#        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED) 
+#        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 #
 #    def test_faq_feedback(self):
 #        """Test that we can submit feedback on an FAQ"""
 #        response = self.client.post(self.url, {})
-#        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)         
+#        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class CheckUrgencyViewTests(APITestCase):
@@ -167,8 +168,8 @@ class CheckUrgencyViewTests(APITestCase):
             self.url, data=payload, content_type="application/json"
         )
 
-        assert response.json() == {'urgency_score': 1.0}
-  
+        assert response.json() == {"urgency_score": 1.0}
+
     @responses.activate
     def test_not_urgent(self):
         """
@@ -191,4 +192,4 @@ class CheckUrgencyViewTests(APITestCase):
             self.url, data=payload, content_type="application/json"
         )
 
-        assert response.json() == {'urgency_score': 0.0}
+        assert response.json() == {"urgency_score": 0.0}

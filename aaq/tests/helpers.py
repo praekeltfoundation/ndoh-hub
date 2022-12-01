@@ -49,6 +49,7 @@ class FakeAaqCoreApi:
 
         return (200, {}, json.dumps(resp_body))
 
+
 class FakeAaqUdApi:
     def post_inbound_check_return_one(self, request):
         resp_body = {
@@ -62,4 +63,4 @@ class FakeAaqUdApi:
             "urgency_score": 0.0,
         }
 
-        return (200, {}, json.dumps(resp_body))    
+        return (200, {}, json.dumps(resp_body))
