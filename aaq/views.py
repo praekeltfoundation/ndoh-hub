@@ -37,11 +37,9 @@ def get_first_page(request, *args, **kwargs):
     body_content = {}
     message_titles = []
 
-    counter = 0
-    for id, title, content in top_responses:
-        counter += 1
-        body_content[f"{counter}"] = {"text": content, "id": id}
-        message_titles.append(f"*{counter}* - {title}")
+    for count, (id, title, content) in enumerate(top_responses, start=1):
+        body_content[f"{count}"] = {"text": content, "id": id}
+        message_titles.append(f"*{count}* - {title}")
 
     feedback_secret_key = response.json()["feedback_secret_key"]
     inbound_secret_key = response.json()["inbound_secret_key"]

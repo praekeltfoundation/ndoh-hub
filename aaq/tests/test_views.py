@@ -6,7 +6,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .helpers import FakeAaqCoreApi
+from .helpers import FakeAaqCoreApi, FakeAaqUdApi
 
 
 class GetFirstPageViewTests(APITestCase):
@@ -127,3 +127,68 @@ class GetFirstPageViewTests(APITestCase):
         )
 
         assert response.json() == {"question": ["This field may not be blank."]}
+
+#class AddFeedbackViewTests(APITestCase):
+#    url = reverse("aaq-add-feedback")
+#
+#    def test_page_feedback(self):
+#        """Test that we can submit feedback on an FAQ"""
+#        response = self.client.post(self.url, {})
+#        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED) 
+#
+#    def test_faq_feedback(self):
+#        """Test that we can submit feedback on an FAQ"""
+#        response = self.client.post(self.url, {})
+#        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)         
+
+
+class CheckUrgencyViewTests(APITestCase):
+    url = reverse("aaq-check-urgency")
+
+    @responses.activate
+    def test_urgent(self):
+        """
+        Test that we can get an urgency score of 1.0
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        fakeAaqUdApi = FakeAaqUdApi()
+        responses.add_callback(
+            responses.POST,
+            "http://aaqud/inbound/check",
+            callback=fakeAaqUdApi.post_inbound_check_return_one,
+            content_type="application/json",
+        )
+
+        payload = json.dumps({"question": "I am pregnant and out of breath"})
+        # test string value, bad question, empty str, emoji, int
+
+        response = self.client.post(
+            self.url, data=payload, content_type="application/json"
+        )
+
+        assert response.json() == {'urgency_score': 1.0}
+  
+    @responses.activate
+    def test_not_urgent(self):
+        """
+        Test that we can get an urgency score of 1.0
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        fakeAaqUdApi = FakeAaqUdApi()
+        responses.add_callback(
+            responses.POST,
+            "http://aaqud/inbound/check",
+            callback=fakeAaqUdApi.post_inbound_check_return_zero,
+            content_type="application/json",
+        )
+
+        payload = json.dumps({"question": "I am fine"})
+        # test string value, bad question, empty str, emoji, int
+
+        response = self.client.post(
+            self.url, data=payload, content_type="application/json"
+        )
+
+        assert response.json() == {'urgency_score': 0.0}
