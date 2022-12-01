@@ -66,26 +66,13 @@ def add_feedback(request, *args, **kwargs):
     feedback_secret_key = json_data["feedback_secret_key"]
     inbound_id = json_data["inbound_id"]
     feedback_type = json_data["feedback"]["feedback_type"]
-    faq_id = None
-    page_number = None
+
+    kwargs = {}
     if "faq_id" in json_data["feedback"]:
-        faq_id = json_data["feedback"]["faq_id"]
-        send_feedback_task.apply_async(
-            args=[feedback_secret_key, inbound_id, feedback_type],
-            kwargs={
-                "faq_id": faq_id,
-            },
-            countdown=5,
-        )
-    if "page_number" in json_data["feedback"]:
-        page_number = json_data["feedback"]["page_number"]
-        send_feedback_task.apply_async(
-            args=[feedback_secret_key, inbound_id, feedback_type],
-            kwargs={
-                "page": page_number,
-            },
-            countdown=5,
-        )
+        kwargs["faq_id"] = json_data["feedback"]["faq_id"]
+    elif "page_number" in json_data["feedback"]:
+        kwargs["page"] = json_data["feedback"]["page_number"]
+    send_feedback_task.delay(feedback_secret_key, inbound_id, feedback_type, **kwargs)
 
     return Response(status=status.HTTP_202_ACCEPTED)
 
