@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division
 
 import json
+import tempfile
 import urllib.parse
 from urllib.parse import urlencode, urljoin
 
@@ -325,19 +326,30 @@ def get_edc_report(report_id, contact_uuid):
     return response.json()
 
 
-def upload_edc_media(report, study_id, record_id, field_id, token, content_type="application/json"):
+def upload_edc_media(report, study_id, record_id, field_id, token):
     headers = {
         "Authorization": "Bearer {}".format(token),
-        "Content-Type": content_type,
+        "Accept": "application/hal+json",
     }
+    url = urljoin(settings.ADA_EDC_STUDY_URL, study_id)
+    url = urljoin(url + "/", "record/")
+    url = urljoin(url, record_id)
+    url = urljoin(url + "/", "study-data-point/")
+    url = urljoin(url, field_id)
+    # null = None
+    nullValues = json.dumps(report, indent=2).replace("null", "None")
+    tobyte = nullValues.encode("utf-8")
+    file = tempfile.NamedTemporaryFile()
+    report_file = file.name
+    file.write(tobyte)
+    file.seek(0)
+
     response = requests.post(
-        urljoin(
-            settings.ADA_EDC_STUDY_URL, study_id, 
-            "record", record_id, "study-data-point", field_id),
+        url,
+        files={
+            "upload_file": ("report.json", open(report_file, "rb"), "application/pdf")
+        },
         headers=headers,
-        data={
-            "upload_file": report
-        }
     )
     response.raise_for_status()
     return response.json()
