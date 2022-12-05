@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division
 
 import json
+import posixpath
 import tempfile
 import urllib.parse
 from urllib.parse import urlencode, urljoin
@@ -318,7 +319,7 @@ def upload_turn_media(media, content_type="application/pdf"):
 
 
 def get_edc_report(report_id, contact_uuid):
-    head = get_header_pdf(contact_uuid)
+    head = get_header_edc(contact_uuid)
     payload = {}
     path = urljoin(settings.ADA_EDC_REPORT_URL, report_id)
     response = requests.get(path, json=payload, headers=head)
@@ -331,12 +332,13 @@ def upload_edc_media(report, study_id, record_id, field_id, token):
         "Authorization": "Bearer {}".format(token),
         "Accept": "application/hal+json",
     }
-    url = urljoin(settings.ADA_EDC_STUDY_URL, study_id)
-    url = urljoin(url + "/", "record/")
-    url = urljoin(url, record_id)
-    url = urljoin(url + "/", "study-data-point/")
-    url = urljoin(url, field_id)
-    # null = None
+    study_id = study_id
+    record = "record"
+    record_id = record_id
+    study_data_point = "study-data-point"
+    field_id = field_id
+    path = posixpath.join(study_id, record, record_id, study_data_point, field_id)
+    url = urljoin(settings.ADA_EDC_STUDY_URL, path)
     nullValues = json.dumps(report, indent=2).replace("null", "None")
     tobyte = nullValues.encode("utf-8")
     file = tempfile.NamedTemporaryFile()
@@ -389,6 +391,16 @@ def get_header(contact_uuid):
 
 
 def get_header_pdf(contact_uuid):
+    head = {
+        "x-ada-clientId": settings.X_ADA_CLIENTID,
+        "x-ada-userId": contact_uuid,
+        "Accept-Language": "en-GB",
+        "Content-Type": "application/pdf",
+    }
+    return head
+
+
+def get_header_edc(contact_uuid):
     head = {
         "x-ada-clientId": settings.X_ADA_CLIENTID,
         "x-ada-userId": contact_uuid,
