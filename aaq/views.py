@@ -9,9 +9,9 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
 from aaq.serializers import (
+    AddFeedbackSerializer,
     InboundCheckSerializer,
     UrgencyCheckSerializer,
-    AddFeedbackSerializer,
 )
 
 from .tasks import send_feedback_task
