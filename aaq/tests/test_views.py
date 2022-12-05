@@ -154,8 +154,33 @@ class AddFeedbackViewTests(APITestCase):
         )
 
         payload = json.dumps(data)
-        # test string value, bad question, empty str, emoji, int
+        response = self.client.put(
+            self.url, data=payload, content_type="application/json"
+        )
+        assert response.status_code == 202
 
+    @responses.activate
+    def test_page_feedback_view(self):
+        """Test that we can submit feedback on an FAQ"""
+        data = {
+            "feedback_secret_key": "dummy_secret",
+            "inbound_id": "dummy_inbound_id",
+            "feedback": {
+                "feedback_type": "dummy_feedback_type",
+                "page_number": "dummy_page_number",
+            },
+        }
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        fakeTask = FakeTask()
+        responses.add_callback(
+            responses.PUT,
+            "http://aaqcore/inbound/feedback",
+            callback=fakeTask.call_add_feedback_task,
+            content_type="application/json",
+        )
+
+        payload = json.dumps(data)
         response = self.client.put(
             self.url, data=payload, content_type="application/json"
         )
