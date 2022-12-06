@@ -29,7 +29,7 @@ def send_feedback_task(secret_key, inbound_id, feedback_type, **kwargs):
 
     url = urljoin(settings.AAQ_CORE_API_URL, "/inbound/feedback")
     headers = {
-        "Authorization": settings.AAQ_CORE_INBOUND_CHECK_TOKEN,
+        "Authorization": settings.AAQ_CORE_INBOUND_CHECK_AUTH,
         "Content-Type": "application/json",
     }
     response = requests.request("PUT", url, json=data, headers=headers)

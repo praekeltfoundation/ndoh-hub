@@ -30,7 +30,7 @@ def get_first_page(request, *args, **kwargs):
     url = urllib.parse.urljoin(settings.AAQ_CORE_API_URL, "/inbound/check")
     payload = {"text_to_match": f"{question}"}
     headers = {
-        "Authorization": settings.AAQ_CORE_INBOUND_CHECK_TOKEN,
+        "Authorization": settings.AAQ_CORE_INBOUND_CHECK_AUTH,
         "Content-Type": "application/json",
     }
 
@@ -92,7 +92,7 @@ def check_urgency(request, *args, **kwargs):
     url = urllib.parse.urljoin(settings.AAQ_UD_API_URL, "/inbound/check")
     payload = {"text_to_match": f"{question}"}
     headers = {
-        "Authorization": settings.AAQ_UD_INBOUND_CHECK_TOKEN,
+        "Authorization": settings.AAQ_UD_INBOUND_CHECK_AUTH,
         "Content-Type": "application/json",
     }
 
