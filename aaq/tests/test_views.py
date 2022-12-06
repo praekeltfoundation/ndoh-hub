@@ -139,7 +139,7 @@ class AddFeedbackViewTests(APITestCase):
             "feedback_secret_key": "dummy_secret",
             "inbound_id": "dummy_inbound_id",
             "feedback": {
-                "feedback_type": "dummy_feedback_type",
+                "feedback_type": "negative",
                 "faq_id": "dummy_faq_id",
             },
         }
@@ -157,16 +157,17 @@ class AddFeedbackViewTests(APITestCase):
         response = self.client.put(
             self.url, data=payload, content_type="application/json"
         )
+
         assert response.status_code == 202
 
     @responses.activate
     def test_page_feedback_view(self):
-        """Test that we can submit feedback on an FAQ"""
+        """Test that we can submit feedback on an Page"""
         data = {
             "feedback_secret_key": "dummy_secret",
             "inbound_id": "dummy_inbound_id",
             "feedback": {
-                "feedback_type": "dummy_feedback_type",
+                "feedback_type": "positive",
                 "page_number": "dummy_page_number",
             },
         }
@@ -184,7 +185,32 @@ class AddFeedbackViewTests(APITestCase):
         response = self.client.put(
             self.url, data=payload, content_type="application/json"
         )
+
         assert response.status_code == 202
+
+    def test_page_invalid_feedback_view(self):
+        """Test that we can submit feedback on an Page"""
+        data = {
+            "feedback_secret_key": "dummy_secret",
+            "inbound_id": "dummy_inbound_id",
+            "feedback": {
+                "feedback_type": "positive",
+            },
+        }
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        payload = json.dumps(data)
+        response = self.client.put(
+            self.url, data=payload, content_type="application/json"
+        )
+
+        assert response.status_code == 400
+        assert response.json() == {
+            "non_field_errors": [
+                "At least one of faq_id or page_number must be supplied."
+            ]
+        }
 
 
 class CheckUrgencyViewTests(APITestCase):

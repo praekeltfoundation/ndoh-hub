@@ -1,4 +1,3 @@
-import json
 import logging
 import urllib
 
@@ -9,7 +8,11 @@ from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
-from aaq.serializers import InboundCheckSerializer, UrgencyCheckSerializer
+from aaq.serializers import (
+    AddFeedbackSerializer,
+    InboundCheckSerializer,
+    UrgencyCheckSerializer,
+)
 
 from .tasks import send_feedback_task
 
@@ -27,7 +30,7 @@ def get_first_page(request, *args, **kwargs):
     url = urllib.parse.urljoin(settings.AAQ_CORE_API_URL, "/inbound/check")
     payload = {"text_to_match": f"{question}"}
     headers = {
-        "Authorization": settings.AAQ_CORE_INBOUND_CHECK_TOKEN,
+        "Authorization": settings.AAQ_CORE_INBOUND_CHECK_AUTH,
         "Content-Type": "application/json",
     }
 
@@ -63,16 +66,18 @@ def get_first_page(request, *args, **kwargs):
 @api_view(("PUT",))
 @renderer_classes((JSONRenderer,))
 def add_feedback(request, *args, **kwargs):
-    json_data = json.loads(request.body)
-    feedback_secret_key = json_data["feedback_secret_key"]
-    inbound_id = json_data["inbound_id"]
-    feedback_type = json_data["feedback"]["feedback_type"]
+    serializer = AddFeedbackSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    feedback_secret_key = serializer.validated_data["feedback_secret_key"]
+    inbound_id = serializer.validated_data["inbound_id"]
+    feedback_type = serializer.validated_data["feedback"]["feedback_type"]
 
     kwargs = {}
-    if "faq_id" in json_data["feedback"]:
-        kwargs["faq_id"] = json_data["feedback"]["faq_id"]
-    elif "page_number" in json_data["feedback"]:
-        kwargs["page_number"] = json_data["feedback"]["page_number"]
+    if "faq_id" in serializer.validated_data["feedback"]:
+        kwargs["faq_id"] = serializer.validated_data["feedback"]["faq_id"]
+    elif "page_number" in serializer.validated_data["feedback"]:
+        kwargs["page_number"] = serializer.validated_data["feedback"]["page_number"]
     send_feedback_task.delay(feedback_secret_key, inbound_id, feedback_type, **kwargs)
 
     return Response(status=status.HTTP_202_ACCEPTED)
@@ -87,7 +92,7 @@ def check_urgency(request, *args, **kwargs):
     url = urllib.parse.urljoin(settings.AAQ_UD_API_URL, "/inbound/check")
     payload = {"text_to_match": f"{question}"}
     headers = {
-        "Authorization": settings.AAQ_UD_INBOUND_CHECK_TOKEN,
+        "Authorization": settings.AAQ_UD_INBOUND_CHECK_AUTH,
         "Content-Type": "application/json",
     }
 
