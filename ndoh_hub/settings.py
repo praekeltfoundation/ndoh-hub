@@ -250,15 +250,23 @@ HANDLE_EXPIRED_HELPDESK_CONTACTS_HOUR = env.str(
 )
 
 RANDOM_CONTACTS_HOUR = env.str("RANDOM_CONTACTS_HOUR", "2")
-RANDOM_CONTACTS_DAY_OF_WEEK = env.str("RANDOM_CONTACTS_DAY_OF_WEEK", "5")
+RANDOM_CONTACTS_DAY_OF_WEEK = env.str("RANDOM_CONTACTS_DAY_OF_WEEK", "4")
 
 CELERY_BEAT_SCHEDULE = {
     "handle-expired-helpdesk-contacts": {
         "task": "eventstore.tasks.handle_expired_helpdesk_contacts",
         "schedule": crontab(minute="0", hour=HANDLE_EXPIRED_HELPDESK_CONTACTS_HOUR),
     },
-    "post-random-contacts-to-slack-channel": {
-        "task": "eventstore.tasks.post_random_contacts_to_slack_channel",
+    "post-random-mc-contacts-to-slack-channel": {
+        "task": "eventstore.tasks.post_random_mc_contacts_to_slack_channel",
+        "schedule": crontab(
+            minute="0",
+            hour=RANDOM_CONTACTS_HOUR,
+            day_of_week=RANDOM_CONTACTS_DAY_OF_WEEK,
+        ),
+    },
+    "post-random-mqr-contacts-to-slack-channel": {
+        "task": "eventstore.tasks.post_random_mqr_contacts_to_slack_channel",
         "schedule": crontab(
             minute="0",
             hour=RANDOM_CONTACTS_HOUR,
@@ -390,6 +398,7 @@ RANDOM_CONTACT_LIMIT = env.str("RANDOM_CONTACT_LIMIT", 10)
 MQR_CONTENTREPO_URL = env.str("MQR_CONTENTREPO_URL", None)
 MQR_STUDY_START_DATE = env.str("MQR_STUDY_START_DATE", "2022-05-09")
 MQR_SEND_AIRTIME_FLOW_ID = env.str("MQR_SEND_AIRTIME_FLOW_ID", None)
+MQR_STUDY_ACTIVE = env.bool("MQR_STUDY_ACTIVE", False)
 
 # AAQ-Beta
 AAQ_CORE_API_URL = env.str("AAQ_CORE_API_URL", None)

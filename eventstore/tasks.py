@@ -594,15 +594,41 @@ def process_ada_assessment_notification(
     soft_time_limit=10,
     time_limit=15,
 )
-def post_random_contacts_to_slack_channel():
+def post_random_mc_contacts_to_slack_channel():
+    return post_random_contacts_to_slack_channel()
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def post_random_mqr_contacts_to_slack_channel():
+    if not settings.MQR_STUDY_ACTIVE:
+        return
+    study_start_date = datetime.strptime(
+        settings.MQR_STUDY_START_DATE, "%Y-%m-%d"
+    ).date()
+    return post_random_contacts_to_slack_channel(
+        "MQR", study_start_date, "MQR active contacts"
+    )
+
+
+def post_random_contacts_to_slack_channel(
+    contact_type="MomConnect", start_date=None, group=None
+):
     # Get 10 random contacts to post to slack channel
     if settings.RAPIDPRO_URL and settings.RAPIDPRO_TOKEN and settings.SLACK_CHANNEL:
         rapidpro_url = urljoin(settings.RAPIDPRO_URL, "/contact/read/{}/")
 
-        contact_details = []
+        contact_details = [f"{contact_type} Contacts for investigation"]
+        count = 0
 
-        while len(contact_details) < settings.RANDOM_CONTACT_LIMIT:
-            turn_profile_link, contact_uuid = get_random_contact()
+        while len(contact_details) < settings.RANDOM_CONTACT_LIMIT and count < 50:
+            turn_profile_link, contact_uuid = get_random_contact(start_date, group)
 
             if turn_profile_link and contact_uuid:
                 rapidpro_link = rapidpro_url.format(contact_uuid)
@@ -612,6 +638,8 @@ def post_random_contacts_to_slack_channel():
                     f"{contact_number} - <{rapidpro_link}|RapidPro>"
                     f" <{turn_profile_link}|Turn>"
                 )
+            else:
+                count += 1
 
         if contact_details:
             sent = send_slack_message(
@@ -643,14 +671,15 @@ def get_turn_profile_link(contact_number):
                 return profile.json().get("chat", {}).get("permalink")
 
 
-def get_random_contact():
+def get_random_contact(start_date=None, group=None):
     # After date must be lass then before date
-    after = get_random_date()
+    after = get_random_date(start_date)
     before = after + timedelta(days=1)
 
-    for contact_batch in rapidpro.get_contacts(after=after, before=before).iterfetches(
-        retry_on_rate_exceed=True
-    ):
+    count = 0
+    for contact_batch in rapidpro.get_contacts(
+        after=after, before=before, group=group
+    ).iterfetches(retry_on_rate_exceed=True):
         for contact in contact_batch:
             contact_uuid = contact.uuid
             contact_urns = contact.urns
@@ -666,6 +695,10 @@ def get_random_contact():
 
                     if profile_link:
                         return profile_link, contact_uuid
+
+            count += 1
+            if count > 3:
+                return None, None
     return None, None
 
 
