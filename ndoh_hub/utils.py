@@ -220,8 +220,9 @@ class TokenAuthQueryString(CachedTokenAuthentication):
         return None
 
 
-def get_random_date():
-    start_date = datetime.date(2020, 1, 1)
+def get_random_date(start_date=None):
+    if not start_date:
+        start_date = datetime.date(2020, 1, 1)
     end_date = datetime.date.today()
 
     time_between_dates = end_date - start_date
@@ -240,7 +241,6 @@ def send_slack_message(channel, text):
             {"token": settings.SLACK_TOKEN, "channel": channel, "text": text},
         ).json()
 
-        if response:
-            if response["ok"]:
-                return True
+        if response and response["ok"]:
+            return True
     return False
