@@ -1,6 +1,8 @@
 from __future__ import absolute_import, division
 
 import json
+import posixpath
+import tempfile
 import urllib.parse
 from urllib.parse import urlencode, urljoin
 
@@ -316,6 +318,45 @@ def upload_turn_media(media, content_type="application/pdf"):
     return response.json()["media"][0]["id"]
 
 
+def get_edc_report(report_id, contact_uuid):
+    head = get_header_edc(contact_uuid)
+    payload = {}
+    path = urljoin(settings.ADA_EDC_REPORT_URL, report_id)
+    response = requests.get(path, json=payload, headers=head)
+    response.raise_for_status()
+    return response.json()
+
+
+def upload_edc_media(report, study_id, record_id, field_id, token):
+    headers = {
+        "Authorization": "Bearer {}".format(token),
+        "Accept": "application/hal+json",
+    }
+    study_id = study_id
+    record = "record"
+    record_id = record_id
+    study_data_point = "study-data-point"
+    field_id = field_id
+    path = posixpath.join(study_id, record, record_id, study_data_point, field_id)
+    url = urljoin(settings.ADA_EDC_STUDY_URL, path)
+    nullValues = json.dumps(report, indent=2).replace("null", "None")
+    tobyte = nullValues.encode("utf-8")
+    file = tempfile.NamedTemporaryFile()
+    report_file = file.name
+    file.write(tobyte)
+    file.seek(0)
+
+    response = requests.post(
+        url,
+        files={
+            "upload_file": ("report.json", open(report_file, "rb"), "application/pdf")
+        },
+        headers=headers,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
 # Go back to previous question
 def previous_question(body, path, contact_uuid):
     head = get_header(contact_uuid)
@@ -354,6 +395,17 @@ def get_header_pdf(contact_uuid):
         "x-ada-clientId": settings.X_ADA_CLIENTID,
         "x-ada-userId": contact_uuid,
         "Accept-Language": "en-GB",
+        "Content-Type": "application/pdf",
+    }
+    return head
+
+
+def get_header_edc(contact_uuid):
+    head = {
+        "x-ada-clientId": settings.X_ADA_CLIENTID,
+        "x-ada-userId": contact_uuid,
+        "Accept-Language": "en-GB",
+        "Accept": "application/json",
         "Content-Type": "application/pdf",
     }
     return head

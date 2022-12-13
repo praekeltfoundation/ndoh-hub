@@ -29,6 +29,7 @@ from .utils import (
     build_rp_request,
     encodeurl,
     format_message,
+    get_edc_report,
     get_endpoint,
     get_path,
     get_report,
@@ -38,6 +39,7 @@ from .utils import (
     post_to_ada,
     post_to_ada_start_assessment,
     previous_question,
+    upload_edc_media,
     upload_turn_media,
 )
 
@@ -263,3 +265,19 @@ class Reports(generics.GenericAPIView):
         data = json.loads(urldecoded)
         message = format_message(data)
         return Response(message, status=status.HTTP_200_OK)
+
+
+class EDC_Reports(generics.GenericAPIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request, *args, **kwargs):
+        body = request.data
+        contact_uuid = body["contact_uuid"]
+        report_id = body["report_id"]
+        study_id = body["study_id"]
+        record_id = body["record_id"]
+        field_id = body["field_id"]
+        token = body["token"]
+        pdf_content = get_edc_report(report_id, contact_uuid)
+        upload_edc_media(pdf_content, study_id, record_id, field_id, token)
+        return Response("Successfully submitted to Castor", status=status.HTTP_200_OK)

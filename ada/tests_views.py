@@ -1143,3 +1143,40 @@ class AdaAssessmentReport(APITestCase):
         response = self.client.get(self.pdf_url, format="json")
         self.assertEqual(response.json(), self.pdf_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class AdaEDC(APITestCase):
+    @patch("ada.views.upload_edc_media")
+    @patch("ada.views.get_edc_report")
+    def test_edc_submit_report(self, mock_get_edc_report, mock_upload_edc_media):
+        mock_get_edc_report.return_value = {
+            "caseName": "chronic schistosomiasis",
+            "patient": {
+                "name": "Chima",
+                "age": {
+                    "value": 28,
+                    "unit": "a",
+                    "entryTs": "2022-08-09T21:02:01.698Z",
+                },
+                "sex": "male",
+            },
+        }
+
+        mock_upload_edc_media.return_value = "Successfully submitted to Castor"
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            reverse("ada-edc-reports"),
+            json.dumps(
+                {
+                    "contact_uuid": "bcffcc74-0d27-46a2-b165-60a07ef07878",
+                    "report_id": "484c2534-422c-4381-97c4-2467222685",
+                    "study_id": "22BBDE33-D35A-44B6-A759-CE742FCEF5A5",
+                    "record_id": "483390-00001-0001",
+                    "field_id": "11AC8D74-DBB6-5FF7-AFW3-1731A9D72E90",
+                    "token": "880b00a7b8f230d4c9a7281a0a2530ca52fb6c13b",
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.json(), "Successfully submitted to Castor")
