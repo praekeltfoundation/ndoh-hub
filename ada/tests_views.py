@@ -1135,9 +1135,6 @@ class AdaAssessmentReport(APITestCase):
         self.client.force_authenticate(user)
         response = self.client.post(self.start_url, self.data, format="json")
         self.assertRedirects(response, self.destination_url, target_status_code=302)
-        # mock_start_pdf_flow.delay.assert_called_once_with(
-        #    "27856454612", mock_upload_turn_media.return_value
-        # )
         response = self.client.get(self.destination_url, format="json")
         self.assertRedirects(response, self.pdf_url, target_status_code=200)
         response = self.client.get(self.pdf_url, format="json")
