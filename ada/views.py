@@ -122,7 +122,7 @@ class Covid(generics.GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         body = request.data
-        resource_id = body["id"]
+        resource_id = body["payload"]["id"]
         store_url_entry = CovidDataLakeEntry(resource_id=resource_id, data=body)
         store_url_entry.save()
         return Response({}, status=status.HTTP_200_OK)
