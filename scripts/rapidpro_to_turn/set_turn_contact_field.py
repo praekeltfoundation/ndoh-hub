@@ -36,10 +36,12 @@ def update_contact(url, token, field, value, whatsapp_id):
     else:
         print(f"Updated {whatsapp_id}")
 
+
 def main():
     args = get_arguments()
     for line in sys.stdin:
         update_contact(args.url, args.token, args.field, args.value, line.strip())
+
 
 if __name__ == "__main__":
     main()

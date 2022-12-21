@@ -1,12 +1,14 @@
 import argparse
 from openpyxl import load_workbook
 
+
 def get_arguments():
     parser = argparse.ArgumentParser(
         description="Extracts the whatsapp IDs from a rapidpro contacts export"
     )
     parser.add_argument("filename", help="Excel file to extract from")
     return parser.parse_args()
+
 
 def main():
     args = get_arguments()
@@ -22,6 +24,7 @@ def main():
         whatsapp_id = row[urn_col - 1].value
         if whatsapp_id and whatsapp_id.isnumeric():
             print(whatsapp_id)
+
 
 if __name__ == "__main__":
     main()
