@@ -1,7 +1,8 @@
 import argparse
-import requests
-from urllib.parse import urljoin
 import sys
+from urllib.parse import urljoin
+
+import requests
 
 
 def get_arguments():
