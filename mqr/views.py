@@ -36,7 +36,7 @@ from ndoh_hub.utils import rapidpro
 from .models import BaselineSurveyResult, MqrStrata
 from .serializers import BaselineSurveyResultSerializer, MqrStrataSerializer
 
-STUDY_ARMS = ["ARM", "RCM", "BCM", "RCM_BCM", "RCM_SMS"]
+STUDY_ARMS = ["ARM", "RCM", "RCM_BCM", "RCM_SMS"]
 
 
 class RandomStrataArmView(generics.GenericAPIView):
