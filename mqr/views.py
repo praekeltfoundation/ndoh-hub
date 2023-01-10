@@ -121,12 +121,14 @@ class NextMessageView(BaseMessageView):
         subscription_type = serializer.validated_data.get("subscription_type")
         arm = serializer.validated_data.get("arm")
         mom_name = serializer.validated_data.get("mom_name")
+        tag_extra = serializer.validated_data.get("tag_extra")
         sequence = serializer.validated_data.get("sequence")
 
         response = get_next_message(
             edd_or_dob_date,
             subscription_type,
             arm,
+            tag_extra,
             sequence,
             mom_name,
             self.get_tracking_data(serializer, "scheduled"),

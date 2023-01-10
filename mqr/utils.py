@@ -18,10 +18,12 @@ def get_week(subscription_type, edd_or_dob_date):
         return abs(get_today() - edd_or_dob_date).days // 7
 
 
-def get_tag(arm, subscription_type, edd_or_dob_date, sequence=None):
+def get_tag(arm, subscription_type, edd_or_dob_date, tag_extra=None, sequence=None):
     week = get_week(subscription_type, edd_or_dob_date)
 
     label = f"{arm}_week_{subscription_type}{week}"
+    if tag_extra:
+        label = f"{label}_{tag_extra}"
     if sequence:
         label = f"{label}_{sequence}"
     return label.lower()
@@ -72,15 +74,23 @@ def get_message_details(tag, tracking_data, mom_name=None):
 
 
 def get_next_message(
-    edd_or_dob_date, subscription_type, arm, sequence, mom_name, tracking_data
+    edd_or_dob_date,
+    subscription_type,
+    arm,
+    tag_extra,
+    sequence,
+    mom_name,
+    tracking_data,
 ):
-    tag = get_tag(arm, subscription_type, edd_or_dob_date, sequence)
+    tag = get_tag(arm, subscription_type, edd_or_dob_date, tag_extra, sequence)
 
     response = get_message_details(tag, tracking_data, mom_name)
 
     if sequence:
         next_sequence = chr(ord(sequence) + 1)
-        next_tag = get_tag(arm, subscription_type, edd_or_dob_date, next_sequence)
+        next_tag = get_tag(
+            arm, subscription_type, edd_or_dob_date, tag_extra, next_sequence
+        )
         url = urljoin(settings.MQR_CONTENTREPO_URL, f"api/v2/pages?tag={next_tag}")
         contentrepo_response = requests.get(url)
         contentrepo_response.raise_for_status()
