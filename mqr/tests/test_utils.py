@@ -218,7 +218,7 @@ class TestGetNextMessage(TestCase):
         }
 
         edd = datetime.strptime("20220701", "%Y%m%d").date()
-        response = utils.get_next_message(edd, "pre", "RCM", None, "Mom", {})
+        response = utils.get_next_message(edd, "pre", "RCM", None, None, "Mom", {})
 
         self.assertEqual(
             response,
@@ -249,7 +249,7 @@ class TestGetNextMessage(TestCase):
         )
 
         edd = datetime.strptime("20220701", "%Y%m%d").date()
-        response = utils.get_next_message(edd, "pre", "RCM", "a", "Mom", {})
+        response = utils.get_next_message(edd, "pre", "RCM", None, "a", "Mom", {})
 
         message_prompt = "To get another helpful message tomorrow, reply *YES*."
 
@@ -281,7 +281,7 @@ class TestGetNextMessage(TestCase):
         )
 
         edd = datetime.strptime("20220701", "%Y%m%d").date()
-        response = utils.get_next_message(edd, "pre", "RCM", "a", "Mom", {})
+        response = utils.get_next_message(edd, "pre", "RCM", None, "a", "Mom", {})
 
         message_prompt = "-----\nReply:\n*MENU* for the main menu 📌"
 
@@ -316,7 +316,7 @@ class TestGetNextMessage(TestCase):
         )
 
         edd = datetime.strptime("20220701", "%Y%m%d").date()
-        response = utils.get_next_message(edd, "pre", "RCM", "a", "Mom", {})
+        response = utils.get_next_message(edd, "pre", "RCM", None, "a", "Mom", {})
 
         self.assertEqual(
             response,
