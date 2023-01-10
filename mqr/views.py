@@ -63,6 +63,30 @@ class RandomStrataArmView(generics.GenericAPIView):
         weeks_pregnant_bucket = get_weeks_pregnant(estimated_delivery_date)
         age_bucket = get_age_bucket(mom_age)
 
+        return Response(
+            {
+                "clinic_code": clinic_code,
+                "weeks_pregnant_bucket": weeks_pregnant_bucket,
+                "mom_age": mom_age,
+            }
+        )
+
+
+class RandomStrataArmViewv2(generics.GenericAPIView):
+    def post(self, request):
+        """
+        Randomization of the ARMs.
+        """
+        serializer = MqrStrataSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        clinic_code = serializer.validated_data.get("clinic_code")
+        weeks_pregnant_bucket = serializer.validated_data.get(
+            "weeks_pregnant_bucket"
+        )
+        age_bucket = serializer.validated_data.get("age_bucket")
+        mom_age = serializer.validated_data.get("mom_age")
+
         if clinic_code and weeks_pregnant_bucket and age_bucket:
             province = clinic_code.province
 
@@ -88,6 +112,7 @@ class RandomStrataArmView(generics.GenericAPIView):
                 strata.save()
 
             return Response({"random_arm": arm})
+
         clinic = clinic_code.code if clinic_code else None
         return Response(
             {
@@ -96,6 +121,7 @@ class RandomStrataArmView(generics.GenericAPIView):
                 f"age: {mom_age}",
             }
         )
+    
 
 
 class BaseMessageView(generics.GenericAPIView):

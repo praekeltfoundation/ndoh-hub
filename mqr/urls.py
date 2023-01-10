@@ -13,6 +13,11 @@ urlpatterns = [
         views.RandomStrataArmView.as_view(),
         name="mqr_randomstrataarm",
     ),
+    url(
+        r"^api/v1/mqr_randomstrataarm_v2",
+        views.RandomStrataArmViewv2.as_view(),
+        name="mqr_randomstrataarm_v2",
+    ),
     url(r"^api/v1/mqr-faq/", views.FaqView.as_view(), name="mqr-faq"),
     url(r"^api/v1/mqr-faq-menu/", views.FaqMenuView.as_view(), name="mqr-faq-menu"),
     url(
