@@ -351,28 +351,22 @@ class StrataRandomization(APITestCase):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
-        facility_code = 123456
-        province="EC"
-        weeks_pregnant_bucket="16-20"
-        age_bucket="31+"
-
         ClinicCode.objects.create(
-            code=facility_code, value=1, uid=1, name="test", province=province
+            code="123456", value=1, uid=1, name="test", province="EC"
         )
 
         response = self.client.post(
             self.url,
             data={
-                "facility_code": facility_code,
-                "weeks_pregnant_bucket": weeks_pregnant_bucket,
-                "age_bucket": age_bucket,
+                "facility_code": "123456",
+                "estimated_delivery_date": datetime.date(2022, 8, 17),
                 "mom_age": 32,
             },
             format="json",
         )
 
         strata_arm = MqrStrata.objects.get(
-            province=province, weeks_pregnant_bucket=weeks_pregnant_bucket, age_bucket=age_bucket
+            province="EC", weeks_pregnant_bucket="16-20", age_bucket="31+"
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -383,7 +377,6 @@ class StrataRandomization(APITestCase):
         """
         Check the next arm from the existing data
         Returns: string response
-
         """
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
@@ -404,8 +397,7 @@ class StrataRandomization(APITestCase):
             self.url,
             data={
                 "facility_code": "246800",
-                "weeks_pregnant_bucket": "26-30",
-                "age_bucket": "31+",
+                "estimated_delivery_date": datetime.date(2022, 6, 13),
                 "mom_age": 34,
             },
             format="json",
@@ -439,8 +431,7 @@ class StrataRandomization(APITestCase):
             self.url,
             data={
                 "facility_code": "369120",
-                "weeks_pregnant_bucket": "26-30",
-                "age_bucket": "18-30",
+                "estimated_delivery_date": datetime.date(2022, 6, 13),
                 "mom_age": 22,
             },
             format="json",

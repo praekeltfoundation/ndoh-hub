@@ -34,17 +34,17 @@ from mqr.utils import (
 from ndoh_hub.utils import rapidpro
 
 from .models import BaselineSurveyResult, MqrStrata
-from .serializers import BaselineSurveyResultSerializer, MqrStrataSerializer, MqrStrataValidationSerializer
+from .serializers import BaselineSurveyResultSerializer, MqrStrataSerializer
 
 STUDY_ARMS = ["ARM", "RCM", "RCM_BCM", "RCM_SMS"]
 
 
 class RandomStrataArmValidationView(generics.GenericAPIView):
     permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = MqrStrataValidationSerializer
+    serializer_class = MqrStrataSerializer
 
     def post(self, request):
-        serializer = MqrStrataValidationSerializer(data=request.data)
+        serializer = MqrStrataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         # use facility code and look up on db for province
@@ -66,12 +66,15 @@ class RandomStrataArmValidationView(generics.GenericAPIView):
         if clinic_code and weeks_pregnant_bucket and age_bucket:
             return Response(
                 {
-                    "facility_code": facility_code,
-                    "weeks_pregnant_bucket": weeks_pregnant_bucket,
-                    "mom_age": mom_age,
+                    "Valid": True,
                 }
             )
 
+        return Response(
+                {
+                    "Valid": False,
+                }
+            )
 
 class RandomStrataArmView(generics.GenericAPIView):
     def post(self, request):
@@ -82,13 +85,14 @@ class RandomStrataArmView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
 
         facility_code = serializer.validated_data.get("facility_code")
-        clinic_code = get_facility_province(facility_code)
-
-        weeks_pregnant_bucket = serializer.validated_data.get(
-            "weeks_pregnant_bucket"
+        estimated_delivery_date = serializer.validated_data.get(
+            "estimated_delivery_date"
         )
-        age_bucket = serializer.validated_data.get("age_bucket")
         mom_age = serializer.validated_data.get("mom_age")
+
+        clinic_code = get_facility_province(facility_code)
+        weeks_pregnant_bucket = get_weeks_pregnant(estimated_delivery_date)
+        age_bucket = get_age_bucket(mom_age)
 
         if mom_age and weeks_pregnant_bucket and age_bucket:
             province = clinic_code.province

@@ -20,16 +20,10 @@ class BaselineSurveyResultSerializer(serializers.ModelSerializer):
         return instance
 
 
-class MqrStrataValidationSerializer(serializers.Serializer):
+class MqrStrataSerializer(serializers.Serializer):
     facility_code = serializers.CharField(required=True)
     estimated_delivery_date = serializers.DateField(required=True)
     mom_age = serializers.IntegerField(required=True)
-
-class MqrStrataSerializer(serializers.Serializer):
-    facility_code = serializers.CharField(required=True)
-    weeks_pregnant_bucket = serializers.CharField(required=True)
-    mom_age = serializers.IntegerField(required=True)
-    age_bucket = serializers.CharField(required=True)
 
 
 class BaseMessageSerializer(serializers.Serializer):
