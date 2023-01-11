@@ -239,12 +239,11 @@ def override_get_today():
     return datetime.datetime.strptime("20220308", "%Y%m%d").date()
 
 
-class StrataRandomization(APITestCase):
+class StrataRandomizationValidation(APITestCase):
     def setUp(self):
         utils.get_today = override_get_today
 
-    url = reverse("mqr_randomstrataarm")
-    url_v2 = reverse("mqr_randomstrataarm_v2")
+    url = reverse("mqr_randomstrataarm_validation")
 
     def test_random_arm_unauthorized_user(self):
         """
@@ -277,42 +276,7 @@ class StrataRandomization(APITestCase):
             response.json(),
             {"Excluded": True, "reason": "study not active for weeks pregnant"}
         )
-
     
-    def test_random_arm(self):
-        user = get_user_model().objects.create_user("test")
-        self.client.force_authenticate(user)
-
-        clinic_code = 123456
-        province="EC"
-        weeks_pregnant_bucket="16-20"
-        age_bucket="31+"
-
-        ClinicCode.objects.create(
-            code=clinic_code, value=1, uid=1, name="test", province=province
-        )
-
- 
-
-        response = self.client.post(
-            self.url_v2,
-            data={
-                "clinic_code": clinic_code,
-                "weeks_pregnant_bucket": weeks_pregnant_bucket,
-                "age_bucket": age_bucket,
-                "mom_age": 32,
-            },
-            format="json",
-        )
-
-        # strata_arm = MqrStrata.objects.get(
-        #     province=province, weeks_pregnant_bucket=weeks_pregnant_bucket, age_bucket=age_bucket
-        # )
-
-        # self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # self.assertContains(response, strata_arm.order.split(",")[0])
-        # self.assertEqual(strata_arm.next_index, 1)
-
     def test_random_arm_exclude(self):
         """
         Exclude if person doesn't qualify for study
@@ -366,6 +330,55 @@ class StrataRandomization(APITestCase):
             {"Excluded": True, "reason": "study not active for weeks pregnant"},
         )
 
+class StrataRandomization(APITestCase):
+    def setUp(self):
+        utils.get_today = override_get_today
+
+    url= reverse("mqr_randomstrataarm")
+
+    def test_random_arm_unauthorized_user(self):
+        """
+        unauthorized user access denied
+        Returns: status code 401
+
+        """
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_random_arm(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        facility_code = 123456
+        province="EC"
+        weeks_pregnant_bucket="16-20"
+        age_bucket="31+"
+
+        ClinicCode.objects.create(
+            code=facility_code, value=1, uid=1, name="test", province=province
+        )
+
+        response = self.client.post(
+            self.url,
+            data={
+                "facility_code": facility_code,
+                "weeks_pregnant_bucket": weeks_pregnant_bucket,
+                "age_bucket": age_bucket,
+                "mom_age": 32,
+            },
+            format="json",
+        )
+
+        strata_arm = MqrStrata.objects.get(
+            province=province, weeks_pregnant_bucket=weeks_pregnant_bucket, age_bucket=age_bucket
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertContains(response, strata_arm.order.split(",")[0])
+        self.assertEqual(strata_arm.next_index, 1)
+
     def test_get_random_starta_arm(self):
         """
         Check the next arm from the existing data
@@ -391,7 +404,8 @@ class StrataRandomization(APITestCase):
             self.url,
             data={
                 "facility_code": "246800",
-                "estimated_delivery_date": datetime.date(2022, 6, 13),
+                "weeks_pregnant_bucket": "26-30",
+                "age_bucket": "31+",
                 "mom_age": 34,
             },
             format="json",
@@ -425,7 +439,8 @@ class StrataRandomization(APITestCase):
             self.url,
             data={
                 "facility_code": "369120",
-                "estimated_delivery_date": datetime.date(2022, 6, 13),
+                "weeks_pregnant_bucket": "26-30",
+                "age_bucket": "18-30",
                 "mom_age": 22,
             },
             format="json",

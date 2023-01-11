@@ -34,17 +34,17 @@ from mqr.utils import (
 from ndoh_hub.utils import rapidpro
 
 from .models import BaselineSurveyResult, MqrStrata
-from .serializers import BaselineSurveyResultSerializer, MqrStrataSerializer
+from .serializers import BaselineSurveyResultSerializer, MqrStrataSerializer, MqrStrataValidationSerializer
 
 STUDY_ARMS = ["ARM", "RCM", "RCM_BCM", "RCM_SMS"]
 
 
-class RandomStrataArmView(generics.GenericAPIView):
+class RandomStrataArmValidationView(generics.GenericAPIView):
     permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = MqrStrataSerializer
+    serializer_class = MqrStrataValidationSerializer
 
     def post(self, request):
-        serializer = MqrStrataSerializer(data=request.data)
+        serializer = MqrStrataValidationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         # use facility code and look up on db for province
@@ -63,16 +63,17 @@ class RandomStrataArmView(generics.GenericAPIView):
         weeks_pregnant_bucket = get_weeks_pregnant(estimated_delivery_date)
         age_bucket = get_age_bucket(mom_age)
 
-        return Response(
-            {
-                "clinic_code": clinic_code,
-                "weeks_pregnant_bucket": weeks_pregnant_bucket,
-                "mom_age": mom_age,
-            }
-        )
+        if clinic_code and weeks_pregnant_bucket and age_bucket:
+            return Response(
+                {
+                    "facility_code": facility_code,
+                    "weeks_pregnant_bucket": weeks_pregnant_bucket,
+                    "mom_age": mom_age,
+                }
+            )
 
 
-class RandomStrataArmViewv2(generics.GenericAPIView):
+class RandomStrataArmView(generics.GenericAPIView):
     def post(self, request):
         """
         Randomization of the ARMs.
@@ -80,14 +81,16 @@ class RandomStrataArmViewv2(generics.GenericAPIView):
         serializer = MqrStrataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        clinic_code = serializer.validated_data.get("clinic_code")
+        facility_code = serializer.validated_data.get("facility_code")
+        clinic_code = get_facility_province(facility_code)
+
         weeks_pregnant_bucket = serializer.validated_data.get(
             "weeks_pregnant_bucket"
         )
         age_bucket = serializer.validated_data.get("age_bucket")
         mom_age = serializer.validated_data.get("mom_age")
 
-        if clinic_code and weeks_pregnant_bucket and age_bucket:
+        if mom_age and weeks_pregnant_bucket and age_bucket:
             province = clinic_code.province
 
             strata, created = MqrStrata.objects.get_or_create(

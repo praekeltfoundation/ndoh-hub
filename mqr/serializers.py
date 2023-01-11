@@ -4,6 +4,8 @@ from rest_framework import serializers
 from eventstore.serializers import MSISDNField
 from mqr.models import BaselineSurveyResult
 
+import typing
+
 
 class BaselineSurveyResultSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,10 +20,16 @@ class BaselineSurveyResultSerializer(serializers.ModelSerializer):
         return instance
 
 
-class MqrStrataSerializer(serializers.Serializer):
+class MqrStrataValidationSerializer(serializers.Serializer):
     facility_code = serializers.CharField(required=True)
     estimated_delivery_date = serializers.DateField(required=True)
     mom_age = serializers.IntegerField(required=True)
+
+class MqrStrataSerializer(serializers.Serializer):
+    facility_code = serializers.CharField(required=True)
+    weeks_pregnant_bucket = serializers.CharField(required=True)
+    mom_age = serializers.IntegerField(required=True)
+    age_bucket = serializers.CharField(required=True)
 
 
 class BaseMessageSerializer(serializers.Serializer):

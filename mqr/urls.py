@@ -9,14 +9,14 @@ router.register("mqrbaselinesurvey", views.BaselineSurveyResultViewSet)
 
 urlpatterns = [
     url(
-        r"^api/v1/mqr_randomstrataarm/",
-        views.RandomStrataArmView.as_view(),
-        name="mqr_randomstrataarm",
+        r"^api/v1/mqr_randomstrataarm_validation/",
+        views.RandomStrataArmValidationView.as_view(),
+        name="mqr_randomstrataarm_validation",
     ),
     url(
-        r"^api/v1/mqr_randomstrataarm_v2",
-        views.RandomStrataArmViewv2.as_view(),
-        name="mqr_randomstrataarm_v2",
+        r"^api/v1/mqr_randomstrataarm",
+        views.RandomStrataArmView.as_view(),
+        name="mqr_randomstrataarm",
     ),
     url(r"^api/v1/mqr-faq/", views.FaqView.as_view(), name="mqr-faq"),
     url(r"^api/v1/mqr-faq-menu/", views.FaqMenuView.as_view(), name="mqr-faq-menu"),
