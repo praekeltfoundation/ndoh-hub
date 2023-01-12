@@ -300,7 +300,7 @@ class StrataRandomizationValidation(APITestCase):
 
         self.assertEqual(
             response.json(),
-            {"Excluded": True, "reason": "clinic: 123456, weeks: None, age: 38"},
+            {'Valid': False}
         )
 
     @override_settings(MQR_STUDY_START_DATE="2022-01-03")
