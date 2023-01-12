@@ -239,11 +239,11 @@ def override_get_today():
     return datetime.datetime.strptime("20220308", "%Y%m%d").date()
 
 
-class StrataRandomizationValidation(APITestCase):
+class StrataValidation(APITestCase):
     def setUp(self):
         utils.get_today = override_get_today
 
-    url = reverse("mqr_randomstrataarm_validation")
+    url = reverse("mqr_strataarm_validation")
 
     def test_random_arm_unauthorized_user(self):
         """
@@ -297,7 +297,10 @@ class StrataRandomizationValidation(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.json(), {"Valid": False})
+        self.assertEqual(
+            response.json(),
+            {"Valid": False, "reason": "clinic: 123456, weeks: None"},
+        )
 
     @override_settings(MQR_STUDY_START_DATE="2022-01-03")
     def test_random_arm_exclude_study_limit(self):

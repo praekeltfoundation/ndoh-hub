@@ -9,9 +9,9 @@ router.register("mqrbaselinesurvey", views.BaselineSurveyResultViewSet)
 
 urlpatterns = [
     url(
-        r"^api/v1/mqr_randomstrataarm_validation/",
-        views.RandomStrataArmValidationView.as_view(),
-        name="mqr_randomstrataarm_validation",
+        r"^api/v1/mqr_strataarm_validation/",
+        views.StrataArmValidationView.as_view(),
+        name="mqr_strataarm_validation",
     ),
     url(
         r"^api/v1/mqr_randomstrataarm",

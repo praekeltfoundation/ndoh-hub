@@ -39,7 +39,7 @@ from .serializers import BaselineSurveyResultSerializer, MqrStrataSerializer
 STUDY_ARMS = ["ARM", "RCM", "RCM_BCM", "RCM_SMS"]
 
 
-class RandomStrataArmValidationView(generics.GenericAPIView):
+class StrataArmValidationView(generics.GenericAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = MqrStrataSerializer
 
@@ -73,6 +73,7 @@ class RandomStrataArmValidationView(generics.GenericAPIView):
         return Response(
             {
                 "Valid": False,
+                "reason": f"clinic: {clinic_code.code}, weeks: {weeks_pregnant_bucket}",
             }
         )
 
