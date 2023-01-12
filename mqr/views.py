@@ -77,6 +77,7 @@ class RandomStrataArmValidationView(generics.GenericAPIView):
             )
 
 class RandomStrataArmView(generics.GenericAPIView):
+
     def post(self, request):
         """
         Randomization of the ARMs.
@@ -128,7 +129,6 @@ class RandomStrataArmView(generics.GenericAPIView):
                 f"age: {mom_age}",
             }
         )
-    
 
 
 class BaseMessageView(generics.GenericAPIView):

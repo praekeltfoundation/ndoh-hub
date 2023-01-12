@@ -270,13 +270,12 @@ class StrataRandomizationValidation(APITestCase):
             format="json",
         )
 
-
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
             response.json(),
             {"Excluded": True, "reason": "study not active for weeks pregnant"}
         )
-    
+
     def test_random_arm_exclude(self):
         """
         Exclude if person doesn't qualify for study
@@ -330,11 +329,12 @@ class StrataRandomizationValidation(APITestCase):
             {"Excluded": True, "reason": "study not active for weeks pregnant"},
         )
 
+
 class StrataRandomization(APITestCase):
     def setUp(self):
         utils.get_today = override_get_today
 
-    url= reverse("mqr_randomstrataarm")
+    url = reverse("mqr_randomstrataarm")
 
     def test_random_arm_unauthorized_user(self):
         """
