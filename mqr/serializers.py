@@ -4,8 +4,6 @@ from rest_framework import serializers
 from eventstore.serializers import MSISDNField
 from mqr.models import BaselineSurveyResult
 
-import typing
-
 
 class BaselineSurveyResultSerializer(serializers.ModelSerializer):
     class Meta:
