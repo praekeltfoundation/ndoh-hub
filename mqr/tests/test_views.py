@@ -273,7 +273,7 @@ class StrataRandomizationValidation(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
             response.json(),
-            {"Excluded": True, "reason": "study not active for weeks pregnant"}
+            {"Excluded": True, "reason": "study not active for weeks pregnant"},
         )
 
     def test_random_arm_exclude(self):
@@ -297,10 +297,7 @@ class StrataRandomizationValidation(APITestCase):
             format="json",
         )
 
-        self.assertEqual(
-            response.json(),
-            {'Valid': False}
-        )
+        self.assertEqual(response.json(), {"Valid": False})
 
     @override_settings(MQR_STUDY_START_DATE="2022-01-03")
     def test_random_arm_exclude_study_limit(self):

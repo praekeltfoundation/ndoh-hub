@@ -71,14 +71,13 @@ class RandomStrataArmValidationView(generics.GenericAPIView):
             )
 
         return Response(
-                {
-                    "Valid": False,
-                }
-            )
+            {
+                "Valid": False,
+            }
+        )
 
 
 class RandomStrataArmView(generics.GenericAPIView):
-
     def post(self, request):
         """
         Randomization of the ARMs.
