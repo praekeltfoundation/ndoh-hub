@@ -239,6 +239,97 @@ def override_get_today():
     return datetime.datetime.strptime("20220308", "%Y%m%d").date()
 
 
+class StrataValidation(APITestCase):
+    def setUp(self):
+        utils.get_today = override_get_today
+
+    url = reverse("mqr_strataarm_validation")
+
+    def test_random_arm_unauthorized_user(self):
+        """
+        unauthorized user access denied
+        Returns: status code 401
+
+        """
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_random_arm_validate(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        response = self.client.post(
+            self.url,
+            data={
+                "facility_code": "123456",
+                "estimated_delivery_date": datetime.date(2023, 8, 17),
+                "mom_age": 32,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.json(),
+            {"Excluded": True, "reason": "study not active for weeks pregnant"},
+        )
+
+    def test_random_arm_exclude(self):
+        """
+        Exclude if person doesn't qualify for study
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        ClinicCode.objects.create(
+            code="123456", value=1, uid=1, name="test", province="EC"
+        )
+
+        response = self.client.post(
+            self.url,
+            data={
+                "estimated_delivery_date": "2022-01-30",
+                "facility_code": "123456",
+                "mom_age": "38",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.json(),
+            {"Valid": False, "reason": "clinic: 123456, weeks: None"},
+        )
+
+    @override_settings(MQR_STUDY_START_DATE="2022-01-03")
+    def test_random_arm_exclude_study_limit(self):
+        """
+        Exclude if person doesn't qualify for study based on min study pregnancy weeks
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        ClinicCode.objects.create(
+            code="123456", value=1, uid=1, name="test", province="EC"
+        )
+
+        response = self.client.post(
+            self.url,
+            data={
+                "facility_code": "123456",
+                "estimated_delivery_date": datetime.date(2022, 8, 17),
+                "mom_age": 32,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.json(),
+            {"Excluded": True, "reason": "study not active for weeks pregnant"},
+        )
+
+
 class StrataRandomization(APITestCase):
     def setUp(self):
         utils.get_today = override_get_today
@@ -282,64 +373,10 @@ class StrataRandomization(APITestCase):
         self.assertContains(response, strata_arm.order.split(",")[0])
         self.assertEqual(strata_arm.next_index, 1)
 
-    def test_random_arm_exclude(self):
-        """
-        Exclude if person doesn't qualify for study
-        """
-        user = get_user_model().objects.create_user("test")
-        self.client.force_authenticate(user)
-
-        ClinicCode.objects.create(
-            code="123456", value=1, uid=1, name="test", province="EC"
-        )
-
-        response = self.client.post(
-            self.url,
-            data={
-                "estimated_delivery_date": "2022-01-30",
-                "facility_code": "123456",
-                "mom_age": "38",
-            },
-            format="json",
-        )
-
-        self.assertEqual(
-            response.json(),
-            {"Excluded": True, "reason": "clinic: 123456, weeks: None, age: 38"},
-        )
-
-    @override_settings(MQR_STUDY_START_DATE="2022-01-03")
-    def test_random_arm_exclude_study_limit(self):
-        """
-        Exclude if person doesn't qualify for study based on min study pregnancy weeks
-        """
-        user = get_user_model().objects.create_user("test")
-        self.client.force_authenticate(user)
-
-        ClinicCode.objects.create(
-            code="123456", value=1, uid=1, name="test", province="EC"
-        )
-
-        response = self.client.post(
-            self.url,
-            data={
-                "facility_code": "123456",
-                "estimated_delivery_date": datetime.date(2022, 8, 17),
-                "mom_age": 32,
-            },
-            format="json",
-        )
-
-        self.assertEqual(
-            response.json(),
-            {"Excluded": True, "reason": "study not active for weeks pregnant"},
-        )
-
     def test_get_random_starta_arm(self):
         """
         Check the next arm from the existing data
         Returns: string response
-
         """
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)

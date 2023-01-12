@@ -39,7 +39,7 @@ from .serializers import BaselineSurveyResultSerializer, MqrStrataSerializer
 STUDY_ARMS = ["ARM", "RCM", "RCM_BCM", "RCM_SMS"]
 
 
-class RandomStrataArmView(generics.GenericAPIView):
+class StrataArmValidationView(generics.GenericAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = MqrStrataSerializer
 
@@ -64,6 +64,39 @@ class RandomStrataArmView(generics.GenericAPIView):
         age_bucket = get_age_bucket(mom_age)
 
         if clinic_code and weeks_pregnant_bucket and age_bucket:
+            return Response(
+                {
+                    "Valid": True,
+                }
+            )
+
+        return Response(
+            {
+                "Valid": False,
+                "reason": f"clinic: {clinic_code.code}, weeks: {weeks_pregnant_bucket}",
+            }
+        )
+
+
+class RandomStrataArmView(generics.GenericAPIView):
+    def post(self, request):
+        """
+        Randomization of the ARMs.
+        """
+        serializer = MqrStrataSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        facility_code = serializer.validated_data.get("facility_code")
+        estimated_delivery_date = serializer.validated_data.get(
+            "estimated_delivery_date"
+        )
+        mom_age = serializer.validated_data.get("mom_age")
+
+        clinic_code = get_facility_province(facility_code)
+        weeks_pregnant_bucket = get_weeks_pregnant(estimated_delivery_date)
+        age_bucket = get_age_bucket(mom_age)
+
+        if mom_age and weeks_pregnant_bucket and age_bucket:
             province = clinic_code.province
 
             strata, created = MqrStrata.objects.get_or_create(
@@ -88,6 +121,7 @@ class RandomStrataArmView(generics.GenericAPIView):
                 strata.save()
 
             return Response({"random_arm": arm})
+
         clinic = clinic_code.code if clinic_code else None
         return Response(
             {
