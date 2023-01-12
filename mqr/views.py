@@ -76,6 +76,7 @@ class RandomStrataArmValidationView(generics.GenericAPIView):
                 }
             )
 
+
 class RandomStrataArmView(generics.GenericAPIView):
 
     def post(self, request):
