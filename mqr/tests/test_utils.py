@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta
+from django.test import override_settings
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -509,5 +510,29 @@ class TestIsStudyActiveForWeeksPregnant(TestCase):
         self.assertFalse(study_active)
 
         edd = date(2022, 11, 1)  # 18 weeks
+        study_active = utils.is_study_active_for_weeks_pregnant(edd)
+        self.assertTrue(study_active)
+
+    @override_settings(MQR_WEEK_LIMIT_OFFSET=4)
+    def test_is_study_active_for_weeks_pregnant_with_offset(self):
+        utils.get_today = lambda: date(2022, 5, 25)
+
+        # Study 2 weeks in, everything is valid
+        edd = date(2022, 11, 15)  # 16 weeks
+        study_active = utils.is_study_active_for_weeks_pregnant(edd)
+        self.assertTrue(study_active)
+
+        edd = date(2022, 11, 8)  # 17 weeks
+        study_active = utils.is_study_active_for_weeks_pregnant(edd)
+        self.assertTrue(study_active)
+
+        # Study 7 weeks in, validate against edd
+        utils.get_today = lambda: date(2022, 6, 30)
+
+        edd = date(2022, 12, 12)  # 17 weeks
+        study_active = utils.is_study_active_for_weeks_pregnant(edd)
+        self.assertFalse(study_active)
+
+        edd = date(2022, 12, 5)  # 18 weeks
         study_active = utils.is_study_active_for_weeks_pregnant(edd)
         self.assertTrue(study_active)
