@@ -1,9 +1,9 @@
 from datetime import date, datetime, timedelta
-from django.test import override_settings
 from unittest import TestCase
 from unittest.mock import patch
 
 import responses
+from django.test import override_settings
 
 from mqr import utils
 
