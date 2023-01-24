@@ -180,7 +180,12 @@ def is_study_active_for_weeks_pregnant(estimated_delivery_date):
     ).date()
 
     weeks_pregnant = get_week("pre", estimated_delivery_date)
-    study_min_weeks = ((get_today() - study_start_date).days // 7) + 15
+    study_active_weeks = (get_today() - study_start_date).days // 7
+
+    if study_active_weeks <= settings.MQR_WEEK_LIMIT_OFFSET:
+        return True
+
+    study_min_weeks = study_active_weeks + 15 - settings.MQR_WEEK_LIMIT_OFFSET
 
     return weeks_pregnant >= study_min_weeks
 

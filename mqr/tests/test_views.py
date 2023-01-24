@@ -256,6 +256,7 @@ class StrataValidation(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    @override_settings(MQR_STUDY_START_DATE="2022-02-21")
     def test_random_arm_validate(self):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
@@ -264,7 +265,7 @@ class StrataValidation(APITestCase):
             self.url,
             data={
                 "facility_code": "123456",
-                "estimated_delivery_date": datetime.date(2023, 8, 17),
+                "estimated_delivery_date": datetime.date(2022, 11, 15),
                 "mom_age": 32,
             },
             format="json",

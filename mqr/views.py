@@ -70,10 +70,12 @@ class StrataArmValidationView(generics.GenericAPIView):
                 }
             )
 
+        clinic = clinic_code.code if clinic_code else None
+
         return Response(
             {
                 "Valid": False,
-                "reason": f"clinic: {clinic_code.code}, weeks: {weeks_pregnant_bucket}",
+                "reason": f"clinic: {clinic}, weeks: {weeks_pregnant_bucket}",
             }
         )
 
