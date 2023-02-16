@@ -15,7 +15,6 @@ from eventstore.whatsapp_actions import (
     handle_inbound,
     handle_operator_message,
     handle_outbound,
-    update_rapidpro_alert_optout,
     update_rapidpro_preferred_channel,
 )
 from registrations.models import JembiSubmission
@@ -152,29 +151,6 @@ class HandleInboundTests(DjangoTestCase):
             handle_inbound(message)
             update.assert_called_once_with(message)
 
-    def test_alert_optout(self):
-        """
-        If the button text matches the optout phrase then it should update the contact
-        in Rapidpro
-        """
-        message = Mock()
-        message.has_label.return_value = False
-        message.type = "button"
-        message.data = {
-            "button": {"text": "Opt out of alerts", "payload": None},
-            "context": {
-                "mentions": [],
-                "from": "+27820001001",
-                "id": "gBGGJ4NjeFMfAgnCTLheojmq20o",
-            },
-        }
-
-        with patch(
-            "eventstore.whatsapp_actions.update_rapidpro_alert_optout"
-        ) as update:
-            handle_inbound(message)
-            update.assert_called_once_with(message)
-
     def test_handle_edd_label(self):
         """
         If the message has the EDD label then the correct flow should be started
@@ -202,24 +178,6 @@ class HandleInboundTests(DjangoTestCase):
         with patch("eventstore.whatsapp_actions.handle_edd_message") as handle:
             handle_inbound(message)
             handle.assert_not_called
-
-
-class UpdateRapidproAlertOptoutTests(DjangoTestCase):
-    def test_contact_update_is_called(self):
-        """
-        Updates the rapidpro contact with the correct info
-        """
-        message = Mock()
-        message.id = "test-id"
-        message.fallback_channel = True
-        message.contact_id = "27820001001"
-
-        with patch("eventstore.tasks.rapidpro") as p:
-            update_rapidpro_alert_optout(message)
-
-        p.update_contact.assert_called_once_with(
-            "whatsapp:27820001001", fields={"optout_alerts": "TRUE"}
-        )
 
 
 class UpdateRapidproPreferredChannelTests(DjangoTestCase):
