@@ -48,8 +48,20 @@ def handle_inbound(message):
     if not message.fallback_channel:
         update_rapidpro_preferred_channel(message)
 
+    if (
+        message.type == "button"
+        and message.data["button"]["text"] == settings.ALERT_OPTOUT_PHRASE
+    ):
+        update_rapidpro_alert_optout(message)
+
     if not settings.DISABLE_EDD_LABEL_FLOW and message.has_label("EDD ISSUE"):
         handle_edd_message(message)
+
+
+def update_rapidpro_alert_optout(message):
+    update_rapidpro_contact.delay(
+        urn=f"whatsapp:{message.contact_id}", fields={"optout_alerts": "TRUE"}
+    )
 
 
 def update_rapidpro_preferred_channel(message):
