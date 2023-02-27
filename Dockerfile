@@ -1,4 +1,4 @@
-FROM praekeltfoundation/django-bootstrap:py3.9
+FROM ghcr.io/praekeltfoundation/docker-django-bootstrap-nw:py3.9-bullseye
 
 COPY setup.py /app
 RUN pip install --no-cache-dir -e .
