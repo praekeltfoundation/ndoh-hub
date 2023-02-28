@@ -989,6 +989,40 @@ class AdaAssessmentDialog(APITestCase):
             message,
         )
 
+    @patch("ada.views.post_to_ada")
+    def test_timeout(self, mock_post_to_ada):
+        request = utils.build_rp_request(self.data_next_dialog)
+        self.assertEqual(request, {"step": 5, "value": "27"})
+
+        mock_post_to_ada.return_value = 410
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.entry_url, self.data_next_dialog, format="json"
+        )
+        self.assertRedirects(
+            response,
+            (
+                "/api/v2/ada/nextdialog?contact_uuid="
+                "67460e74-02e3-11e8-b443-"
+                "00163e990bdb&msisdn=27856454612&"
+                "choiceContext=&choices=None&message="
+                "How+old+are+you%3F%0A%0AReply+%2ABACK%"
+                "2A+to+go+to+the+previous+question+or+%"
+                "2AMENU%2A+to+end+the+assessment&"
+                "explanations=&step=5&value=27&optionId="
+                "None&path=%2Fassessments%2Ff9d4be32-78fa-"
+                "48e0-b9a3-e12e305e73ce%2Fdialog%2Fnext&"
+                "cardType=INPUT&title=Patient+Information&"
+                "description=How+old+are+you%3F&formatType="
+                "integer&max=120&max_error=Age+must+be+120+"
+                "years+or+younger+to+assess+the+symptoms&min="
+                "1&min_error=Age+in+years+must+be+greater+"
+                "than+0+to+assess+the+symptoms&pattern="
+            ),
+            target_status_code=410,
+        )
+
 
 class AdaAssessmentReport(APITestCase):
     maxDiff = None

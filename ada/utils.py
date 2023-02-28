@@ -112,6 +112,8 @@ def post_to_ada(body, path, contact_uuid):
     head = get_header(contact_uuid)
     path = urljoin(settings.ADA_START_ASSESSMENT_URL, path)
     response = requests.post(path, json=body, headers=head)
+    if response.status_code == 410:
+        return response.status_code
     response.raise_for_status()
     response = response.json()
     return response

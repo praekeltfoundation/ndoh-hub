@@ -195,6 +195,8 @@ class NextDialog(generics.GenericAPIView):
         assessment_id = path.split("/")[-3]
         request = build_rp_request(data)
         ada_response = post_to_ada(request, path, contact_uuid)
+        if ada_response == 410:
+            return Response("Timeout", status=status.HTTP_410_GONE)
         pdf = pdf_ready(ada_response)
         if pdf:
             report_path = ada_response["_links"]["report"]["href"]
