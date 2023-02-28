@@ -1022,8 +1022,6 @@ class AdaAssessmentDialog(APITestCase):
             ),
             target_status_code=410,
         )
-        response = self.client.get(self.data_next_dialog, format="json")
-        self.assertEqual(response.status_code, status.HTTP_410_GONE)
 
 
 class AdaAssessmentReport(APITestCase):
