@@ -166,7 +166,14 @@ class MessagesViewSet(GenericViewSet):
 
             for statuses in request.data.get("statuses", []):
                 message_id = statuses.pop("id")
-                recipient_id = statuses.pop("recipient_id")
+
+                if "message" in statuses:
+                    recipient_id = statuses["message"].pop("recipient_id")
+                    if statuses["message"] == {}:
+                        statuses.pop("message")
+                else:
+                    recipient_id = statuses.pop("recipient_id")
+
                 timestamp = datetime.fromtimestamp(
                     int(statuses.pop("timestamp")), tz=UTC
                 )

@@ -366,9 +366,21 @@ setattr(WhatsAppInboundMessageSerializer, "from", serializers.CharField())
 
 class WhatsAppEventSerializer(serializers.Serializer):
     id = serializers.CharField(required=True)
-    recipient_id = serializers.CharField()
+    recipient_id = serializers.CharField(required=False)
     timestamp = serializers.CharField(validators=[posix_timestamp])
     status = serializers.CharField()
+
+    class Message(serializers.Serializer):
+        recipient_id = serializers.CharField(required=False)
+
+    message = Message(required=False)
+
+    def validate(self, data):
+        old_recipient_id = data.get("recipient_id")
+        new_recipient_id = data.get("message", {}).get("recipient_id")
+        if not old_recipient_id and not new_recipient_id:
+            raise serializers.ValidationError("at least one recipient_id required.")
+        return data
 
 
 class WhatsAppWebhookSerializer(serializers.Serializer):

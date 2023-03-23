@@ -1469,6 +1469,86 @@ class MessagesViewSetTests(APITestCase):
         mock_handle_event.assert_not_called()
 
     @mock.patch("eventstore.views.handle_event")
+    def test_successful_events_request_new_format(self, mock_handle_event):
+        """
+        Should create a new Event object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_message"))
+        self.client.force_authenticate(user)
+        data = {
+            "statuses": [
+                {
+                    "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+                    "message": {"recipient_id": "16315555555"},
+                    "status": "read",
+                    "timestamp": "1518694700",
+                    "random": "data",
+                }
+            ]
+        }
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+            HTTP_X_TURN_HOOK_SUBSCRIPTION="whatsapp",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [event] = Event.objects.all()
+        self.assertEqual(str(event.message_id), "ABGGFlA5FpafAgo6tHcNmNjXmuSf")
+        self.assertEqual(str(event.recipient_id), "16315555555")
+        self.assertEqual(event.status, "read")
+        self.assertEqual(
+            event.timestamp, datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
+        )
+        self.assertEqual(event.created_by, user.username)
+        self.assertFalse(event.fallback_channel)
+        self.assertEqual(event.data, {"random": "data"})
+
+        mock_handle_event.assert_not_called()
+
+    @mock.patch("eventstore.views.handle_event")
+    def test_successful_events_request_missing_recipient_id(self, mock_handle_event):
+        """
+        Should create a new Event object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_message"))
+        self.client.force_authenticate(user)
+        data = {
+            "statuses": [
+                {
+                    "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+                    "status": "read",
+                    "timestamp": "1518694700",
+                    "random": "data",
+                }
+            ]
+        }
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+            HTTP_X_TURN_HOOK_SIGNATURE=self.generate_hmac_signature(data, "REPLACEME"),
+            HTTP_X_TURN_HOOK_SUBSCRIPTION="whatsapp",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        self.assertEqual(
+            response.json(),
+            {
+                "statuses": {
+                    "0": {"non_field_errors": ["at least one recipient_id required."]}
+                }
+            },
+        )
+
+        mock_handle_event.assert_not_called()
+
+    @mock.patch("eventstore.views.handle_event")
     def test_successful_events_request_on_fallback_channel(self, mock_handle_event):
         """
         Should create a new Event object in the database with the fallback
