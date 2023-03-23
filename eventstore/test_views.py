@@ -1181,7 +1181,6 @@ class MessagesViewSetTests(APITestCase):
                 "statuses": {
                     0: {
                         "id": ["This field is required."],
-                        "recipient_id": ["This field is required."],
                         "timestamp": ["Invalid POSIX timestamp."],
                         "status": ["This field is required."],
                     }
