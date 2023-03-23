@@ -1511,7 +1511,7 @@ class MessagesViewSetTests(APITestCase):
     @mock.patch("eventstore.views.handle_event")
     def test_successful_events_request_missing_recipient_id(self, mock_handle_event):
         """
-        Should create a new Event object in the database
+        If there is no recipient id present it should return the correct error
         """
         user = get_user_model().objects.create_user("test")
         user.user_permissions.add(Permission.objects.get(codename="add_message"))
