@@ -2,8 +2,8 @@ import uuid
 
 from django.contrib.auth.models import User
 from django.db import models
-from six import python_2_unicode_compatible
 from simple_history.models import HistoricalRecords
+from six import python_2_unicode_compatible
 
 
 @python_2_unicode_compatible
