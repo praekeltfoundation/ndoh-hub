@@ -8,7 +8,6 @@ import eventstore.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("eventstore", "0035_covid19triage_place_of_work")]
 
     operations = [

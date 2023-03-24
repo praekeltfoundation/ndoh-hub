@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 @api_view(("POST",))
 @renderer_classes((JSONRenderer,))
 def get_first_page(request, *args, **kwargs):
-
     serializer = InboundCheckSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 

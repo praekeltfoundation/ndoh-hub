@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("eventstore", "0047_remove_healthcheckuserprofile_hcs_study_c_pilot_arm")
     ]

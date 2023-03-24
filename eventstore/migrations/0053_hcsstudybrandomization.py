@@ -9,7 +9,6 @@ import eventstore.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("eventstore", "0052_auto_20220131_1239"),
     ]

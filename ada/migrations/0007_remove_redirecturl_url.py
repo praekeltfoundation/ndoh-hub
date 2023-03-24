@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("ada", "0006_auto_20210510_0507")]
 
     operations = [migrations.RemoveField(model_name="redirecturl", name="url")]

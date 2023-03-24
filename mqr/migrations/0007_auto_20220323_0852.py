@@ -8,7 +8,6 @@ import eventstore.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("mqr", "0006_auto_20220323_0758"),
     ]

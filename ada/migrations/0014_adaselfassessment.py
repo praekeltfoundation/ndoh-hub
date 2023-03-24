@@ -8,7 +8,6 @@ import ada.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("ada", "0013_remove_redirecturl_url")]
 
     operations = [
