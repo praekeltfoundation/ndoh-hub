@@ -731,6 +731,9 @@ def get_text_or_caption_from_turn_message(message: dict) -> str:
     if message["type"] is None:
         return "<unknown>"
 
+    if message["type"] == "button":
+        return "<button>"
+
     raise ValueError("Unknown message type")
 
 
