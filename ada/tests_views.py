@@ -13,7 +13,7 @@ from ada import utils
 from .models import RedirectUrl
 
 
-class TestViews(TestCase):
+class TestViews(APITestCase):
     def test_whatsapp_url_error(self):
         """
         Should check that the right template is used for no whatsapp string in url

@@ -323,7 +323,9 @@ ENABLE_JEMBI_EVENTS = env.bool("ENABLE_JEMBI_EVENTS", True)
 CACHES = {
     "default": env.cache(default="locmemcache://"),
     "locmem": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
-    "redis": env.cache("REDIS_URL", default=REDIS_URL),
+    "redis": env.cache(
+        "REDIS_URL", default=REDIS_URL, backend="django_redis.cache.RedisCache"
+    ),
 }
 
 EXTERNAL_REGISTRATIONS_V2 = env.bool("EXTERNAL_REGISTRATIONS_V2", False)

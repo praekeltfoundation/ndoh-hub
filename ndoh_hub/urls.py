@@ -1,8 +1,7 @@
 import os
 
-from django.conf.urls import include, url
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path, re_path
 from django_prometheus import exports as django_prometheus
 from rest_framework import routers
 from rest_framework.authtoken.views import obtain_auth_token
@@ -81,14 +80,16 @@ v5router.register("covid19triage", Covid19TriageV4ViewSet, basename="covid19tria
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    url(r"^api/auth/", include("rest_framework.urls", namespace="rest_framework")),
-    url(r"^api/token-auth/", obtain_auth_token),
-    url(r"^docs/", include_docs_urls(title="NDOH Hub")),
-    url(r"^", include("mqr.urls")),
-    url(r"^", include("aaq.urls")),
-    url(r"^", include("registrations.urls")),
+    re_path(r"^api/auth/", include("rest_framework.urls", namespace="rest_framework")),
+    re_path(r"^api/token-auth/", obtain_auth_token),
+    re_path(r"^docs/", include_docs_urls(title="NDOH Hub")),
+    re_path(r"^", include("mqr.urls")),
+    re_path(r"^", include("aaq.urls")),
+    re_path(r"^", include("registrations.urls")),
     path("", include("ada.urls")),
-    url(r"^api/v1/forgetcontact/", ForgetContactView.as_view(), name="forgetcontact"),
+    re_path(
+        r"^api/v1/forgetcontact/", ForgetContactView.as_view(), name="forgetcontact"
+    ),
     path("api/v2/", include(v2router.urls)),
     path("api/v3/", include(v3router.urls)),
     path("api/v4/", include(v4router.urls)),

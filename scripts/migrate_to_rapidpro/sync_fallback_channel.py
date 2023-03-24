@@ -76,7 +76,7 @@ if __name__ == "__main__":
     contact_id = 0
 
     start, d_print = time.time(), time.time()
-    for (path, contact_id, fields) in cursor:
+    for path, contact_id, fields in cursor:
         preferred_channel = fields.get(field_mapping["preferred_channel"], {}).get(
             "text", ""
         )

@@ -215,7 +215,7 @@ if __name__ == "__main__":
     )
     total = 0
     start, d_print = time.time(), time.time()
-    for (id, details, failed_msgs_count) in cursor:
+    for id, details, failed_msgs_count in cursor:
         process_identity(identities, id, details, failed_msgs_count)
 
         if time.time() - d_print > 1:
@@ -240,7 +240,7 @@ if __name__ == "__main__":
     )
     total = 0
     start, d_print = time.time(), time.time()
-    for (id, created, reason) in cursor:
+    for id, created, reason in cursor:
         process_optout(identities, id, created, reason)
         if time.time() - d_print > 1:
             print(
@@ -274,7 +274,7 @@ if __name__ == "__main__":
     )
     total = 0
     start, d_print = time.time(), time.time()
-    for (id, data) in cursor:
+    for id, data in cursor:
         process_registration(identities, id, data)
         if time.time() - d_print > 1:
             print(
@@ -302,7 +302,7 @@ if __name__ == "__main__":
     )
     total = 0
     start, d_print = time.time(), time.time()
-    for (id, action, data, created) in cursor:
+    for id, action, data, created in cursor:
         process_change(identities, id, action, data, created)
         if time.time() - d_print > 1:
             print(
@@ -340,7 +340,7 @@ if __name__ == "__main__":
     )
     total = 0
     start, d_print = time.time(), time.time()
-    for (id, name, created) in cursor:
+    for id, name, created in cursor:
         process_subscription(identities, id, name, created)
         if time.time() - d_print > 1:
             print(
