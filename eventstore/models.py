@@ -6,7 +6,6 @@ from typing import Text
 import pycountry
 from django.conf import settings
 from django.conf.locale import LANG_INFO
-from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
@@ -81,7 +80,7 @@ class OptOut(models.Model):
     source = models.CharField(max_length=255)
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
-    data = JSONField(default=dict, blank=True, null=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
 
     def __str__(self):
         return "{} opt out: {} <{}>".format(
@@ -95,7 +94,7 @@ class BabySwitch(models.Model):
     source = models.CharField(max_length=255)
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
-    data = JSONField(default=dict, blank=True, null=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
 
     class Meta:
         verbose_name_plural = "Baby switches"
@@ -109,7 +108,7 @@ class ChannelSwitch(models.Model):
     to_channel = models.CharField(max_length=255)
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
-    data = JSONField(default=dict, blank=True, null=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
 
     class Meta:
         verbose_name_plural = "Channel switches"
@@ -123,7 +122,7 @@ class MSISDNSwitch(models.Model):
     new_msisdn = models.CharField(max_length=255)
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
-    data = JSONField(default=dict, blank=True, null=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
 
 
 class DeliveryFailure(models.Model):
@@ -140,7 +139,7 @@ class LanguageSwitch(models.Model):
     new_language = models.CharField(max_length=255)
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
-    data = JSONField(default=dict, blank=True, null=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
 
 
 class IdentificationSwitch(models.Model):
@@ -163,7 +162,7 @@ class IdentificationSwitch(models.Model):
     new_passport_number = models.CharField(max_length=255, blank=True, default="")
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
-    data = JSONField(default=dict, blank=True, null=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
 
 
 class ResearchOptinSwitch(models.Model):
@@ -174,7 +173,7 @@ class ResearchOptinSwitch(models.Model):
     new_research_consent = models.BooleanField()
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
-    data = JSONField(default=dict, blank=True, null=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
 
 
 class PublicRegistration(models.Model):
@@ -186,7 +185,7 @@ class PublicRegistration(models.Model):
     channel = models.CharField(max_length=8, choices=CHANNEL_TYPES, default="")
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
-    data = JSONField(default=dict, blank=True, null=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
 
 
 class CHWRegistration(models.Model):
@@ -206,7 +205,7 @@ class CHWRegistration(models.Model):
     channel = models.CharField(max_length=8, choices=CHANNEL_TYPES, default="")
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
-    data = JSONField(default=dict, blank=True, null=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
 
 
 class PrebirthRegistration(models.Model):
@@ -228,7 +227,7 @@ class PrebirthRegistration(models.Model):
     source = models.CharField(max_length=255)
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
-    data = JSONField(default=dict, blank=True, null=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
 
 
 class PMTCTRegistration(models.Model):
@@ -243,7 +242,7 @@ class PMTCTRegistration(models.Model):
     source = models.CharField(max_length=255)
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
-    data = JSONField(default=dict, blank=True, null=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
 
 
 class PostbirthRegistration(models.Model):
@@ -265,7 +264,7 @@ class PostbirthRegistration(models.Model):
     channel = models.CharField(max_length=8, choices=CHANNEL_TYPES, default="")
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
-    data = JSONField(default=dict, blank=True, null=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
 
 
 class EddSwitch(models.Model):
@@ -276,7 +275,7 @@ class EddSwitch(models.Model):
     new_edd = models.DateField()
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
-    data = JSONField(default=dict, blank=True, null=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
 
 
 class BabyDobSwitch(models.Model):
@@ -287,7 +286,7 @@ class BabyDobSwitch(models.Model):
     new_baby_dob = models.DateField()
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
-    data = JSONField(default=dict, blank=True, null=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
 
 
 class Feedback(models.Model):
@@ -301,7 +300,7 @@ class Feedback(models.Model):
     positive = models.BooleanField(default=False)
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
-    data = JSONField(default=dict, blank=True, null=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
 
 
 class Message(models.Model):
@@ -313,7 +312,7 @@ class Message(models.Model):
     contact_id = models.CharField(max_length=255, blank=True)
     timestamp = models.DateTimeField(default=timezone.now)
     type = models.CharField(max_length=255, blank=True)
-    data = JSONField(default=dict, blank=True, null=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
     message_direction = models.CharField(max_length=1, choices=DIRECTION_TYPES)
     created_by = models.CharField(max_length=255, blank=True)
     fallback_channel = models.BooleanField(default=False)
@@ -370,7 +369,7 @@ class Event(models.Model):
     status = models.CharField(max_length=255, blank=True, choices=STATUS)
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True)
-    data = JSONField(default=dict, blank=True, null=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
     fallback_channel = models.BooleanField(default=False)
 
     @property
@@ -517,7 +516,7 @@ class Covid19Triage(models.Model):
     completed_timestamp = models.DateTimeField(default=timezone.now)
     timestamp = models.DateTimeField(default=timezone.now, db_index=True)
     created_by = models.CharField(max_length=255, blank=True, default="")
-    data = JSONField(default=dict, blank=True, null=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
 
     class Meta:
         indexes = [models.Index(fields=["msisdn", "timestamp"])]
@@ -710,7 +709,7 @@ class HealthCheckUserProfile(models.Model):
     hcs_study_c_quarantine_arm = models.CharField(
         max_length=3, choices=STUDY_ARM_QUARANTINE_CHOICES, null=True, default=None
     )
-    data = JSONField(default=dict, blank=True, null=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
 
     objects = HealthCheckUserProfileManager()
 
@@ -957,7 +956,7 @@ class ImportError(models.Model):
     )
     row_number = models.PositiveSmallIntegerField()
     error_type = models.PositiveSmallIntegerField(choices=ErrorType.choices)
-    error_args = JSONField(blank=True)
+    error_args = models.JSONField(blank=True)
 
     @property
     def error(self):
