@@ -154,6 +154,7 @@ LANGUAGES = [
     ("ven-za", "Tshivenda"),
     ("xho-za", "isiXhosa"),
     ("zul-za", "isiZulu"),
+    ("en", "English"),
 ]
 
 LANG_INFO = {
