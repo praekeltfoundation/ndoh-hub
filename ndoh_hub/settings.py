@@ -132,7 +132,7 @@ PROMETHEUS_EXPORT_MIGRATIONS = False
 # Internationalization
 # https://docs.djangoproject.com/en/1.9/topics/i18n/
 
-LANGUAGE_CODE = "eng-za"
+LANGUAGE_CODE = "en"
 
 TIME_ZONE = "UTC"
 
