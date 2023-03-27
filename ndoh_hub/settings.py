@@ -195,6 +195,8 @@ TEMPLATES = [
     }
 ]
 
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
 # Sentry configuration
 RAVEN_CONFIG = {
     # DevOps will supply you with this.
