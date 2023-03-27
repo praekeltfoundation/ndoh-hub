@@ -3,10 +3,8 @@ import uuid
 from django.contrib.auth.models import User
 from django.db import models
 from simple_history.models import HistoricalRecords
-from six import python_2_unicode_compatible
 
 
-@python_2_unicode_compatible
 class Source(models.Model):
     """The source from which a registation originates.
     The User foreignkey is used to identify the source based on the
@@ -33,7 +31,6 @@ class Source(models.Model):
         return "%s" % self.name
 
 
-@python_2_unicode_compatible
 class Registration(models.Model):
     """A registation submitted via Vumi or other sources.
 
@@ -141,7 +138,6 @@ class Registration(models.Model):
         ]
 
 
-@python_2_unicode_compatible
 class SubscriptionRequest(models.Model):
     """A data model that maps to the Stagebased Store
     Subscription model. Created after a successful Registration

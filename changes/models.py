@@ -2,12 +2,10 @@ import uuid
 
 from django.contrib.auth.models import User
 from django.db import models
-from six import python_2_unicode_compatible
 
 from registrations.models import Source
 
 
-@python_2_unicode_compatible
 class Change(models.Model):
     """A request to change a subscription
 
