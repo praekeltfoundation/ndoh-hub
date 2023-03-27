@@ -132,7 +132,7 @@ PROMETHEUS_EXPORT_MIGRATIONS = False
 # Internationalization
 # https://docs.djangoproject.com/en/1.9/topics/i18n/
 
-LANGUAGE_CODE = "eng-za"
+LANGUAGE_CODE = "en"
 
 TIME_ZONE = "UTC"
 
@@ -154,6 +154,7 @@ LANGUAGES = [
     ("ven-za", "Tshivenda"),
     ("xho-za", "isiXhosa"),
     ("zul-za", "isiZulu"),
+    ("en", "English"),
 ]
 
 LANG_INFO = {
@@ -193,6 +194,8 @@ TEMPLATES = [
         },
     }
 ]
+
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 # Sentry configuration
 RAVEN_CONFIG = {
