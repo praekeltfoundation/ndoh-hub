@@ -12,7 +12,6 @@ def mock_request_to_jembi_api(url):
 
 
 def mock_get_identity_by_id(identity_id, details={}):
-
     default_details = {"foo": "bar", "lang_code": "afr_ZA"}
     default_details.update(details)
 

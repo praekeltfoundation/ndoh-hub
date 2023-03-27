@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("registrations", "0018_add_subscription_check_permission")]
 
     operations = [

@@ -1,13 +1,10 @@
 import uuid
 
 from django.contrib.auth.models import User
-from django.contrib.postgres.fields import JSONField
 from django.db import models
-from django.utils.encoding import python_2_unicode_compatible
 from simple_history.models import HistoricalRecords
 
 
-@python_2_unicode_compatible
 class Source(models.Model):
     """The source from which a registation originates.
     The User foreignkey is used to identify the source based on the
@@ -34,7 +31,6 @@ class Source(models.Model):
         return "%s" % self.name
 
 
-@python_2_unicode_compatible
 class Registration(models.Model):
     """A registation submitted via Vumi or other sources.
 
@@ -86,7 +82,7 @@ class Registration(models.Model):
     registrant_id = models.CharField(
         max_length=36, null=True, blank=False, db_index=True
     )
-    data = JSONField(null=True, blank=True)
+    data = models.JSONField(null=True, blank=True)
     validated = models.BooleanField(default=False)
     source = models.ForeignKey(
         Source, related_name="registrations", null=False, on_delete=models.CASCADE
@@ -142,7 +138,6 @@ class Registration(models.Model):
         ]
 
 
-@python_2_unicode_compatible
 class SubscriptionRequest(models.Model):
     """A data model that maps to the Stagebased Store
     Subscription model. Created after a successful Registration
@@ -155,7 +150,7 @@ class SubscriptionRequest(models.Model):
     next_sequence_number = models.IntegerField(default=1, null=False, blank=False)
     lang = models.CharField(max_length=6, null=False, blank=False)
     schedule = models.IntegerField(default=1)
-    metadata = JSONField(null=True, blank=True)
+    metadata = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -257,9 +252,9 @@ class ClinicCode(models.Model):
 
 class JembiSubmission(models.Model):
     path = models.CharField(max_length=255)
-    request_data = JSONField()
+    request_data = models.JSONField()
     timestamp = models.DateTimeField(auto_now_add=True)
     submitted = models.BooleanField(default=False)
     response_status_code = models.IntegerField(null=True, default=None)
-    response_headers = JSONField(default=dict)
+    response_headers = models.JSONField(default=dict)
     response_body = models.TextField(blank=True, default="")

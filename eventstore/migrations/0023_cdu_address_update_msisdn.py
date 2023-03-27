@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("eventstore", "0022_cdu_address_update")]
 
     operations = [

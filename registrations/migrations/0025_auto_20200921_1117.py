@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("registrations", "0024_delete_whatsappcontact")]
 
     operations = [

@@ -8,7 +8,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("eventstore", "0012_add_msisdn_switch")]
 
     operations = [

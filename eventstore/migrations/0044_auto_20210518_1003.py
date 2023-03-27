@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("eventstore", "0043_auto_20210511_1316")]
 
     operations = [

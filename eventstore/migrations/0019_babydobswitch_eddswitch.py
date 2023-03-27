@@ -8,7 +8,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("eventstore", "0018_auto_20200205_1033")]
 
     operations = [

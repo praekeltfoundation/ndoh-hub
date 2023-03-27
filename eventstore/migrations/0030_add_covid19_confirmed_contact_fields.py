@@ -6,7 +6,6 @@ import eventstore.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("eventstore", "0029_add_index_on_timestamp")]
 
     operations = [

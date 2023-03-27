@@ -10,7 +10,6 @@ import eventstore.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("eventstore", "0040_momconnectimport_last_uploaded_row")]
 
     operations = [

@@ -86,7 +86,7 @@ def get_messages(short_name):
         (short_name,),
     )
     msgs: defaultdict = defaultdict(dict)
-    for (sequence, content, language) in cursor:
+    for sequence, content, language in cursor:
         msgs[sequence][language.rstrip("_ZA")] = content
     return msgs
 

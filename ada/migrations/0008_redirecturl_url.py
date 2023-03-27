@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("ada", "0007_remove_redirecturl_url")]
 
     operations = [

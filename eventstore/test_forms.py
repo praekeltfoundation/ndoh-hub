@@ -186,7 +186,7 @@ class MomConnectImportFormTests(TestCase):
         [error] = instance.errors.all()
         self.assertEqual(
             error.error,
-            "Field messaging_consent failed validation: 'foo' value must be either "
+            "Field messaging_consent failed validation: “foo” value must be either "
             "True or False.",
         )
         self.assertEqual(error.row_number, 2)
@@ -210,7 +210,7 @@ class MomConnectImportFormTests(TestCase):
         [error] = instance.errors.all()
         self.assertEqual(
             error.error,
-            "Field research_consent failed validation: 'foo' value must be either "
+            "Field research_consent failed validation: “foo” value must be either "
             "True or False.",
         )
         self.assertEqual(error.row_number, 2)
@@ -254,7 +254,7 @@ class MomConnectImportFormTests(TestCase):
         [error] = instance.errors.all()
         self.assertEqual(
             error.error,
-            "Field previous_optout failed validation: 'foo' value must be either "
+            "Field previous_optout failed validation: “foo” value must be either "
             "True or False.",
         )
         self.assertEqual(error.row_number, 2)

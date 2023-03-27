@@ -65,7 +65,7 @@ if __name__ == "__main__":
     contact_id = 0
 
     start, d_print = time.time(), time.time()
-    for (contact_id, contact_uuid, fields, group_id, created_on) in cursor:
+    for contact_id, contact_uuid, fields, group_id, created_on in cursor:
         should_receive_msgs = False
         fields_to_update = {}
 

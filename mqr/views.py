@@ -281,11 +281,9 @@ class FirstSendDateView(generics.GenericAPIView):
 
 
 class MqrEndlineChecksViewSet(generics.GenericAPIView):
-
     # Lookup contact
 
     def post(self, request, *args, **kwargs):
-
         serializer = MqrEndlineChecksSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 

@@ -483,7 +483,6 @@ class HCSStudyBRandomizationViewSet(GenericViewSet, CreateModelMixin, ListModelM
     filterset_class = HCSStudyBRandomizationFilter
 
     def create(self, request, *args, **kwargs):
-
         serializer = HCSStudyBRandomizationSerializer(
             data=request.data, context={"request": request}
         )

@@ -16,7 +16,6 @@ def destroy_rthb_nurseconnect_position_tracker(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("registrations", "0013_historicalpositiontracker_positiontracker")]
 
     operations = [

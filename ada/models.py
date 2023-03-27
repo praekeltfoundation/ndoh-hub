@@ -4,7 +4,6 @@ from .validators import za_phone_number
 
 
 class RedirectUrl(models.Model):
-
     content = models.TextField(
         default="This entry has no copy",
         help_text="The content of the mesage that this link was sent in",

@@ -211,7 +211,6 @@ class TestGetNextMessage(TestCase):
 
     @patch("mqr.utils.get_message_details")
     def test_get_next_message(self, mock_get_message_details):
-
         mock_get_message_details.return_value = {
             "is_template": False,
             "has_parameters": False,
@@ -235,7 +234,6 @@ class TestGetNextMessage(TestCase):
     @responses.activate
     @patch("mqr.utils.get_message_details")
     def test_get_next_message_with_sequence(self, mock_get_message_details):
-
         mock_get_message_details.return_value = {
             "is_template": False,
             "has_parameters": False,
@@ -267,7 +265,6 @@ class TestGetNextMessage(TestCase):
     @responses.activate
     @patch("mqr.utils.get_message_details")
     def test_get_next_message_with_sequence_last(self, mock_get_message_details):
-
         mock_get_message_details.return_value = {
             "is_template": False,
             "has_parameters": False,
@@ -301,7 +298,6 @@ class TestGetNextMessage(TestCase):
     def test_get_next_message_with_sequence_and_existing_prompt(
         self, mock_get_message_details
     ):
-
         mock_get_message_details.return_value = {
             "is_template": False,
             "has_parameters": False,

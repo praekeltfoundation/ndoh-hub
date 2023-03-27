@@ -11,7 +11,6 @@ import eventstore.validators
 
 
 class Migration(migrations.Migration):
-
     replaces = [
         ("eventstore", "0038_importerror_importrow_momconnectimport"),
         ("eventstore", "0039_auto_20210114_1424"),
