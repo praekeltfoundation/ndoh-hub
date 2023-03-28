@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.0
+1. Upgrade to Django 4
+  ([#532](https://github.com/praekeltfoundation/ndoh-hub/pull/532))
+
 ## 0.9.64
 1. Handle timeouts
   ([#530](https://github.com/praekeltfoundation/ndoh-hub/pull/530))
