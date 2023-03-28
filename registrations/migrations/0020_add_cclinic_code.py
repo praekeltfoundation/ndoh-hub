@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("registrations", "0019_add_whatsapp_postbirth_registration_type")]
 
     operations = [

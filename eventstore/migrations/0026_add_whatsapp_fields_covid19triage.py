@@ -17,7 +17,6 @@ def noop(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("eventstore", "0025_add_difficulty_breathing")]
 
     operations = [

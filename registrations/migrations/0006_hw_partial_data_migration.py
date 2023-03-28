@@ -16,7 +16,6 @@ def move_partial_to_limited(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("registrations", "0005_rename_limited_authority_to_partial")]
 
     operations = [

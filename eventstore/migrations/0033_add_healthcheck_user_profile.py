@@ -9,7 +9,6 @@ import eventstore.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("eventstore", "0032_deliveryfailure_timestamp")]
 
     operations = [

@@ -78,7 +78,6 @@ class HandleOldWaitingForHelpdeskContactsTests(TestCase):
 
     @responses.activate
     def test_conversation_expired(self):
-
         contact_id = "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"
 
         self.add_rapidpro_contact_list_response(

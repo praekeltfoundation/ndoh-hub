@@ -6,7 +6,6 @@ import eventstore.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         (
             "eventstore",

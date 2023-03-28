@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("registrations", "0023_migrate_wacontact_v1_data")]
 
     operations = [migrations.DeleteModel(name="WhatsAppContact")]

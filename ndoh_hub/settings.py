@@ -132,7 +132,7 @@ PROMETHEUS_EXPORT_MIGRATIONS = False
 # Internationalization
 # https://docs.djangoproject.com/en/1.9/topics/i18n/
 
-LANGUAGE_CODE = "en-gb"
+LANGUAGE_CODE = "en"
 
 TIME_ZONE = "UTC"
 
@@ -154,6 +154,7 @@ LANGUAGES = [
     ("ven-za", "Tshivenda"),
     ("xho-za", "isiXhosa"),
     ("zul-za", "isiZulu"),
+    ("en", "English"),
 ]
 
 LANG_INFO = {
@@ -193,6 +194,8 @@ TEMPLATES = [
         },
     }
 ]
+
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 # Sentry configuration
 RAVEN_CONFIG = {
@@ -323,7 +326,9 @@ ENABLE_JEMBI_EVENTS = env.bool("ENABLE_JEMBI_EVENTS", True)
 CACHES = {
     "default": env.cache(default="locmemcache://"),
     "locmem": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
-    "redis": env.cache("REDIS_URL", default=REDIS_URL),
+    "redis": env.cache(
+        "REDIS_URL", default=REDIS_URL, backend="django_redis.cache.RedisCache"
+    ),
 }
 
 EXTERNAL_REGISTRATIONS_V2 = env.bool("EXTERNAL_REGISTRATIONS_V2", False)

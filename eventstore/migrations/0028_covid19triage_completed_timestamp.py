@@ -14,7 +14,6 @@ def noop(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("eventstore", "0027_normalise_msisdn")]
 
     operations = [

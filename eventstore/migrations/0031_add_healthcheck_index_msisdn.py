@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("eventstore", "0030_add_covid19_confirmed_contact_fields")]
 
     operations = [

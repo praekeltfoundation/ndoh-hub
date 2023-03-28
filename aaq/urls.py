@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import re_path
 from rest_framework import routers
 
 from . import views
@@ -8,17 +8,17 @@ router.trailing_slash = "/?"
 
 
 urlpatterns = [
-    url(
+    re_path(
         r"^api/v1/inbound/check",
         views.get_first_page,
         name="aaq-get-first-page",
     ),
-    url(
+    re_path(
         r"^api/v1/inbound/feedback",
         views.add_feedback,
         name="aaq-add-feedback",
     ),
-    url(
+    re_path(
         r"^api/v1/check-urgency",
         views.check_urgency,
         name="aaq-check-urgency",

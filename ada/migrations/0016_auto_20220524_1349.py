@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("ada", "0015_adaselfassessment_roadblock")]
 
     operations = [

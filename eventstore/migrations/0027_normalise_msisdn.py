@@ -30,7 +30,6 @@ def normalise_msisdn(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("eventstore", "0026_add_whatsapp_fields_covid19triage")]
 
     operations = [

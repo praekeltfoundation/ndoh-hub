@@ -1,5 +1,4 @@
-from django.conf.urls import include, url
-from django.urls import path
+from django.urls import include, path, re_path
 from rest_framework import routers
 
 from . import views
@@ -12,5 +11,5 @@ urlpatterns = [
     path(
         "api/v1/facilityCheck", views.FacilityCheckView.as_view(), name="facility-check"
     ),
-    url(r"^api/v1/", include(router.urls)),
+    re_path(r"^api/v1/", include(router.urls)),
 ]

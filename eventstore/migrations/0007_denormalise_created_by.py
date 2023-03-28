@@ -19,7 +19,6 @@ def populate_createdby_name(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("eventstore", "0006_create_postbirthregistration")]
 
     operations = [

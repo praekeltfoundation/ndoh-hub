@@ -13,7 +13,7 @@ from ada import utils
 from .models import RedirectUrl
 
 
-class TestViews(TestCase):
+class TestViews(APITestCase):
     def test_whatsapp_url_error(self):
         """
         Should check that the right template is used for no whatsapp string in url
@@ -624,7 +624,6 @@ class StartAssessment(APITestCase):
     def test_start_assessment(
         self, mock_get_endpoint, mock_post_to_ada_start_assessment, mock_post_to_ada
     ):
-
         mock_post_to_ada_start_assessment.return_value = {
             "id": "052a482d-8b77-4e48-b198-ade28485bf3f",
             "step": 0,

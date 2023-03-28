@@ -1,14 +1,11 @@
 import uuid
 
 from django.contrib.auth.models import User
-from django.contrib.postgres.fields import JSONField
 from django.db import models
-from django.utils.encoding import python_2_unicode_compatible
 
 from registrations.models import Source
 
 
-@python_2_unicode_compatible
 class Change(models.Model):
     """A request to change a subscription
 
@@ -60,7 +57,7 @@ class Change(models.Model):
     action = models.CharField(
         max_length=255, null=False, blank=False, choices=ACTION_CHOICES
     )
-    data = JSONField(null=True, blank=True)
+    data = models.JSONField(null=True, blank=True)
     validated = models.BooleanField(default=False)
     source = models.ForeignKey(
         Source, related_name="changes", null=True, on_delete=models.SET_NULL

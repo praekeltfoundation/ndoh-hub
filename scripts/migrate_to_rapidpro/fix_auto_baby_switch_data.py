@@ -74,7 +74,7 @@ def get_babyswitches(conn):
     )  # 158680
     total = 0
     start, d_print = time.time(), time.time()
-    for (contact_id, timestamp) in cursor:
+    for contact_id, timestamp in cursor:
         babyswitches[contact_id] = timestamp
 
         if time.time() - d_print > 1:
@@ -105,7 +105,7 @@ def get_optouts(conn):
     )  # 255855
     total = 0
     start, d_print = time.time(), time.time()
-    for (contact_id, timestamp) in cursor:
+    for contact_id, timestamp in cursor:
         optouts[contact_id] = timestamp
 
         if time.time() - d_print > 1:
@@ -136,7 +136,7 @@ def get_registrations(conn, babyswitches, optouts):
     )  # 216808
     total = 0
     start, d_print = time.time(), time.time()
-    for (contact_id, timestamp) in cursor:
+    for contact_id, timestamp in cursor:
         if contact_id in babyswitches and timestamp < babyswitches[contact_id]:
             continue
         if contact_id in optouts and timestamp < optouts[contact_id]:

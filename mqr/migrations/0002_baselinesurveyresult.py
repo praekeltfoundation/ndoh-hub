@@ -8,7 +8,6 @@ import eventstore.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("mqr", "0001_initial"),
     ]
