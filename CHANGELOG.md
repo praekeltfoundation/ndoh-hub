@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.64
+1. Handle timeouts
+  ([#530](https://github.com/praekeltfoundation/ndoh-hub/pull/530))
+
 ## 0.9.4
 1. Flag to disable expire helpdesk task
   ([#434](https://github.com/praekeltfoundation/ndoh-hub/pull/434))
