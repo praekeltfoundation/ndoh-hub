@@ -6,7 +6,12 @@ from eventstore.whatsapp_actions import handle_event
 from ndoh_hub.celery import app
 
 
-@app.task(base=Batches, flush_every=100, flush_interval=10)
+@app.task(
+    base=Batches,
+    flush_every=settings.BULK_INSERT_EVENTS_FLUSH_EVERY,
+    flush_interval=settings.BULK_INSERT_EVENTS_FLUSH_INTERVAL,
+    acks_late=True,
+)
 def bulk_insert_events(requests):
     data = []
     for request in requests:
