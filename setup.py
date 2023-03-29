@@ -37,7 +37,7 @@ setup(
         "iso6709==0.1.5",
         "redis==4.5.3",
         "django-redis==5.2.0",
-        "celery_batches=0.7",
+        "celery_batches==0.7",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
