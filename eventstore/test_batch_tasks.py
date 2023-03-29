@@ -1,7 +1,7 @@
 from django.test import TestCase
-from eventstore.models import Event
 
 from eventstore.batch_tasks import bulk_insert_events
+from eventstore.models import Event
 
 
 class UpdateTurnContactTaskTest(TestCase):
@@ -13,7 +13,8 @@ class UpdateTurnContactTaskTest(TestCase):
             status="sent",
             created_by="test user",
             data={},
-            fallback_channel=False)
+            fallback_channel=False,
+        )
 
         [event] = Event.objects.all()
 

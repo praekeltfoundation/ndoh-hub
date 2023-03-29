@@ -1,9 +1,9 @@
-from django.conf import settings
 from celery_batches import Batches
+from django.conf import settings
 
 from eventstore.models import Event
-from ndoh_hub.celery import app
 from eventstore.whatsapp_actions import handle_event
+from ndoh_hub.celery import app
 
 
 @app.task(base=Batches, flush_every=100, flush_interval=10)
