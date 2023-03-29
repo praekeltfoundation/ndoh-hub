@@ -14,6 +14,7 @@ from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ViewSet
 
+from eventstore.batch_tasks import bulk_insert_events
 from eventstore.models import (
     BabyDobSwitch,
     BabySwitch,
@@ -24,7 +25,6 @@ from eventstore.models import (
     Covid19TriageStart,
     DBEOnBehalfOfProfile,
     EddSwitch,
-    Event,
     Feedback,
     HCSStudyBRandomization,
     HealthCheckUserProfile,
@@ -77,7 +77,7 @@ from eventstore.tasks import (
     process_ada_assessment_notification,
     reset_delivery_failure,
 )
-from eventstore.whatsapp_actions import handle_event, handle_inbound, handle_outbound
+from eventstore.whatsapp_actions import handle_inbound, handle_outbound
 from ndoh_hub.utils import TokenAuthQueryString, validate_signature
 
 
@@ -178,7 +178,8 @@ class MessagesViewSet(GenericViewSet):
                     int(statuses.pop("timestamp")), tz=UTC
                 )
                 message_status = statuses.pop("status")
-                event = Event.objects.create(
+
+                bulk_insert_events.delay(
                     message_id=message_id,
                     recipient_id=recipient_id,
                     timestamp=timestamp,
@@ -187,9 +188,6 @@ class MessagesViewSet(GenericViewSet):
                     data=statuses,
                     fallback_channel=on_fallback_channel,
                 )
-
-                if settings.ENABLE_EVENTSTORE_WHATSAPP_ACTIONS:
-                    handle_event(event)
 
         elif webhook_type == "turn":
             TurnOutboundSerializer(data=request.data).is_valid(raise_exception=True)
