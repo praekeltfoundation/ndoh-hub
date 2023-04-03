@@ -1,6 +1,5 @@
 from celery_batches import Batches
 from django.conf import settings
-from django.utils.dateparse import parse_date
 
 from eventstore.models import Event
 from eventstore.whatsapp_actions import handle_event
@@ -21,5 +20,4 @@ def bulk_insert_events(requests):
     events = Event.objects.bulk_create(data)
     if settings.ENABLE_EVENTSTORE_WHATSAPP_ACTIONS:
         for event in events:
-            event.timestamp = parse_date(event.timestamp)
             handle_event(event)

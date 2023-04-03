@@ -268,7 +268,8 @@ class HandleEventTests(DjangoTestCase):
         event.fallback_channel = False
         event.status = Event.FAILED
         event.recipient_id = "27820001001"
-        event.timestamp = timezone.now() + timedelta(days=2)
+        event.timestamp = str(timezone.now() + timedelta(days=2))
+        event.save()
 
         DeliveryFailure.objects.create(number_of_failures=4, contact_id="27820001001")
 
@@ -299,6 +300,7 @@ class HandleEventTests(DjangoTestCase):
         event.status = Event.FAILED
         event.recipient_id = "27820001001"
         event.timestamp = timezone.now() + timedelta(days=2)
+        event.save()
 
         DeliveryFailure.objects.create(number_of_failures=4, contact_id="27820001001")
 
@@ -330,6 +332,7 @@ class HandleEventTests(DjangoTestCase):
         event.status = Event.FAILED
         event.recipient_id = "27820001001"
         event.timestamp = timezone.now()
+        event.save()
 
         DeliveryFailure.objects.create(number_of_failures=4, contact_id="27820001001")
 
@@ -351,6 +354,7 @@ class HandleEventTests(DjangoTestCase):
         event.status = Event.FAILED
         event.recipient_id = "27820001001"
         event.timestamp = timezone.now() + timedelta(days=2)
+        event.save()
 
         DeliveryFailure.objects.create(number_of_failures=5, contact_id="27820001001")
 
@@ -372,6 +376,7 @@ class HandleEventTests(DjangoTestCase):
         event.status = Event.FAILED
         event.recipient_id = "27820001001"
         event.timestamp = timezone.now() + timedelta(days=2)
+        event.save()
 
         with patch("eventstore.tasks.rapidpro") as p:
             handle_event(event)
@@ -392,6 +397,7 @@ class HandleEventTests(DjangoTestCase):
         event.status = Event.FAILED
         event.recipient_id = "27820001001"
         event.timestamp = timezone.now() + timedelta(days=2)
+        event.save()
 
         with patch("eventstore.tasks.rapidpro") as p:
             handle_event(event)
@@ -412,6 +418,7 @@ class HandleEventTests(DjangoTestCase):
         event.status = Event.READ
         event.recipient_id = "27820001001"
         event.timestamp = timezone.now() + timedelta(days=2)
+        event.save()
 
         with patch("eventstore.tasks.rapidpro") as p:
             handle_event(event)
@@ -431,6 +438,7 @@ class HandleEventTests(DjangoTestCase):
         event.status = Event.SENT
         event.recipient_id = "27820001001"
         event.timestamp = timezone.now() + timedelta(days=2)
+        event.save()
 
         DeliveryFailure.objects.create(number_of_failures=3, contact_id="27820001001")
 
@@ -452,6 +460,7 @@ class HandleEventTests(DjangoTestCase):
         event.status = Event.READ
         event.recipient_id = "27820001001"
         event.timestamp = timezone.now() + timedelta(days=2)
+        event.save()
 
         DeliveryFailure.objects.create(number_of_failures=1, contact_id="27820001001")
 
