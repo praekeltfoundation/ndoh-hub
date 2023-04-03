@@ -97,6 +97,7 @@ def handle_event(event):
             contact_id=event.recipient_id, defaults={"number_of_failures": 0}
         )
 
+        event.refresh_from_db()
         if not created and (event.timestamp - df.timestamp).days <= 0:
             return
 
