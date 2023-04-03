@@ -5,7 +5,6 @@ from eventstore.models import DeliveryFailure, Event
 
 
 class UpdateTurnContactTaskTest(TestCase):
-    @override_settings(ENABLE_EVENTSTORE_WHATSAPP_ACTIONS=True)
     def test_batch_insert_events(self):
         DeliveryFailure.objects.get_or_create(
             contact_id="recipient_id", defaults={"number_of_failures": 0}
