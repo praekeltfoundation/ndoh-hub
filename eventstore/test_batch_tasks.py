@@ -1,14 +1,12 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from eventstore.batch_tasks import bulk_insert_events
-from eventstore.models import Event, DeliveryFailure
-from django.test import override_settings
+from eventstore.models import DeliveryFailure, Event
 
 
 class UpdateTurnContactTaskTest(TestCase):
     @override_settings(ENABLE_EVENTSTORE_WHATSAPP_ACTIONS=True)
     def test_batch_insert_events(self):
-
         DeliveryFailure.objects.get_or_create(
             contact_id="recipient_id", defaults={"number_of_failures": 0}
         )
