@@ -35,7 +35,7 @@ setup(
         "pycountry==19.8.18",
         "attrs",
         "iso6709==0.1.5",
-        "redis==4.5.3",
+        "redis==4.5.4",
         "django-redis==5.2.0",
         "celery_batches==0.7",
     ],
