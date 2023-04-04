@@ -1427,7 +1427,7 @@ class MessagesViewSetTests(APITestCase):
         [messages] = Message.objects.all()
         self.assertTrue(messages.fallback_channel)
 
-    @mock.patch("eventstore.batch_tasks.handle_event")
+    @mock.patch("eventstore.views.handle_event")
     def test_successful_events_request(self, mock_handle_event):
         """
         Should create a new Event object in the database
@@ -1467,7 +1467,7 @@ class MessagesViewSetTests(APITestCase):
 
         mock_handle_event.assert_not_called()
 
-    @mock.patch("eventstore.batch_tasks.handle_event")
+    @mock.patch("eventstore.views.handle_event")
     def test_successful_events_request_new_format(self, mock_handle_event):
         """
         Should create a new Event object in the database
@@ -1508,7 +1508,7 @@ class MessagesViewSetTests(APITestCase):
 
         mock_handle_event.assert_not_called()
 
-    @mock.patch("eventstore.batch_tasks.handle_event")
+    @mock.patch("eventstore.views.handle_event")
     def test_successful_events_request_missing_recipient_id(self, mock_handle_event):
         """
         If there is no recipient id present it should return the correct error
@@ -1547,7 +1547,7 @@ class MessagesViewSetTests(APITestCase):
 
         mock_handle_event.assert_not_called()
 
-    @mock.patch("eventstore.batch_tasks.handle_event")
+    @mock.patch("eventstore.views.handle_event")
     def test_successful_events_request_on_fallback_channel(self, mock_handle_event):
         """
         Should create a new Event object in the database with the fallback
@@ -1582,7 +1582,7 @@ class MessagesViewSetTests(APITestCase):
 
         mock_handle_event.assert_not_called()
 
-    @mock.patch("eventstore.batch_tasks.handle_event")
+    @mock.patch("eventstore.views.handle_event")
     @override_settings(ENABLE_EVENTSTORE_WHATSAPP_ACTIONS=True)
     def test_events_request_calls_handle_event(self, mock_handle_event):
         """

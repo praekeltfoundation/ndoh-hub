@@ -1,9 +1,13 @@
+import logging
+
 from celery_batches import Batches
 from django.conf import settings
 
 from eventstore.models import Event
 from eventstore.whatsapp_actions import handle_event
 from ndoh_hub.celery import app
+
+logger = logging.getLogger(__name__)
 
 
 @app.task(
@@ -13,6 +17,7 @@ from ndoh_hub.celery import app
     acks_late=True,
 )
 def bulk_insert_events(requests):
+    logger.info(f">>> bulk_insert_events: {len(requests)}")
     data = []
     for request in requests:
         data.append(Event(**request.kwargs))

@@ -25,6 +25,7 @@ from eventstore.models import (
     Covid19TriageStart,
     DBEOnBehalfOfProfile,
     EddSwitch,
+    Event,
     Feedback,
     HCSStudyBRandomization,
     HealthCheckUserProfile,
@@ -77,7 +78,7 @@ from eventstore.tasks import (
     process_ada_assessment_notification,
     reset_delivery_failure,
 )
-from eventstore.whatsapp_actions import handle_inbound, handle_outbound
+from eventstore.whatsapp_actions import handle_event, handle_inbound, handle_outbound
 from ndoh_hub.utils import TokenAuthQueryString, validate_signature
 
 
@@ -179,15 +180,29 @@ class MessagesViewSet(GenericViewSet):
                 )
                 message_status = statuses.pop("status")
 
-                bulk_insert_events.delay(
-                    message_id=message_id,
-                    recipient_id=recipient_id,
-                    timestamp=timestamp,
-                    status=message_status,
-                    created_by=request.user.username,
-                    data=statuses,
-                    fallback_channel=on_fallback_channel,
-                )
+                if settings.BULK_INSERT_EVENTS_ENABLED:
+                    bulk_insert_events.delay(
+                        message_id=message_id,
+                        recipient_id=recipient_id,
+                        timestamp=timestamp,
+                        status=message_status,
+                        created_by=request.user.username,
+                        data=statuses,
+                        fallback_channel=on_fallback_channel,
+                    )
+                else:
+                    event = Event.objects.create(
+                        message_id=message_id,
+                        recipient_id=recipient_id,
+                        timestamp=timestamp,
+                        status=message_status,
+                        created_by=request.user.username,
+                        data=statuses,
+                        fallback_channel=on_fallback_channel,
+                    )
+
+                    if settings.ENABLE_EVENTSTORE_WHATSAPP_ACTIONS:
+                        handle_event(event)
 
         elif webhook_type == "turn":
             TurnOutboundSerializer(data=request.data).is_valid(raise_exception=True)
