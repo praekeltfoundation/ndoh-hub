@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.2
+1. Add setting to disable bulk inserts
+  ([#541](https://github.com/praekeltfoundation/ndoh-hub/pull/541))
+
 ## 0.10.1
 1. Batch insert WA events
   ([#536](https://github.com/praekeltfoundation/ndoh-hub/pull/536))
