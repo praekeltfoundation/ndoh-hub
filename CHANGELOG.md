@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.1
+1. Batch insert WA events
+  ([#536](https://github.com/praekeltfoundation/ndoh-hub/pull/536))
+  ([#539](https://github.com/praekeltfoundation/ndoh-hub/pull/539))
+  ([#540](https://github.com/praekeltfoundation/ndoh-hub/pull/540))
+
 ## 0.10.0
 1. Upgrade to Django 4
   ([#532](https://github.com/praekeltfoundation/ndoh-hub/pull/532))
