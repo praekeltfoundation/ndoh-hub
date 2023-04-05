@@ -365,7 +365,7 @@ class Event(models.Model):
     ]
 
     message_id = models.CharField(max_length=255, blank=True)
-    recipient_id = models.CharField(max_length=255, blank=True)
+    recipient_id = models.CharField(max_length=255, blank=True, db_index=True)
     status = models.CharField(max_length=255, blank=True, choices=STATUS)
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True)
