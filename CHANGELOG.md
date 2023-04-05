@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.3
+1. Add index to event.recipient_id concurrently
+  ([#542](https://github.com/praekeltfoundation/ndoh-hub/pull/542))
+
 ## 0.10.2
 1. Add setting to disable bulk inserts
   ([#541](https://github.com/praekeltfoundation/ndoh-hub/pull/541))
