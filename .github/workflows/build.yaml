@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - develop
+      - add-events-recipient-id-index
     tags:
       - "*"
 
