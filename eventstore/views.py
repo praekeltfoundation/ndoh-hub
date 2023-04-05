@@ -14,7 +14,7 @@ from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ViewSet
 
-from eventstore.batch_tasks import bulk_insert_events
+from eventstore.batch_tasks import bulk_insert_events, update_or_create_message
 from eventstore.models import (
     BabyDobSwitch,
     BabySwitch,
@@ -78,7 +78,7 @@ from eventstore.tasks import (
     process_ada_assessment_notification,
     reset_delivery_failure,
 )
-from eventstore.whatsapp_actions import handle_event, handle_inbound, handle_outbound
+from eventstore.whatsapp_actions import handle_event
 from ndoh_hub.utils import TokenAuthQueryString, validate_signature
 
 
@@ -150,9 +150,9 @@ class MessagesViewSet(GenericViewSet):
                     int(inbound.pop("timestamp")), tz=UTC
                 )
 
-                msg, created = Message.objects.update_or_create(
-                    id=id,
-                    defaults={
+                update_or_create_message.delay(
+                    id,
+                    {
                         "contact_id": contact_id,
                         "type": type,
                         "data": inbound,
@@ -162,8 +162,6 @@ class MessagesViewSet(GenericViewSet):
                         "fallback_channel": on_fallback_channel,
                     },
                 )
-                if settings.ENABLE_EVENTSTORE_WHATSAPP_ACTIONS and created:
-                    handle_inbound(msg)
 
             for statuses in request.data.get("statuses", []):
                 message_id = statuses.pop("id")
@@ -217,9 +215,9 @@ class MessagesViewSet(GenericViewSet):
                     status.HTTP_400_BAD_REQUEST,
                 )
 
-            msg, created = Message.objects.update_or_create(
-                id=message_id,
-                defaults={
+            update_or_create_message.delay(
+                message_id,
+                {
                     "contact_id": contact_id,
                     "type": type,
                     "data": outbound,
@@ -228,8 +226,7 @@ class MessagesViewSet(GenericViewSet):
                     "fallback_channel": on_fallback_channel,
                 },
             )
-            if settings.ENABLE_EVENTSTORE_WHATSAPP_ACTIONS and created:
-                handle_outbound(msg)
+
         else:
             return Response(
                 {
