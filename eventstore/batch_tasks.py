@@ -3,8 +3,8 @@ import logging
 from celery_batches import Batches
 from django.conf import settings
 
-from eventstore.models import Event
-from eventstore.whatsapp_actions import handle_event
+from eventstore.models import Event, Message
+from eventstore.whatsapp_actions import handle_event, handle_inbound, handle_outbound
 from ndoh_hub.celery import app
 
 logger = logging.getLogger(__name__)
@@ -26,3 +26,16 @@ def bulk_insert_events(requests):
     if settings.ENABLE_EVENTSTORE_WHATSAPP_ACTIONS:
         for event in events:
             handle_event(event)
+
+
+@app.task
+def update_or_create_message(message_id, defaults):
+    msg, created = Message.objects.update_or_create(
+        id=message_id,
+        defaults=defaults,
+    )
+    if settings.ENABLE_EVENTSTORE_WHATSAPP_ACTIONS and created:
+        if msg.message_direction == Message.INBOUND:
+            handle_inbound(msg)
+        elif msg.message_direction == Message.OUTBOUND:
+            handle_outbound(msg)

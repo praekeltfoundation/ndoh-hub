@@ -1227,7 +1227,9 @@ class MessagesViewSetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data, {"X-WhatsApp-Id": ["This header is required."]})
 
-    def test_successful_inbound_messages_request(self):
+    @mock.patch("eventstore.batch_tasks.handle_inbound")
+    @override_settings(ENABLE_EVENTSTORE_WHATSAPP_ACTIONS=True)
+    def test_successful_inbound_messages_request(self, mock_handle_inbound):
         """
         Should create a new Inbound Message object in the database
         """
@@ -1311,6 +1313,8 @@ class MessagesViewSetTests(APITestCase):
         ),
         self.assertEqual(messages.created_by, user.username)
 
+        mock_handle_inbound.assert_called_with(messages)
+
     def test_successful_inbound_from_fallback_channel(self):
         """
         Save inbound message when subscription is turn and x-turn-event is 1
@@ -1344,7 +1348,9 @@ class MessagesViewSetTests(APITestCase):
         self.assertEqual(str(message.contact_id), "sender-wa-id")
         self.assertEqual(message.message_direction, Message.INBOUND)
 
-    def test_successful_outbound_messages_request(self):
+    @mock.patch("eventstore.batch_tasks.handle_outbound")
+    @override_settings(ENABLE_EVENTSTORE_WHATSAPP_ACTIONS=True)
+    def test_successful_outbound_messages_request(self, mock_handle_outbound):
         """
         Should create a new Outbound Message object in the database
         """
@@ -1395,6 +1401,8 @@ class MessagesViewSetTests(APITestCase):
         ),
         self.assertEqual(messages.created_by, user.username)
         self.assertFalse(messages.fallback_channel)
+
+        mock_handle_outbound.assert_called_with(messages)
 
     def test_successful_outbound_messages_on_fallback(self):
         """
