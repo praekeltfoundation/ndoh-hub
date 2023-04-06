@@ -309,7 +309,7 @@ class Message(models.Model):
     DIRECTION_TYPES = [(INBOUND, "Inbound"), (OUTBOUND, "Outbound")]
 
     id = models.CharField(max_length=255, primary_key=True, blank=True)
-    contact_id = models.CharField(max_length=255, blank=True)
+    contact_id = models.CharField(max_length=255, blank=True, db_index=True)
     timestamp = models.DateTimeField(default=timezone.now)
     type = models.CharField(max_length=255, blank=True)
     data = models.JSONField(default=dict, blank=True, null=True)
