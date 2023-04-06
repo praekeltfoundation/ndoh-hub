@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.4
+1. Move message insert/update to celery task
+  ([#543](https://github.com/praekeltfoundation/ndoh-hub/pull/543))
+
 ## 0.10.3
 1. Add index to event.recipient_id concurrently
   ([#542](https://github.com/praekeltfoundation/ndoh-hub/pull/542))
