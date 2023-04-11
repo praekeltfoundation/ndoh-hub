@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.5
+1. Add index to message.contact_id
+  ([#544](https://github.com/praekeltfoundation/ndoh-hub/pull/544))
+1. Bump redis from 4.5.3 to 4.5.4
+  ([#537](https://github.com/praekeltfoundation/ndoh-hub/pull/537))
+
 ## 0.10.4
 1. Move message insert/update to celery task
   ([#543](https://github.com/praekeltfoundation/ndoh-hub/pull/543))
