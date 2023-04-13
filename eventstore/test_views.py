@@ -260,7 +260,9 @@ class ForgetContactViewTests(APITestCase):
         response = self.client.post(self.url, {"contact_id": contact_id})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        mock_forget_contact.delay.assert_called_once_with(contact_id)
+        mock_forget_contact.apply_async.assert_called_once_with(
+            countdown=600, args=[contact_id]
+        )
 
 
 class BabySwitchViewSetTests(APITestCase, BaseEventTestCase):

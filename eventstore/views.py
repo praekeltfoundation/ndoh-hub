@@ -247,7 +247,7 @@ class OptOutViewSet(GenericViewSet, CreateModelMixin):
     def perform_create(self, serializer):
         optout = serializer.save()
         if optout.optout_type == OptOut.FORGET_TYPE:
-            forget_contact.delay(str(optout.contact_id))
+            forget_contact.apply_async(countdown=600, args=[str(optout.contact_id)])
 
 
 class ForgetContactView(generics.GenericAPIView):
@@ -259,7 +259,9 @@ class ForgetContactView(generics.GenericAPIView):
 
         contact_id = serializer.validated_data.get("contact_id")
 
-        forget_contact.delay(str(contact_id))
+        forget_contact.apply_async(
+            countdown=settings.FORGET_OPTOUT_TASK_COUNTDOWN, args=[str(contact_id)]
+        )
 
         return Response({}, status=status.HTTP_200_OK)
 
