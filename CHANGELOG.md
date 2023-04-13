@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.6
+1. Delay forget_contact task
+  ([#545](https://github.com/praekeltfoundation/ndoh-hub/pull/545))
+
 ## 0.10.5
 1. Add index to message.contact_id
   ([#544](https://github.com/praekeltfoundation/ndoh-hub/pull/544))
