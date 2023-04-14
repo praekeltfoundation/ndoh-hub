@@ -1,16 +1,13 @@
-import datetime
 import json
-from unittest import mock
 
 from django.contrib.auth.models import Permission, User
 from django.test import TestCase
 from django.urls import reverse
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient, APITestCase
 
-from registrations.models import ClinicCode, WhatsAppContact
+from registrations.models import ClinicCode
 
 
 class HUBAPITestCase(TestCase):
@@ -111,16 +108,12 @@ class WhatsAppContactCheckViewTests(AuthenticatedAPITestCase):
         response = self.normalclient.post(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    @mock.patch("registrations.views.get_whatsapp_contact")
-    def test_get_statuses(self, task):
+    def test_get_statuses(self):
         """
         Contacts without whatsapp IDs should return invalid, with IDs valid, and no
         entry in the database, either "processing" for no_wait or do the lookup for wait
         """
         url = reverse("whatsappcontact-list")
-        WhatsAppContact.objects.create(msisdn="0820001001")
-        WhatsAppContact.objects.create(msisdn="0820001002", whatsapp_id="27820001002")
-        task.return_value = {"input": "0820001003", "status": "invalid"}
 
         self.normaluser.user_permissions.add(
             Permission.objects.get(name="Can add WhatsApp Contact")
@@ -136,15 +129,13 @@ class WhatsAppContactCheckViewTests(AuthenticatedAPITestCase):
             json.loads(response.content),
             {
                 "contacts": [
-                    {"input": "0820001001", "status": "invalid"},
+                    {"input": "0820001001", "status": "valid", "wa_id": "27820001001"},
                     {"input": "0820001002", "status": "valid", "wa_id": "27820001002"},
-                    {"input": "0820001003", "status": "invalid"},
+                    {"input": "0820001003", "status": "valid", "wa_id": "27820001003"},
                 ]
             },
         )
-        task.assert_called_once_with(msisdn="0820001003")
 
-        task.reset_mock()
         response = self.normalclient.post(
             url,
             data={
@@ -156,50 +147,9 @@ class WhatsAppContactCheckViewTests(AuthenticatedAPITestCase):
             json.loads(response.content),
             {
                 "contacts": [
-                    {"input": "0820001001", "status": "invalid"},
+                    {"input": "0820001001", "status": "valid", "wa_id": "27820001001"},
                     {"input": "0820001002", "status": "valid", "wa_id": "27820001002"},
-                    {"input": "0820001003", "status": "processing"},
+                    {"input": "0820001003", "status": "valid", "wa_id": "27820001003"},
                 ]
             },
         )
-
-        task.assert_not_called()
-        task.delay.assert_called_once_with(msisdn="0820001003")
-
-    def test_prune_contacts_permission_required(self):
-        """
-        You need to be authenticated and have the correct permission to be able to prune
-        whatsapp contacts from the database
-        """
-        url = reverse("whatsappcontact-prune")
-        response = self.normalclient.post(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-        self.normaluser.user_permissions.add(
-            Permission.objects.get(name="Can prune WhatsApp contact")
-        )
-        response = self.normalclient.post(url)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-
-    def test_prune_contacts(self):
-        """
-        The prune action should delete all contacts older than 7 days from the database
-        """
-        contact1 = WhatsAppContact.objects.create(
-            msisdn="0820001001", whatsapp_id="27820001001"
-        )
-        contact2 = WhatsAppContact.objects.create(
-            msisdn="0820001002", whatsapp_id="27820001002"
-        )
-        contact2.created = timezone.now() - datetime.timedelta(days=7)
-        contact2.save()
-
-        self.normaluser.user_permissions.add(
-            Permission.objects.get(name="Can prune WhatsApp contact")
-        )
-        url = reverse("whatsappcontact-prune")
-        response = self.normalclient.post(url)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-
-        [contact] = WhatsAppContact.objects.all()
-        self.assertEqual(contact, contact1)

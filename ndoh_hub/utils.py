@@ -199,6 +199,13 @@ def json_decode(data):
     return json.loads(data)
 
 
+def msisdn_to_whatsapp_id(msisdn: str) -> str:
+    """
+    Takes MSISDN input, normalises it and formats it as a whatsapp ID
+    """
+    return normalise_msisdn(msisdn).replace("+", "")
+
+
 def normalise_msisdn(msisdn: str) -> str:
     """
     Takes the MSISDN input, and normalises it to E164 format
