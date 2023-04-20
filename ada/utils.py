@@ -411,3 +411,28 @@ def get_header_edc(contact_uuid):
         "Content-Type": "application/pdf",
     }
     return head
+
+
+def create_castor_record(token):
+    headers = {
+        "Authorization": "Bearer {}".format(token),
+        "Accept": "application/json",
+    }
+    data = {"institute_id": settings.ADA_EDC_INSTITUTE_ID}
+    path = urljoin(settings.ADA_EDC_STUDY_URL, f"{settings.ADA_EDC_STUDY_ID}/record")
+    response = requests.post(path, json=data, headers=headers).json()
+
+    return response["record_id"]
+
+
+def submit_castor_data(token, record_id, field, value):
+    headers = {
+        "Authorization": "Bearer {}".format(token),
+        "Accept": "application/json",
+    }
+    data = {"field_value": value}
+    path = urljoin(
+        settings.ADA_EDC_STUDY_URL,
+        f"{settings.ADA_EDC_STUDY_ID}/record/{record_id}/study-data-point/{field}",
+    )
+    requests.post(path, json=data, headers=headers)

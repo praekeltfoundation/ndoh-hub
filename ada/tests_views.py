@@ -1,5 +1,5 @@
 import json
-from unittest.mock import patch
+from unittest.mock import call, patch
 from urllib.parse import urljoin
 
 from django.contrib.auth import get_user_model
@@ -1210,3 +1210,72 @@ class AdaEDC(APITestCase):
             content_type="application/json",
         )
         self.assertEqual(response.json(), "Successfully submitted to Castor")
+
+
+class SubmitCastorDataTests(APITestCase):
+    url = reverse("submit-castor-data")
+
+    @patch("ada.views.create_castor_record")
+    @patch("ada.views.submit_castor_data")
+    def test_submit_castor_data_with_record_id(
+        self, mock_submit_castor_data, mock_create_castor_record
+    ):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        response = self.client.post(
+            self.url,
+            {
+                "edc_record_id": "record-id",
+                "token": "token-uuid",
+                "records": [
+                    {"id": "field-id-1", "value": "field-value-1"},
+                    {"id": "field-id-2", "value": "field-value-2"},
+                ],
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json(), {"record_id": "record-id"})
+
+        mock_create_castor_record.assert_not_called()
+
+        mock_submit_castor_data.assert_has_calls(
+            [
+                call("token-uuid", "record-id", "field-id-1", "field-value-1"),
+                call("token-uuid", "record-id", "field-id-2", "field-value-2"),
+            ]
+        )
+
+    @patch("ada.views.create_castor_record")
+    @patch("ada.views.submit_castor_data")
+    def test_submit_castor_data_no_record_id(
+        self, mock_submit_castor_data, mock_create_castor_record
+    ):
+        mock_create_castor_record.return_value = "record-id"
+
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        response = self.client.post(
+            self.url,
+            {
+                "token": "token-uuid",
+                "records": [
+                    {"id": "field-id-1", "value": "field-value-1"},
+                    {"id": "field-id-2", "value": "field-value-2"},
+                ],
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json(), {"record_id": "record-id"})
+
+        mock_create_castor_record.assert_called_once_with("token-uuid")
+
+        mock_submit_castor_data.assert_has_calls(
+            [
+                call("token-uuid", "record-id", "field-id-1", "field-value-1"),
+                call("token-uuid", "record-id", "field-id-2", "field-value-2"),
+            ]
+        )

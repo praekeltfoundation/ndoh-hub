@@ -14,6 +14,7 @@ from ada.serializers import (
     AdaInputTypeSerializer,
     AdaTextTypeSerializer,
     StartAssessmentSerializer,
+    SubmitCastorDataSerializer,
     SymptomCheckSerializer,
 )
 
@@ -27,6 +28,7 @@ from .tasks import post_to_topup_endpoint, start_prototype_survey_flow, start_to
 from .utils import (
     abort_assessment,
     build_rp_request,
+    create_castor_record,
     encodeurl,
     format_message,
     get_edc_report,
@@ -39,6 +41,7 @@ from .utils import (
     post_to_ada,
     post_to_ada_start_assessment,
     previous_question,
+    submit_castor_data,
     upload_edc_media,
     upload_turn_media,
 )
@@ -267,6 +270,25 @@ class Reports(generics.GenericAPIView):
         data = json.loads(urldecoded)
         message = format_message(data)
         return Response(message, status=status.HTTP_200_OK)
+
+
+class SubmitCastorData(generics.GenericAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        serializer = SubmitCastorDataSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        token = serializer.validated_data["token"]
+        records = serializer.validated_data["records"]
+        record_id = serializer.validated_data.get("edc_record_id")
+        if not record_id:
+            record_id = create_castor_record(token)
+
+        for record in records:
+            submit_castor_data(token, record_id, record["id"], record["value"])
+
+        return Response({"record_id": record_id}, status=status.HTTP_200_OK)
 
 
 class EDC_Reports(generics.GenericAPIView):
