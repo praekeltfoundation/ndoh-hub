@@ -1,4 +1,7 @@
+import json
 from unittest import TestCase
+
+import responses
 
 from ada import utils
 
@@ -585,3 +588,39 @@ class TestCovidDataLake(TestCase):
         }
         resource_id = payload["payload"]["id"]
         self.assertEqual(resource_id, "35e6cde9d29e47acda1042def0b10db8")
+
+
+class TestCreateCastorRecord(TestCase):
+    @responses.activate
+    def test_create_castor_record(self):
+        responses.add(
+            responses.POST,
+            "http://castor/test-study-id/record",
+            json={"record_id": "record-id"},
+        )
+        record_id = utils.create_castor_record("token-uuid")
+
+        self.assertEqual(record_id, "record-id")
+
+        [call] = responses.calls
+
+        self.assertEqual(call.request.headers["Authorization"], "Bearer token-uuid")
+        self.assertEqual(
+            json.loads(call.request.body), {"institute_id": "test-institute-id"}
+        )
+
+
+class TestSubmitCastorData(TestCase):
+    @responses.activate
+    def test_submit_castor_data(self):
+        responses.add(
+            responses.POST,
+            "http://castor/test-study-id/record/record-id/study-data-point/field-uuid",
+            json={},
+        )
+        utils.submit_castor_data("token-uuid", "record-id", "field-uuid", "field-value")
+
+        [call] = responses.calls
+
+        self.assertEqual(call.request.headers["Authorization"], "Bearer token-uuid")
+        self.assertEqual(json.loads(call.request.body), {"field_value": "field-value"})

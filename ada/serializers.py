@@ -113,3 +113,15 @@ class AdaChoiceTypeSerializer(serializers.Serializer):
                 data["error"] = error
                 raise serializers.ValidationError(data)
         return data
+
+
+class SubmitCastorDataSerializer(serializers.Serializer):
+    class CastorRecord(serializers.Serializer):
+        id = serializers.CharField(required=True)
+        value = serializers.CharField(required=True)
+
+    edc_record_id = serializers.CharField(required=False)
+    token = serializers.CharField(required=True)
+    records = serializers.ListField(
+        child=CastorRecord(), allow_empty=False, required=True
+    )

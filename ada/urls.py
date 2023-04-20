@@ -43,4 +43,9 @@ urlpatterns = [
     path("api/v2/ada/abort", views.Abort.as_view(), name="ada-abort"),
     path("api/v2/ada/covid", views.Covid.as_view(), name="ada-covid"),
     path("api/v2/ada/edc_reports", views.EDC_Reports.as_view(), name="ada-edc-reports"),
+    path(
+        "api/v2/ada/submit_castor_data",
+        views.SubmitCastorData.as_view(),
+        name="submit-castor-data",
+    ),
 ]
