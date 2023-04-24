@@ -120,7 +120,7 @@ class SubmitCastorDataSerializer(serializers.Serializer):
         id = serializers.CharField(required=True)
         value = serializers.CharField(required=True)
 
-    edc_record_id = serializers.CharField(required=False)
+    edc_record_id = serializers.CharField(required=False, allow_null=True)
     token = serializers.CharField(required=True)
     records = serializers.ListField(
         child=CastorRecord(), allow_empty=False, required=True
