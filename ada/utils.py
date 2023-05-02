@@ -340,6 +340,7 @@ def upload_edc_media(report, study_id, record_id, field_id, token):
     study_data_point = "study-data-point"
     field_id = field_id
     path = posixpath.join(study_id, record, record_id, study_data_point, field_id)
+    report_name = record_id + "_" + "report"
     url = urljoin(settings.ADA_EDC_STUDY_URL, path)
     nullValues = json.dumps(report, indent=2).replace("null", "None")
     tobyte = nullValues.encode("utf-8")
@@ -351,7 +352,7 @@ def upload_edc_media(report, study_id, record_id, field_id, token):
     response = requests.post(
         url,
         files={
-            "upload_file": ("report.json", open(report_file, "rb"), "application/pdf")
+            "upload_file": (report_name, open(report_file, "rb"), "application/pdf")
         },
         headers=headers,
     )
