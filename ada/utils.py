@@ -2,6 +2,7 @@ from __future__ import absolute_import, division
 
 import json
 import posixpath
+import re
 import tempfile
 import urllib.parse
 from urllib.parse import urlencode, urljoin
@@ -341,6 +342,7 @@ def upload_edc_media(report, study_id, record_id, field_id, token):
     field_id = field_id
     path = posixpath.join(study_id, record, record_id, study_data_point, field_id)
     report_name = record_id + "_" + "report"
+    report_name = clean_filename(report_name)
     url = urljoin(settings.ADA_EDC_STUDY_URL, path)
     nullValues = json.dumps(report, indent=2).replace("null", "None")
     tobyte = nullValues.encode("utf-8")
@@ -437,3 +439,8 @@ def submit_castor_data(token, record_id, field, value):
         f"{settings.ADA_EDC_STUDY_ID}/record/{record_id}/study-data-point/{field}",
     )
     requests.post(path, json=data, headers=headers)
+
+
+def clean_filename(file_name):
+    file_name = str(file_name).strip().replace(" ", "_")
+    return re.sub(r"(?u)[^-\w.]", "", file_name)

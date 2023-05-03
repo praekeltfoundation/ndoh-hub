@@ -624,3 +624,9 @@ class TestSubmitCastorData(TestCase):
 
         self.assertEqual(call.request.headers["Authorization"], "Bearer token-uuid")
         self.assertEqual(json.loads(call.request.body), {"field_value": "field-value"})
+
+
+class TestCleanFilename(TestCase):
+    def test_clean_filename(self):
+        file_name = utils.clean_filename("7566422 0001 0001'#{ report.json")
+        self.assertEqual(file_name, "7566422_0001_0001_report.json")
