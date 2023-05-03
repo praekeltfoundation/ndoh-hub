@@ -251,3 +251,39 @@ def send_slack_message(channel, text):
         if response and response["ok"]:
             return True
     return False
+
+
+def send_whatsapp_template_message(msisdn, namespace, template_name, parameters, *args):
+    # send whatsapp template
+    headers = {
+        "Authorization": "Bearer {}".format(settings.TURN_TOKEN),
+        "Content-Type": "application/json",
+    }
+
+    wa_id = normalise_msisdn(msisdn)
+
+    data = json.dumps(
+        {
+            "to": wa_id,
+            "type": "template",
+            "template": {
+                "namespace": namespace,
+                "name": template_name,
+                "language": {"policy": "deterministic", "code": "en"},
+                "components": [{"type": "body", "parameters": parameters}],
+            },
+        }
+    )
+
+    response = requests.post(
+        urljoin(settings.TURN_URL, "v1/messages"), headers=headers, data=data
+    )
+
+    response_data = response.json()
+
+    prefered_chanel = "Whatsapp"
+    if "messages" not in response_data:
+        if response_data["error"]["code"] == 1013:
+            prefered_chanel = "SMS"
+
+    return prefered_chanel
