@@ -29,7 +29,7 @@ class TestMsisdnToWhatsapp(TestCase):
         self.assertEqual(msisdn_to_whatsapp_id("+27820001001"), "27820001001")
 
 
-class TestSendWhatsappTemplateMessageTrue(TestCase):
+class TestSendWhatsappTemplateMessage(TestCase):
     @responses.activate
     def test_send_whatsapp_template_message_number_on_whatsapp(self):
         """
@@ -53,8 +53,6 @@ class TestSendWhatsappTemplateMessageTrue(TestCase):
 
         self.assertEqual(response, "Whatsapp")
 
-
-class TestSendWhatsappTemplateMessageFalse(TestCase):
     @responses.activate
     def test_send_whatsapp_template_message_number_not_on_whatsapp(self):
         """
