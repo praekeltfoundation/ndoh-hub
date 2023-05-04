@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.10.7
-1. Delay forget_contact task
+1. Rename assessment report
   ([#549](https://github.com/praekeltfoundation/ndoh-hub/pull/549))
   
 ## 0.10.6
