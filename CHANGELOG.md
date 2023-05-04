@@ -2,6 +2,10 @@
 
 ## 0.10.6
 1. Delay forget_contact task
+  ([#549](https://github.com/praekeltfoundation/ndoh-hub/pull/549))
+  
+## 0.10.6
+1. Delay forget_contact task
   ([#545](https://github.com/praekeltfoundation/ndoh-hub/pull/545))
 
 ## 0.10.5
