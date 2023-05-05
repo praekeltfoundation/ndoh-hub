@@ -38,6 +38,8 @@ from eventstore.views import (
 )
 from ndoh_hub.decorators import internal_only
 
+from . import views
+
 admin.site.site_header = os.environ.get("HUB_TITLE", "NDOH Hub Admin")
 
 v2router = routers.DefaultRouter()
@@ -96,5 +98,10 @@ urlpatterns = [
     path("api/v5/", include(v5router.urls)),
     path(
         "metrics", internal_only(django_prometheus.ExportToDjangoView), name="metrics"
+    ),
+    re_path(
+        r"^api/v1/send-whatsapp-template",
+        views.SendWhatsappTemplateView.as_view(),
+        name="send-whatsapp-template",
     ),
 ]
