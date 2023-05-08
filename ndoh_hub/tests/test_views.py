@@ -51,7 +51,7 @@ class SendWhatsappTemplateTests(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json()["preferred channel"], "Whatsapp")
+        self.assertEqual(response.json()["preferred_channel"], "Whatsapp")
 
     @responses.activate
     def test_send_whatsapp_template_message_number_not_on_whatsapp(self):
@@ -80,4 +80,4 @@ class SendWhatsappTemplateTests(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json()["preferred channel"], "SMS")
+        self.assertEqual(response.json()["preferred_channel"], "SMS")

@@ -24,6 +24,6 @@ class SendWhatsappTemplateView(generics.GenericAPIView):
 
         return Response(
             {
-                "preferred channel": preferred_channel,
+                "preferred_channel": preferred_channel,
             }
         )
