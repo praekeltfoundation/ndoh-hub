@@ -81,3 +81,29 @@ class SendWhatsappTemplateTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()["preferred_channel"], "SMS")
+
+    @responses.activate
+    def test_send_whatsapp_template_message_invalid(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        parameters = {"type_": "text", "text": "test template send"}
+        namespace = 1
+        msisdn = "+27820001001"
+        template_name = "test template"
+
+        response = self.client.post(
+            self.url,
+            data={
+                "msisdn": msisdn,
+                "namespace": namespace,
+                "template_name": template_name,
+                "parameters": parameters,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json()["parameters"]["type"], ["This field is required."]
+        )

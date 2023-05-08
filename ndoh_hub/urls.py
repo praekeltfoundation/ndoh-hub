@@ -100,7 +100,7 @@ urlpatterns = [
         "metrics", internal_only(django_prometheus.ExportToDjangoView), name="metrics"
     ),
     re_path(
-        r"^api/v1/send-whatsapp-template",
+        r"^api/v1/sendwhatsapptemplate",
         views.SendWhatsappTemplateView.as_view(),
         name="send-whatsapp-template",
     ),
