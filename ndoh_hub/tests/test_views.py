@@ -114,10 +114,63 @@ class SendWhatsappTemplateTests(APITestCase):
                     "namespace": "test",
                     "name": "test template",
                     "language": {"policy": "deterministic", "code": "en"},
+                    "components": [],
+                },
+            },
+        )
+
+    @responses.activate
+    def test_send_whatsapp_template_message_with_media(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        media = {"filename": "myfile.pdf", "id": "media-uuid"}
+        namespace = "test"
+        msisdn = "+27820001001"
+        template_name = "test template"
+
+        responses.add(
+            method=responses.POST,
+            url="http://turn/v1/messages",
+            json={"messages": [{"id": "gBEGkYiEB1VXAglK1ZEqA1YKPrU"}]},
+            status=200,
+        )
+
+        response = self.client.post(
+            self.url,
+            data={
+                "msisdn": msisdn,
+                "namespace": namespace,
+                "template_name": template_name,
+                "media": media,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["preferred_channel"], "Whatsapp")
+
+        request = json.loads(responses.calls[0].request.body)
+        self.assertEqual(
+            request,
+            {
+                "to": "+27820001001",
+                "type": "template",
+                "template": {
+                    "namespace": "test",
+                    "name": "test template",
+                    "language": {"policy": "deterministic", "code": "en"},
                     "components": [
                         {
-                            "type": "body",
-                            "parameters": [],
+                            "type": "header",
+                            "parameters": [
+                                {
+                                    "type": "document",
+                                    "document": {
+                                        "filename": "myfile.pdf",
+                                        "id": "media-uuid",
+                                    },
+                                }
+                            ],
                         }
                     ],
                 },
@@ -132,7 +185,8 @@ class SendWhatsappTemplateTests(APITestCase):
         response = self.client.post(
             self.url,
             data={
-                "parameters": [{"text": "test template send"}],
+                "parameters": [{"something": "else"}],
+                "media": {"something": "else"},
             },
             format="json",
         )
@@ -144,6 +198,15 @@ class SendWhatsappTemplateTests(APITestCase):
                 "msisdn": ["This field is required."],
                 "template_name": ["This field is required."],
                 "namespace": ["This field is required."],
-                "parameters": {"0": {"type": ["This field is required."]}},
+                "parameters": {
+                    "0": {
+                        "type": ["This field is required."],
+                        "text": ["This field is required."],
+                    }
+                },
+                "media": {
+                    "filename": ["This field is required."],
+                    "id": ["This field is required."],
+                },
             },
         )
