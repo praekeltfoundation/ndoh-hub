@@ -14,13 +14,12 @@ class SendWhatsappTemplateView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
 
         msisdn = serializer.validated_data.get("msisdn")
-        namespace = serializer.validated_data.get("namespace")
         template_name = serializer.validated_data.get("template_name")
         parameters = serializer.validated_data.get("parameters", [])
         media = serializer.validated_data.get("media")
 
         preferred_channel = send_whatsapp_template_message(
-            msisdn, namespace, template_name, parameters, media
+            msisdn, template_name, parameters, media
         )
 
         return Response(

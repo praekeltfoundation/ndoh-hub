@@ -314,6 +314,9 @@ ENGAGE_URL = os.environ.get("WASSUP_URL", "http://engage")
 ENGAGE_TOKEN = os.environ.get("WASSUP_TOKEN", "engage-token")
 TURN_URL = os.environ.get("TURN_URL", "http://turn")
 TURN_TOKEN = os.environ.get("TURN_TOKEN", "turn-token")
+WHATSAPP_NAMESPACE = os.environ.get(
+    "WHATSAPP_NAMESPACE", "ff7348dc_a184_4ec1_bf0a_47dc38679d42"
+)
 
 NURSECONNECT_RTHB = os.environ.get("NURSECONNECT_RTHB", "false").lower() == "true"
 

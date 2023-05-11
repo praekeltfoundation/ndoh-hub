@@ -15,36 +15,10 @@ import six
 from django.conf import settings
 from django_redis import get_redis_connection
 from rest_framework.exceptions import AuthenticationFailed
-from seed_services_client.identity_store import IdentityStoreApiClient
-from seed_services_client.message_sender import MessageSenderApiClient
-from seed_services_client.stage_based_messaging import StageBasedMessagingApiClient
 from temba_client.v2 import TembaClient
-from wabclient import Client as WABClient
 
 from ndoh_hub.auth import CachedTokenAuthentication
-from ndoh_hub.constants import (  # noqa:F401
-    ID_TYPES,
-    JEMBI_LANGUAGES,
-    LANGUAGES,
-    PASSPORT_ORIGINS,
-    WHATSAPP_LANGUAGE_MAP,
-)
-
-sbm_client = StageBasedMessagingApiClient(
-    api_url=settings.STAGE_BASED_MESSAGING_URL,
-    auth_token=settings.STAGE_BASED_MESSAGING_TOKEN,
-)
-
-is_client = IdentityStoreApiClient(
-    api_url=settings.IDENTITY_STORE_URL, auth_token=settings.IDENTITY_STORE_TOKEN
-)
-
-ms_client = MessageSenderApiClient(
-    api_url=settings.MESSAGE_SENDER_URL, auth_token=settings.MESSAGE_SENDER_TOKEN
-)
-
-wab_client = WABClient(url=settings.ENGAGE_URL)
-wab_client.connection.set_token(settings.ENGAGE_TOKEN)
+from ndoh_hub.constants import ID_TYPES, LANGUAGES, PASSPORT_ORIGINS  # noqa:F401
 
 rapidpro = None
 if settings.EXTERNAL_REGISTRATIONS_V2:
@@ -53,27 +27,6 @@ if settings.EXTERNAL_REGISTRATIONS_V2:
 VERSION = pkg_resources.require("ndoh-hub")[0].version
 
 redis = get_redis_connection("redis")
-
-
-def get_identity_msisdn(registrant_id):
-    """
-    Given an identity UUID, returns the msisdn for the identity. Takes into
-    account default addresses, opted out addresses, and missing identities
-    or addresses. Returns None when it cannot find an MSISDN address.
-    """
-    identity = is_client.get_identity(registrant_id)
-    if not identity:
-        return
-
-    msisdns = identity["details"].get("addresses", {}).get("msisdn", {})
-
-    identity_msisdn = None
-    for msisdn, details in msisdns.items():
-        if "default" in details and details["default"]:
-            return msisdn
-        if not ("optedout" in details and details["optedout"]):
-            identity_msisdn = msisdn
-    return identity_msisdn
 
 
 def validate_signature(request):
@@ -253,16 +206,14 @@ def send_slack_message(channel, text):
     return False
 
 
-def send_whatsapp_template_message(
-    msisdn, namespace, template_name, parameters, media=None
-):
+def send_whatsapp_template_message(msisdn, template_name, parameters, media=None):
     # send whatsapp template
     headers = {
         "Authorization": "Bearer {}".format(settings.TURN_TOKEN),
         "Content-Type": "application/json",
     }
 
-    wa_id = normalise_msisdn(msisdn)
+    wa_id = msisdn_to_whatsapp_id(msisdn)
 
     components = []
     if parameters:
@@ -278,7 +229,7 @@ def send_whatsapp_template_message(
             "to": wa_id,
             "type": "template",
             "template": {
-                "namespace": namespace,
+                "namespace": settings.WHATSAPP_NAMESPACE,
                 "name": template_name,
                 "language": {"policy": "deterministic", "code": "en"},
                 "components": components,

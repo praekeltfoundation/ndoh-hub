@@ -31,7 +31,6 @@ class SendWhatsappTemplateTests(APITestCase):
         self.client.force_authenticate(user)
 
         parameters = [{"type": "text", "text": "test template send"}]
-        namespace = "test"
         msisdn = "+27820001001"
         template_name = "test template"
 
@@ -46,7 +45,6 @@ class SendWhatsappTemplateTests(APITestCase):
             self.url,
             data={
                 "msisdn": msisdn,
-                "namespace": namespace,
                 "template_name": template_name,
                 "parameters": parameters,
             },
@@ -59,10 +57,10 @@ class SendWhatsappTemplateTests(APITestCase):
         self.assertEqual(
             request,
             {
-                "to": "+27820001001",
+                "to": "27820001001",
                 "type": "template",
                 "template": {
-                    "namespace": "test",
+                    "namespace": "test-namespace",
                     "name": "test template",
                     "language": {"policy": "deterministic", "code": "en"},
                     "components": [
@@ -82,7 +80,6 @@ class SendWhatsappTemplateTests(APITestCase):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
-        namespace = "test"
         msisdn = "+27820001001"
         template_name = "test template"
 
@@ -96,7 +93,6 @@ class SendWhatsappTemplateTests(APITestCase):
             self.url,
             data={
                 "msisdn": msisdn,
-                "namespace": namespace,
                 "template_name": template_name,
             },
             format="json",
@@ -108,10 +104,10 @@ class SendWhatsappTemplateTests(APITestCase):
         self.assertEqual(
             request,
             {
-                "to": "+27820001001",
+                "to": "27820001001",
                 "type": "template",
                 "template": {
-                    "namespace": "test",
+                    "namespace": "test-namespace",
                     "name": "test template",
                     "language": {"policy": "deterministic", "code": "en"},
                     "components": [],
@@ -125,7 +121,6 @@ class SendWhatsappTemplateTests(APITestCase):
         self.client.force_authenticate(user)
 
         media = {"filename": "myfile.pdf", "id": "media-uuid"}
-        namespace = "test"
         msisdn = "+27820001001"
         template_name = "test template"
 
@@ -140,7 +135,6 @@ class SendWhatsappTemplateTests(APITestCase):
             self.url,
             data={
                 "msisdn": msisdn,
-                "namespace": namespace,
                 "template_name": template_name,
                 "media": media,
             },
@@ -153,10 +147,10 @@ class SendWhatsappTemplateTests(APITestCase):
         self.assertEqual(
             request,
             {
-                "to": "+27820001001",
+                "to": "27820001001",
                 "type": "template",
                 "template": {
-                    "namespace": "test",
+                    "namespace": "test-namespace",
                     "name": "test template",
                     "language": {"policy": "deterministic", "code": "en"},
                     "components": [
@@ -197,7 +191,6 @@ class SendWhatsappTemplateTests(APITestCase):
             {
                 "msisdn": ["This field is required."],
                 "template_name": ["This field is required."],
-                "namespace": ["This field is required."],
                 "parameters": {
                     "0": {
                         "type": ["This field is required."],
