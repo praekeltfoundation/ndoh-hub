@@ -1,3 +1,4 @@
+import json
 import responses
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -28,7 +29,7 @@ class SendWhatsappTemplateTests(APITestCase):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
-        parameters = {"type": "text", "text": "test template send"}
+        parameters = [{"type": "text", "text": "test template send"}]
         namespace = "test"
         msisdn = "+27820001001"
         template_name = "test template"
@@ -53,12 +54,33 @@ class SendWhatsappTemplateTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()["preferred_channel"], "Whatsapp")
 
+        request = json.loads(responses.calls[0].request.body)
+        self.assertEqual(
+            request,
+            {
+                "to": "+27820001001",
+                "type": "template",
+                "template": {
+                    "namespace": "test",
+                    "name": "test template",
+                    "language": {"policy": "deterministic", "code": "en"},
+                    "components": [
+                        {
+                            "type": "body",
+                            "parameters": [
+                                {"type": "text", "text": "test template send"}
+                            ],
+                        }
+                    ],
+                },
+            },
+        )
+
     @responses.activate
     def test_send_whatsapp_template_message_number_not_on_whatsapp(self):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
-        parameters = {"type": "text", "text": "test template send"}
         namespace = "test"
         msisdn = "+27820001001"
         template_name = "test template"
@@ -75,35 +97,52 @@ class SendWhatsappTemplateTests(APITestCase):
                 "msisdn": msisdn,
                 "namespace": namespace,
                 "template_name": template_name,
-                "parameters": parameters,
             },
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()["preferred_channel"], "SMS")
 
+        request = json.loads(responses.calls[0].request.body)
+        self.assertEqual(
+            request,
+            {
+                "to": "+27820001001",
+                "type": "template",
+                "template": {
+                    "namespace": "test",
+                    "name": "test template",
+                    "language": {"policy": "deterministic", "code": "en"},
+                    "components": [
+                        {
+                            "type": "body",
+                            "parameters": [],
+                        }
+                    ],
+                },
+            },
+        )
+
     @responses.activate
     def test_send_whatsapp_template_message_invalid(self):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
-        parameters = {"type_": "text", "text": "test template send"}
-        namespace = 1
-        msisdn = "+27820001001"
-        template_name = "test template"
-
         response = self.client.post(
             self.url,
             data={
-                "msisdn": msisdn,
-                "namespace": namespace,
-                "template_name": template_name,
-                "parameters": parameters,
+                "parameters": [{"text": "test template send"}],
             },
             format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
-            response.json()["parameters"]["type"], ["This field is required."]
+            response.json(),
+            {
+                "msisdn": ["This field is required."],
+                "template_name": ["This field is required."],
+                "namespace": ["This field is required."],
+                "parameters": {"0": {"type": ["This field is required."]}},
+            },
         )
