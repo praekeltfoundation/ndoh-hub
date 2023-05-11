@@ -253,7 +253,9 @@ def send_slack_message(channel, text):
     return False
 
 
-def send_whatsapp_template_message(msisdn, namespace, template_name, parameters, *args):
+def send_whatsapp_template_message(
+    msisdn, namespace, template_name, parameters, media=None
+):
     # send whatsapp template
     headers = {
         "Authorization": "Bearer {}".format(settings.TURN_TOKEN),
@@ -261,6 +263,15 @@ def send_whatsapp_template_message(msisdn, namespace, template_name, parameters,
     }
 
     wa_id = normalise_msisdn(msisdn)
+
+    components = []
+    if parameters:
+        components.append({"type": "body", "parameters": parameters})
+
+    if media:
+        components.append(
+            {"type": "header", "parameters": [{"type": "document", "document": media}]}
+        )
 
     data = json.dumps(
         {
@@ -270,7 +281,7 @@ def send_whatsapp_template_message(msisdn, namespace, template_name, parameters,
                 "namespace": namespace,
                 "name": template_name,
                 "language": {"policy": "deterministic", "code": "en"},
-                "components": [{"type": "body", "parameters": parameters}],
+                "components": components,
             },
         }
     )
