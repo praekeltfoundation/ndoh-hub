@@ -10,3 +10,6 @@ class WhatsappTemplateMessageSerializer(serializers.Serializer):
     parameters = ParametersField()
     template_name = serializers.CharField(required=True)
     namespace = serializers.CharField(required=True)
+    parameters = serializers.ListField(
+        child=ParametersField(), allow_empty=True, required=False
+    )

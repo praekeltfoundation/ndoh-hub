@@ -16,7 +16,7 @@ class SendWhatsappTemplateView(generics.GenericAPIView):
         msisdn = serializer.validated_data.get("msisdn")
         namespace = serializer.validated_data.get("namespace")
         template_name = serializer.validated_data.get("template_name")
-        parameters = serializer.validated_data.get("parameters")
+        parameters = serializer.validated_data.get("parameters", [])
 
         preferred_channel = send_whatsapp_template_message(
             msisdn, namespace, template_name, parameters
