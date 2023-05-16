@@ -38,6 +38,14 @@ class AdaInputTypeSerializer(serializers.Serializer):
                     )
                     data["error"] = error
                     raise serializers.ValidationError(data)
+                if re.match(r"^[_\W]+$", user_input):
+                    error = (
+                        "Sorry, we didn't understand your answer. "
+                        "Your reply must be alphabetic "
+                        "and not have special characters only."
+                    )
+                    data["error"] = error
+                    raise serializers.ValidationError(data)
             elif format == "integer" and pattern != "":
                 if not re.match(pattern, user_input):
                     error = min_error

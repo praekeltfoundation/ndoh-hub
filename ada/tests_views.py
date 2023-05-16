@@ -298,6 +298,67 @@ class AdaValidationViewTests(APITestCase):
             response.json(),
         )
 
+    def test_input_type_error_special_character(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            reverse("ada-assessments"),
+            json.dumps(
+                {
+                    "msisdn": "27856454612",
+                    "message": (
+                        "Please type in the symptom that is troubling you, "
+                        "only one symptom at a time. Reply back to go to the "
+                        "previous question or menu to end the assessment."
+                    ),
+                    "step": 4,
+                    "value": "_",
+                    "optionId": 8,
+                    "path": "/assessments/assessment-id/dialog/next",
+                    "cardType": "INPUT",
+                    "title": "SYMPTOM",
+                    "formatType": "string",
+                    "max": None,
+                    "max_error": "",
+                    "min": None,
+                    "min_error": "",
+                    "pattern": "",
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(
+            response.json(),
+            {
+                "msisdn": "27856454612",
+                "message": (
+                    "Please type in the symptom "
+                    "that is troubling you, "
+                    "only one symptom at a time. "
+                    "Reply back to go to the previous "
+                    "question or menu to end the assessment."
+                ),
+                "step": "4",
+                "value": "_",
+                "optionId": "8",
+                "path": "/assessments/assessment-id/dialog/next",
+                "cardType": "INPUT",
+                "title": "SYMPTOM",
+                "formatType": "string",
+                "max": "None",
+                "max_error": "",
+                "min": "None",
+                "min_error": "",
+                "error": (
+                    "Sorry, we didn't understand your answer. "
+                    "Your reply must be alphabetic and not "
+                    "have special characters only."
+                ),
+                "pattern": "",
+            },
+            response.json(),
+        )
+
     def test_input_type_error_integer(self):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
