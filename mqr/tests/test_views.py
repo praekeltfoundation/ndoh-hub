@@ -65,7 +65,6 @@ class NextMessageViewTests(APITestCase):
                 "mom_name": "Test",
                 "contact_uuid": contact_uuid,
                 "run_uuid": run_uuid,
-                "sequence": "",
             },
         )
 
@@ -92,7 +91,6 @@ class NextMessageViewTests(APITestCase):
             "PRE",
             "BCM",
             None,
-            "",
             "Test",
             mock_tracking_data,
         )
@@ -113,6 +111,109 @@ class NextMessageViewTests(APITestCase):
                 "arm": "BCM",
                 "edd_or_dob_date": "2022-07-12",
                 "subscription_type": "PRE",
+                "mom_name": "Test",
+                "contact_uuid": contact_uuid,
+                "run_uuid": run_uuid,
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {"error": "no message found"},
+        )
+
+
+class NextArmMessageViewTests(APITestCase):
+    url = reverse("mqr-nextarmmessage")
+
+    def test_unauthenticated(self):
+        response = self.client.post(self.url, {})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_invalid_data(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url, {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {
+                "last_tag": ["This field is required."],
+                "mom_name": ["This field is required."],
+                "sequence": ["This field is required."],
+                "contact_uuid": ["This field is required."],
+                "run_uuid": ["This field is required."],
+            },
+        )
+
+    @patch("mqr.views.get_next_arm_message")
+    def test_next_arm_message(self, mock_get_next_arm_message):
+        contact_uuid = str(uuid.uuid4())
+        run_uuid = str(uuid.uuid4())
+
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        mock_get_next_arm_message.return_value = {
+            "is_template": False,
+            "has_parameters": False,
+            "message": "Test Message 1",
+            "next_send_date": "2022-03-14",
+            "tag": "BCM_week_PRE19",
+        }
+
+        response = self.client.post(
+            self.url,
+            {
+                "last_tag": "rcm_week_pre23",
+                "sequence": "a",
+                "mom_name": "Test",
+                "contact_uuid": contact_uuid,
+                "run_uuid": run_uuid,
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.json(),
+            {
+                "message": "Test Message 1",
+                "is_template": False,
+                "has_parameters": False,
+                "next_send_date": "2022-03-14",
+                "tag": "BCM_week_PRE19",
+            },
+        )
+
+        mock_tracking_data = {
+            "data__contact_uuid": contact_uuid,
+            "data__run_uuid": run_uuid,
+            "data__mqr": "scheduled",
+        }
+
+        mock_get_next_arm_message.assert_called_with(
+            "rcm_week_pre23",
+            "a",
+            "Test",
+            mock_tracking_data,
+        )
+
+    @patch("mqr.views.get_next_arm_message")
+    def test_next_arm_message_error(self, mock_get_next_arm_message):
+        contact_uuid = str(uuid.uuid4())
+        run_uuid = str(uuid.uuid4())
+
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        mock_get_next_arm_message.return_value = {"error": "no message found"}
+
+        response = self.client.post(
+            self.url,
+            {
+                "last_tag": "rcm_week_pre23",
+                "sequence": "a",
                 "mom_name": "Test",
                 "contact_uuid": contact_uuid,
                 "run_uuid": run_uuid,

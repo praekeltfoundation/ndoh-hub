@@ -18,14 +18,12 @@ def get_week(subscription_type, edd_or_dob_date):
         return abs(get_today() - edd_or_dob_date).days // 7
 
 
-def get_tag(arm, subscription_type, edd_or_dob_date, tag_extra=None, sequence=None):
+def get_tag(arm, subscription_type, edd_or_dob_date, tag_extra=None):
     week = get_week(subscription_type, edd_or_dob_date)
 
     label = f"{arm}_week_{subscription_type}{week}"
     if tag_extra:
         label = f"{label}_{tag_extra}"
-    if sequence:
-        label = f"{label}_{sequence}"
     return label.lower()
 
 
@@ -78,41 +76,44 @@ def get_next_message(
     subscription_type,
     arm,
     tag_extra,
-    sequence,
     mom_name,
     tracking_data,
 ):
-    tag = get_tag(arm, subscription_type, edd_or_dob_date, tag_extra, sequence)
+    tag = get_tag(arm, subscription_type, edd_or_dob_date, tag_extra)
 
     response = get_message_details(tag, tracking_data, mom_name)
 
-    if sequence:
-        next_sequence = chr(ord(sequence) + 1)
-        next_tag = get_tag(
-            arm, subscription_type, edd_or_dob_date, tag_extra, next_sequence
-        )
-        url = urljoin(settings.MQR_CONTENTREPO_URL, f"api/v2/pages?tag={next_tag}")
-        contentrepo_response = requests.get(url)
-        contentrepo_response.raise_for_status()
+    response["next_send_date"] = get_next_send_date()
+    response["tag"] = tag
 
-        add_prompt = True
+    return response
 
-        if "*yes*" in response["message"].split("\n")[-1].lower():
-            add_prompt = False
 
-        if len(contentrepo_response.json()["results"]) == 1:
-            prompt_message = "To get another helpful message tomorrow, reply *YES*."
-            response["has_next_message"] = True
-        else:
-            prompt_message = "-----\nReply:\n*MENU* for the main menu 📌"
-            response["has_next_message"] = False
+def get_next_arm_message(last_tag, sequence, mom_name, tracking_data):
+    tag = f"{last_tag}_{sequence}"
+    response = get_message_details(tag, tracking_data, mom_name)
 
-        if add_prompt:
-            base_message = response["message"]
-            response["message"] = f"{base_message}\n\n{prompt_message}"
+    next_sequence = chr(ord(sequence) + 1)
+    next_tag = f"{last_tag}_{next_sequence}"
+    url = urljoin(settings.MQR_CONTENTREPO_URL, f"api/v2/pages?tag={next_tag}")
+    contentrepo_response = requests.get(url)
+    contentrepo_response.raise_for_status()
+
+    add_prompt = True
+
+    if "*yes*" in response["message"].split("\n")[-1].lower():
+        add_prompt = False
+
+    if len(contentrepo_response.json()["results"]) == 1:
+        prompt_message = "To get another helpful message tomorrow, reply *YES*."
+        response["has_next_message"] = True
     else:
-        response["next_send_date"] = get_next_send_date()
-        response["tag"] = tag
+        prompt_message = "-----\nReply:\n*MENU* for the main menu 📌"
+        response["has_next_message"] = False
+
+    if add_prompt:
+        base_message = response["message"]
+        response["message"] = f"{base_message}\n\n{prompt_message}"
 
     return response
 

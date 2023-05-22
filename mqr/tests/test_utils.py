@@ -218,7 +218,7 @@ class TestGetNextMessage(TestCase):
         }
 
         edd = datetime.strptime("20220701", "%Y%m%d").date()
-        response = utils.get_next_message(edd, "pre", "RCM", None, None, "Mom", {})
+        response = utils.get_next_message(edd, "pre", "RCM", None, "Mom", {})
 
         self.assertEqual(
             response,
@@ -230,6 +230,11 @@ class TestGetNextMessage(TestCase):
                 "tag": "rcm_week_pre23",
             },
         )
+
+
+class TestGetNextArmMessage(TestCase):
+    def setUp(self):
+        utils.get_today = override_get_today
 
     @responses.activate
     @patch("mqr.utils.get_message_details")
@@ -247,8 +252,7 @@ class TestGetNextMessage(TestCase):
             status=200,
         )
 
-        edd = datetime.strptime("20220701", "%Y%m%d").date()
-        response = utils.get_next_message(edd, "pre", "RCM", None, "a", "Mom", {})
+        response = utils.get_next_arm_message("rcm_week_pre23", "a", "Mom", {})
 
         message_prompt = "To get another helpful message tomorrow, reply *YES*."
 
@@ -278,8 +282,7 @@ class TestGetNextMessage(TestCase):
             status=200,
         )
 
-        edd = datetime.strptime("20220701", "%Y%m%d").date()
-        response = utils.get_next_message(edd, "pre", "RCM", None, "a", "Mom", {})
+        response = utils.get_next_arm_message("rcm_week_pre23", "a", "Mom", {})
 
         message_prompt = "-----\nReply:\n*MENU* for the main menu 📌"
 
@@ -312,8 +315,7 @@ class TestGetNextMessage(TestCase):
             status=200,
         )
 
-        edd = datetime.strptime("20220701", "%Y%m%d").date()
-        response = utils.get_next_message(edd, "pre", "RCM", None, "a", "Mom", {})
+        response = utils.get_next_arm_message("rcm_week_pre23", "a", "Mom", {})
 
         self.assertEqual(
             response,
