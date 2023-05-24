@@ -51,7 +51,7 @@ class SendWhatsappTemplateTests(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json()["preferred_channel"], "Whatsapp")
+        self.assertEqual(response.json()["preferred_channel"], "WhatsApp")
 
         request = json.loads(responses.calls[0].request.body)
         self.assertEqual(
@@ -141,7 +141,7 @@ class SendWhatsappTemplateTests(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json()["preferred_channel"], "Whatsapp")
+        self.assertEqual(response.json()["preferred_channel"], "WhatsApp")
 
         request = json.loads(responses.calls[0].request.body)
         self.assertEqual(

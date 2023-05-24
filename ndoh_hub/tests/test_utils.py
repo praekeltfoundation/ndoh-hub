@@ -51,7 +51,7 @@ class TestSendWhatsappTemplateMessage(TestCase):
             msisdn, namespace, template_name, parameters
         )
 
-        self.assertEqual(response, "Whatsapp")
+        self.assertEqual(response, "WhatsApp")
 
     @responses.activate
     def test_send_whatsapp_template_message_number_not_on_whatsapp(self):
