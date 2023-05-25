@@ -632,11 +632,11 @@ def post_random_contacts_to_slack_channel(
 
             if turn_profile_link and contact_uuid:
                 rapidpro_link = rapidpro_url.format(contact_uuid)
-                contact_number = len(contact_details) + 1
+                contact_number = len(contact_details)
 
                 contact_details.append(
-                    f"{contact_number} - <{rapidpro_link}|RapidPro>"
-                    f" <{turn_profile_link}|Turn>"
+                    f"{contact_number}. <{rapidpro_link}|RapidPro>"
+                    f"    <{turn_profile_link}|Turn>"
                 )
             else:
                 count += 1
