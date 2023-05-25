@@ -787,13 +787,21 @@ class PostRandomContactsToSlackTests(TestCase):
         slack_message = responses.calls[-1]
         slack_body = requests.utils.unquote(slack_message.request.body)
 
-        self.assertIn("success", response)
+        self.assertTrue(response["success"])
         self.assertEqual(len(response.get("results")), 10)
         self.assertEqual(slack_message.request.method, "POST")
         self.assertEqual(
             slack_message.request.url, "http://slack.com/api/chat.postMessage"
         )
-        self.assertIn("/contact/read/148947f5-a3b6-4b6b-9e9b-25058b1b7800/", slack_body)
+
+        line1 = slack_body.split("\n")[1]
+        self.assertEqual(
+            line1.split("++++")[0],
+            "1.+</contact/read/148947f5-a3b6-4b6b-9e9b-25058b1b7800/|RapidPro>",
+        )
+        self.assertEqual(
+            line1.split("++++")[1], "<https://turn.io/c/8cc14-6a4e-4f2-82ed-c5|Turn>"
+        )
 
     @responses.activate
     @override_settings(TURN_URL="https://turn/", TURN_TOKEN="token")
