@@ -1,9 +1,27 @@
 # Changelog
 
+## 0.10.8
+1. Send WhatsApp Template endpoint
+   ([#552](https://github.com/praekeltfoundation/ndoh-hub/pull/552))
+   ([#554](https://github.com/praekeltfoundation/ndoh-hub/pull/554))
+   ([#555](https://github.com/praekeltfoundation/ndoh-hub/pull/555))
+   ([#556](https://github.com/praekeltfoundation/ndoh-hub/pull/556))
+   ([#560](https://github.com/praekeltfoundation/ndoh-hub/pull/560))
+1. Bump django from 4.1.7 to 4.1.9
+   ([#553](https://github.com/praekeltfoundation/ndoh-hub/pull/553))
+1. Handle replies with only special characters for Input Type
+   ([#557](https://github.com/praekeltfoundation/ndoh-hub/pull/557))
+1. MQR split out ARM next message view
+   ([#558](https://github.com/praekeltfoundation/ndoh-hub/pull/558))
+1. Bump requests from 2.28.2 to 2.31.0
+   ([#559](https://github.com/praekeltfoundation/ndoh-hub/pull/559))
+1. Minor tweaks to random contact slack post
+   ([#561](https://github.com/praekeltfoundation/ndoh-hub/pull/561))
+
 ## 0.10.7
 1. Rename assessment report
   ([#549](https://github.com/praekeltfoundation/ndoh-hub/pull/549))
-  
+
 ## 0.10.6
 1. Delay forget_contact task
   ([#545](https://github.com/praekeltfoundation/ndoh-hub/pull/545))
