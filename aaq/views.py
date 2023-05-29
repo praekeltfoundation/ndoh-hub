@@ -34,7 +34,20 @@ def get_first_page(request, *args, **kwargs):
     }
 
     response = requests.request("POST", url, json=payload, headers=headers)
+    feedback_secret_key = response.json()["feedback_secret_key"]
+    inbound_secret_key = response.json()["inbound_secret_key"]
+    inbound_id = response.json()["inbound_id"]
     top_responses = response.json()["top_responses"]
+
+    if top_responses == []:
+        json_msg = {
+            "message": "Gibberish Detected",
+            "body": {},
+            "feedback_secret_key": feedback_secret_key,
+            "inbound_secret_key": inbound_secret_key,
+            "inbound_id": inbound_id,
+        }
+        return Response(json_msg, status=status.HTTP_202_ACCEPTED)
 
     json_msg = {}
     body_content = {}
@@ -43,10 +56,6 @@ def get_first_page(request, *args, **kwargs):
     for count, (id, title, content) in enumerate(top_responses, start=1):
         body_content[f"{count}"] = {"text": content, "id": id}
         message_titles.append(f"*{count}* - {title}")
-
-    feedback_secret_key = response.json()["feedback_secret_key"]
-    inbound_secret_key = response.json()["inbound_secret_key"]
-    inbound_id = response.json()["inbound_id"]
 
     json_msg = {
         "message": "\n".join(message_titles),
@@ -58,8 +67,7 @@ def get_first_page(request, *args, **kwargs):
     if "next_page_url" in response.json():
         json_msg["next_page_url"] = response.json()["next_page_url"]
 
-    return_data = json_msg
-    return Response(return_data, status=status.HTTP_202_ACCEPTED)
+    return Response(json_msg, status=status.HTTP_202_ACCEPTED)
 
 
 @api_view(("PUT",))
