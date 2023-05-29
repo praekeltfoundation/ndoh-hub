@@ -75,7 +75,7 @@ class GetFirstPageViewTests(APITestCase):
         }
 
     @responses.activate
-    def test_get_first_page_view_no_words(self):
+    def test_get_first_page_view_gibberish_input(self):
         """
         Check that we get a response with an empty list in the top_responses part
         """
@@ -97,7 +97,7 @@ class GetFirstPageViewTests(APITestCase):
         )
 
         assert response.json() == {
-            "message": "",
+            "message": "Gibberish Detected",
             "body": {},
             "feedback_secret_key": "xxx",
             "inbound_secret_key": "yyy",
