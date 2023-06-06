@@ -26,6 +26,11 @@ urlpatterns = [
         name="mqr-nextmessage",
     ),
     re_path(
+        r"^api/v1/mqr-midweekarmmessage/",
+        views.MidweekArmMessageView.as_view(),
+        name="mqr-midweekarmmessage",
+    ),
+    re_path(
         r"^api/v1/mqr-nextarmmessage/",
         views.NextArmMessageView.as_view(),
         name="mqr-nextarmmessage",

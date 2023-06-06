@@ -89,6 +89,13 @@ def get_next_message(
     return response
 
 
+def get_midweek_arm_message(last_tag, mom_name, tracking_data):
+    tag = f"{last_tag}_mid"
+    response = get_message_details(tag, tracking_data, mom_name)
+    response["tag"] = tag
+    return response
+
+
 def get_next_arm_message(last_tag, sequence, mom_name, tracking_data):
     tag = f"{last_tag}_{sequence}"
     response = get_message_details(tag, tracking_data, mom_name)

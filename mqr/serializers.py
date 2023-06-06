@@ -37,6 +37,11 @@ class NextMessageSerializer(BaseMessageSerializer):
     tag_extra = serializers.CharField(required=False, allow_blank=True)
 
 
+class MidweekArmMessageSerializer(BaseMessageSerializer):
+    last_tag = serializers.CharField(required=True)
+    mom_name = serializers.CharField(required=True)
+
+
 class NextArmMessageSerializer(BaseMessageSerializer):
     last_tag = serializers.CharField(required=True)
     mom_name = serializers.CharField(required=True)
