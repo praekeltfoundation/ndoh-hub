@@ -227,6 +227,105 @@ class NextArmMessageViewTests(APITestCase):
         )
 
 
+class MidweekArmMessageViewTests(APITestCase):
+    url = reverse("mqr-midweekarmmessage")
+
+    def test_unauthenticated(self):
+        response = self.client.post(self.url, {})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_invalid_data(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url, {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {
+                "last_tag": ["This field is required."],
+                "mom_name": ["This field is required."],
+                "contact_uuid": ["This field is required."],
+                "run_uuid": ["This field is required."],
+            },
+        )
+
+    @patch("mqr.views.get_midweek_arm_message")
+    def test_arm_midweek_message(self, mock_get_midweek_arm_message):
+        contact_uuid = str(uuid.uuid4())
+        run_uuid = str(uuid.uuid4())
+
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        mock_get_midweek_arm_message.return_value = {
+            "is_template": False,
+            "has_parameters": False,
+            "message": "Test Message 1",
+            "next_send_date": "2022-03-14",
+            "tag": "arm_week_pre39_mid",
+        }
+
+        response = self.client.post(
+            self.url,
+            {
+                "last_tag": "arm_week_pre39",
+                "mom_name": "Test",
+                "contact_uuid": contact_uuid,
+                "run_uuid": run_uuid,
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.json(),
+            {
+                "message": "Test Message 1",
+                "is_template": False,
+                "has_parameters": False,
+                "next_send_date": "2022-03-14",
+                "tag": "arm_week_pre39_mid",
+            },
+        )
+
+        mock_tracking_data = {
+            "data__contact_uuid": contact_uuid,
+            "data__run_uuid": run_uuid,
+            "data__mqr": "scheduled",
+        }
+
+        mock_get_midweek_arm_message.assert_called_with(
+            "arm_week_pre39",
+            "Test",
+            mock_tracking_data,
+        )
+
+    @patch("mqr.views.get_midweek_arm_message")
+    def test_midweek_arm_message_error(self, mock_get_midweek_arm_message):
+        contact_uuid = str(uuid.uuid4())
+        run_uuid = str(uuid.uuid4())
+
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        mock_get_midweek_arm_message.return_value = {"error": "no message found"}
+
+        response = self.client.post(
+            self.url,
+            {
+                "last_tag": "arm_week_pre39",
+                "mom_name": "Test",
+                "contact_uuid": contact_uuid,
+                "run_uuid": run_uuid,
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {"error": "no message found"},
+        )
+
+
 class FaqViewTests(APITestCase):
     url = reverse("mqr-faq")
 

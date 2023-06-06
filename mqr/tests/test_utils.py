@@ -232,6 +232,33 @@ class TestGetNextMessage(TestCase):
         )
 
 
+class TestGetMidweekArmMessage(TestCase):
+    def setUp(self):
+        utils.get_today = override_get_today
+
+    @patch("mqr.utils.get_message_details")
+    def test_get_midweek_arm_message(self, mock_get_message_details):
+        mock_get_message_details.return_value = {
+            "is_template": False,
+            "has_parameters": False,
+            "message": "Test Message Mom",
+        }
+
+        response = utils.get_midweek_arm_message("arm_week_pre39", "Mom", {})
+
+        self.assertEqual(
+            response,
+            {
+                "is_template": False,
+                "has_parameters": False,
+                "message": "Test Message Mom",
+                "tag": "arm_week_pre39_mid",
+            },
+        )
+
+        mock_get_message_details.assert_called_with("arm_week_pre39_mid", {}, "Mom")
+
+
 class TestGetNextArmMessage(TestCase):
     def setUp(self):
         utils.get_today = override_get_today

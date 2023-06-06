@@ -18,6 +18,7 @@ from mqr.serializers import (
     FaqMenuSerializer,
     FaqSerializer,
     FirstSendDateSerializer,
+    MidweekArmMessageSerializer,
     MqrEndlineChecksSerializer,
     NextArmMessageSerializer,
     NextMessageSerializer,
@@ -28,6 +29,7 @@ from mqr.utils import (
     get_faq_menu,
     get_faq_message,
     get_first_send_date,
+    get_midweek_arm_message,
     get_next_arm_message,
     get_next_message,
     get_weeks_pregnant,
@@ -170,6 +172,30 @@ class NextMessageView(BaseMessageView):
             self.get_tracking_data(serializer, "scheduled"),
         )
 
+        if "error" in response:
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(response, status=status.HTTP_200_OK)
+
+
+class MidweekArmMessageView(BaseMessageView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        """
+        Gets the midweek ARM message that we need to send from the content repo
+        """
+        serializer = MidweekArmMessageSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        last_tag = serializer.validated_data.get("last_tag")
+        mom_name = serializer.validated_data.get("mom_name")
+
+        response = get_midweek_arm_message(
+            last_tag,
+            mom_name,
+            self.get_tracking_data(serializer, "scheduled"),
+        )
         if "error" in response:
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
