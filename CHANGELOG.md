@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.9
+1. Added gibberish input detection to AAQ
+   ([#562](https://github.com/praekeltfoundation/ndoh-hub/pull/562))
+1. Split out midweek arm message
+   ([#564](https://github.com/praekeltfoundation/ndoh-hub/pull/564))
+
 ## 0.10.8
 1. Send WhatsApp Template endpoint
    ([#552](https://github.com/praekeltfoundation/ndoh-hub/pull/552))
