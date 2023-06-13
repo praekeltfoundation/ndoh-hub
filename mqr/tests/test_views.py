@@ -11,7 +11,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from temba_client.v2 import TembaClient
 
-from mqr import utils, views
+from mqr import views
 from mqr.models import BaselineSurveyResult, MqrStrata
 from registrations.models import ClinicCode
 
@@ -435,14 +435,7 @@ class FaqMenuViewTests(APITestCase):
         mock_get_faq_menu.assert_called_with("rcm_week_pre22", [], False, 1)
 
 
-def override_get_today():
-    return datetime.datetime.strptime("20220308", "%Y%m%d").date()
-
-
 class StrataValidation(APITestCase):
-    def setUp(self):
-        utils.get_today = override_get_today
-
     url = reverse("mqr_strataarm_validation")
 
     def test_random_arm_unauthorized_user(self):
@@ -456,6 +449,21 @@ class StrataValidation(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_invalid_data(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url, {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {
+                "estimated_delivery_date": ["This field is required."],
+                "facility_code": ["This field is required."],
+                "mom_age": ["This field is required."],
+                "registration_date": ["This field is required."],
+            },
+        )
+
     @override_settings(MQR_STUDY_START_DATE="2022-02-21")
     def test_random_arm_validate(self):
         user = get_user_model().objects.create_user("test")
@@ -466,6 +474,7 @@ class StrataValidation(APITestCase):
             data={
                 "facility_code": "123456",
                 "estimated_delivery_date": datetime.date(2022, 11, 15),
+                "registration_date": datetime.date(2022, 3, 8),
                 "mom_age": 32,
             },
             format="json",
@@ -493,6 +502,7 @@ class StrataValidation(APITestCase):
             data={
                 "estimated_delivery_date": "2022-01-30",
                 "facility_code": "123456",
+                "registration_date": datetime.date(2022, 3, 8),
                 "mom_age": "38",
             },
             format="json",
@@ -519,6 +529,7 @@ class StrataValidation(APITestCase):
             self.url,
             data={
                 "facility_code": "123456",
+                "registration_date": datetime.date(2022, 3, 8),
                 "estimated_delivery_date": datetime.date(2022, 8, 17),
                 "mom_age": 32,
             },
@@ -532,9 +543,6 @@ class StrataValidation(APITestCase):
 
 
 class StrataRandomization(APITestCase):
-    def setUp(self):
-        utils.get_today = override_get_today
-
     url = reverse("mqr_randomstrataarm")
 
     def test_random_arm_unauthorized_user(self):
@@ -547,6 +555,21 @@ class StrataRandomization(APITestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_invalid_data(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url, {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {
+                "estimated_delivery_date": ["This field is required."],
+                "facility_code": ["This field is required."],
+                "mom_age": ["This field is required."],
+                "registration_date": ["This field is required."],
+            },
+        )
 
     def test_random_arm(self):
         user = get_user_model().objects.create_user("test")
@@ -561,6 +584,7 @@ class StrataRandomization(APITestCase):
             data={
                 "facility_code": "123456",
                 "estimated_delivery_date": datetime.date(2022, 8, 17),
+                "registration_date": datetime.date(2022, 3, 8),
                 "mom_age": 32,
             },
             format="json",
@@ -599,6 +623,7 @@ class StrataRandomization(APITestCase):
             data={
                 "facility_code": "246800",
                 "estimated_delivery_date": datetime.date(2022, 6, 13),
+                "registration_date": datetime.date(2022, 3, 8),
                 "mom_age": 34,
             },
             format="json",
@@ -633,6 +658,7 @@ class StrataRandomization(APITestCase):
             data={
                 "facility_code": "369120",
                 "estimated_delivery_date": datetime.date(2022, 6, 13),
+                "registration_date": datetime.date(2022, 3, 8),
                 "mom_age": 22,
             },
             format="json",

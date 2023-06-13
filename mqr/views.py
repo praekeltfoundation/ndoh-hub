@@ -56,6 +56,7 @@ class StrataArmValidationView(generics.GenericAPIView):
         estimated_delivery_date = serializer.validated_data.get(
             "estimated_delivery_date"
         )
+        registration_date = serializer.validated_data.get("registration_date")
         mom_age = serializer.validated_data.get("mom_age")
 
         if not is_study_active_for_weeks_pregnant(estimated_delivery_date):
@@ -64,7 +65,9 @@ class StrataArmValidationView(generics.GenericAPIView):
             )
 
         clinic_code = get_facility_province(facility_code)
-        weeks_pregnant_bucket = get_weeks_pregnant(estimated_delivery_date)
+        weeks_pregnant_bucket = get_weeks_pregnant(
+            registration_date, estimated_delivery_date
+        )
         age_bucket = get_age_bucket(mom_age)
 
         if clinic_code and weeks_pregnant_bucket and age_bucket:
@@ -96,10 +99,13 @@ class RandomStrataArmView(generics.GenericAPIView):
         estimated_delivery_date = serializer.validated_data.get(
             "estimated_delivery_date"
         )
+        registration_date = serializer.validated_data.get("registration_date")
         mom_age = serializer.validated_data.get("mom_age")
 
         clinic_code = get_facility_province(facility_code)
-        weeks_pregnant_bucket = get_weeks_pregnant(estimated_delivery_date)
+        weeks_pregnant_bucket = get_weeks_pregnant(
+            registration_date, estimated_delivery_date
+        )
         age_bucket = get_age_bucket(mom_age)
 
         if mom_age and weeks_pregnant_bucket and age_bucket:
