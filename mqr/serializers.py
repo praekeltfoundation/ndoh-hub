@@ -20,6 +20,7 @@ class BaselineSurveyResultSerializer(serializers.ModelSerializer):
 
 class MqrStrataSerializer(serializers.Serializer):
     facility_code = serializers.CharField(required=True)
+    registration_date = serializers.DateField(required=True)
     estimated_delivery_date = serializers.DateField(required=True)
     mom_age = serializers.IntegerField(required=True)
 
