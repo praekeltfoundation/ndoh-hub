@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.10
+1. Use registration date instead of today
+   ([#566](https://github.com/praekeltfoundation/ndoh-hub/pull/566))
+1. Rename argument
+   ([#567](https://github.com/praekeltfoundation/ndoh-hub/pull/567))
+
 ## 0.10.9
 1. Added gibberish input detection to AAQ
    ([#562](https://github.com/praekeltfoundation/ndoh-hub/pull/562))
