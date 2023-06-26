@@ -245,7 +245,7 @@ def send_whatsapp_template_message(msisdn, template_name, parameters, media=None
 
     prefered_chanel = "WhatsApp"
     if "messages" not in response_data:
-        if response_data["error"]["code"] == 1013:
+        if response_data["errors"][0]["code"] == 1013:
             prefered_chanel = "SMS"
 
     return prefered_chanel
