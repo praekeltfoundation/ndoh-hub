@@ -66,7 +66,20 @@ class TestSendWhatsappTemplateMessage(TestCase):
         responses.add(
             method=responses.POST,
             url="http://turn/v1/messages",
-            json={"error": {"code": 1013}},
+            json={
+                "errors": [
+                    {
+                        "code": 1013,
+                        "details": "Recipient is not a valid WhatsApp user",
+                        "title": "User is not valid",
+                    }
+                ],
+                "meta": {
+                    "api_status": "stable",
+                    "backend": {"name": "WhatsApp", "version": "latest"},
+                    "version": "4.412.3",
+                },
+            },
         )
 
         response = send_whatsapp_template_message(
