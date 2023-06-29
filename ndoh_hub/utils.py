@@ -206,14 +206,29 @@ def send_slack_message(channel, text):
     return False
 
 
+def update_turn_contact_details(wa_id, fields):
+    headers = {
+        "Authorization": f"Bearer {settings.TURN_TOKEN}",
+        "content-type": "application/json",
+        "Accept": "application/vnd.v1+json",
+    }
+    response = requests.patch(
+        urljoin(settings.TURN_URL, "/v1/contacts/{}".format(wa_id)),
+        json=fields,
+        headers=headers,
+    )
+    response.raise_for_status()
+
+
 def send_whatsapp_template_message(msisdn, template_name, parameters, media=None):
     # send whatsapp template
     headers = {
-        "Authorization": "Bearer {}".format(settings.TURN_TOKEN),
+        "Authorization": f"Bearer {settings.TURN_TOKEN}",
         "Content-Type": "application/json",
     }
 
     wa_id = msisdn_to_whatsapp_id(msisdn)
+    update_turn_contact_details(wa_id, {"is_fallback_active": False})
 
     components = []
     if parameters:
@@ -247,5 +262,6 @@ def send_whatsapp_template_message(msisdn, template_name, parameters, media=None
     if "messages" not in response_data:
         if response_data["errors"][0]["code"] == 1013:
             prefered_chanel = "SMS"
+            update_turn_contact_details(wa_id, {"is_fallback_active": True})
 
     return prefered_chanel

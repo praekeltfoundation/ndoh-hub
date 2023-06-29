@@ -1,3 +1,4 @@
+import json
 from unittest import TestCase
 
 import responses
@@ -6,6 +7,7 @@ from ndoh_hub.utils import (
     msisdn_to_whatsapp_id,
     normalise_msisdn,
     send_whatsapp_template_message,
+    update_turn_contact_details,
 )
 
 
@@ -29,6 +31,28 @@ class TestMsisdnToWhatsapp(TestCase):
         self.assertEqual(msisdn_to_whatsapp_id("+27820001001"), "27820001001")
 
 
+class TestUpdateTurnContactDetails(TestCase):
+    @responses.activate
+    def test_update_turn_contact_details(self):
+        """
+        Should call the turn api with the correct body
+        """
+        responses.add(
+            method=responses.PATCH,
+            url="http://turn/v1/contacts/27820001001",
+            json={},
+            status=200,
+        )
+
+        update_turn_contact_details("27820001001", {"field": "new value"})
+
+        request = json.loads(responses.calls[0].request.body)
+        self.assertEqual(
+            request,
+            {"field": "new value"},
+        )
+
+
 class TestSendWhatsappTemplateMessage(TestCase):
     @responses.activate
     def test_send_whatsapp_template_message_number_on_whatsapp(self):
@@ -39,6 +63,13 @@ class TestSendWhatsappTemplateMessage(TestCase):
         namespace = "test"
         msisdn = "+27820001001"
         template_name = "test template"
+
+        responses.add(
+            method=responses.PATCH,
+            url="http://turn/v1/contacts/27820001001",
+            json={},
+            status=200,
+        )
 
         responses.add(
             method=responses.POST,
@@ -53,6 +84,8 @@ class TestSendWhatsappTemplateMessage(TestCase):
 
         self.assertEqual(response, "WhatsApp")
 
+        self.assertEqual(len(responses.calls), 2)
+
     @responses.activate
     def test_send_whatsapp_template_message_number_not_on_whatsapp(self):
         """
@@ -62,6 +95,13 @@ class TestSendWhatsappTemplateMessage(TestCase):
         namespace = "test"
         msisdn = "+27820001001"
         template_name = "test template"
+
+        responses.add(
+            method=responses.PATCH,
+            url="http://turn/v1/contacts/27820001001",
+            json={},
+            status=200,
+        )
 
         responses.add(
             method=responses.POST,
@@ -87,3 +127,15 @@ class TestSendWhatsappTemplateMessage(TestCase):
         )
 
         self.assertEqual(response, "SMS")
+
+        self.assertEqual(len(responses.calls), 3)
+        request = json.loads(responses.calls[0].request.body)
+        self.assertEqual(
+            request,
+            {"is_fallback_active": False},
+        )
+        request = json.loads(responses.calls[2].request.body)
+        self.assertEqual(
+            request,
+            {"is_fallback_active": True},
+        )

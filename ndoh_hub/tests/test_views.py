@@ -35,6 +35,13 @@ class SendWhatsappTemplateTests(APITestCase):
         template_name = "test template"
 
         responses.add(
+            method=responses.PATCH,
+            url="http://turn/v1/contacts/27820001001",
+            json={},
+            status=200,
+        )
+
+        responses.add(
             method=responses.POST,
             url="http://turn/v1/messages",
             json={"messages": [{"id": "gBEGkYiEB1VXAglK1ZEqA1YKPrU"}]},
@@ -53,7 +60,7 @@ class SendWhatsappTemplateTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()["preferred_channel"], "WhatsApp")
 
-        request = json.loads(responses.calls[0].request.body)
+        request = json.loads(responses.calls[1].request.body)
         self.assertEqual(
             request,
             {
@@ -82,6 +89,13 @@ class SendWhatsappTemplateTests(APITestCase):
 
         msisdn = "+27820001001"
         template_name = "test template"
+
+        responses.add(
+            method=responses.PATCH,
+            url="http://turn/v1/contacts/27820001001",
+            json={},
+            status=200,
+        )
 
         responses.add(
             method=responses.POST,
@@ -113,7 +127,7 @@ class SendWhatsappTemplateTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()["preferred_channel"], "SMS")
 
-        request = json.loads(responses.calls[0].request.body)
+        request = json.loads(responses.calls[1].request.body)
         self.assertEqual(
             request,
             {
@@ -138,6 +152,13 @@ class SendWhatsappTemplateTests(APITestCase):
         template_name = "test template"
 
         responses.add(
+            method=responses.PATCH,
+            url="http://turn/v1/contacts/27820001001",
+            json={},
+            status=200,
+        )
+
+        responses.add(
             method=responses.POST,
             url="http://turn/v1/messages",
             json={"messages": [{"id": "gBEGkYiEB1VXAglK1ZEqA1YKPrU"}]},
@@ -156,7 +177,7 @@ class SendWhatsappTemplateTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()["preferred_channel"], "WhatsApp")
 
-        request = json.loads(responses.calls[0].request.body)
+        request = json.loads(responses.calls[1].request.body)
         self.assertEqual(
             request,
             {
