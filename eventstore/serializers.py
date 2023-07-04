@@ -13,6 +13,7 @@ from eventstore.models import (
     Covid19Triage,
     Covid19TriageStart,
     DBEOnBehalfOfProfile,
+    DeliveryFailure,
     EddSwitch,
     Feedback,
     HCSStudyBRandomization,
@@ -452,3 +453,9 @@ class AdaObservationSerializer(serializers.Serializer):
 
 class ForgetContactSerializer(serializers.Serializer):
     contact_id = serializers.UUIDField(required=True)
+
+
+class DeliveryFailureSerializer(serializers.Serializer):
+    contact_id = serializers.CharField()
+    timestamp = serializers.DateTimeField()
+    number_of_failures = serializers.IntegerField(required=False, read_only=True)

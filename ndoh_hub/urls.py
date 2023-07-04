@@ -20,6 +20,7 @@ from eventstore.views import (
     Covid19TriageV4ViewSet,
     Covid19TriageViewSet,
     DBEOnBehalfOfProfileViewSet,
+    DeliveryFailureViewSet,
     EddSwitchViewSet,
     FeedbackViewSet,
     ForgetContactView,
@@ -70,6 +71,7 @@ v2router.register(
     AdaAssessmentNotificationViewSet,
     basename="adaassessmentnotification",
 )
+v2router.register("deliveryfailure", DeliveryFailureViewSet)
 
 v3router = routers.DefaultRouter()
 v3router.register("covid19triage", Covid19TriageV2ViewSet, basename="covid19triagev2")

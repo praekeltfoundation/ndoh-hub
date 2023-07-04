@@ -24,6 +24,7 @@ from eventstore.models import (
     Covid19Triage,
     Covid19TriageStart,
     DBEOnBehalfOfProfile,
+    DeliveryFailure,
     EddSwitch,
     Event,
     Feedback,
@@ -55,6 +56,7 @@ from eventstore.serializers import (
     Covid19TriageV3Serializer,
     Covid19TriageV4Serializer,
     DBEOnBehalfOfProfileSerializer,
+    DeliveryFailureSerializer,
     EddSwitchSerializer,
     FeedbackSerializer,
     ForgetContactSerializer,
@@ -604,3 +606,42 @@ class AdaAssessmentNotificationViewSet(ViewSet):
         }
         process_ada_assessment_notification.delay(**data)
         return Response(data, status=status.HTTP_202_ACCEPTED)
+
+
+class DeliveryFailureViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixin):
+    queryset = DeliveryFailure.objects.all()
+    serializer_class = DeliveryFailureSerializer
+    permission_classes = (DjangoViewModelPermissions,)
+    pagination_class = CursorPaginationFactory("timestamp")
+
+    def get_object(self):
+        obj = DeliveryFailure.objects.get(contact_id=self.kwargs["pk"])
+        if not obj.pk:
+            raise Http404()
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def post(self, request, *args, **kwargs):
+        serializer = DeliveryFailureSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        contact_id = serializer.validated_data.get("contact_id")
+        timestamp = serializer.validated_data.get("timestamp")
+
+        df, created = DeliveryFailure.objects.get_or_create(
+            contact_id=contact_id, defaults={"number_of_failures": 0}
+        )
+
+        if not created and (timestamp - df.timestamp).days <= 0:
+            return Response({}, status=status.HTTP_200_OK)
+
+        df.number_of_failures += 1
+        df.save()
+
+        # TODO
+        # Trigger flow if enough failures
+
+        if created:
+            return Response({}, status=status.HTTP_201_CREATED)
+
+        return Response({}, status=status.HTTP_200_OK)
