@@ -452,3 +452,9 @@ class AdaObservationSerializer(serializers.Serializer):
 
 class ForgetContactSerializer(serializers.Serializer):
     contact_id = serializers.UUIDField(required=True)
+
+
+class DeliveryFailureSerializer(serializers.Serializer):
+    contact_id = serializers.CharField()
+    timestamp = serializers.DateTimeField()
+    number_of_failures = serializers.IntegerField(required=False, read_only=True)

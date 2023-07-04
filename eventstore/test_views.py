@@ -1,7 +1,7 @@
 import base64
 import datetime
 import hmac
-from datetime import date
+from datetime import date, timedelta
 from hashlib import sha256
 from unittest import mock
 from urllib.parse import urlencode
@@ -2969,3 +2969,145 @@ class AdaAssessmentNotificationViewSetTests(APITestCase, BaseEventTestCase):
                 "timestamp": "2021-01-02T03:04:05Z",
             },
         )
+
+
+class DeliveryFailureTests(APITestCase):
+    url = reverse("deliveryfailure-detail", args=("27820001001",))
+
+    def create_delivery_failure(self, **kwargs):
+        default = {"contact_id": "27820001001"}
+        default.update(kwargs)
+        return DeliveryFailure.objects.create(**default)
+
+    def test_authentication_required(self):
+        """
+        There must be an authenticated user to make the request
+        """
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_permission_required(self):
+        """
+        The authenticated user must have permission to access the endpoint
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_get_deliveryfailure_by_msisdn(self):
+        """
+        Should only return the delivery failure info associated with that MSISDN
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="view_deliveryfailure")
+        )
+        self.client.force_authenticate(user)
+
+        df = self.create_delivery_failure(contact_id="27820001001")
+        self.create_delivery_failure(contact_id="27820001002")
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.json(),
+            {
+                "contact_id": "27820001001",
+                "timestamp": df.timestamp.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "number_of_failures": 0,
+            },
+        )
+
+    def test_deliveryfailure_data_validation(self):
+        """
+        The supplied data must be validated, and any errors returned
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_deliveryfailure")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_new_deliveryfailure(self):
+        """
+        Should create a new DeliveryFailure object in the database
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_deliveryfailure")
+        )
+        self.client.force_authenticate(user)
+        response = self.client.post(
+            self.url,
+            {
+                "contact_id": "27820001001",
+                "timestamp": datetime.datetime.today().strftime(
+                    "%Y-%m-%dT%H:%M:%S.%fZ"
+                ),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        [df] = DeliveryFailure.objects.all()
+        self.assertEqual(str(df.contact_id), "27820001001")
+        self.assertEqual(df.number_of_failures, 1)
+
+    def test_update_existing_deliveryfailure(self):
+        """
+        Should update the DeliveryFailure object in the database if it already exists
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_deliveryfailure")
+        )
+        self.client.force_authenticate(user)
+
+        self.create_delivery_failure(number_of_failures=1)
+
+        yesterday = datetime.datetime.today() - timedelta(days=1)
+        DeliveryFailure.objects.filter(contact_id="27820001001").update(
+            timestamp=yesterday
+        )
+
+        response = self.client.post(
+            self.url,
+            {
+                "contact_id": "27820001001",
+                "timestamp": datetime.datetime.today().strftime(
+                    "%Y-%m-%dT%H:%M:%S.%fZ"
+                ),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        [df] = DeliveryFailure.objects.all()
+        self.assertEqual(str(df.contact_id), "27820001001")
+        self.assertEqual(df.number_of_failures, 2)
+
+    def test_dont_update_existing_deliveryfailure(self):
+        """
+        Should NOT update the DeliveryFailure object in the database if it already
+        exists with a timestamp on the same day
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="add_deliveryfailure")
+        )
+        self.client.force_authenticate(user)
+
+        self.create_delivery_failure(number_of_failures=1)
+
+        response = self.client.post(
+            self.url,
+            {
+                "contact_id": "27820001001",
+                "timestamp": datetime.datetime.today().strftime(
+                    "%Y-%m-%dT%H:%M:%S.%fZ"
+                ),
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        [df] = DeliveryFailure.objects.all()
+        self.assertEqual(str(df.contact_id), "27820001001")
+        self.assertEqual(df.number_of_failures, 1)
