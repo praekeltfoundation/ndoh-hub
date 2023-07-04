@@ -13,7 +13,6 @@ from eventstore.models import (
     Covid19Triage,
     Covid19TriageStart,
     DBEOnBehalfOfProfile,
-    DeliveryFailure,
     EddSwitch,
     Feedback,
     HCSStudyBRandomization,
