@@ -93,31 +93,37 @@ def handle_event(event):
             if settings.DISABLE_SMS_FAILURE_OPTOUTS:
                 return
 
-        df, created = DeliveryFailure.objects.get_or_create(
-            contact_id=event.recipient_id, defaults={"number_of_failures": 0}
-        )
-
-        event.refresh_from_db()
-        if not created and (event.timestamp - df.timestamp).days <= 0:
-            return
-
-        df.number_of_failures += 1
-        df.save()
-        if df.number_of_failures == 5:
-            async_create_flow_start.delay(
-                extra={
-                    "optout_reason": reason,
-                    "timestamp": event.timestamp.timestamp(),
-                    "babyloss_subscription": "FALSE",
-                    "delete_info_for_babyloss": "FALSE",
-                    "delete_info_consent": "FALSE",
-                    "source": "System",
-                },
-                flow=settings.RAPIDPRO_OPTOUT_FLOW,
-                urns=[f"whatsapp:{event.recipient_id}"],
-            )
+        increment_failure_count(event.recipient_id, event.timestamp, reason)
 
     elif event.status == Event.READ or event.status == Event.DELIVERED:
         DeliveryFailure.objects.update_or_create(
             contact_id=event.recipient_id, defaults={"number_of_failures": 0}
         )
+
+
+def increment_failure_count(contact_id, timestamp, reason):
+    df, created = DeliveryFailure.objects.get_or_create(
+        contact_id=contact_id, defaults={"number_of_failures": 0}
+    )
+
+    if not created and (timestamp - df.timestamp).days <= 0:
+        return False
+
+    df.number_of_failures += 1
+    df.save()
+
+    if df.number_of_failures == 5:
+        async_create_flow_start.delay(
+            extra={
+                "optout_reason": reason,
+                "timestamp": timestamp.timestamp(),
+                "babyloss_subscription": "FALSE",
+                "delete_info_for_babyloss": "FALSE",
+                "delete_info_consent": "FALSE",
+                "source": "System",
+            },
+            flow=settings.RAPIDPRO_OPTOUT_FLOW,
+            urns=[f"whatsapp:{contact_id}"],
+        )
+
+    return created

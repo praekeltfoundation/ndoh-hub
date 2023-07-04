@@ -80,7 +80,7 @@ from eventstore.tasks import (
     process_ada_assessment_notification,
     reset_delivery_failure,
 )
-from eventstore.whatsapp_actions import handle_event
+from eventstore.whatsapp_actions import handle_event, increment_failure_count
 from ndoh_hub.utils import TokenAuthQueryString, validate_signature
 
 
@@ -627,19 +627,9 @@ class DeliveryFailureViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixi
 
         contact_id = serializer.validated_data.get("contact_id")
         timestamp = serializer.validated_data.get("timestamp")
+        reason = OptOut.WHATSAPP_FAILURE_REASON
 
-        df, created = DeliveryFailure.objects.get_or_create(
-            contact_id=contact_id, defaults={"number_of_failures": 0}
-        )
-
-        if not created and (timestamp - df.timestamp).days <= 0:
-            return Response({}, status=status.HTTP_200_OK)
-
-        df.number_of_failures += 1
-        df.save()
-
-        # TODO
-        # Trigger flow if enough failures
+        created = increment_failure_count(contact_id, timestamp, reason)
 
         if created:
             return Response({}, status=status.HTTP_201_CREATED)
