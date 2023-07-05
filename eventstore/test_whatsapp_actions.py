@@ -271,6 +271,8 @@ class HandleEventTests(DjangoTestCase):
         event.timestamp = str(timezone.now() + timedelta(days=2))
         event.save()
 
+        event.refresh_from_db()
+
         DeliveryFailure.objects.create(number_of_failures=4, contact_id="27820001001")
 
         with patch("eventstore.tasks.rapidpro") as p:
