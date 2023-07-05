@@ -615,8 +615,9 @@ class DeliveryFailureViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixi
     pagination_class = CursorPaginationFactory("timestamp")
 
     def get_object(self):
-        obj = DeliveryFailure.objects.get(contact_id=self.kwargs["pk"])
-        if not obj.pk:
+        try:
+            obj = DeliveryFailure.objects.get(contact_id=self.kwargs["pk"])
+        except DeliveryFailure.DoesNotExist:
             raise Http404()
         self.check_object_permissions(self.request, obj)
         return obj

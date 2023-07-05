@@ -3019,6 +3019,19 @@ class DeliveryFailureTests(APITestCase):
             },
         )
 
+    def test_get_deliveryfailure_by_msisdn_not_found(self):
+        """
+        Should return 404 if there is no DeliveryFailure object found
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(
+            Permission.objects.get(codename="view_deliveryfailure")
+        )
+        self.client.force_authenticate(user)
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
     def test_deliveryfailure_data_validation(self):
         """
         The supplied data must be validated, and any errors returned
