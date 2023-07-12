@@ -105,7 +105,7 @@ class GetFirstPageViewTests(APITestCase):
         }
 
     @responses.activate
-    def test_get_first_page_view_non_text(self):
+    def test_get_first_page_view_non_text_input(self):
         """
         Check that we get an error message if a blank question is submitted
         This happens when a voicenote or document is sent, or if an image is
