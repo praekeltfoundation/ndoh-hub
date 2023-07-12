@@ -22,9 +22,15 @@ logger = logging.getLogger(__name__)
 @api_view(("POST",))
 @renderer_classes((JSONRenderer,))
 def get_first_page(request, *args, **kwargs):
+    print(request.data)
+    if request.data == {"question": ""}:
+        json_msg = {
+            "message": "Non-text Input Detected",
+        }
+        return Response(json_msg, status=status.HTTP_202_ACCEPTED)
+
     serializer = InboundCheckSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-
     question = serializer.validated_data["question"]
     url = urllib.parse.urljoin(settings.AAQ_CORE_API_URL, "/inbound/check")
     payload = {"text_to_match": f"{question}"}

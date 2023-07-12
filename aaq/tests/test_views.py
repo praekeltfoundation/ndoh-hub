@@ -105,9 +105,11 @@ class GetFirstPageViewTests(APITestCase):
         }
 
     @responses.activate
-    def test_get_first_page_view_blank(self):
+    def test_get_first_page_view_non_text(self):
         """
         Check that we get an error message if a blank question is submitted
+        This happens when a voicenote or document is sent, or if an image is
+        sent without a text caption
         """
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
@@ -120,13 +122,12 @@ class GetFirstPageViewTests(APITestCase):
         )
 
         payload = json.dumps({"question": ""})
-        # test string value, bad question, empty str, emoji, int
 
         response = self.client.post(
             self.url, data=payload, content_type="application/json"
         )
 
-        assert response.json() == {"question": ["This field may not be blank."]}
+        assert response.json() == {"message": "Non-text Input Detected"}
 
 
 class AddFeedbackViewTests(APITestCase):
