@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.10.11
+1. Add privacy policy PDF
+   ([#568](https://github.com/praekeltfoundation/ndoh-hub/pull/568))
+1. Fix WA error payload
+   ([#569](https://github.com/praekeltfoundation/ndoh-hub/pull/569))
+1. Manage fallback channel
+   ([#570](https://github.com/praekeltfoundation/ndoh-hub/pull/570))
+1. Add delivery failure api to add and view
+   ([#571](https://github.com/praekeltfoundation/ndoh-hub/pull/571))
+1. Refactor starting flow on 5 failures
+   ([#573](https://github.com/praekeltfoundation/ndoh-hub/pull/573))
+1. Fix deliveryfailure get not found
+   ([#574](https://github.com/praekeltfoundation/ndoh-hub/pull/574))
+
 ## 0.10.10
 1. Use registration date instead of today
    ([#566](https://github.com/praekeltfoundation/ndoh-hub/pull/566))
