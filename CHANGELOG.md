@@ -1,5 +1,7 @@
 # Changelog
-
+# 0.10.12
+1. Added handling of non-text (media) input
+   ([#576](https://github.com/praekeltfoundation/ndoh-hub/pull/576))
 ## 0.10.11
 1. Add privacy policy PDF
    ([#568](https://github.com/praekeltfoundation/ndoh-hub/pull/568))
