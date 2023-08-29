@@ -14,6 +14,7 @@ from eventstore.models import (
     Covid19TriageStart,
     DBEOnBehalfOfProfile,
     EddSwitch,
+    Event,
     Feedback,
     HCSStudyBRandomization,
     HealthCheckUserProfile,
@@ -394,6 +395,13 @@ class WhatsAppWebhookSerializer(serializers.Serializer):
 
 class TurnOutboundSerializer(serializers.Serializer):
     to = serializers.CharField()
+
+
+class EventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = "__all__"
+        read_only_fields = ("id", "timestamp")
 
 
 class EddSwitchSerializer(BaseEventSerializer):

@@ -53,6 +53,7 @@ from eventstore.serializers import (
     Covid19TriageV2Serializer,
     Covid19TriageV3Serializer,
     Covid19TriageV4Serializer,
+    EventSerializer,
 )
 
 
@@ -1655,6 +1656,64 @@ class MessagesViewSetTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(response.data, {"detail": "Invalid hook signature"})
+
+
+class WhatsappEventsViewSetTests(APITestCase, BaseEventTestCase):
+    url = reverse("event-list")
+
+    def test_create_event(self):
+        """
+        Should not allow creation on this endpoint
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="add_event"))
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.json(), {"detail": 'Method "POST" not allowed.'})
+
+    def test_get_event_list(self):
+        """
+        Should return the data, filtered by the querystring
+        """
+        user = get_user_model().objects.create_user("test")
+        user.user_permissions.add(Permission.objects.get(codename="view_event"))
+        self.client.force_authenticate(user)
+
+        event_old = Event.objects.create()
+        event_old.timestamp = timezone.now() - timedelta(days=2)
+        event_old.save()
+
+        event = Event.objects.create()
+        event.message_id = "message-id"
+        event.fallback_channel = True
+        event.status = Event.FAILED
+        event.recipient_id = "27820001001"
+        event.timestamp = timezone.now()
+        event.save()
+
+        response = self.client.get(
+            f"{self.url}?"
+            f"{urlencode({'timestamp_gt': event_old.timestamp.isoformat()})}"
+        )
+        self.assertEqual(
+            response.data["results"],
+            [EventSerializer(instance=event).data],
+        )
+        [r] = response.data["results"]
+        r.pop("id")
+        r.pop("timestamp")
+        self.assertEqual(
+            r,
+            {
+                "message_id": "message-id",
+                "recipient_id": "27820001001",
+                "status": "failed",
+                "created_by": "",
+                "data": {},
+                "fallback_channel": True,
+            },
+        )
 
 
 class CHWRegistrationViewSetTests(APITestCase, BaseEventTestCase):

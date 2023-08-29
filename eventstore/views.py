@@ -58,6 +58,7 @@ from eventstore.serializers import (
     DBEOnBehalfOfProfileSerializer,
     DeliveryFailureSerializer,
     EddSwitchSerializer,
+    EventSerializer,
     FeedbackSerializer,
     ForgetContactSerializer,
     HCSStudyBRandomizationSerializer,
@@ -239,6 +240,23 @@ class MessagesViewSet(GenericViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(status=status.HTTP_201_CREATED)
+
+
+class EventFilter(filters.FilterSet):
+    timestamp_gt = filters.IsoDateTimeFilter(field_name="timestamp", lookup_expr="gt")
+
+    class Meta:
+        model = Event
+        fields: list = ["message_id"]
+
+
+class WhatsAppEventsViewSet(GenericViewSet, ListModelMixin):
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
+    permission_classes = (DjangoViewModelPermissions,)
+    pagination_class = CursorPaginationFactory("timestamp")
+    filter_backends = [filters.DjangoFilterBackend]
+    filterset_class = EventFilter
 
 
 class OptOutViewSet(GenericViewSet, CreateModelMixin):
