@@ -21,7 +21,7 @@ class Command(BaseCommand):
             "retention_period",
             type=int,
             help="Specify the retention period in months",
-            default=60
+            default=60,
         )
 
     def handle(self, *args, **options):
