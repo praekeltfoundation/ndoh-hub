@@ -36,6 +36,7 @@ setup(
         "redis==4.5.4",
         "django-redis==5.2.0",
         "celery_batches==0.7",
+        "python-dateutil==2.8.2",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
