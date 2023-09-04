@@ -105,6 +105,7 @@ LOGGING = {
     "loggers": {
         "registrations": {"handlers": ["console"], "level": "INFO"},
         "changes": {"handlers": ["console"], "level": "INFO"},
+        "eventstore": {"handlers": ["console"], "level": "INFO"},
         "django.request": {"handlers": ["console"], "level": "ERROR"},
         "django.db.backends": {
             "level": "ERROR",
