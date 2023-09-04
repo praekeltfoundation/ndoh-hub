@@ -1,6 +1,14 @@
 # Changelog
 
 # 0.10.13
+1. Events Export API
+   ([#578](https://github.com/praekeltfoundation/ndoh-hub/pull/578))
+1. Delete historical records management command
+   ([#579](https://github.com/praekeltfoundation/ndoh-hub/pull/579))
+   ([#580](https://github.com/praekeltfoundation/ndoh-hub/pull/580))
+   ([#581](https://github.com/praekeltfoundation/ndoh-hub/pull/581))
+
+# 0.10.13
 1. Bump django from 4.1.9 to 4.1.10
    ([#575](https://github.com/praekeltfoundation/ndoh-hub/pull/576))
 
