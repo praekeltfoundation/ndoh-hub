@@ -1,6 +1,10 @@
 # Changelog
 
-# 0.10.13
+# 0.10.15
+1. Push docker image to ghcr
+   ([#582](https://github.com/praekeltfoundation/ndoh-hub/pull/582))
+
+# 0.10.14
 1. Events Export API
    ([#578](https://github.com/praekeltfoundation/ndoh-hub/pull/578))
 1. Delete historical records management command
