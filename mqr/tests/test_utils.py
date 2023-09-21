@@ -515,6 +515,10 @@ class TestGetFirstSendDate(TestCase):
         first_send_date = utils.get_first_send_date(date(2022, 2, 13))
         self.assertEqual(first_send_date, date(2022, 3, 6))
 
+    def test_get_first_send_date_postbirth_today(self):
+        first_send_date = utils.get_first_send_date(override_get_today())
+        self.assertEqual(first_send_date, date(2022, 3, 8))
+
 
 class TestIsStudyActiveForWeeksPregnant(TestCase):
     def test_is_study_active_for_weeks_pregnant(self):
