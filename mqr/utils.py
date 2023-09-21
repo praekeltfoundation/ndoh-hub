@@ -174,12 +174,8 @@ def get_next_send_date():
 
 
 def get_first_send_date(edd_or_dob_date):
-    if edd_or_dob_date < get_today():
-        full_weeks = (edd_or_dob_date - get_today()).days // 7
-        return edd_or_dob_date - timedelta(weeks=full_weeks)
-    else:
-        full_weeks = ((get_today() - edd_or_dob_date).days // 7) + 1
-        return edd_or_dob_date + timedelta(weeks=full_weeks)
+    full_weeks = (get_today() - edd_or_dob_date).days // 7 + 1
+    return edd_or_dob_date + timedelta(weeks=full_weeks)
 
 
 def is_study_active_for_weeks_pregnant(estimated_delivery_date):
