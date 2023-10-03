@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.10.16
+1. Push MQR Fix Send Date
+   ([#583](https://github.com/praekeltfoundation/ndoh-hub/pull/583))
+   
 # 0.10.15
 1. Push docker image to ghcr
    ([#582](https://github.com/praekeltfoundation/ndoh-hub/pull/582))
