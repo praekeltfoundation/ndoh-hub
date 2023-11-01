@@ -61,7 +61,7 @@ class OptOut(models.Model):
     STILLBIRTH_REASON = "stillbirth"
     BABYLOSS_REASON = "babyloss"
     NOT_HIV_POSITIVE_REASON = "not_hiv_pos"
-    NO_CONSENT_TO_PRIVACY_POLICY = "no consent to privacy policy"
+    NO_CONSENT_TO_PRIVACY_POLICY = "no_consent_to_priv_pol"
     REASON_TYPES = (
         (NOT_USEFUL_REASON, "Not useful"),
         (OTHER_REASON, "Other"),
@@ -78,7 +78,7 @@ class OptOut(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     contact_id = models.UUIDField()
     optout_type = models.CharField(max_length=6, choices=OPTOUT_TYPES)
-    reason = models.CharField(max_length=30, choices=REASON_TYPES)
+    reason = models.CharField(max_length=23, choices=REASON_TYPES)
     source = models.CharField(max_length=255)
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.CharField(max_length=255, blank=True, default="")
