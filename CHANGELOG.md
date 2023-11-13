@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.10.17
+1. Add optout reason to model
+   ([#583](https://github.com/praekeltfoundation/ndoh-hub/pull/587))
 # 0.10.16
 1. Push MQR Fix Send Date
    ([#583](https://github.com/praekeltfoundation/ndoh-hub/pull/583))
