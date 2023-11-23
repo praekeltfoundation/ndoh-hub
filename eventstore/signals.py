@@ -48,7 +48,7 @@ def queue_channel_switch(sender, instance, created, **kwargs):
 
 
 @receiver(post_save, sender=OptOut)
-def queue_channel_switch(sender, instance, created, **kwargs):
+def queue_optout(sender, instance, created, **kwargs):
     if created:
         OpenHIMQueue.objects.create(
             object_id=instance.id,
