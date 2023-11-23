@@ -3,13 +3,17 @@ from unittest.mock import call, patch
 from django.test import TestCase, override_settings
 
 from eventstore.models import (
+    ChannelSwitch,
+    CHWRegistration,
     Covid19Triage,
     Event,
     HCSStudyBRandomization,
     HealthCheckUserProfile,
     Message,
     OpenHIMQueue,
+    OptOut,
     PrebirthRegistration,
+    PublicRegistration,
 )
 
 
@@ -587,3 +591,59 @@ class PrebirthRegistrationTests(TestCase):
         self.assertEqual(
             queue_record.object_type, OpenHIMQueue.ObjectType.PREBIRTH_REGISTRATION
         )
+
+
+class PublicRegistrationTests(TestCase):
+    def test_create_signal(self):
+        publicregistration = PublicRegistration.objects.create(
+            contact_id="9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+            device_contact_id="9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+        )
+
+        queue_record = OpenHIMQueue.objects.first()
+
+        self.assertEqual(queue_record.object_id, publicregistration.id)
+        self.assertEqual(
+            queue_record.object_type, OpenHIMQueue.ObjectType.PUBLIC_REGISTRATION
+        )
+
+
+class CHWRegistrationTests(TestCase):
+    def test_create_signal(self):
+        registration = CHWRegistration.objects.create(
+            contact_id="9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+            device_contact_id="9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+        )
+
+        queue_record = OpenHIMQueue.objects.first()
+
+        self.assertEqual(queue_record.object_id, registration.id)
+        self.assertEqual(
+            queue_record.object_type, OpenHIMQueue.ObjectType.CHW_REGISTRATION
+        )
+
+
+class ChannelSwitchTests(TestCase):
+    def test_create_signal(self):
+        switch = ChannelSwitch.objects.create(
+            contact_id="9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+        )
+
+        queue_record = OpenHIMQueue.objects.first()
+
+        self.assertEqual(queue_record.object_id, switch.id)
+        self.assertEqual(
+            queue_record.object_type, OpenHIMQueue.ObjectType.CHANNEL_SWITCH
+        )
+
+
+class OptoutTests(TestCase):
+    def test_create_signal(self):
+        optout = OptOut.objects.create(
+            contact_id="9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+        )
+
+        queue_record = OpenHIMQueue.objects.first()
+
+        self.assertEqual(queue_record.object_id, optout.id)
+        self.assertEqual(queue_record.object_type, OpenHIMQueue.ObjectType.OPTOUT)
