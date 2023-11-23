@@ -1094,3 +1094,32 @@ class ImportRow(models.Model):
                 date(self.dob_year, self.dob_month, self.dob_day)
             except ValueError as e:
                 raise ValidationError(f"Invalid date of birth date, {str(e)}")
+
+
+class OpenHIMQueue(models.Model):
+    class ObjectType:
+        PREBIRTH_REGISTRATION = "prebirth_registration"
+        CHW_REGISTRATION = "chw_registration"
+        PUBLIC_REGISTRATION = "public_registration"
+        CHANNEL_SWITCH = "channel_switch"
+        OPTOUT = "optout"
+        choices = (
+            (PREBIRTH_REGISTRATION, "PrebirthRegistration"),
+            (CHW_REGISTRATION, "CHWRegistration"),
+            (PUBLIC_REGISTRATION, "PublicRegistration"),
+            (CHANNEL_SWITCH, "ChannelSwitch"),
+            (OPTOUT, "OptOut"),
+        )
+
+    class Status(models.IntegerChoices):
+        PENDING = 0
+        PROCESSING = 1
+        COMPLETE = 2
+        ERROR = 3
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    object_id = models.UUIDField()
+    object_type = models.CharField(max_length=30, choices=ObjectType.choices)
+    status = models.PositiveSmallIntegerField(
+        choices=Status.choices, default=Status.PENDING
+    )

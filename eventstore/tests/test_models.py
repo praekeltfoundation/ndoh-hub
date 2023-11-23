@@ -8,6 +8,8 @@ from eventstore.models import (
     HCSStudyBRandomization,
     HealthCheckUserProfile,
     Message,
+    OpenHIMQueue,
+    PrebirthRegistration,
 )
 
 
@@ -569,3 +571,19 @@ class HCSStudyBRandomizationTests(TestCase):
 
         mock_get_study_totals_per_province.return_value = (2000, 10)
         self.assertIsNone(rand.get_random_study_b_arm())
+
+
+class PrebirthRegistrationTests(TestCase):
+    def test_create_signal(self):
+        prebirthregistration = PrebirthRegistration.objects.create(
+            contact_id="9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+            device_contact_id="9e12d04c-af25-40b6-aa4f-57c72e8e3f91",
+            edd="2020-12-01",
+        )
+
+        queue_record = OpenHIMQueue.objects.first()
+
+        self.assertEqual(queue_record.object_id, prebirthregistration.id)
+        self.assertEqual(
+            queue_record.object_type, OpenHIMQueue.ObjectType.PREBIRTH_REGISTRATION
+        )
