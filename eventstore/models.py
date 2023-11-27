@@ -1118,6 +1118,7 @@ class OpenHIMQueue(models.Model):
         ERROR = 3
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    timestamp = models.DateTimeField(auto_now=True)
     object_id = models.UUIDField()
     object_type = models.CharField(max_length=30, choices=ObjectType.choices)
     status = models.PositiveSmallIntegerField(
