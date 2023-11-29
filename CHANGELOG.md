@@ -1,12 +1,18 @@
 # Changelog
 
+# 0.10.18
+1. Add openhim queue model and signal
+   ([#590](https://github.com/praekeltfoundation/ndoh-hub/pull/590))
+   ([#591](https://github.com/praekeltfoundation/ndoh-hub/pull/591))
+   ([#592](https://github.com/praekeltfoundation/ndoh-hub/pull/592))
+
 # 0.10.17
 1. Add optout reason to model
-   ([#583](https://github.com/praekeltfoundation/ndoh-hub/pull/587))
+   ([#587](https://github.com/praekeltfoundation/ndoh-hub/pull/587))
 # 0.10.16
 1. Push MQR Fix Send Date
    ([#583](https://github.com/praekeltfoundation/ndoh-hub/pull/583))
-   
+
 # 0.10.15
 1. Push docker image to ghcr
    ([#582](https://github.com/praekeltfoundation/ndoh-hub/pull/582))
