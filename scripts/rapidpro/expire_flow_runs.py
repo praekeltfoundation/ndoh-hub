@@ -20,13 +20,13 @@ print(len(session_ids))
 
 print(
     f"""UPDATE
-		flows_flowsession s
-	SET
-		timeout_on = NULL,
-		ended_on = NOW(),
-		status = 'X'
-	WHERE
-		id = ANY(ARRAY[{",".join(session_ids)}])
+    flows_flowsession s
+    SET
+    timeout_on = NULL,
+    ended_on = NOW(),
+    status = 'X'
+    WHERE
+    id = ANY(ARRAY[{",".join(session_ids)}])
 """
 )
 
