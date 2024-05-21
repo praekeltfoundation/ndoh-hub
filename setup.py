@@ -21,7 +21,7 @@ setup(
         "django-filter==2.4.0",
         "celery==5.2.3",
         "six==1.11.0",
-        "requests==2.31.0",
+        "requests==2.32.0",
         "demands==3.0.0",
         "structlog==18.2.0",
         "phonenumberslite==8.9.15",
