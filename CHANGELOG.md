@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.10.19
+1. Remove old remove old db tests and expire flow runs
+   ([#593](https://github.com/praekeltfoundation/ndoh-hub/pull/593))
+
 # 0.10.18
 1. Add openhim queue model and signal
    ([#590](https://github.com/praekeltfoundation/ndoh-hub/pull/590))
