@@ -3,6 +3,8 @@
 # 0.10.19
 1. Remove old remove old db tests and expire flow runs
    ([#593](https://github.com/praekeltfoundation/ndoh-hub/pull/593))
+2. Add timestamp to openhim queue
+   ([#592](https://github.com/praekeltfoundation/ndoh-hub/pull/592))
 
 # 0.10.18
 1. Add openhim queue model and signal
