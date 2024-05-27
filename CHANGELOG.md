@@ -1,10 +1,12 @@
 # Changelog
 
 # 0.10.19
-1. Remove old remove old db tests and expire flow runs
-   ([#593](https://github.com/praekeltfoundation/ndoh-hub/pull/593))
-2. Add timestamp to openhim queue
+1. Add timestamp to queue 
    ([#592](https://github.com/praekeltfoundation/ndoh-hub/pull/592))
+2. Bump black from 23.1.0 to 24.3.0
+   ([#593](https://github.com/praekeltfoundation/ndoh-hub/pull/593))
+3. Bump requests from 2.31.0 to 2.32.0
+   ([#594](https://github.com/praekeltfoundation/ndoh-hub/pull/594))
 
 # 0.10.18
 1. Add openhim queue model and signal
