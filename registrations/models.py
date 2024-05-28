@@ -245,6 +245,10 @@ class ClinicCode(models.Model):
     name = models.CharField(max_length=255)
     province = models.CharField(max_length=6, blank=True, null=True, default=None)
     location = models.CharField(max_length=255, blank=True, null=True, default=None)
+    area_type = models.CharField(max_length=50, blank=True, null=True, default=None)
+    unit_type = models.CharField(max_length=50, blank=True, null=True, default=None)
+    district = models.CharField(max_length=50, blank=True, null=True, default=None)
+    municipality = models.CharField(max_length=50, blank=True, null=True, default=None)
 
     class Meta:
         indexes = [models.Index(fields=["value"])]
