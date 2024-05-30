@@ -1,5 +1,6 @@
 from functools import partial
 
+from django.forms.models import model_to_dict
 from rest_framework import generics, mixins, status, viewsets
 from rest_framework.authentication import (
     BasicAuthentication,
@@ -18,6 +19,28 @@ from .serializers import WhatsAppContactCheckSerializer
 
 class BearerTokenAuthentication(TokenAuthentication):
     keyword = "Bearer"
+
+
+class FacilityDetailsView(generics.RetrieveAPIView):
+
+    def get(self, request):
+        try:
+            facility_code = request.query_params["facility_code"]
+        except KeyError:
+            return Response(
+                {"error": "Must supply 'criteria' query parameter"},
+                status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            clinic = ClinicCode.objects.get(value=facility_code)
+        except ClinicCode.DoesNotExist:
+            return Response(
+                {"error": "Clinic not found"},
+                status.HTTP_404_NOT_FOUND,
+            )
+
+        return Response(model_to_dict(clinic))
 
 
 class FacilityCheckView(generics.RetrieveAPIView):

@@ -31,6 +31,44 @@ class AuthenticatedAPITestCase(HUBAPITestCase):
         self.normalclient.credentials(HTTP_AUTHORIZATION="Token " + self.normaltoken)
 
 
+class FacilityDetailsViewTests(APITestCase):
+    def test_get_facility_details(self):
+        ClinicCode.objects.create(
+            code="123456",
+            value="123456",
+            uid="cc1",
+            name="test1",
+            province="ZA-EC",
+            location="(location)",
+            area_type="rural",
+            unit_type="test unit type",
+            district="test district",
+            municipality="test munnicipality",
+        )
+
+        user = User.objects.create_user("test", "test")
+        self.client.force_authenticate(user)
+
+        url = reverse("facility-detail")
+        response = self.client.get(url, {"facility_code": "123456"})
+
+        self.assertEqual(
+            response.json(),
+            {
+                "area_type": "rural",
+                "code": "123456",
+                "district": "test district",
+                "location": "(location)",
+                "municipality": "test munnicipality",
+                "name": "test1",
+                "province": "ZA-EC",
+                "uid": "cc1",
+                "unit_type": "test unit type",
+                "value": "123456",
+            },
+        )
+
+
 class FacilityCheckViewTests(APITestCase):
     def test_filter_by_code(self):
         ClinicCode.objects.create(
