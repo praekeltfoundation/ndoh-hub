@@ -1,4 +1,3 @@
-import ast
 import csv
 
 import pycountry
@@ -45,8 +44,10 @@ class Command(BaseCommand):
         return PROVINCES[clean_name(row["OU2short"])]
 
     def get_location(self, row):
-        lng, lat = ast.literal_eval(row["coordinates"])
-        return self.format_location(lat, lng)
+        if row["longitude"] and row["latitude"]:
+            lng = float(row["longitude"])
+            lat = float(row["latitude"])
+            return self.format_location(lat, lng)
 
     def handle(self, *args, **options):
         for csv_file in options["csv_file"]:
@@ -55,11 +56,6 @@ class Command(BaseCommand):
             for row in reader:
                 clinic = ClinicCode.objects.filter(uid=row["OU5uid"]).first()
                 if clinic:
-                    clinic.code = row["OU5code"]
-                    clinic.value = row["OU5code"]
-                    clinic.name = row["organisationunitname"]
-                    clinic.province = self.get_province(row)
-                    clinic.location = self.get_location(row)
                     clinic.area_type = row["OrgUnitRuralUrban"]
                     clinic.unit_type = row["OrgUnitType"]
                     clinic.district = row["OU3short"]

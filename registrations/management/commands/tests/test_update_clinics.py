@@ -16,9 +16,6 @@ class UpdateClinicsTestCase(TestCase):
         )
 
         existing_clinic.refresh_from_db()
-        self.assertEqual(existing_clinic.name, "Test Clinic 1")
-        self.assertEqual(existing_clinic.location, "-33.54222+025.69077/")
-        self.assertEqual(existing_clinic.province, "ZA-EC")
         self.assertEqual(existing_clinic.area_type, "Urban")
         self.assertEqual(existing_clinic.unit_type, "Clinic")
         self.assertEqual(existing_clinic.district, "Sarah Baartman DM")
