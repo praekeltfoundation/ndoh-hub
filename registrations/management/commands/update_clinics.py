@@ -1,4 +1,3 @@
-import ast
 import csv
 
 import pycountry
@@ -45,27 +44,21 @@ class Command(BaseCommand):
         return PROVINCES[clean_name(row["OU2short"])]
 
     def get_location(self, row):
-        lng, lat = ast.literal_eval(row["coordinates"])
-        return self.format_location(lat, lng)
+        if row["longitude"] and row["latitude"]:
+            lng = float(row["longitude"])
+            lat = float(row["latitude"])
+            return self.format_location(lat, lng)
 
     def handle(self, *args, **options):
-        print(options["csv_file"])
         for csv_file in options["csv_file"]:
             reader = csv.DictReader(open(csv_file))
 
             for row in reader:
-                clinic, created = ClinicCode.objects.update_or_create(
-                    uid=row["OU5uid"],
-                    defaults={
-                        "code": row["OU5code"],
-                        "value": row["OU5code"],
-                        "name": row["organisationunitname"],
-                        "province": self.get_province(row),
-                        "location": self.get_location(row),
-                        "area_type": row["OrgUnitRuralUrban"],
-                        "unit_type": row["OrgUnitType"],
-                        "district": row["OU3short"],
-                        "municipality": row["OU4short"],
-                    },
-                )
-                print(f"{'Created' if created else 'Updated'}: {clinic.value}")
+                clinic = ClinicCode.objects.filter(uid=row["OU5uid"]).first()
+                if clinic:
+                    clinic.area_type = row["OrgUnitRuralUrban"]
+                    clinic.unit_type = row["OrgUnitType"]
+                    clinic.district = row["OU3short"]
+                    clinic.municipality = row["OU4short"]
+                    clinic.save()
+                    print(f"Updated: {clinic.value}")
