@@ -11,5 +11,10 @@ urlpatterns = [
     path(
         "api/v1/facilityCheck", views.FacilityCheckView.as_view(), name="facility-check"
     ),
+    path(
+        "api/v1/facilityDetails",
+        views.FacilityDetailsView.as_view(),
+        name="facility-detail",
+    ),
     re_path(r"^api/v1/", include(router.urls)),
 ]
