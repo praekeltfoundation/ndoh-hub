@@ -24,13 +24,7 @@ class UpdateClinicsTestCase(TestCase):
         self.assertEqual(existing_clinic.district, "Sarah Baartman DM")
         self.assertEqual(existing_clinic.municipality, "Sundays River Valley LM")
 
-        new_clinic = ClinicCode.objects.get(uid="QYdJjvibz4e")
-        self.assertEqual(new_clinic.name, "Test Clinic 2")
-        self.assertEqual(new_clinic.location, "-32.69994+026.29404/")
-        self.assertEqual(new_clinic.province, "ZA-EC")
-        self.assertEqual(new_clinic.area_type, "Urban")
-        self.assertEqual(new_clinic.unit_type, "Clinic")
-        self.assertEqual(new_clinic.district, "Amathole DM")
-        self.assertEqual(new_clinic.municipality, "Raymond Mhlaba LM")
+        new_clinic = ClinicCode.objects.filter(uid="QYdJjvibz4e").first()
+        self.assertIsNone(new_clinic)
 
-        self.assertEqual(ClinicCode.objects.count(), 2)
+        self.assertEqual(ClinicCode.objects.count(), 1)
