@@ -17,6 +17,7 @@ from django_redis import get_redis_connection
 from rest_framework.exceptions import AuthenticationFailed
 from temba_client.v2 import TembaClient
 
+from eventstore import models
 from ndoh_hub.auth import CachedTokenAuthentication
 from ndoh_hub.constants import ID_TYPES, LANGUAGES, PASSPORT_ORIGINS  # noqa:F401
 
@@ -220,7 +221,9 @@ def update_turn_contact_details(wa_id, fields):
     response.raise_for_status()
 
 
-def send_whatsapp_template_message(msisdn, template_name, parameters, media=None):
+def send_whatsapp_template_message(
+    msisdn, template_name, parameters, media=None, save_status_record=False
+):
     # send whatsapp template
     headers = {
         "Authorization": f"Bearer {settings.TURN_TOKEN}",
@@ -258,10 +261,16 @@ def send_whatsapp_template_message(msisdn, template_name, parameters, media=None
 
     response_data = response.json()
 
+    status_id = None
     prefered_chanel = "WhatsApp"
     if "messages" not in response_data:
         if response_data["errors"][0]["code"] == 1013:
             prefered_chanel = "SMS"
             update_turn_contact_details(wa_id, {"is_fallback_active": True})
+    elif save_status_record:
+        message_id = response_data["messages"][0]["id"]
+        status_id = models.WhatsAppTemplateSendStatus.objects.create(
+            message_id=message_id
+        ).id
 
-    return prefered_chanel
+    return prefered_chanel, status_id

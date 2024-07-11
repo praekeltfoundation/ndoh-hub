@@ -1,8 +1,10 @@
 import json
 from unittest import TestCase
 
+import pytest
 import responses
 
+from eventstore import models
 from ndoh_hub.utils import (
     msisdn_to_whatsapp_id,
     normalise_msisdn,
@@ -53,6 +55,7 @@ class TestUpdateTurnContactDetails(TestCase):
         )
 
 
+@pytest.mark.django_db
 class TestSendWhatsappTemplateMessage(TestCase):
     @responses.activate
     def test_send_whatsapp_template_message_number_on_whatsapp(self):
@@ -78,11 +81,49 @@ class TestSendWhatsappTemplateMessage(TestCase):
             status=200,
         )
 
-        response = send_whatsapp_template_message(
+        preferred_channel, status_id = send_whatsapp_template_message(
             msisdn, namespace, template_name, parameters
         )
 
-        self.assertEqual(response, "WhatsApp")
+        self.assertEqual(preferred_channel, "WhatsApp")
+
+        status_count = models.WhatsAppTemplateSendStatus.objects.count()
+        self.assertEqual(status_count, 0)
+
+        self.assertEqual(len(responses.calls), 2)
+
+    @responses.activate
+    def test_send_whatsapp_template_message_number_on_whatsapp_save_status(self):
+        """
+        Send a template to Whatsapp
+        """
+        parameters = {"type": "text", "text": "test template send"}
+        namespace = "test"
+        msisdn = "+27820001001"
+        template_name = "test template"
+
+        responses.add(
+            method=responses.PATCH,
+            url="http://turn/v1/contacts/27820001001",
+            json={},
+            status=200,
+        )
+
+        responses.add(
+            method=responses.POST,
+            url="http://turn/v1/messages",
+            json={"messages": [{"id": "gBEGkYiEB1VXAglK1ZEqA1YKPrU"}]},
+            status=200,
+        )
+
+        preferred_channel, status_id = send_whatsapp_template_message(
+            msisdn, namespace, template_name, parameters, save_status_record=True
+        )
+
+        self.assertEqual(preferred_channel, "WhatsApp")
+
+        status = models.WhatsAppTemplateSendStatus.objects.get(id=status_id)
+        self.assertEqual(status.message_id, "gBEGkYiEB1VXAglK1ZEqA1YKPrU")
 
         self.assertEqual(len(responses.calls), 2)
 
@@ -122,11 +163,12 @@ class TestSendWhatsappTemplateMessage(TestCase):
             },
         )
 
-        response = send_whatsapp_template_message(
+        preferred_channel, status_id = send_whatsapp_template_message(
             msisdn, namespace, template_name, parameters
         )
 
-        self.assertEqual(response, "SMS")
+        self.assertEqual(preferred_channel, "SMS")
+        self.assertIsNone(status_id)
 
         self.assertEqual(len(responses.calls), 3)
         request = json.loads(responses.calls[0].request.body)

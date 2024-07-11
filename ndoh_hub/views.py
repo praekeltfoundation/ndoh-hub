@@ -17,13 +17,12 @@ class SendWhatsappTemplateView(generics.GenericAPIView):
         template_name = serializer.validated_data.get("template_name")
         parameters = serializer.validated_data.get("parameters", [])
         media = serializer.validated_data.get("media")
+        save_status_record = serializer.validated_data.get("save_status_record")
 
-        preferred_channel = send_whatsapp_template_message(
-            msisdn, template_name, parameters, media
+        preferred_channel, status_id = send_whatsapp_template_message(
+            msisdn, template_name, parameters, media, save_status_record
         )
 
         return Response(
-            {
-                "preferred_channel": preferred_channel,
-            }
+            {"preferred_channel": preferred_channel, "status_id": status_id}
         )
