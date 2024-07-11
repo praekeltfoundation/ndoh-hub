@@ -1125,10 +1125,13 @@ class OpenHIMQueue(models.Model):
         choices=Status.choices, default=Status.PENDING
     )
 
+
 class WhatsAppTemplateSendStatus(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     message_id = models.CharField(max_length=255, blank=True)
     sent_at = models.DateTimeField(auto_now_add=True)
     event_received_at = models.DateTimeField(null=True)
     registration_completed_at = models.DateTimeField(null=True)
-    preferred_channel = models.CharField(max_length=8, choices=CHANNEL_TYPES, default=WHATSAPP_CHANNELTYPE)
+    preferred_channel = models.CharField(
+        max_length=8, choices=CHANNEL_TYPES, default=WHATSAPP_CHANNELTYPE
+    )
