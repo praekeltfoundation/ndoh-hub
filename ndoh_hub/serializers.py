@@ -16,3 +16,4 @@ class WhatsappTemplateMessageSerializer(serializers.Serializer):
         child=ParametersField(), allow_empty=True, required=False
     )
     media = MediaField(required=False)
+    save_status_record = serializers.BooleanField(default=False)
