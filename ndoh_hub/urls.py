@@ -37,6 +37,7 @@ from eventstore.views import (
     PublicRegistrationViewSet,
     ResearchOptinSwitchViewSet,
     WhatsAppEventsViewSet,
+    WhatsAppTemplateSendStatusViewSet,
 )
 from ndoh_hub.decorators import internal_only
 
@@ -74,6 +75,7 @@ v2router.register(
 )
 v2router.register("deliveryfailure", DeliveryFailureViewSet)
 v2router.register("events", WhatsAppEventsViewSet)
+v2router.register("whatsapptemplatesendstatus", WhatsAppTemplateSendStatusViewSet)
 
 v3router = routers.DefaultRouter()
 v3router.register("covid19triage", Covid19TriageV2ViewSet, basename="covid19triagev2")

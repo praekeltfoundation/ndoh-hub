@@ -27,6 +27,7 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
+    WhatsAppTemplateSendStatus,
 )
 
 from .validators import posix_timestamp
@@ -466,3 +467,17 @@ class DeliveryFailureSerializer(serializers.Serializer):
     contact_id = serializers.CharField()
     timestamp = serializers.DateTimeField()
     number_of_failures = serializers.IntegerField(required=False, read_only=True)
+
+
+class WhatsAppTemplateSendStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WhatsAppTemplateSendStatus
+        fields = "__all__"
+        read_only_fields = (
+            "id",
+            "message_id",
+            "sent_at",
+            "event_received_at",
+            "preferred_channel",
+            "status",
+        )

@@ -46,6 +46,7 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
+    WhatsAppTemplateSendStatus,
 )
 from eventstore.serializers import (
     Covid19TriageSerializer,
@@ -3183,3 +3184,62 @@ class DeliveryFailureTests(APITestCase):
         [df] = DeliveryFailure.objects.all()
         self.assertEqual(str(df.contact_id), "27820001001")
         self.assertEqual(df.number_of_failures, 1)
+
+
+class WhatsAppTemplateSendStatusViewTests(APITestCase):
+    def setUp(self):
+        self.status = WhatsAppTemplateSendStatus.objects.create(
+            message_id="test-message-id"
+        )
+        self.url = reverse("whatsapptemplatesendstatus-detail", args=[self.status.id])
+
+    def test_authentication_required(self):
+        """
+        There must be an authenticated user to make the request
+        """
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_permission_required(self):
+        """
+        The authenticated user must have the correct permissions to make the request
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_get_object(self):
+        """
+        Should be able to get a single object
+        """
+        user = get_user_model().objects.create_user("test")
+
+        user.user_permissions.add(
+            Permission.objects.get(codename="view_whatsapptemplatesendstatus")
+        )
+        self.client.force_authenticate(user)
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["id"], str(self.status.id))
+        self.assertEqual(response.json()["message_id"], self.status.message_id)
+
+    def test_change_object(self):
+        """
+        Should be able to update an object
+        """
+        user = get_user_model().objects.create_user("test")
+
+        user.user_permissions.add(
+            Permission.objects.get(codename="change_whatsapptemplatesendstatus")
+        )
+        self.client.force_authenticate(user)
+
+        response = self.client.patch(
+            self.url, {"registration_completed_at": timezone.now()}
+        )
+
+        self.status.refresh_from_db()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNotNone(self.status.registration_completed_at)
