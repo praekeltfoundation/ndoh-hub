@@ -8,7 +8,12 @@ from pytz import UTC
 from rest_framework import generics, permissions, serializers, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.exceptions import ValidationError
-from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin
+from rest_framework.mixins import (
+    CreateModelMixin,
+    ListModelMixin,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+)
 from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.response import Response
@@ -40,6 +45,7 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
+    WhatsAppTemplateSendStatus,
 )
 from eventstore.serializers import (
     AdaAssessmentNotificationSerializer,
@@ -74,6 +80,7 @@ from eventstore.serializers import (
     PublicRegistrationSerializer,
     ResearchOptinSwitchSerializer,
     TurnOutboundSerializer,
+    WhatsAppTemplateSendStatusSerializer,
     WhatsAppWebhookSerializer,
 )
 from eventstore.tasks import (
@@ -654,3 +661,12 @@ class DeliveryFailureViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixi
             return Response({}, status=status.HTTP_201_CREATED)
 
         return Response({}, status=status.HTTP_200_OK)
+
+
+class WhatsAppTemplateSendStatusViewSet(
+    GenericViewSet, RetrieveModelMixin, UpdateModelMixin
+):
+    queryset = WhatsAppTemplateSendStatus.objects.all()
+    serializer_class = WhatsAppTemplateSendStatusSerializer
+    permission_classes = (DjangoViewModelPermissions,)
+    filter_backends = [filters.DjangoFilterBackend]
