@@ -11,7 +11,7 @@ import pytz
 import requests
 from celery.exceptions import SoftTimeLimitExceeded
 from django.conf import settings
-from django.utils import dateparse
+from django.utils import dateparse, timezone
 from requests.exceptions import RequestException
 from temba_client.exceptions import TembaHttpError
 
@@ -37,6 +37,7 @@ from eventstore.models import (
     PrebirthRegistration,
     PublicRegistration,
     ResearchOptinSwitch,
+    WhatsAppTemplateSendStatus,
 )
 from ndoh_hub.celery import app
 from ndoh_hub.utils import (
@@ -824,3 +825,20 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
         "reply_timestamp": reply_timestamp.timestamp(),
         "reply_operator": reply_operator,
     }
+
+
+@app.task(acks_late=True, soft_time_limit=10, time_limit=15, bind=True)
+def update_whatsapp_template_send_status(message_id, preferred_channel=None):
+    try:
+        status = WhatsAppTemplateSendStatus.objects.get(
+            message_id=message_id, event_received_at__isnull=True
+        )
+        status.event_received_at = timezone.now()
+        status.status = WhatsAppTemplateSendStatus.Status.EVENT_RECEIVED
+
+        if preferred_channel:
+            status.preferred_channel = preferred_channel
+
+        status.save()
+    except WhatsAppTemplateSendStatus.DoesNotExist:
+        pass

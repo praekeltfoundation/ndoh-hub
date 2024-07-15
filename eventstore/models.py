@@ -1127,6 +1127,16 @@ class OpenHIMQueue(models.Model):
 
 
 class WhatsAppTemplateSendStatus(models.Model):
+    class Status:
+        WIRED = "wired"
+        EVENT_RECEIVED = "event_received"
+        REGISTRATION_COMPLETED = "registration_completed"
+        choices = (
+            (WIRED, "Message wired"),
+            (EVENT_RECEIVED, "Event received"),
+            (REGISTRATION_COMPLETED, "Registration completed"),
+        )
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     message_id = models.CharField(max_length=255, blank=True)
     sent_at = models.DateTimeField(auto_now_add=True)
@@ -1134,4 +1144,7 @@ class WhatsAppTemplateSendStatus(models.Model):
     registration_completed_at = models.DateTimeField(null=True)
     preferred_channel = models.CharField(
         max_length=8, choices=CHANNEL_TYPES, default=WHATSAPP_CHANNELTYPE
+    )
+    status = models.CharField(
+        max_length=30, choices=Status.choices, default=Status.WIRED
     )
