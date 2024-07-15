@@ -291,6 +291,69 @@ class HandleEventTests(DjangoTestCase):
             urns=["whatsapp:27820001001"],
         )
 
+    @patch("eventstore.whatsapp_actions.update_whatsapp_template_send_status")
+    def test_whatsapp_sent_event(self, mock_upate_status):
+        """
+        If the event is of type Sent, then it should start the update status task.
+        """
+        event = Event.objects.create()
+        event.message_id = "message-id"
+        event.fallback_channel = False
+        event.status = Event.SENT
+        event.recipient_id = "27820001001"
+        event.timestamp = str(timezone.now() + timedelta(days=2))
+        event.save()
+
+        handle_event(event)
+
+        mock_upate_status.delay.assert_called_once_with(event.message_id)
+
+    @patch("eventstore.whatsapp_actions.update_whatsapp_template_send_status")
+    def test_whatsapp_delivered_or_read_event(self, mock_upate_status):
+        """
+        If the event is of type delivered or read(We sometimes get these before SENT),
+        then it should start the update status task.
+        """
+        event = Event.objects.create()
+        event.message_id = "message-id"
+        event.fallback_channel = False
+        event.status = Event.DELIVERED
+        event.recipient_id = "27820001001"
+        event.timestamp = str(timezone.now() + timedelta(days=2))
+        event.save()
+
+        handle_event(event)
+
+        mock_upate_status.delay.assert_called_once_with(event.message_id)
+
+    @patch("eventstore.whatsapp_actions.update_whatsapp_template_send_status")
+    def test_whatsapp_131026_failure_event(self, mock_upate_status):
+        """
+        If the event is of type Failed, and the error code is 131026, then it should
+        start the update status task with the SMS preferred_channel type.
+        """
+        event = Event.objects.create()
+        event.message_id = "message-id"
+        event.fallback_channel = False
+        event.status = Event.FAILED
+        event.recipient_id = "27820001001"
+        event.timestamp = str(timezone.now() + timedelta(days=2))
+        event.data = {
+            "errors": [
+                {
+                    "message": "Message undeliverable",
+                    "code": 131026,
+                    "error_data": {"details": "Message Undeliverable."},
+                    "title": "Message undeliverable",
+                }
+            ]
+        }
+        event.save()
+
+        handle_event(event)
+
+        mock_upate_status.delay.assert_called_once_with(event.message_id, "SMS")
+
     @override_settings(RAPIDPRO_OPTOUT_FLOW="test-flow-uuid")
     def test_fallback_channel_delivery_failure_error(self):
         """

@@ -1,7 +1,7 @@
 from celery import chain
 from django.conf import settings
 
-from eventstore.models import DeliveryFailure, Event, OptOut
+from eventstore.models import SMS_CHANNELTYPE, DeliveryFailure, Event, OptOut
 from eventstore.tasks import (
     async_create_flow_start,
     get_rapidpro_contact_by_msisdn,
@@ -10,7 +10,7 @@ from eventstore.tasks import (
 )
 from ndoh_hub.utils import normalise_msisdn
 
-from .tasks import get_engage_inbound_and_reply
+from .tasks import get_engage_inbound_and_reply, update_whatsapp_template_send_status
 
 
 def handle_outbound(message):
@@ -95,10 +95,20 @@ def handle_event(event):
 
         increment_failure_count(event.recipient_id, event.timestamp, reason)
 
+        errors = event.data.get("errors", [])
+        for error in errors:
+            if error.get("code") == 131026:
+                update_whatsapp_template_send_status.delay(
+                    event.message_id, SMS_CHANNELTYPE
+                )
+
     elif event.status == Event.READ or event.status == Event.DELIVERED:
         DeliveryFailure.objects.update_or_create(
             contact_id=event.recipient_id, defaults={"number_of_failures": 0}
         )
+        update_whatsapp_template_send_status.delay(event.message_id)
+    elif event.status == Event.SENT:
+        update_whatsapp_template_send_status.delay(event.message_id)
 
 
 def increment_failure_count(contact_id, timestamp, reason):
