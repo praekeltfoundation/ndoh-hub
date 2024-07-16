@@ -479,5 +479,4 @@ class WhatsAppTemplateSendStatusSerializer(serializers.ModelSerializer):
             "sent_at",
             "event_received_at",
             "preferred_channel",
-            "status",
         )
