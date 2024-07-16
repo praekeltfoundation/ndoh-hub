@@ -1130,18 +1130,18 @@ class WhatsAppTemplateSendStatus(models.Model):
     class Status:
         WIRED = "wired"
         EVENT_RECEIVED = "event_received"
-        REGISTRATION_COMPLETED = "registration_completed"
+        ACTION_COMPLETED = "action_completed"
         choices = (
             (WIRED, "Message wired"),
             (EVENT_RECEIVED, "Event received"),
-            (REGISTRATION_COMPLETED, "Registration completed"),
+            (ACTION_COMPLETED, "Action completed"),
         )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     message_id = models.CharField(max_length=255, blank=True)
     sent_at = models.DateTimeField(auto_now_add=True)
     event_received_at = models.DateTimeField(null=True)
-    registration_completed_at = models.DateTimeField(null=True)
+    action_completed_at = models.DateTimeField(null=True)
     preferred_channel = models.CharField(
         max_length=8, choices=CHANNEL_TYPES, default=WHATSAPP_CHANNELTYPE
     )

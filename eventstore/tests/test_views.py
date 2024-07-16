@@ -3239,14 +3239,14 @@ class WhatsAppTemplateSendStatusViewTests(APITestCase):
         response = self.client.patch(
             self.url,
             {
-                "registration_completed_at": timezone.now(),
-                "status": WhatsAppTemplateSendStatus.Status.REGISTRATION_COMPLETED,
+                "action_completed_at": timezone.now(),
+                "status": WhatsAppTemplateSendStatus.Status.ACTION_COMPLETED,
             },
         )
 
         self.status.refresh_from_db()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIsNotNone(self.status.registration_completed_at)
+        self.assertIsNotNone(self.status.action_completed_at)
         self.assertEqual(
-            self.status.status, WhatsAppTemplateSendStatus.Status.REGISTRATION_COMPLETED
+            self.status.status, WhatsAppTemplateSendStatus.Status.ACTION_COMPLETED
         )
