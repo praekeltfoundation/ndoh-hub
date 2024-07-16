@@ -8,7 +8,13 @@ from django.test import TestCase, override_settings
 from temba_client.v2 import TembaClient
 
 from eventstore import tasks
-from eventstore.models import Covid19Triage, ImportError, ImportRow, MomConnectImport
+from eventstore.models import (
+    Covid19Triage,
+    ImportError,
+    ImportRow,
+    MomConnectImport,
+    WhatsAppTemplateSendStatus,
+)
 from ndoh_hub import utils
 from registrations.models import ClinicCode
 
@@ -917,3 +923,32 @@ class SendSlackMessageTests(TestCase):
         response = utils.send_slack_message("test-mom", str(self.contact_details))
 
         self.assertEqual(response, True)
+
+
+class UpdateWhatsappTemplateSendStatus(TestCase):
+    def setUp(self):
+        self.status = WhatsAppTemplateSendStatus.objects.create(
+            message_id="test-message-id"
+        )
+
+    def test_update_status_whatsapp(self):
+        tasks.update_whatsapp_template_send_status.delay(self.status.message_id)
+
+        self.status.refresh_from_db()
+
+        self.assertEqual(
+            self.status.status, WhatsAppTemplateSendStatus.Status.EVENT_RECEIVED
+        )
+        self.assertEqual(self.status.preferred_channel, "WhatsApp")
+        self.assertIsNotNone(self.status.event_received_at)
+
+    def test_update_status_sms(self):
+        tasks.update_whatsapp_template_send_status.delay(self.status.message_id, "SMS")
+
+        self.status.refresh_from_db()
+
+        self.assertEqual(
+            self.status.status, WhatsAppTemplateSendStatus.Status.EVENT_RECEIVED
+        )
+        self.assertEqual(self.status.preferred_channel, "SMS")
+        self.assertIsNotNone(self.status.event_received_at)

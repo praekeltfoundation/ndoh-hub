@@ -827,7 +827,7 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
     }
 
 
-@app.task(acks_late=True, soft_time_limit=10, time_limit=15, bind=True)
+@app.task(acks_late=True, soft_time_limit=10, time_limit=15)
 def update_whatsapp_template_send_status(message_id, preferred_channel=None):
     try:
         status = WhatsAppTemplateSendStatus.objects.get(
