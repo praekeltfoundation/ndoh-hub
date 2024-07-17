@@ -279,6 +279,10 @@ CELERY_BEAT_SCHEDULE = {
             day_of_week=RANDOM_CONTACTS_DAY_OF_WEEK,
         ),
     },
+    "process-whatsapp-template-send-status": {
+        "task": "eventstore.tasks.process_whatsapp_template_send_status",
+        "schedule": 300.0,
+    },
 }
 
 BULK_INSERT_EVENTS_ENABLED = env.bool("BULK_INSERT_EVENTS_ENABLED", False)
@@ -427,3 +431,7 @@ AAQ_UD_API_URL = env.str("AAQ_UD_API_URL", None)
 AAQ_UD_INBOUND_CHECK_AUTH = env.str("AAQ_UD_INBOUND_CHECK_AUTH", None)
 
 ALERT_OPTOUT_PHRASE = env.str("ALERT_OPTOUT_PHRASE", "Opt out of alerts")
+
+WHATSAPP_TEMPLATE_SEND_TIMEOUT_HOURS = env.int(
+    "WHATSAPP_TEMPLATE_SEND_TIMEOUT_HOURS", 3
+)
