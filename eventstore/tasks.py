@@ -842,3 +842,29 @@ def update_whatsapp_template_send_status(message_id, preferred_channel=None):
         status.save()
     except WhatsAppTemplateSendStatus.DoesNotExist:
         pass
+
+
+@app.task(acks_late=True, soft_time_limit=10, time_limit=15)
+def process_whatsapp_template_send_status():
+    filter_date = timezone.now() - timedelta(
+        hours=settings.WHATSAPP_TEMPLATE_SEND_TIMEOUT_HOURS
+    )
+    ready_statuses = WhatsAppTemplateSendStatus.objects.filter(
+        flow_uuid__isnull=False, status=WhatsAppTemplateSendStatus.Status.EVENT_RECEIVED
+    )
+    expired_statuses = WhatsAppTemplateSendStatus.objects.filter(
+        flow_uuid__isnull=False,
+        status=WhatsAppTemplateSendStatus.Status.WIRED,
+        sent_at__lt=filter_date,
+    )
+
+    all_statuses = ready_statuses | expired_statuses
+
+    print(all_statuses)
+
+    for status in all_statuses:
+        async_create_flow_start.delay(
+            extra=status.data,
+            flow=str(status.flow_uuid),
+            contacts=[str(status.contact_uuid)],
+        )

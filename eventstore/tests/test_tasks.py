@@ -5,6 +5,7 @@ from unittest import mock
 import requests
 import responses
 from django.test import TestCase, override_settings
+from django.utils import timezone
 from temba_client.v2 import TembaClient
 
 from eventstore import tasks
@@ -952,3 +953,48 @@ class UpdateWhatsappTemplateSendStatus(TestCase):
         )
         self.assertEqual(self.status.preferred_channel, "SMS")
         self.assertIsNotNone(self.status.event_received_at)
+
+
+class ProcessWhatsAppTemplateSendStatusTests(TestCase):
+    def setUp(self):
+        self.contact_uuid = "06639860-1967-4b2b-97a5-f17b094f3763"
+        self.flow_uuid = "f4cc0bfb-57ec-4fd9-8c32-4a6a72b14d53"
+        self.status_ignored = WhatsAppTemplateSendStatus.objects.create(
+            message_id="test-message-id1"
+        )
+        self.status_ready = WhatsAppTemplateSendStatus.objects.create(
+            message_id="test-message-id2",
+            status=WhatsAppTemplateSendStatus.Status.EVENT_RECEIVED,
+            data={"status": "ready"},
+            flow_uuid=self.flow_uuid,
+            contact_uuid=self.contact_uuid,
+        )
+        self.status_expired = WhatsAppTemplateSendStatus.objects.create(
+            message_id="test-message-id3",
+            status=WhatsAppTemplateSendStatus.Status.WIRED,
+            data={"status": "expired"},
+            flow_uuid=self.flow_uuid,
+            contact_uuid=self.contact_uuid,
+        )
+        self.status_expired.sent_at = timezone.now() - datetime.timedelta(hours=4)
+        self.status_expired.save()
+
+    @mock.patch("eventstore.tasks.async_create_flow_start")
+    def test_starts_flows(self, mock_async_flow_start):
+        tasks.process_whatsapp_template_send_status()
+
+        self.assertEqual(
+            mock_async_flow_start.delay.mock_calls,
+            [
+                mock.call(
+                    extra=self.status_ready.data,
+                    flow=self.status_ready.flow_uuid,
+                    contacts=[self.status_ready.contact_uuid],
+                ),
+                mock.call(
+                    extra=self.status_expired.data,
+                    flow=self.status_expired.flow_uuid,
+                    contacts=[self.status_expired.contact_uuid],
+                ),
+            ],
+        )

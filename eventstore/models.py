@@ -1148,3 +1148,6 @@ class WhatsAppTemplateSendStatus(models.Model):
     status = models.CharField(
         max_length=30, choices=Status.choices, default=Status.WIRED
     )
+    contact_uuid = models.UUIDField(null=True, blank=True)
+    flow_uuid = models.UUIDField(null=True, blank=True)
+    data = models.JSONField(default=dict, blank=True, null=True)
