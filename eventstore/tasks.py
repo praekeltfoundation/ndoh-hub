@@ -860,8 +860,6 @@ def process_whatsapp_template_send_status():
 
     all_statuses = ready_statuses | expired_statuses
 
-    print(all_statuses)
-
     for status in all_statuses:
         async_create_flow_start.delay(
             extra=status.data,
