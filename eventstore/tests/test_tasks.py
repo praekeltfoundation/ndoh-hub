@@ -987,12 +987,12 @@ class ProcessWhatsAppTemplateSendStatusTests(TestCase):
             mock_async_flow_start.delay.mock_calls,
             [
                 mock.call(
-                    extra=self.status_ready.data,
+                    extra={"status": "ready", "preferred_channel": "WhatsApp"},
                     flow=self.status_ready.flow_uuid,
                     contacts=[self.status_ready.contact_uuid],
                 ),
                 mock.call(
-                    extra=self.status_expired.data,
+                    extra={"status": "expired", "preferred_channel": "WhatsApp"},
                     flow=self.status_expired.flow_uuid,
                     contacts=[self.status_expired.contact_uuid],
                 ),

@@ -861,8 +861,10 @@ def process_whatsapp_template_send_status():
     all_statuses = ready_statuses | expired_statuses
 
     for status in all_statuses:
+        extra = status.data
+        extra["preferred_channel"] = status.preferred_channel
         async_create_flow_start.delay(
-            extra=status.data,
+            extra=extra,
             flow=str(status.flow_uuid),
             contacts=[str(status.contact_uuid)],
         )
