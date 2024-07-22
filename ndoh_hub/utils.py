@@ -4,6 +4,7 @@ import base64
 import datetime
 import hmac
 import json
+import logging
 import random
 from hashlib import sha256
 from urllib.parse import urljoin
@@ -28,6 +29,8 @@ if settings.EXTERNAL_REGISTRATIONS_V2:
 VERSION = pkg_resources.require("ndoh-hub")[0].version
 
 redis = get_redis_connection("redis")
+
+logger = logging.getLogger(__name__)
 
 
 def validate_signature(request):
@@ -261,9 +264,9 @@ def send_whatsapp_template_message(
 
     response_data = response.json()
 
-    print(">>> send_whatsapp_template_message")
-    print(f"save_status_record: {save_status_record}")
-    print(response_data)
+    logger.info(">>> send_whatsapp_template_message")
+    logger.info(f"save_status_record: {save_status_record}")
+    logger.info(response_data)
 
     status_id = None
     prefered_chanel = "WhatsApp"
@@ -277,6 +280,6 @@ def send_whatsapp_template_message(
             message_id=message_id
         ).id
 
-    print(f"status_id: {status_id}")
+    logger.info(f"status_id: {status_id}")
 
     return prefered_chanel, status_id
