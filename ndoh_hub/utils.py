@@ -261,6 +261,10 @@ def send_whatsapp_template_message(
 
     response_data = response.json()
 
+    print(">>> send_whatsapp_template_message")
+    print(f"save_status_record: {save_status_record}")
+    print(response_data)
+
     status_id = None
     prefered_chanel = "WhatsApp"
     if "messages" not in response_data:
@@ -272,5 +276,7 @@ def send_whatsapp_template_message(
         status_id = models.WhatsAppTemplateSendStatus.objects.create(
             message_id=message_id
         ).id
+
+    print(f"status_id: {status_id}")
 
     return prefered_chanel, status_id
