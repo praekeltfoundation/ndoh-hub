@@ -840,6 +840,15 @@ def update_whatsapp_template_send_status(message_id, preferred_channel=None):
             status.preferred_channel = preferred_channel
 
         status.save()
+
+        if status.flow_uuid:
+            extra = status.data
+            extra["preferred_channel"] = status.preferred_channel
+            async_create_flow_start(
+                extra=extra,
+                flow=str(status.flow_uuid),
+                contacts=[str(status.contact_uuid)],
+            )
     except WhatsAppTemplateSendStatus.DoesNotExist:
         pass
 

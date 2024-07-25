@@ -932,8 +932,12 @@ class UpdateWhatsappTemplateSendStatus(TestCase):
             message_id="test-message-id"
         )
 
-    def test_update_status_whatsapp(self):
-        tasks.update_whatsapp_template_send_status.delay(self.status.message_id)
+    @mock.patch("eventstore.tasks.async_create_flow_start")
+    def test_update_status_whatsapp(self, mock_flow_start):
+        """
+        If the event is received the status record needs to be updated
+        """
+        tasks.update_whatsapp_template_send_status(self.status.message_id)
 
         self.status.refresh_from_db()
 
@@ -943,8 +947,34 @@ class UpdateWhatsappTemplateSendStatus(TestCase):
         self.assertEqual(self.status.preferred_channel, "WhatsApp")
         self.assertIsNotNone(self.status.event_received_at)
 
-    def test_update_status_sms(self):
-        tasks.update_whatsapp_template_send_status.delay(self.status.message_id, "SMS")
+        mock_flow_start.assert_not_called()
+
+    @mock.patch("eventstore.tasks.async_create_flow_start")
+    def test_update_status_whatsapp_ready(self, mock_flow_start):
+        """
+        If the event is received and it has a flow to start, the status record needs to
+        be updated and the async_create_flow_start task needs to be called
+        """
+        self.status.flow_uuid = "flow-uuid"
+        tasks.update_whatsapp_template_send_status(self.status.message_id)
+
+        self.status.refresh_from_db()
+
+        self.assertEqual(
+            self.status.status, WhatsAppTemplateSendStatus.Status.EVENT_RECEIVED
+        )
+        self.assertEqual(self.status.preferred_channel, "WhatsApp")
+        self.assertIsNotNone(self.status.event_received_at)
+
+        mock_flow_start.assert_not_called()
+
+    @mock.patch("eventstore.tasks.async_create_flow_start")
+    def test_update_status_sms(self, mock_flow_start):
+        """
+        If the event is received with SMS as the preferred_channel the status record
+        needs to be updated
+        """
+        tasks.update_whatsapp_template_send_status(self.status.message_id, "SMS")
 
         self.status.refresh_from_db()
 
@@ -953,6 +983,7 @@ class UpdateWhatsappTemplateSendStatus(TestCase):
         )
         self.assertEqual(self.status.preferred_channel, "SMS")
         self.assertIsNotNone(self.status.event_received_at)
+        mock_flow_start.assert_not_called()
 
 
 class ProcessWhatsAppTemplateSendStatusTests(TestCase):
