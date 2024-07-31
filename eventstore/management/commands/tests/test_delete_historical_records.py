@@ -33,22 +33,23 @@ class DeleteHistoricalRecordsTests(TestCase):
         self.assertRaises(Exception, self.call_command, "InvalidModel")
 
     def test_delete_events(self):
-        running_month = timezone.now() - relativedelta(months=12, hour=12)
+        running_month = timezone.now() - relativedelta(days=365, hour=12)
 
         for i in range(12):
             self.create_record(Event, i, running_month)
-            running_month = running_month + relativedelta(months=1)
+            running_month = running_month + relativedelta(days=31)
 
         self.call_command("Event", 6)
 
         self.assertEqual(Event.objects.count(), 6)
 
     def test_delete_messages(self):
-        running_month = timezone.now() - relativedelta(months=12, hour=12)
-
+        running_month = timezone.now() - relativedelta(days=365, hour=12)
+        
         for i in range(12):
             self.create_record(Message, i, running_month)
-            running_month = running_month + relativedelta(months=1)
+            running_month = running_month + relativedelta(days=31)
+            print(f" running month: {running_month}")
 
         self.call_command("Message", 6)
 
