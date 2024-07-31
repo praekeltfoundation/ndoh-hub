@@ -49,7 +49,6 @@ class DeleteHistoricalRecordsTests(TestCase):
         for i in range(12):
             self.create_record(Message, i, running_month)
             running_month = running_month + relativedelta(days=31)
-            print(f" running month: {running_month}")
 
         self.call_command("Message", 6)
 
