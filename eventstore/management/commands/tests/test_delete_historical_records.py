@@ -45,7 +45,7 @@ class DeleteHistoricalRecordsTests(TestCase):
 
     def test_delete_messages(self):
         running_month = timezone.now() - relativedelta(days=365, hour=12)
-        
+
         for i in range(12):
             self.create_record(Message, i, running_month)
             running_month = running_month + relativedelta(days=31)
