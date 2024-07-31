@@ -1,5 +1,27 @@
 # Changelog
 
+# 0.10.20
+1. Clinic list update
+   ([#596](https://github.com/praekeltfoundation/ndoh-hub/pull/596))  
+   ([#597](https://github.com/praekeltfoundation/ndoh-hub/pull/597))
+   ([#598](https://github.com/praekeltfoundation/ndoh-hub/pull/598))
+2. Bump djangorestframework from 3.14.0 to 3.15.2
+   ([#599](https://github.com/praekeltfoundation/ndoh-hub/pull/599))
+3. Bump django from 4.2.13 to 4.2.14
+   ([#600](https://github.com/praekeltfoundation/ndoh-hub/pull/600))
+4. CAPI backend change
+   ([#601](https://github.com/praekeltfoundation/ndoh-hub/pull/601))
+   ([#602](https://github.com/praekeltfoundation/ndoh-hub/pull/602))
+   ([#603](https://github.com/praekeltfoundation/ndoh-hub/pull/603))
+   ([#604](https://github.com/praekeltfoundation/ndoh-hub/pull/604))
+   ([#605](https://github.com/praekeltfoundation/ndoh-hub/pull/605))
+   ([#606](https://github.com/praekeltfoundation/ndoh-hub/pull/606))
+   ([#607](https://github.com/praekeltfoundation/ndoh-hub/pull/607))
+   ([#608](https://github.com/praekeltfoundation/ndoh-hub/pull/608))
+   ([#609](https://github.com/praekeltfoundation/ndoh-hub/pull/609))
+   ([#610](https://github.com/praekeltfoundation/ndoh-hub/pull/610))
+   ([#611](https://github.com/praekeltfoundation/ndoh-hub/pull/611))
+
 # 0.10.19
 1. Add timestamp to queue 
    ([#592](https://github.com/praekeltfoundation/ndoh-hub/pull/592))
