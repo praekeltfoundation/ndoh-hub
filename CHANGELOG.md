@@ -9,7 +9,7 @@
    ([#599](https://github.com/praekeltfoundation/ndoh-hub/pull/599))
 3. Bump django from 4.2.13 to 4.2.14
    ([#600](https://github.com/praekeltfoundation/ndoh-hub/pull/600))
-4. CAPI backend changes
+4. CAPI backend change
    ([#601](https://github.com/praekeltfoundation/ndoh-hub/pull/601))
    ([#602](https://github.com/praekeltfoundation/ndoh-hub/pull/602))
    ([#603](https://github.com/praekeltfoundation/ndoh-hub/pull/603))
