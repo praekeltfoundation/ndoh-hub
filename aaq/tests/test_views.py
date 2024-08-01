@@ -6,7 +6,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .helpers import FakeAaqCoreApi, FakeAaqUdApi, FakeTask
+from .helpers import FakeAaqApi, FakeAaqCoreApi, FakeAaqUdApi, FakeTask
 
 
 class GetFirstPageViewTests(APITestCase):
@@ -264,3 +264,43 @@ class CheckUrgencyViewTests(APITestCase):
         )
 
         assert response.json() == {"urgency_score": 0.0}
+
+
+class SearchViewTests(APITestCase):
+    url = reverse("aaq-search")
+
+    @responses.activate
+    def test_search(self):
+        """
+        Test that search returns data.
+        """
+
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        fakeAaqApi = FakeAaqApi()
+        responses.add_callback(
+            responses.POST,
+            "http://aaq_v2/search",
+            callback=fakeAaqApi.post_search,
+            content_type="application/json",
+        )
+
+        payload = json.dumps(
+            {
+                "generate_llm_response": False,
+                "query_metadata": {"some_key": "query_metadata"},
+                "query_text": "Breastfeeding",
+            }
+        )
+
+        response = self.client.post(
+            self.url, data=payload, content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 202)
+        self.assertIn("query_id", response.data)
+        self.assertIn("llm_response", response.data)
+        self.assertIn("search_results", response.data)
+        self.assertIn("feedback_secret_key", response.data)
+        self.assertIn("debug_info", response.data)
+        self.assertIn("state", response.data)

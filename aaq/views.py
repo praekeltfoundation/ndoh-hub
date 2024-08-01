@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from aaq.serializers import (
     AddFeedbackSerializer,
     InboundCheckSerializer,
+    SearchSerializer,
     UrgencyCheckSerializer,
 )
 
@@ -112,6 +113,40 @@ def check_urgency(request, *args, **kwargs):
     urgency_score = response.json()["urgency_score"]
     json_msg = {
         "urgency_score": urgency_score,
+    }
+
+    return_data = json_msg
+    return Response(return_data, status=status.HTTP_202_ACCEPTED)
+
+
+@api_view(("POST",))
+@renderer_classes((JSONRenderer,))
+def search(request, *args, **kwargs):
+    serializer = SearchSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    query_text = serializer.validated_data["query_text"]
+    generate_llm_response = serializer.validated_data["generate_llm_response"]
+    query_metadata = serializer.validated_data["query_metadata"]
+    url = urllib.parse.urljoin(settings.AAQ_V2_API_URL, "search")
+    payload = {
+        "query_text": f"{query_text}",
+        "generate_llm_response": f"{generate_llm_response}",
+        "query_metadata": f"{query_metadata}",
+    }
+    headers = {
+        "Authorization": settings.AAQ_V2_AUTH,
+        "Content-Type": "application/json",
+    }
+
+    response = requests.request("POST", url, json=payload, headers=headers)
+
+    json_msg = {
+        "query_id": response.json()["query_id"],
+        "llm_response": response.json()["llm_response"],
+        "search_results": response.json()["search_results"],
+        "feedback_secret_key": response.json()["feedback_secret_key"],
+        "debug_info": response.json()["debug_info"],
+        "state": response.json()["state"],
     }
 
     return_data = json_msg
