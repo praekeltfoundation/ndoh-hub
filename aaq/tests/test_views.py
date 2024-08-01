@@ -298,9 +298,7 @@ class SearchViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, 202)
+        self.assertIn("message", response.data)
+        self.assertIn("body", response.data)
         self.assertIn("query_id", response.data)
-        self.assertIn("llm_response", response.data)
-        self.assertIn("search_results", response.data)
         self.assertIn("feedback_secret_key", response.data)
-        self.assertIn("debug_info", response.data)
-        self.assertIn("state", response.data)

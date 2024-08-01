@@ -129,9 +129,9 @@ def search(request, *args, **kwargs):
     query_metadata = serializer.validated_data["query_metadata"]
     url = urllib.parse.urljoin(settings.AAQ_V2_API_URL, "search")
     payload = {
-        "query_text": f"{query_text}",
-        "generate_llm_response": f"{generate_llm_response}",
-        "query_metadata": f"{query_metadata}",
+        "query_text": query_text,
+        "generate_llm_response": generate_llm_response,
+        "query_metadata": query_metadata,
     }
     headers = {
         "Authorization": settings.AAQ_V2_AUTH,
@@ -140,14 +140,35 @@ def search(request, *args, **kwargs):
 
     response = requests.request("POST", url, json=payload, headers=headers)
 
+    query_id = response.json()["query_id"]
+    feedback_secret_key = response.json()["feedback_secret_key"]
+    search_results = response.json()["search_results"]
+
+    if search_results == []:
+        json_msg = {
+            "message": "Gibberish Detected",
+            "body": {},
+            "feedback_secret_key": feedback_secret_key,
+            "query_id": query_id,
+        }
+        return Response(json_msg, status=status.HTTP_202_ACCEPTED)
+    json_msg = {}
+    body_content = {}
+    message_titles = []
+
+    for key, value in search_results.items():
+        text = value["text"]
+        id = value["id"]
+        title = value["title"]
+
+        body_content[key] = {"text": text, "id": id}
+        message_titles.append(f"*{key}* - {title}")
+
     json_msg = {
-        "query_id": response.json()["query_id"],
-        "llm_response": response.json()["llm_response"],
-        "search_results": response.json()["search_results"],
-        "feedback_secret_key": response.json()["feedback_secret_key"],
-        "debug_info": response.json()["debug_info"],
-        "state": response.json()["state"],
+        "message": "\n".join(message_titles),
+        "body": body_content,
+        "feedback_secret_key": feedback_secret_key,
+        "query_id": query_id,
     }
 
-    return_data = json_msg
-    return Response(return_data, status=status.HTTP_202_ACCEPTED)
+    return Response(json_msg, status=status.HTTP_202_ACCEPTED)
