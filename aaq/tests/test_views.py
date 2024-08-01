@@ -6,6 +6,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from aaq.serializers import SearchSerializer
+
 from .helpers import FakeAaqApi, FakeAaqCoreApi, FakeAaqUdApi, FakeTask
 
 
@@ -297,8 +299,69 @@ class SearchViewTests(APITestCase):
             self.url, data=payload, content_type="application/json"
         )
 
-        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.status_code, 200)
         self.assertIn("message", response.data)
         self.assertIn("body", response.data)
         self.assertIn("query_id", response.data)
         self.assertIn("feedback_secret_key", response.data)
+
+        assert response.json() == {
+            "message": "*0* - Example content title\n*1* - Another example content title",
+            "body": {
+                "0": {"text": "Example content text", "id": 23},
+                "1": {"text": "Another example content text", "id": 12},
+            },
+            "feedback_secret_key": "secret-key-12345-abcde",
+            "query_id": 1,
+        }
+
+    @responses.activate
+    def test_search_gibberish(self):
+        """
+        Check that we get a response with an empty list in the search results part
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        fakeAaqApi = FakeAaqApi()
+        responses.add_callback(
+            responses.POST,
+            "http://aaq_v2/search",
+            callback=fakeAaqApi.post_search_return_empty,
+            content_type="application/json",
+        )
+
+        payload = json.dumps(
+            {
+                "generate_llm_response": False,
+                "query_metadata": {"some_key": "query_metadata"},
+                "query_text": "yjyvcgrfeuyikbjmfb",
+            }
+        )
+
+        response = self.client.post(
+            self.url, data=payload, content_type="application/json"
+        )
+
+        assert response.json() == {
+            "message": "Gibberish Detected",
+            "body": {},
+            "feedback_secret_key": "secret-key-12345-abcde",
+            "query_id": 1,
+        }
+
+    @responses.activate
+    def test_search_invalid_request_body(self):
+        """
+        Test search valid request.
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        payload = json.dumps({})
+
+        response = self.client.post(
+            self.url, data=payload, content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.json(), {"query_text": ["This field is required."]})

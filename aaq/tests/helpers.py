@@ -99,3 +99,15 @@ class FakeAaqApi:
         }
 
         return (200, {}, json.dumps(resp_body))
+
+    def post_search_return_empty(self, request):
+        resp_body = {
+            "debug_info": {"example": "debug-info"},
+            "feedback_secret_key": "secret-key-12345-abcde",
+            "llm_response": None,
+            "query_id": 1,
+            "search_results": {},
+            "state": "final",
+        }
+
+        return (200, {}, json.dumps(resp_body))

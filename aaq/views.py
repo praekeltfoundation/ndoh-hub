@@ -144,14 +144,15 @@ def search(request, *args, **kwargs):
     feedback_secret_key = response.json()["feedback_secret_key"]
     search_results = response.json()["search_results"]
 
-    if search_results == []:
+    if search_results == {}:
         json_msg = {
             "message": "Gibberish Detected",
             "body": {},
             "feedback_secret_key": feedback_secret_key,
             "query_id": query_id,
         }
-        return Response(json_msg, status=status.HTTP_202_ACCEPTED)
+        return Response(json_msg, status=status.HTTP_200_OK)
+
     json_msg = {}
     body_content = {}
     message_titles = []
@@ -171,4 +172,4 @@ def search(request, *args, **kwargs):
         "query_id": query_id,
     }
 
-    return Response(json_msg, status=status.HTTP_202_ACCEPTED)
+    return Response(json_msg, status=status.HTTP_200_OK)
