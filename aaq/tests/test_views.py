@@ -308,7 +308,7 @@ class SearchViewTests(APITestCase):
             " Another example content title",
             "body": {
                 "0": {"text": "Example content text", "id": 23},
-                "1": {"text": "Another example content text", "id": 12}
+                "1": {"text": "Another example content text", "id": 12},
             },
             "feedback_secret_key": "secret-key-12345-abcde",
             "query_id": 1,
