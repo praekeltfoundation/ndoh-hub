@@ -304,14 +304,14 @@ class SearchViewTests(APITestCase):
         self.assertIn("feedback_secret_key", response.data)
 
         assert response.json() == {
-            'message': '*0* - Example content title\n*1* - Another example content title',
+            'message': '*0* - Example content title\n*1* -/\
+                            Another example content title',
             'body': {
-                '0': {'text': 'Example content text', 'id': 23}, 
+                '0': {'text': 'Example content text', 'id': 23},
                 '1': {'text': 'Another example content text', 'id': 12}
             }, 'feedback_secret_key': 'secret-key-12345-abcde',
             'query_id': 1,
         }
-
 
     @responses.activate
     def test_search_gibberish(self):
@@ -347,7 +347,6 @@ class SearchViewTests(APITestCase):
             "query_id": 1,
         }
 
-
     @responses.activate
     def test_search_invalid_request_body(self):
         """
@@ -363,4 +362,4 @@ class SearchViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.json(), {'query_text': ['This field is required.']})        
+        self.assertEqual(response.json(), {'query_text': ['This field is required.']})
