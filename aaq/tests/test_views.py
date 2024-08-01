@@ -304,8 +304,8 @@ class SearchViewTests(APITestCase):
         self.assertIn("feedback_secret_key", response.data)
 
         assert response.json() == {
-            "message": "*0* - Example content title\n*1* -/\
-                            Another example content title",
+            "message": "*0* - Example content title\n*1* -"
+            " Another example content title",
             "body": {
                 "0": {"text": "Example content text", "id": 23},
                 "1": {"text": "Another example content text", "id": 12},
