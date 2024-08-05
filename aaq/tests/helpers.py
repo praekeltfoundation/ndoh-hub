@@ -72,3 +72,10 @@ class FakeTask:
             "task_added": "True",
         }
         return (202, {}, json.dumps(resp_body))
+
+    def call_response_feedback_task_v2(self, request):
+        resp_body = {
+            "task_added": "True",
+        }
+
+        return (200, {}, json.dumps(resp_body))

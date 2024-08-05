@@ -11,10 +11,11 @@ from rest_framework.response import Response
 from aaq.serializers import (
     AddFeedbackSerializer,
     InboundCheckSerializer,
+    ResponseFeedbackSerializer,
     UrgencyCheckSerializer,
 )
 
-from .tasks import send_feedback_task
+from .tasks import send_feedback_task, send_feedback_task_v2
 
 logger = logging.getLogger(__name__)
 
@@ -116,3 +117,24 @@ def check_urgency(request, *args, **kwargs):
 
     return_data = json_msg
     return Response(return_data, status=status.HTTP_202_ACCEPTED)
+
+
+@api_view(("POST",))
+@renderer_classes((JSONRenderer,))
+def response_feedback(request, *args, **kwargs):
+    serializer = ResponseFeedbackSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    feedback_secret_key = serializer.validated_data["feedback_secret_key"]
+    query_id = serializer.validated_data["query_id"]
+
+    task_kwargs = {}
+    if "feedback_sentiment" in serializer.validated_data:
+        task_kwargs["feedback_sentiment"] = serializer.validated_data[
+            "feedback_sentiment"
+        ]
+    if "feedback_text" in serializer.validated_data:
+        task_kwargs["feedback_text"] = serializer.validated_data["feedback_text"]
+
+    send_feedback_task_v2.delay(feedback_secret_key, query_id, **task_kwargs)
+
+    return Response(status=status.HTTP_200_OK)

@@ -23,4 +23,9 @@ urlpatterns = [
         views.check_urgency,
         name="aaq-check-urgency",
     ),
+    re_path(
+        r"^api/v2/response-feedback",
+        views.response_feedback,
+        name="aaq-response-feedback",
+    ),
 ]
