@@ -3,7 +3,7 @@ import json
 import responses
 from django.test import TestCase
 
-from aaq.tasks import send_feedback_task
+from aaq.tasks import send_feedback_task, send_feedback_task_v2
 
 
 class AddFeedbackTaskTest(TestCase):
@@ -61,4 +61,36 @@ class AddFeedbackTaskTest(TestCase):
         [request] = responses.calls
 
         self.assertEqual(request.request.url, "http://aaqcore/inbound/feedback")
+        self.assertEqual(json.loads(request.request.body), data)
+
+
+class ResponseFeedbackTaskTest(TestCase):
+    @responses.activate
+    def test_response_feedback_task(self):
+        data = {
+            "feedback_secret_key": "secret 12345",
+            "query_id": 1,
+            "feedback_sentiment": "negative",
+            "feedback_text": "Not helpful",
+        }
+
+        responses.add(
+            responses.POST,
+            "http://aaq_v2/response-feedback",
+            json={},
+            status=200,
+        )
+
+        kwargs = {}
+        kwargs["feedback_sentiment"] = "negative"
+        kwargs["feedback_text"] = "Not helpful"
+        send_feedback_task_v2.delay(
+            "secret 12345",
+            1,
+            **kwargs,
+        )
+
+        [request] = responses.calls
+
+        self.assertEqual(request.request.url, "http://aaq_v2/response-feedback")
         self.assertEqual(json.loads(request.request.body), data)

@@ -30,6 +30,15 @@ class AddFeedbackSerializer(serializers.Serializer):
         return data
 
 
+class ResponseFeedbackSerializer(serializers.Serializer):
+    feedback_secret_key = serializers.CharField(required=True)
+    feedback_sentiment = serializers.ChoiceField(
+        required=False, choices=["negative", "positive"]
+    )
+    feedback_text = serializers.CharField(required=False)
+    query_id = serializers.IntegerField(required=True)
+
+
 class SearchSerializer(serializers.Serializer):
     query_text = serializers.CharField(required=True)
     generate_llm_response = serializers.BooleanField(required=False)

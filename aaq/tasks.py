@@ -34,3 +34,31 @@ def send_feedback_task(secret_key, inbound_id, feedback_type, **kwargs):
     }
     response = requests.request("PUT", url, json=data, headers=headers)
     response.raise_for_status()
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def send_feedback_task_v2(feedback_secret_key, query_id, **kwargs):
+    data = {
+        "feedback_secret_key": feedback_secret_key,
+        "query_id": query_id,
+    }
+
+    if "feedback_sentiment" in kwargs:
+        data["feedback_sentiment"] = kwargs["feedback_sentiment"]
+    if "feedback_text" in kwargs:
+        data["feedback_text"] = kwargs["feedback_text"]
+
+    url = urljoin(settings.AAQ_V2_API_URL, "/response-feedback")
+    headers = {
+        "Authorization": settings.AAQ_V2_AUTH,
+        "Content-Type": "application/json",
+    }
+    response = requests.post(url, json=data, headers=headers)
+    response.raise_for_status()
