@@ -264,3 +264,86 @@ class CheckUrgencyViewTests(APITestCase):
         )
 
         assert response.json() == {"urgency_score": 0.0}
+
+
+class ContentFeedbackViewTests(APITestCase):
+    url = reverse("aaq-content-feedback")
+
+    @responses.activate
+    def test_content_feedback_view(self):
+        """Test that we can submit content feedback on an FAQ"""
+        data = json.dumps(
+            {
+                "feedback_secret_key": "dummy_secret",
+                "query_id": 1,
+                "feedback_sentiment": "negative",
+                "feedback_text": "Not helpful",
+                "content_id": 1,
+            }
+        )
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        fakeTask = FakeTask()
+        responses.add_callback(
+            responses.POST,
+            "http://aaq_v2/content-feedback",
+            callback=fakeTask.call_add_feedback_task,
+            content_type="application/json",
+        )
+
+        response = self.client.post(
+            self.url, data=data, content_type="application/json"
+        )
+        # need to check response here
+
+        assert response.status_code == 200
+
+    def test_content_feedback_invalid_view(self):
+        """Test that we can submit response feedback"""
+        data = json.dumps({"feedback_secret_key": "dummy_secret", "query_id": 1})
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        fakeTask = FakeTask()
+        responses.add_callback(
+            responses.POST,
+            "http://aaq_v2/content-feedback",
+            callback=fakeTask.call_add_feedback_task,
+            content_type="application/json",
+        )
+
+        response = self.client.post(
+            self.url, data=data, content_type="application/json"
+        )
+
+        assert response.status_code == 400
+        assert response.json() == {"content_id": ["This field is required."]}
+
+    def test_content_feedback_invalid_sentiment_view(self):
+        """Test that we can submit content feedback"""
+        data = json.dumps(
+            {
+                "feedback_secret_key": "dummy_secret",
+                "query_id": 1,
+                "feedback_sentiment": "sentiment",
+                "feedback_text": "Not helpful",
+                "content_id": 1,
+            }
+        )
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        fakeTask = FakeTask()
+        responses.add_callback(
+            responses.POST,
+            "http://aaq_v2/content-feedback",
+            callback=fakeTask.call_add_feedback_task,
+            content_type="application/json",
+        )
+
+        response = self.client.post(
+            self.url, data=data, content_type="application/json"
+        )
+
+        assert response.status_code == 400
+        assert response.json() == {
+            "feedback_sentiment": ['"sentiment" is not a valid choice.']
+        }

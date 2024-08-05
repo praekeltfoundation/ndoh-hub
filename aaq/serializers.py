@@ -28,3 +28,13 @@ class AddFeedbackSerializer(serializers.Serializer):
             )
 
         return data
+
+
+class ContentFeedbackSerializer(serializers.Serializer):
+    feedback_secret_key = serializers.CharField(required=True)
+    feedback_sentiment = serializers.ChoiceField(
+        required=False, choices=["negative", "positive"]
+    )
+    feedback_text = serializers.CharField(required=False)
+    query_id = serializers.IntegerField(required=True)
+    content_id = serializers.IntegerField(required=True)
