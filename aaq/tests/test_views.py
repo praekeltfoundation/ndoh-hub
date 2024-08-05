@@ -444,3 +444,86 @@ class SearchViewTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.json(), {"query_text": ["This field is required."]})
+
+
+class ContentFeedbackViewTests(APITestCase):
+    url = reverse("aaq-content-feedback")
+
+    @responses.activate
+    def test_content_feedback_view(self):
+        """Test that we can submit content feedback on an FAQ"""
+        payload = {
+            "feedback_secret_key": "secret-key-12345-abcde",
+            "query_id": 1,
+            "content_id": 1,
+            "feedback_sentiment": "negative",
+            "feedback_text": "Not helpful",
+        }
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        fakeTask = FakeTask()
+        responses.add_callback(
+            responses.POST,
+            "http://aaq_v2/content-feedback",
+            callback=fakeTask.call_add_feedback_task_v2,
+            content_type="application/json",
+        )
+
+        response = self.client.post(self.url, data=payload, format="json")
+
+        assert response.status_code == 200
+
+    def test_content_feedback_invalid_view(self):
+        """Test that we can submit content feedback"""
+        payload = json.dumps(
+            {
+                "feedback_secret_key": "secret-key-12345-abcde",
+                "query_id": 1,
+            }
+        )
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        fakeTask = FakeTask()
+        responses.add_callback(
+            responses.POST,
+            "http://aaq_v2/content-feedback",
+            callback=fakeTask.call_add_feedback_task_v2,
+            content_type="application/json",
+        )
+
+        response = self.client.post(
+            self.url, data=payload, content_type="application/json"
+        )
+
+        assert response.status_code == 400
+        assert response.json() == {"content_id": ["This field is required."]}
+
+    def test_response_feedback_invalid_feedback_text_view(self):
+        """Test that we can submit response feedback"""
+        payload = json.dumps(
+            {
+                "feedback_secret_key": "secret-key-12345-abcde",
+                "query_id": 1,
+                "content_id": 1,
+                "feedback_sentiment": "test",
+                "feedback_text": "feedback test",
+            }
+        )
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        fakeTask = FakeTask()
+        responses.add_callback(
+            responses.POST,
+            "http://aaq_v2/response-feedback",
+            callback=fakeTask.call_add_feedback_task_v2,
+            content_type="application/json",
+        )
+
+        response = self.client.post(
+            self.url, data=payload, content_type="application/json"
+        )
+
+        assert response.status_code == 400
+        assert response.json() == {
+            "feedback_sentiment": ['"test" is not a valid choice.']
+        }

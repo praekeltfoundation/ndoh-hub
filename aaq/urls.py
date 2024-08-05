@@ -29,6 +29,11 @@ urlpatterns = [
         name="aaq-response-feedback",
     ),
     re_path(
+        r"^api/v2/content-feedback",
+        views.content_feedback,
+        name="aaq-content-feedback",
+    ),
+    re_path(
         r"^api/v2/search",
         views.search,
         name="aaq-search",

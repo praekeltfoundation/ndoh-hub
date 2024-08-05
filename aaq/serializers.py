@@ -43,3 +43,13 @@ class SearchSerializer(serializers.Serializer):
     query_text = serializers.CharField(required=True)
     generate_llm_response = serializers.BooleanField(required=False)
     query_metadata = serializers.JSONField(required=False)
+
+
+class ContentFeedbackSerializer(serializers.Serializer):
+    feedback_secret_key = serializers.CharField(required=True)
+    feedback_sentiment = serializers.ChoiceField(
+        required=False, choices=["negative", "positive"]
+    )
+    feedback_text = serializers.CharField(required=False)
+    query_id = serializers.IntegerField(required=True)
+    content_id = serializers.IntegerField(required=True)
