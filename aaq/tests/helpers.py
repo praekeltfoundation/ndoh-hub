@@ -77,10 +77,8 @@ class FakeTask:
         resp_body = {
             "task_added": "True",
         }
-        headers = {
-            "Content-Type": "application/json",
-        }
-        return 200, headers, json.dumps(resp_body)
+
+        return 200, {}, json.dumps(resp_body)
 
 
 class FakeAaqApi:
