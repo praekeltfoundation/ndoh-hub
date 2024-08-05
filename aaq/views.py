@@ -12,6 +12,7 @@ from aaq.serializers import (
     AddFeedbackSerializer,
     InboundCheckSerializer,
     ResponseFeedbackSerializer,
+    SearchSerializer,
     UrgencyCheckSerializer,
 )
 
@@ -122,6 +123,7 @@ def check_urgency(request, *args, **kwargs):
 @api_view(("POST",))
 @renderer_classes((JSONRenderer,))
 def response_feedback(request, *args, **kwargs):
+
     serializer = ResponseFeedbackSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     feedback_secret_key = serializer.validated_data["feedback_secret_key"]
@@ -138,3 +140,59 @@ def response_feedback(request, *args, **kwargs):
     send_feedback_task_v2.delay(feedback_secret_key, query_id, **task_kwargs)
 
     return Response(status=status.HTTP_200_OK)
+
+
+@api_view(("POST",))
+@renderer_classes((JSONRenderer,))
+def search(request, *args, **kwargs):
+    serializer = SearchSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    query_text = serializer.validated_data["query_text"]
+    generate_llm_response = serializer.validated_data["generate_llm_response"]
+    query_metadata = serializer.validated_data["query_metadata"]
+    url = urllib.parse.urljoin(settings.AAQ_V2_API_URL, "search")
+    payload = {
+        "query_text": query_text,
+        "generate_llm_response": generate_llm_response,
+        "query_metadata": query_metadata,
+    }
+    headers = {
+        "Authorization": settings.AAQ_V2_AUTH,
+        "Content-Type": "application/json",
+    }
+
+    response = requests.request("POST", url, json=payload, headers=headers)
+
+    query_id = response.json()["query_id"]
+    feedback_secret_key = response.json()["feedback_secret_key"]
+    search_results = response.json()["search_results"]
+
+    if search_results == {}:
+        json_msg = {
+            "message": "Gibberish Detected",
+            "body": {},
+            "feedback_secret_key": feedback_secret_key,
+            "query_id": query_id,
+        }
+        return Response(json_msg, status=status.HTTP_200_OK)
+
+    json_msg = {}
+    body_content = {}
+    message_titles = []
+
+    for key, value in search_results.items():
+        text = value["text"]
+        id = value["id"]
+        title = value["title"]
+
+        body_content[key] = {"text": text, "id": id}
+        message_titles.append(f"*{key}* - {title}")
+
+    json_msg = {
+        "message": "\n".join(message_titles),
+        "body": body_content,
+        "feedback_secret_key": feedback_secret_key,
+        "query_id": query_id,
+    }
+
+    return Response(json_msg, status=status.HTTP_200_OK)

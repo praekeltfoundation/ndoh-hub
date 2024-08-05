@@ -73,9 +73,50 @@ class FakeTask:
         }
         return (202, {}, json.dumps(resp_body))
 
-    def call_response_feedback_task_v2(self, request):
+    def call_add_feedback_task_v2(self, request):
         resp_body = {
             "task_added": "True",
+        }
+        headers = {
+            "Content-Type": "application/json",
+        }
+        return 200, headers, json.dumps(resp_body)
+
+
+class FakeAaqApi:
+    def post_search(self, request):
+        resp_body = {
+            "debug_info": {"example": "debug-info"},
+            "feedback_secret_key": "secret-key-12345-abcde",
+            "llm_response": None,
+            "query_id": 1,
+            "search_results": {
+                "0": {
+                    "distance": 0.1,
+                    "id": 23,
+                    "text": "Example content text",
+                    "title": "Example content title",
+                },
+                "1": {
+                    "distance": 0.2,
+                    "id": 12,
+                    "text": "Another example content text",
+                    "title": "Another example content title",
+                },
+            },
+            "state": "final",
+        }
+
+        return (200, {}, json.dumps(resp_body))
+
+    def post_search_return_empty(self, request):
+        resp_body = {
+            "debug_info": {"example": "debug-info"},
+            "feedback_secret_key": "secret-key-12345-abcde",
+            "llm_response": None,
+            "query_id": 1,
+            "search_results": {},
+            "state": "final",
         }
 
         return (200, {}, json.dumps(resp_body))

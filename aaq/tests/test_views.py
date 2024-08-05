@@ -6,7 +6,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .helpers import FakeAaqCoreApi, FakeAaqUdApi, FakeTask
+from .helpers import FakeAaqApi, FakeAaqCoreApi, FakeAaqUdApi, FakeTask
 
 
 class GetFirstPageViewTests(APITestCase):
@@ -272,36 +272,31 @@ class ResponseFeedbackViewTests(APITestCase):
     @responses.activate
     def test_response_feedback_view(self):
         """Test that we can submit response feedback on an FAQ"""
-        data = json.dumps(
-            {
-                "feedback_secret_key": "dummy_secret",
-                "query_id": 1,
-                "feedback_sentiment": "negative",
-                "feedback_text": "Not helpful",
-            }
-        )
+        payload = {
+            "feedback_secret_key": "secret-key-12345-abcde",
+            "query_id": 1,
+            "feedback_sentiment": "negative",
+            "feedback_text": "Not helpful",
+        }
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
         fakeTask = FakeTask()
         responses.add_callback(
             responses.POST,
             "http://aaq_v2/response-feedback",
-            callback=fakeTask.call_response_feedback_task_v2,
+            callback=fakeTask.call_add_feedback_task_v2,
             content_type="application/json",
         )
 
-        response = self.client.post(
-            self.url, data=data, content_type="application/json"
-        )
-        # need to check response here
+        response = self.client.post(self.url, data=payload, format="json")
 
         assert response.status_code == 200
 
     def test_response_feedback_invalid_view(self):
         """Test that we can submit response feedback"""
-        data = json.dumps(
+        payload = json.dumps(
             {
-                "feedback_secret_key": "dummy_secret",
+                "feedback_secret_key": "secret-key-12345-abcde",
             }
         )
         user = get_user_model().objects.create_user("test")
@@ -310,12 +305,12 @@ class ResponseFeedbackViewTests(APITestCase):
         responses.add_callback(
             responses.POST,
             "http://aaq_v2/response-feedback",
-            callback=fakeTask.call_response_feedback_task_v2,
+            callback=fakeTask.call_add_feedback_task_v2,
             content_type="application/json",
         )
 
         response = self.client.post(
-            self.url, data=data, content_type="application/json"
+            self.url, data=payload, content_type="application/json"
         )
 
         assert response.status_code == 400
@@ -323,9 +318,9 @@ class ResponseFeedbackViewTests(APITestCase):
 
     def test_response_feedback_invalid_sentiment_view(self):
         """Test that we can submit response feedback"""
-        data = json.dumps(
+        payload = json.dumps(
             {
-                "feedback_secret_key": "dummy_secret",
+                "feedback_secret_key": "secret-key-12345-abcde",
                 "query_id": 1,
                 "feedback_sentiment": "sentiment",
                 "feedback_text": "Not helpful",
@@ -337,15 +332,115 @@ class ResponseFeedbackViewTests(APITestCase):
         responses.add_callback(
             responses.POST,
             "http://aaq_v2/response-feedback",
-            callback=fakeTask.call_response_feedback_task_v2,
+            callback=fakeTask.call_add_feedback_task_v2,
             content_type="application/json",
         )
 
         response = self.client.post(
-            self.url, data=data, content_type="application/json"
+            self.url, data=payload, content_type="application/json"
         )
 
         assert response.status_code == 400
         assert response.json() == {
             "feedback_sentiment": ['"sentiment" is not a valid choice.']
         }
+
+
+class SearchViewTests(APITestCase):
+    url = reverse("aaq-search")
+
+    @responses.activate
+    def test_search(self):
+        """
+        Test that search returns data.
+        """
+
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        fakeAaqApi = FakeAaqApi()
+        responses.add_callback(
+            responses.POST,
+            "http://aaq_v2/search",
+            callback=fakeAaqApi.post_search,
+            content_type="application/json",
+        )
+
+        payload = json.dumps(
+            {
+                "generate_llm_response": False,
+                "query_metadata": {"some_key": "query_metadata"},
+                "query_text": "Breastfeeding",
+            }
+        )
+
+        response = self.client.post(
+            self.url, data=payload, content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("message", response.data)
+        self.assertIn("body", response.data)
+        self.assertIn("query_id", response.data)
+        self.assertIn("feedback_secret_key", response.data)
+
+        assert response.json() == {
+            "message": "*0* - Example content title\n*1* -"
+            " Another example content title",
+            "body": {
+                "0": {"text": "Example content text", "id": 23},
+                "1": {"text": "Another example content text", "id": 12},
+            },
+            "feedback_secret_key": "secret-key-12345-abcde",
+            "query_id": 1,
+        }
+
+    @responses.activate
+    def test_search_gibberish(self):
+        """
+        Check that we get a response with an empty list in the search results part
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        fakeAaqApi = FakeAaqApi()
+        responses.add_callback(
+            responses.POST,
+            "http://aaq_v2/search",
+            callback=fakeAaqApi.post_search_return_empty,
+            content_type="application/json",
+        )
+
+        payload = json.dumps(
+            {
+                "generate_llm_response": False,
+                "query_metadata": {"some_key": "query_metadata"},
+                "query_text": "yjyvcgrfeuyikbjmfb",
+            }
+        )
+
+        response = self.client.post(
+            self.url, data=payload, content_type="application/json"
+        )
+
+        assert response.json() == {
+            "message": "Gibberish Detected",
+            "body": {},
+            "feedback_secret_key": "secret-key-12345-abcde",
+            "query_id": 1,
+        }
+
+    @responses.activate
+    def test_search_invalid_request_body(self):
+        """
+        Test search valid request.
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        payload = json.dumps({})
+
+        response = self.client.post(
+            self.url, data=payload, content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.json(), {"query_text": ["This field is required."]})
