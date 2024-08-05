@@ -264,3 +264,76 @@ class CheckUrgencyViewTests(APITestCase):
         )
 
         assert response.json() == {"urgency_score": 0.0}
+
+class CheckUrgencyV2ViewTests(APITestCase):
+    url = reverse("aaq-check-urgency-v2")
+
+    @responses.activate
+    def test_urgent(self):
+        """
+        Test that we can get an urgency score of 1.0
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        fakeAaqUdApi = FakeAaqUdApi()
+        responses.add_callback(
+            responses.POST,
+            "http://aaq_v2/check-urgency",
+            callback=fakeAaqUdApi.post_inbound_check_return_one,
+            content_type="application/json",
+        )
+
+        payload = json.dumps({"message_text": "I am pregnant and out of breath"})
+
+        response = self.client.post(
+            self.url, data=payload, content_type="application/json"
+        )
+
+        assert response.json() == {"urgency_score": 1.0}
+
+    # @responses.activate
+    # def test_not_urgent(self):
+    #     """
+    #     Test that we can get an urgency score of 1.0
+    #     """
+    #     user = get_user_model().objects.create_user("test")
+    #     self.client.force_authenticate(user)
+    #     fakeAaqUdApi = FakeAaqUdApi()
+    #     responses.add_callback(
+    #         responses.POST,
+    #         "http://aaqud/inbound/check",
+    #         callback=fakeAaqUdApi.post_inbound_check_return_zero,
+    #         content_type="application/json",
+    #     )
+
+    #     payload = json.dumps({"message_text": "I am fine"})
+
+    #     response = self.client.post(
+    #         self.url, data=payload, content_type="application/json"
+    #     )
+
+    #     assert response.json() == {"urgency_score": 0.0}
+
+
+    # @responses.activate
+    # def test_urgent_invalid(self):
+    #     """
+    #     Test that we can get an urgency score of 1.0
+    #     """
+    #     user = get_user_model().objects.create_user("test")
+    #     self.client.force_authenticate(user)
+    #     fakeAaqUdApi = FakeAaqUdApi()
+    #     responses.add_callback(
+    #         responses.POST,
+    #         "http://aaqud/inbound/check",
+    #         callback=fakeAaqUdApi.post_inbound_check_return_zero,
+    #         content_type="application/json",
+    #     )
+
+    #     payload = json.dumps({})
+
+    #     response = self.client.post(
+    #         self.url, data=payload, content_type="application/json"
+    #     )
+
+    #     assert response.json() ==  {'message_text': ['This field is required.']}

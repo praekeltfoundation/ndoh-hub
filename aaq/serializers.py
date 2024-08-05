@@ -9,6 +9,11 @@ class UrgencyCheckSerializer(serializers.Serializer):
     question = serializers.CharField(required=True)
 
 
+
+class UrgencyCheckV2Serializer(serializers.Serializer):
+    message_text = serializers.CharField(required=True)
+
+
 class AddFeedbackSerializer(serializers.Serializer):
     class Feedback(serializers.Serializer):
         feedback_type = serializers.ChoiceField(choices=("positive", "negative"))
