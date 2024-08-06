@@ -230,7 +230,8 @@ def search(request, *args, **kwargs):
 def check_urgency_v2(request, *args, **kwargs):
     serializer = UrgencyCheckV2Serializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    message_text = serializer.validated_data["message_text"]
+    message_text = {}
+    message_text["message_text"] = serializer.validated_data["message_text"]
     url = urllib.parse.urljoin(settings.AAQ_V2_API_URL, "/urgency-check-v2")
     headers = {
         "Authorization": settings.AAQ_V2_API_URL,

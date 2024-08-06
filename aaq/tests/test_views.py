@@ -376,12 +376,14 @@ class SearchViewTests(APITestCase):
         response = self.client.post(
             self.url, data=payload, content_type="application/json"
         )
+        [request] = responses.calls
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("message", response.data)
         self.assertIn("body", response.data)
         self.assertIn("query_id", response.data)
         self.assertIn("feedback_secret_key", response.data)
+        self.assertEqual(json.loads(request.request.body), json.loads(payload))
 
         assert response.json() == {
             "message": "*0* - Example content title\n*1* -"
@@ -552,6 +554,7 @@ class CheckUrgencyV2ViewTests(APITestCase):
         response = self.client.post(
             self.url, data=payload, content_type="application/json"
         )
+        [request] = responses.calls
 
         assert response.status_code == 200
         assert response.json() == {
@@ -565,11 +568,12 @@ class CheckUrgencyV2ViewTests(APITestCase):
                 "Nausea that lasts for 3 days",
             ],
         }
+        self.assertEqual(json.loads(request.request.body), json.loads(payload))
 
     @responses.activate
     def test_urgency_check_not_urgent(self):
         """
-        Test that we can get is urgent False
+        Test that we can get is False
         """
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
