@@ -15,6 +15,7 @@ from aaq.serializers import (
     ResponseFeedbackSerializer,
     SearchSerializer,
     UrgencyCheckSerializer,
+    UrgencyCheckV2Serializer,
 )
 
 from .tasks import send_feedback_task, send_feedback_task_v2
@@ -222,3 +223,29 @@ def search(request, *args, **kwargs):
     }
 
     return Response(json_msg, status=status.HTTP_200_OK)
+
+
+@api_view(("POST",))
+@renderer_classes((JSONRenderer,))
+def check_urgency_v2(request, *args, **kwargs):
+    serializer = UrgencyCheckV2Serializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    message_text = serializer.validated_data["message_text"]
+    url = urllib.parse.urljoin(settings.AAQ_V2_API_URL, "/urgency-check-v2")
+    headers = {
+        "Authorization": settings.AAQ_V2_API_URL,
+        "Content-Type": "application/json",
+    }
+
+    response = requests.request("POST", url, json=message_text, headers=headers)
+    is_urgent = response.json()["is_urgent"]
+    urgency_score = 0.0
+    if is_urgent:
+        urgency_score = 1.0
+
+    json_msg = {
+        "urgency_score": urgency_score,
+    }
+
+    return_data = json_msg
+    return Response(return_data, status=status.HTTP_200_OK)

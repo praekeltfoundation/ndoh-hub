@@ -6,7 +6,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .helpers import FakeAaqApi, FakeAaqCoreApi, FakeAaqUdApi, FakeTask
+from .helpers import FakeAaqApi, FakeAaqCoreApi, FakeAaqUdApi, FakeAaqUdV2Api, FakeTask
 
 
 class GetFirstPageViewTests(APITestCase):
@@ -527,3 +527,71 @@ class ContentFeedbackViewTests(APITestCase):
         assert response.json() == {
             "feedback_sentiment": ['"test" is not a valid choice.']
         }
+
+
+class CheckUrgencyV2ViewTests(APITestCase):
+    url = reverse("aaq-check-urgency-v2")
+
+    @responses.activate
+    def test_urgency_check_urgent(self):
+        """
+        Test that we can get an urgency score of 1.0
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        fakeAaqUdV2Api = FakeAaqUdV2Api()
+        responses.add_callback(
+            responses.POST,
+            "http://aaq_v2/urgency-check-v2",
+            callback=fakeAaqUdV2Api.post_urgency_detect_return_one,
+            content_type="application/json",
+        )
+
+        payload = json.dumps({"message_text": "I am pregnant and out of breath"})
+
+        response = self.client.post(
+            self.url, data=payload, content_type="application/json"
+        )
+
+        assert response.status_code == 200
+        assert response.json() == {"urgency_score": 1.0}
+
+    @responses.activate
+    def test_urgency_check_not_urgent(self):
+        """
+        Test that we can get an urgency score of 0.0
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        fakeAaqUdV2Api = FakeAaqUdV2Api()
+        responses.add_callback(
+            responses.POST,
+            "http://aaq_v2/urgency-check-v2",
+            callback=fakeAaqUdV2Api.post_urgency_detect_return_zero,
+            content_type="application/json",
+        )
+
+        payload = json.dumps({"message_text": "I am fine"})
+
+        response = self.client.post(
+            self.url, data=payload, content_type="application/json"
+        )
+
+        assert response.status_code == 200
+        assert response.json() == {"urgency_score": 0.0}
+
+    @responses.activate
+    def test_urgency_check_invalid(self):
+        """
+        Test that we can get a field required message
+        """
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+        payload = json.dumps({})
+
+        response = self.client.post(
+            self.url, data=payload, content_type="application/json"
+        )
+
+        assert response.status_code == 400
+        assert response.json() == {"message_text": ["This field is required."]}

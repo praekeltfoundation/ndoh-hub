@@ -38,4 +38,9 @@ urlpatterns = [
         views.search,
         name="aaq-search",
     ),
+    re_path(
+        r"^api/v2/check-urgency",
+        views.check_urgency_v2,
+        name="aaq-check-urgency-v2",
+    ),
 ]

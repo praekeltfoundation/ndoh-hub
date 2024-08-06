@@ -53,3 +53,7 @@ class ContentFeedbackSerializer(serializers.Serializer):
     feedback_text = serializers.CharField(required=False)
     query_id = serializers.IntegerField(required=True)
     content_id = serializers.IntegerField(required=True)
+
+
+class UrgencyCheckV2Serializer(serializers.Serializer):
+    message_text = serializers.CharField(required=True)
