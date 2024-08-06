@@ -238,14 +238,6 @@ def check_urgency_v2(request, *args, **kwargs):
     }
 
     response = requests.request("POST", url, json=message_text, headers=headers)
-    is_urgent = response.json()["is_urgent"]
-    urgency_score = 0.0
-    if is_urgent:
-        urgency_score = 1.0
+    is_urgent = {"is_urgent": response.json()["is_urgent"]}
 
-    json_msg = {
-        "urgency_score": urgency_score,
-    }
-
-    return_data = json_msg
-    return Response(return_data, status=status.HTTP_200_OK)
+    return Response(is_urgent, status=status.HTTP_200_OK)

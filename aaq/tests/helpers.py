@@ -121,14 +121,14 @@ class FakeAaqApi:
 
 
 class FakeAaqUdV2Api:
-    def post_urgency_detect_return_one(self, request):
+    def post_urgency_detect_return_true(self, request):
         resp_body = {
             "is_urgent": True,
         }
 
         return (200, {}, json.dumps(resp_body))
 
-    def post_urgency_detect_return_zero(self, request):
+    def post_urgency_detect_return_false(self, request):
         resp_body = {
             "is_urgent": False,
         }

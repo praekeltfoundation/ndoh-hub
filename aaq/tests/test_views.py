@@ -543,7 +543,7 @@ class CheckUrgencyV2ViewTests(APITestCase):
         responses.add_callback(
             responses.POST,
             "http://aaq_v2/urgency-check-v2",
-            callback=fakeAaqUdV2Api.post_urgency_detect_return_one,
+            callback=fakeAaqUdV2Api.post_urgency_detect_return_true,
             content_type="application/json",
         )
 
@@ -554,7 +554,7 @@ class CheckUrgencyV2ViewTests(APITestCase):
         )
 
         assert response.status_code == 200
-        assert response.json() == {"urgency_score": 1.0}
+        assert response.json() == {"is_urgent": True}
 
     @responses.activate
     def test_urgency_check_not_urgent(self):
@@ -567,7 +567,7 @@ class CheckUrgencyV2ViewTests(APITestCase):
         responses.add_callback(
             responses.POST,
             "http://aaq_v2/urgency-check-v2",
-            callback=fakeAaqUdV2Api.post_urgency_detect_return_zero,
+            callback=fakeAaqUdV2Api.post_urgency_detect_return_false,
             content_type="application/json",
         )
 
@@ -578,7 +578,7 @@ class CheckUrgencyV2ViewTests(APITestCase):
         )
 
         assert response.status_code == 200
-        assert response.json() == {"urgency_score": 0.0}
+        assert response.json() == {"is_urgent": False}
 
     @responses.activate
     def test_urgency_check_invalid(self):
