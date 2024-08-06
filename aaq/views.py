@@ -10,6 +10,7 @@ from rest_framework.response import Response
 
 from aaq.serializers import (
     AddFeedbackSerializer,
+    ContentFeedbackSerializer,
     InboundCheckSerializer,
     ResponseFeedbackSerializer,
     SearchSerializer,
@@ -122,9 +123,34 @@ def check_urgency(request, *args, **kwargs):
 
 @api_view(("POST",))
 @renderer_classes((JSONRenderer,))
-def response_feedback(request, *args, **kwargs):
+def content_feedback(request, *args, **kwargs):
+    serializer = ContentFeedbackSerializer(data=request.data)
 
+    serializer.is_valid(raise_exception=True)
+    feedback_secret_key = serializer.validated_data["feedback_secret_key"]
+    query_id = serializer.validated_data["query_id"]
+    content_id = serializer.validated_data["content_id"]
+
+    task_kwargs = {}
+    if "feedback_sentiment" in serializer.validated_data:
+        task_kwargs["feedback_sentiment"] = serializer.validated_data[
+            "feedback_sentiment"
+        ]
+    if "feedback_text" in serializer.validated_data:
+        task_kwargs["feedback_text"] = serializer.validated_data["feedback_text"]
+
+    send_feedback_task_v2.delay(
+        feedback_secret_key, query_id, content_id, **task_kwargs
+    )
+
+    return Response(status=status.HTTP_200_OK)
+
+
+@api_view(("POST",))
+@renderer_classes((JSONRenderer,))
+def response_feedback(request, *args, **kwargs):
     serializer = ResponseFeedbackSerializer(data=request.data)
+
     serializer.is_valid(raise_exception=True)
     feedback_secret_key = serializer.validated_data["feedback_secret_key"]
     query_id = serializer.validated_data["query_id"]

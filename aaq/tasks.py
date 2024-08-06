@@ -44,18 +44,23 @@ def send_feedback_task(secret_key, inbound_id, feedback_type, **kwargs):
     soft_time_limit=10,
     time_limit=15,
 )
-def send_feedback_task_v2(feedback_secret_key, query_id, **kwargs):
+def send_feedback_task_v2(feedback_secret_key, query_id, content_id=None, **kwargs):
     data = {
         "feedback_secret_key": feedback_secret_key,
         "query_id": query_id,
     }
 
+    path = "/response-feedback"
+
     if "feedback_sentiment" in kwargs:
         data["feedback_sentiment"] = kwargs["feedback_sentiment"]
     if "feedback_text" in kwargs:
         data["feedback_text"] = kwargs["feedback_text"]
+    if content_id:
+        data["content_id"] = content_id
+        path = "/content-feedback"
 
-    url = urljoin(settings.AAQ_V2_API_URL, "/response-feedback")
+    url = urljoin(settings.AAQ_V2_API_URL, path)
     headers = {
         "Authorization": settings.AAQ_V2_AUTH,
         "Content-Type": "application/json",
