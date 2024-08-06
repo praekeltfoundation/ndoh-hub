@@ -554,7 +554,17 @@ class CheckUrgencyV2ViewTests(APITestCase):
         )
 
         assert response.status_code == 200
-        assert response.json() == {"is_urgent": True}
+        assert response.json() == {
+            "details": {
+                "0": {"distance": 0.1, "urgency_rule": "Blurry vision and dizziness"},
+                "1": {"distance": 0.2, "urgency_rule": "Nausea that lasts for 3 days"},
+            },
+            "is_urgent": True,
+            "matched_rules": [
+                "Blurry vision and dizziness",
+                "Nausea that lasts for 3 days",
+            ],
+        }
 
     @responses.activate
     def test_urgency_check_not_urgent(self):
@@ -578,7 +588,14 @@ class CheckUrgencyV2ViewTests(APITestCase):
         )
 
         assert response.status_code == 200
-        assert response.json() == {"is_urgent": False}
+        assert response.json() == {
+            "details": {
+                "0": {"distance": 0.1, "urgency_rule": "Baby okay"},
+                "1": {"distance": 0.2, "urgency_rule": "Baby healthy"},
+            },
+            "is_urgent": False,
+            "matched_rules": ["Baby okay", "Baby healthy"],
+        }
 
     @responses.activate
     def test_urgency_check_invalid(self):
