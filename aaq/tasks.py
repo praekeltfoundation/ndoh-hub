@@ -50,17 +50,17 @@ def send_feedback_task_v2(feedback_secret_key, query_id, content_id=None, **kwar
         "query_id": query_id,
     }
 
-    endpoint = "/response-feedback"
+    path = "/response-feedback"
 
     if "feedback_sentiment" in kwargs:
         data["feedback_sentiment"] = kwargs["feedback_sentiment"]
     if "feedback_text" in kwargs:
         data["feedback_text"] = kwargs["feedback_text"]
-    if "content_id" in kwargs:
-        data["content_id"] = kwargs["content_id"]
-        endpoint = "/content-feedback"
+    if content_id:
+        data["content_id"] = content_id
+        path = "/content-feedback"
 
-    url = urljoin(settings.AAQ_V2_API_URL, endpoint)
+    url = urljoin(settings.AAQ_V2_API_URL, path)
     headers = {
         "Authorization": settings.AAQ_V2_AUTH,
         "Content-Type": "application/json",
