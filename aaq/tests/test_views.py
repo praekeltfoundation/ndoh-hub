@@ -537,7 +537,7 @@ class CheckUrgencyV2ViewTests(APITestCase):
     @responses.activate
     def test_urgency_check_urgent(self):
         """
-        Test that we can get is urgent True
+        Test that we can get is_urgent True
         """
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
@@ -573,7 +573,7 @@ class CheckUrgencyV2ViewTests(APITestCase):
     @responses.activate
     def test_urgency_check_not_urgent(self):
         """
-        Test that we can get is False
+        Test that we can get is_urgent False
         """
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
