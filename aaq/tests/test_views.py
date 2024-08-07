@@ -358,6 +358,12 @@ class SearchViewTests(APITestCase):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
         fakeAaqApi = FakeAaqApi()
+
+        search_payload = {
+            "generate_llm_response": False,
+            "query_metadata": {"some_key": "query_metadata"},
+            "query_text": "Breastfeeding",
+        }
         responses.add_callback(
             responses.POST,
             "http://aaq_v2/search",
@@ -365,35 +371,61 @@ class SearchViewTests(APITestCase):
             content_type="application/json",
         )
 
-        payload = json.dumps(
-            {
-                "generate_llm_response": False,
-                "query_metadata": {"some_key": "query_metadata"},
-                "query_text": "Breastfeeding",
-            }
+        fakeAaqUdV2Api = FakeAaqUdV2Api()
+        responses.add_callback(
+            responses.POST,
+            "http://aaq_v2/urgency-check-v2",
+            callback=fakeAaqUdV2Api.post_urgency_detect_return_true,
+            content_type="application/json",
         )
 
+        search_payload = {
+            "query_text": "Test query",
+            "generate_llm_response": True,
+            "query_metadata": {"key": "value"},
+        }
+
+        urgency_check_payload = {
+            "message_text": "Test query",
+        }
+
         response = self.client.post(
-            self.url, data=payload, content_type="application/json"
+            self.url, data=json.dumps(search_payload), content_type="application/json"
         )
-        [request] = responses.calls
+
+        search_request = responses.calls[0]
+        urgency_check_request = responses.calls[1]
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("message", response.data)
         self.assertIn("body", response.data)
         self.assertIn("query_id", response.data)
         self.assertIn("feedback_secret_key", response.data)
-        self.assertEqual(json.loads(request.request.body), json.loads(payload))
-
+        self.assertIn("details", response.data)
+        self.assertIn("is_urgent", response.data)
+        self.assertIn("matched_rules", response.data)
+        self.assertEqual(json.loads(search_request.request.body), search_payload)
+        self.assertEqual(
+            json.loads(urgency_check_request.request.body), urgency_check_payload
+        )
         assert response.json() == {
-            "message": "*0* - Example content title\n*1* -"
-            " Another example content title",
+            "message": "*0* - Example content title\n"
+            "*1* - Another example content title",
             "body": {
                 "0": {"text": "Example content text", "id": 23},
                 "1": {"text": "Another example content text", "id": 12},
             },
             "feedback_secret_key": "secret-key-12345-abcde",
             "query_id": 1,
+            "details": {
+                "0": {"distance": 0.1, "urgency_rule": "Blurry vision and dizziness"},
+                "1": {"distance": 0.2, "urgency_rule": "Nausea that lasts for 3 days"},
+            },
+            "is_urgent": True,
+            "matched_rules": [
+                "Blurry vision and dizziness",
+                "Nausea that lasts for 3 days",
+            ],
         }
 
     @responses.activate
@@ -529,90 +561,3 @@ class ContentFeedbackViewTests(APITestCase):
         assert response.json() == {
             "feedback_sentiment": ['"test" is not a valid choice.']
         }
-
-
-class CheckUrgencyV2ViewTests(APITestCase):
-    url = reverse("aaq-check-urgency-v2")
-
-    @responses.activate
-    def test_urgency_check_urgent(self):
-        """
-        Test that we can get is_urgent True
-        """
-        user = get_user_model().objects.create_user("test")
-        self.client.force_authenticate(user)
-        fakeAaqUdV2Api = FakeAaqUdV2Api()
-        responses.add_callback(
-            responses.POST,
-            "http://aaq_v2/urgency-check-v2",
-            callback=fakeAaqUdV2Api.post_urgency_detect_return_true,
-            content_type="application/json",
-        )
-
-        payload = json.dumps({"message_text": "I am pregnant and out of breath"})
-
-        response = self.client.post(
-            self.url, data=payload, content_type="application/json"
-        )
-        [request] = responses.calls
-
-        assert response.status_code == 200
-        assert response.json() == {
-            "details": {
-                "0": {"distance": 0.1, "urgency_rule": "Blurry vision and dizziness"},
-                "1": {"distance": 0.2, "urgency_rule": "Nausea that lasts for 3 days"},
-            },
-            "is_urgent": True,
-            "matched_rules": [
-                "Blurry vision and dizziness",
-                "Nausea that lasts for 3 days",
-            ],
-        }
-        self.assertEqual(json.loads(request.request.body), json.loads(payload))
-
-    @responses.activate
-    def test_urgency_check_not_urgent(self):
-        """
-        Test that we can get is_urgent False
-        """
-        user = get_user_model().objects.create_user("test")
-        self.client.force_authenticate(user)
-        fakeAaqUdV2Api = FakeAaqUdV2Api()
-        responses.add_callback(
-            responses.POST,
-            "http://aaq_v2/urgency-check-v2",
-            callback=fakeAaqUdV2Api.post_urgency_detect_return_false,
-            content_type="application/json",
-        )
-
-        payload = json.dumps({"message_text": "I am fine"})
-
-        response = self.client.post(
-            self.url, data=payload, content_type="application/json"
-        )
-
-        assert response.status_code == 200
-        assert response.json() == {
-            "details": {
-                "0": {"distance": 0.1, "urgency_rule": "Baby okay"},
-                "1": {"distance": 0.2, "urgency_rule": "Baby healthy"},
-            },
-            "is_urgent": False,
-            "matched_rules": ["Baby okay", "Baby healthy"],
-        }
-
-    @responses.activate
-    def test_urgency_check_invalid(self):
-        """
-        Test that we can get a field required message
-        """
-        user = get_user_model().objects.create_user("test")
-        self.client.force_authenticate(user)
-        payload = json.dumps({})
-
-        response = self.client.post(
-            self.url, data=payload, content_type="application/json"
-        )
-
-        assert response.status_code == 400
-        assert response.json() == {"message_text": ["This field is required."]}

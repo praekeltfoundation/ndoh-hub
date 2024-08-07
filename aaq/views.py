@@ -15,7 +15,6 @@ from aaq.serializers import (
     ResponseFeedbackSerializer,
     SearchSerializer,
     UrgencyCheckSerializer,
-    UrgencyCheckV2Serializer,
 )
 
 from .tasks import send_feedback_task, send_feedback_task_v2
@@ -174,21 +173,27 @@ def response_feedback(request, *args, **kwargs):
 def search(request, *args, **kwargs):
     serializer = SearchSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    query_text = serializer.validated_data["query_text"]
-    generate_llm_response = serializer.validated_data["generate_llm_response"]
-    query_metadata = serializer.validated_data["query_metadata"]
-    url = urllib.parse.urljoin(settings.AAQ_V2_API_URL, "search")
-    payload = {
-        "query_text": query_text,
-        "generate_llm_response": generate_llm_response,
-        "query_metadata": query_metadata,
+
+    search_payload = {
+        "query_text": serializer.validated_data["query_text"],
     }
+    search_url = urllib.parse.urljoin(settings.AAQ_V2_API_URL, "/search")
+
+    if "generate_llm_response" in serializer.validated_data:
+        search_payload["generate_llm_response"] = serializer.validated_data[
+            "generate_llm_response"
+        ]
+    if "query_metadata" in serializer.validated_data:
+        search_payload["query_metadata"] = serializer.validated_data["query_metadata"]
+
     headers = {
         "Authorization": settings.AAQ_V2_AUTH,
         "Content-Type": "application/json",
     }
 
-    response = requests.request("POST", url, json=payload, headers=headers)
+    response = requests.request(
+        "POST", search_url, json=search_payload, headers=headers
+    )
 
     query_id = response.json()["query_id"]
     feedback_secret_key = response.json()["feedback_secret_key"]
@@ -215,29 +220,26 @@ def search(request, *args, **kwargs):
         body_content[key] = {"text": text, "id": id}
         message_titles.append(f"*{key}* - {title}")
 
-    json_msg = {
+    search_results = {
         "message": "\n".join(message_titles),
         "body": body_content,
         "feedback_secret_key": feedback_secret_key,
         "query_id": query_id,
     }
 
-    return Response(json_msg, status=status.HTTP_200_OK)
-
-
-@api_view(("POST",))
-@renderer_classes((JSONRenderer,))
-def check_urgency_v2(request, *args, **kwargs):
-    serializer = UrgencyCheckV2Serializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    message_text = {}
-    message_text["message_text"] = serializer.validated_data["message_text"]
-    url = urllib.parse.urljoin(settings.AAQ_V2_API_URL, "/urgency-check-v2")
-    headers = {
-        "Authorization": settings.AAQ_V2_API_URL,
-        "Content-Type": "application/json",
+    urgency_check_payload = {
+        "message_text": serializer.validated_data["query_text"],
     }
 
-    response = requests.request("POST", url, json=message_text, headers=headers)
+    urgency_check_url = urllib.parse.urljoin(
+        settings.AAQ_V2_API_URL, "/urgency-check-v2"
+    )
 
-    return Response(response.json(), status=status.HTTP_200_OK)
+    response = requests.request(
+        "POST", urgency_check_url, json=urgency_check_payload, headers=headers
+    )
+    check_urgency_results = response.json()
+
+    search_results.update(check_urgency_results)
+
+    return Response(search_results, status=status.HTTP_200_OK)
