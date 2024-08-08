@@ -18,6 +18,7 @@ from aaq.serializers import (
 )
 
 from .tasks import send_feedback_task, send_feedback_task_v2
+from .utils import search
 
 logger = logging.getLogger(__name__)
 
@@ -170,76 +171,14 @@ def response_feedback(request, *args, **kwargs):
 
 @api_view(("POST",))
 @renderer_classes((JSONRenderer,))
-def search(request, *args, **kwargs):
+def aaq_search(request):
+
     serializer = SearchSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
+    query_text = serializer.validated_data["query_text"]
+    generate_llm_response = serializer.validated_data["generate_llm_response"]
+    query_metadata = serializer.validated_data["query_metadata"]
 
-    search_payload = {
-        "query_text": serializer.validated_data["query_text"],
-    }
-    search_url = urllib.parse.urljoin(settings.AAQ_V2_API_URL, "/search")
+    response = search(query_text, generate_llm_response, query_metadata)
 
-    if "generate_llm_response" in serializer.validated_data:
-        search_payload["generate_llm_response"] = serializer.validated_data[
-            "generate_llm_response"
-        ]
-    if "query_metadata" in serializer.validated_data:
-        search_payload["query_metadata"] = serializer.validated_data["query_metadata"]
-
-    headers = {
-        "Authorization": settings.AAQ_V2_AUTH,
-        "Content-Type": "application/json",
-    }
-
-    response = requests.request(
-        "POST", search_url, json=search_payload, headers=headers
-    )
-
-    query_id = response.json()["query_id"]
-    feedback_secret_key = response.json()["feedback_secret_key"]
-    search_results = response.json()["search_results"]
-
-    if search_results == {}:
-        json_msg = {
-            "message": "Gibberish Detected",
-            "body": {},
-            "feedback_secret_key": feedback_secret_key,
-            "query_id": query_id,
-        }
-        return Response(json_msg, status=status.HTTP_200_OK)
-
-    json_msg = {}
-    body_content = {}
-    message_titles = []
-
-    for key, value in search_results.items():
-        text = value["text"]
-        id = value["id"]
-        title = value["title"]
-
-        body_content[key] = {"text": text, "id": id}
-        message_titles.append(f"*{key}* - {title}")
-
-    search_results = {
-        "message": "\n".join(message_titles),
-        "body": body_content,
-        "feedback_secret_key": feedback_secret_key,
-        "query_id": query_id,
-    }
-
-    urgency_check_payload = {
-        "message_text": serializer.validated_data["query_text"],
-    }
-
-    urgency_check_url = urllib.parse.urljoin(
-        settings.AAQ_V2_API_URL, "/urgency-check-v2"
-    )
-
-    response = requests.request(
-        "POST", urgency_check_url, json=urgency_check_payload, headers=headers
-    )
-    check_urgency_results = response.json()
-
-    search_results.update(check_urgency_results)
-
-    return Response(search_results, status=status.HTTP_200_OK)
+    return Response(response.data, status=status.HTTP_200_OK)

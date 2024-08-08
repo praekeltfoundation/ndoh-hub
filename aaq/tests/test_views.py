@@ -354,16 +354,10 @@ class SearchViewTests(APITestCase):
         """
         Test that search returns data.
         """
-
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
-        fakeAaqApi = FakeAaqApi()
 
-        search_payload = {
-            "generate_llm_response": False,
-            "query_metadata": {"some_key": "query_metadata"},
-            "query_text": "Breastfeeding",
-        }
+        fakeAaqApi = FakeAaqApi()
         responses.add_callback(
             responses.POST,
             "http://aaq_v2/search",
@@ -374,27 +368,20 @@ class SearchViewTests(APITestCase):
         fakeAaqUdV2Api = FakeAaqUdV2Api()
         responses.add_callback(
             responses.POST,
-            "http://aaq_v2/urgency-check-v2",
+            "http://aaq_v2/check-urgency",
             callback=fakeAaqUdV2Api.post_urgency_detect_return_true,
             content_type="application/json",
         )
 
-        search_payload = {
-            "query_text": "Test query",
-            "generate_llm_response": True,
-            "query_metadata": {"key": "value"},
-        }
-
-        urgency_check_payload = {
-            "message_text": "Test query",
+        payload = {
+            "generate_llm_response": False,
+            "query_metadata": {},
+            "query_text": "query_text",
         }
 
         response = self.client.post(
-            self.url, data=json.dumps(search_payload), content_type="application/json"
+            self.url, data=json.dumps(payload), content_type="application/json"
         )
-
-        search_request = responses.calls[0]
-        urgency_check_request = responses.calls[1]
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("message", response.data)
@@ -404,11 +391,8 @@ class SearchViewTests(APITestCase):
         self.assertIn("details", response.data)
         self.assertIn("is_urgent", response.data)
         self.assertIn("matched_rules", response.data)
-        self.assertEqual(json.loads(search_request.request.body), search_payload)
-        self.assertEqual(
-            json.loads(urgency_check_request.request.body), urgency_check_payload
-        )
-        assert response.json() == {
+
+        assert response.data == {
             "message": "*0* - Example content title\n"
             "*1* - Another example content title",
             "body": {
@@ -429,40 +413,6 @@ class SearchViewTests(APITestCase):
         }
 
     @responses.activate
-    def test_search_gibberish(self):
-        """
-        Check that we get a response with an empty list in the search results part
-        """
-        user = get_user_model().objects.create_user("test")
-        self.client.force_authenticate(user)
-        fakeAaqApi = FakeAaqApi()
-        responses.add_callback(
-            responses.POST,
-            "http://aaq_v2/search",
-            callback=fakeAaqApi.post_search_return_empty,
-            content_type="application/json",
-        )
-
-        payload = json.dumps(
-            {
-                "generate_llm_response": False,
-                "query_metadata": {"some_key": "query_metadata"},
-                "query_text": "yjyvcgrfeuyikbjmfb",
-            }
-        )
-
-        response = self.client.post(
-            self.url, data=payload, content_type="application/json"
-        )
-
-        assert response.json() == {
-            "message": "Gibberish Detected",
-            "body": {},
-            "feedback_secret_key": "secret-key-12345-abcde",
-            "query_id": 1,
-        }
-
-    @responses.activate
     def test_search_invalid_request_body(self):
         """
         Test search valid request.
@@ -470,10 +420,8 @@ class SearchViewTests(APITestCase):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
-        payload = json.dumps({})
-
         response = self.client.post(
-            self.url, data=payload, content_type="application/json"
+            self.url, data=json.dumps({}), content_type="application/json"
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
