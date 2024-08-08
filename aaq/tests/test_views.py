@@ -384,15 +384,15 @@ class SearchViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("message", response.data)
-        self.assertIn("body", response.data)
-        self.assertIn("query_id", response.data)
-        self.assertIn("feedback_secret_key", response.data)
-        self.assertIn("details", response.data)
-        self.assertIn("is_urgent", response.data)
-        self.assertIn("matched_rules", response.data)
+        self.assertIn("message", response.json())
+        self.assertIn("body", response.json())
+        self.assertIn("query_id", response.json())
+        self.assertIn("feedback_secret_key", response.json())
+        self.assertIn("details", response.json())
+        self.assertIn("is_urgent", response.json())
+        self.assertIn("matched_rules", response.json())
 
-        assert response.data == {
+        assert response.json() == {
             "message": "*0* - Example content title\n"
             "*1* - Another example content title",
             "body": {
@@ -426,6 +426,41 @@ class SearchViewTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.json(), {"query_text": ["This field is required."]})
+
+    @responses.activate
+    def test_request(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        fakeAaqApi = FakeAaqApi()
+        responses.add_callback(
+            responses.POST,
+            "http://aaq_v2/search",
+            callback=fakeAaqApi.post_search,
+            content_type="application/json",
+        )
+
+        fakeAaqUdV2Api = FakeAaqUdV2Api()
+        responses.add_callback(
+            responses.POST,
+            "http://aaq_v2/check-urgency",
+            callback=fakeAaqUdV2Api.post_urgency_detect_return_true,
+            content_type="application/json",
+        )
+
+        payload = {
+            "generate_llm_response": "testing",
+            "query_metadata": {},
+            "query_text": "query_text",
+        }
+
+        response = self.client.post(
+            self.url, data=json.dumps(payload), content_type="application/json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(), {"generate_llm_response": ["Must be a valid boolean."]}
+        )
 
 
 class ContentFeedbackViewTests(APITestCase):

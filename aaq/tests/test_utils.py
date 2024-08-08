@@ -45,14 +45,13 @@ class SearchFunctionTest(APITestCase):
 
         search_request = responses.calls[0]
 
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("message", response.data)
-        self.assertIn("body", response.data)
-        self.assertIn("feedback_secret_key", response.data)
-        self.assertIn("query_id", response.data)
-        self.assertEqual(response.data["query_id"], 1)
+        self.assertIn("message", response)
+        self.assertIn("body", response)
+        self.assertIn("feedback_secret_key", response)
+        self.assertIn("query_id", response)
+        self.assertEqual(response["query_id"], 1)
         self.assertEqual(json.loads(search_request.request.body), payload)
-        assert response.data == {
+        assert response == {
             "message": "*0* - Example content title\n"
             "*1* - Another example content title",
             "body": {
@@ -86,21 +85,17 @@ class SearchFunctionTest(APITestCase):
         )
 
         message_text = "Test message"
-        payload = {
-            "message_text": message_text,
-        }
 
         response = check_urgency_v2(message_text)
 
         [request] = responses.calls
 
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("details", response.data)
-        self.assertIn("is_urgent", response.data)
-        self.assertIn("matched_rules", response.data)
-        self.assertEqual(json.loads(request.request.body), payload)
+        self.assertIn("details", response)
+        self.assertIn("is_urgent", response)
+        self.assertIn("matched_rules", response)
+        self.assertEqual(json.loads(request.request.body), message_text)
 
-        assert response.data == {
+        assert response == {
             "details": {
                 "0": {"distance": 0.1, "urgency_rule": "Blurry vision and dizziness"},
                 "1": {"distance": 0.2, "urgency_rule": "Nausea that lasts for 3 days"},

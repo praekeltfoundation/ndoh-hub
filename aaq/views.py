@@ -181,4 +181,4 @@ def aaq_search(request):
 
     response = search(query_text, generate_llm_response, query_metadata)
 
-    return Response(response.data, status=status.HTTP_200_OK)
+    return Response(response, status=status.HTTP_200_OK)
