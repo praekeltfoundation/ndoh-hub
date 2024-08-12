@@ -8,12 +8,14 @@ from rest_framework.response import Response
 
 def check_urgency_v2(message_text):
     url = urllib.parse.urljoin(settings.AAQ_V2_API_URL, "check-urgency")
+
     headers = {
         "Authorization": settings.AAQ_V2_AUTH,
         "Content-Type": "application/json",
     }
 
     response = requests.request("POST", url, json=message_text, headers=headers)
+    response.raise_for_status()
 
     return response.json()
 
@@ -31,6 +33,7 @@ def search(query_text, generate_llm_response, query_metadata):
     }
 
     response = requests.request("POST", url, json=payload, headers=headers)
+    response.raise_for_status()
 
     query_id = response.json()["query_id"]
     feedback_secret_key = response.json()["feedback_secret_key"]
