@@ -118,3 +118,32 @@ class FakeAaqApi:
         }
 
         return (200, {}, json.dumps(resp_body))
+
+
+class FakeAaqUdV2Api:
+    def post_urgency_detect_return_true(self, request):
+        resp_body = {
+            "details": {
+                "0": {"distance": 0.1, "urgency_rule": "Blurry vision and dizziness"},
+                "1": {"distance": 0.2, "urgency_rule": "Nausea that lasts for 3 days"},
+            },
+            "is_urgent": True,
+            "matched_rules": [
+                "Blurry vision and dizziness",
+                "Nausea that lasts for 3 days",
+            ],
+        }
+
+        return (200, {}, json.dumps(resp_body))
+
+    def post_urgency_detect_return_false(self, request):
+        resp_body = {
+            "details": {
+                "0": {"distance": 0.1, "urgency_rule": "Baby okay"},
+                "1": {"distance": 0.2, "urgency_rule": "Baby healthy"},
+            },
+            "is_urgent": False,
+            "matched_rules": ["Baby okay", "Baby healthy"],
+        }
+
+        return (200, {}, json.dumps(resp_body))

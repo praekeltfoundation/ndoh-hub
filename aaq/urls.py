@@ -35,7 +35,7 @@ urlpatterns = [
     ),
     re_path(
         r"^api/v2/search",
-        views.search,
+        views.aaq_search,
         name="aaq-search",
     ),
 ]

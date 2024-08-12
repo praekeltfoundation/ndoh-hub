@@ -41,8 +41,8 @@ class ResponseFeedbackSerializer(serializers.Serializer):
 
 class SearchSerializer(serializers.Serializer):
     query_text = serializers.CharField(required=True)
-    generate_llm_response = serializers.BooleanField(required=False)
-    query_metadata = serializers.JSONField(required=False)
+    generate_llm_response = serializers.BooleanField(required=False, default=False)
+    query_metadata = serializers.JSONField(required=False, default=dict)
 
 
 class ContentFeedbackSerializer(serializers.Serializer):

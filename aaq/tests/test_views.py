@@ -6,7 +6,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .helpers import FakeAaqApi, FakeAaqCoreApi, FakeAaqUdApi, FakeTask
+from .helpers import FakeAaqApi, FakeAaqCoreApi, FakeAaqUdApi, FakeAaqUdV2Api, FakeTask
 
 
 class GetFirstPageViewTests(APITestCase):
@@ -354,9 +354,9 @@ class SearchViewTests(APITestCase):
         """
         Test that search returns data.
         """
-
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
+
         fakeAaqApi = FakeAaqApi()
         responses.add_callback(
             responses.POST,
@@ -365,67 +365,51 @@ class SearchViewTests(APITestCase):
             content_type="application/json",
         )
 
-        payload = json.dumps(
-            {
-                "generate_llm_response": False,
-                "query_metadata": {"some_key": "query_metadata"},
-                "query_text": "Breastfeeding",
-            }
+        fakeAaqUdV2Api = FakeAaqUdV2Api()
+        responses.add_callback(
+            responses.POST,
+            "http://aaq_v2/check-urgency",
+            callback=fakeAaqUdV2Api.post_urgency_detect_return_true,
+            content_type="application/json",
         )
 
+        payload = {
+            "generate_llm_response": False,
+            "query_metadata": {},
+            "query_text": "query_text",
+        }
+
         response = self.client.post(
-            self.url, data=payload, content_type="application/json"
+            self.url, data=json.dumps(payload), content_type="application/json"
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("message", response.data)
-        self.assertIn("body", response.data)
-        self.assertIn("query_id", response.data)
-        self.assertIn("feedback_secret_key", response.data)
+        self.assertIn("message", response.json())
+        self.assertIn("body", response.json())
+        self.assertIn("query_id", response.json())
+        self.assertIn("feedback_secret_key", response.json())
+        self.assertIn("details", response.json())
+        self.assertIn("is_urgent", response.json())
+        self.assertIn("matched_rules", response.json())
 
         assert response.json() == {
-            "message": "*0* - Example content title\n*1* -"
-            " Another example content title",
+            "message": "*0* - Example content title\n"
+            "*1* - Another example content title",
             "body": {
                 "0": {"text": "Example content text", "id": 23},
                 "1": {"text": "Another example content text", "id": 12},
             },
             "feedback_secret_key": "secret-key-12345-abcde",
             "query_id": 1,
-        }
-
-    @responses.activate
-    def test_search_gibberish(self):
-        """
-        Check that we get a response with an empty list in the search results part
-        """
-        user = get_user_model().objects.create_user("test")
-        self.client.force_authenticate(user)
-        fakeAaqApi = FakeAaqApi()
-        responses.add_callback(
-            responses.POST,
-            "http://aaq_v2/search",
-            callback=fakeAaqApi.post_search_return_empty,
-            content_type="application/json",
-        )
-
-        payload = json.dumps(
-            {
-                "generate_llm_response": False,
-                "query_metadata": {"some_key": "query_metadata"},
-                "query_text": "yjyvcgrfeuyikbjmfb",
-            }
-        )
-
-        response = self.client.post(
-            self.url, data=payload, content_type="application/json"
-        )
-
-        assert response.json() == {
-            "message": "Gibberish Detected",
-            "body": {},
-            "feedback_secret_key": "secret-key-12345-abcde",
-            "query_id": 1,
+            "details": {
+                "0": {"distance": 0.1, "urgency_rule": "Blurry vision and dizziness"},
+                "1": {"distance": 0.2, "urgency_rule": "Nausea that lasts for 3 days"},
+            },
+            "is_urgent": True,
+            "matched_rules": [
+                "Blurry vision and dizziness",
+                "Nausea that lasts for 3 days",
+            ],
         }
 
     @responses.activate
@@ -436,14 +420,47 @@ class SearchViewTests(APITestCase):
         user = get_user_model().objects.create_user("test")
         self.client.force_authenticate(user)
 
-        payload = json.dumps({})
-
         response = self.client.post(
-            self.url, data=payload, content_type="application/json"
+            self.url, data=json.dumps({}), content_type="application/json"
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.json(), {"query_text": ["This field is required."]})
+
+    @responses.activate
+    def test_request(self):
+        user = get_user_model().objects.create_user("test")
+        self.client.force_authenticate(user)
+
+        fakeAaqApi = FakeAaqApi()
+        responses.add_callback(
+            responses.POST,
+            "http://aaq_v2/search",
+            callback=fakeAaqApi.post_search,
+            content_type="application/json",
+        )
+
+        fakeAaqUdV2Api = FakeAaqUdV2Api()
+        responses.add_callback(
+            responses.POST,
+            "http://aaq_v2/check-urgency",
+            callback=fakeAaqUdV2Api.post_urgency_detect_return_true,
+            content_type="application/json",
+        )
+
+        payload = {
+            "generate_llm_response": "testing",
+            "query_metadata": {},
+            "query_text": "query_text",
+        }
+
+        response = self.client.post(
+            self.url, data=json.dumps(payload), content_type="application/json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(), {"generate_llm_response": ["Must be a valid boolean."]}
+        )
 
 
 class ContentFeedbackViewTests(APITestCase):
