@@ -1,8 +1,18 @@
 # Changelog
 
+# 0.10.21
+1. AAQ v2 endpoints
+   ([#613](https://github.com/praekeltfoundation/ndoh-hub/pull/613))
+   ([#614](https://github.com/praekeltfoundation/ndoh-hub/pull/614))
+   ([#615](https://github.com/praekeltfoundation/ndoh-hub/pull/615))
+   ([#616](https://github.com/praekeltfoundation/ndoh-hub/pull/616))
+   ([#618](https://github.com/praekeltfoundation/ndoh-hub/pull/618))
+3. Bump django from 4.2.14 to 4.2.15
+   ([#617](https://github.com/praekeltfoundation/ndoh-hub/pull/617))
+
 # 0.10.20
 1. Clinic list update
-   ([#596](https://github.com/praekeltfoundation/ndoh-hub/pull/596))  
+   ([#596](https://github.com/praekeltfoundation/ndoh-hub/pull/596))
    ([#597](https://github.com/praekeltfoundation/ndoh-hub/pull/597))
    ([#598](https://github.com/praekeltfoundation/ndoh-hub/pull/598))
 2. Bump djangorestframework from 3.14.0 to 3.15.2
@@ -23,7 +33,7 @@
    ([#611](https://github.com/praekeltfoundation/ndoh-hub/pull/611))
 
 # 0.10.19
-1. Add timestamp to queue 
+1. Add timestamp to queue
    ([#592](https://github.com/praekeltfoundation/ndoh-hub/pull/592))
 2. Bump black from 23.1.0 to 24.3.0
    ([#593](https://github.com/praekeltfoundation/ndoh-hub/pull/593))
