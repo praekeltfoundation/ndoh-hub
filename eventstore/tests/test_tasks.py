@@ -985,6 +985,24 @@ class UpdateWhatsappTemplateSendStatus(TestCase):
         self.assertIsNotNone(self.status.event_received_at)
         mock_flow_start.assert_not_called()
 
+    @mock.patch("eventstore.tasks.async_create_flow_start")
+    def test_update_status_action_completed(self, mock_flow_start):
+        """
+        If the status record is already action_completed then do nothing.
+        """
+        self.status.status = WhatsAppTemplateSendStatus.Status.ACTION_COMPLETED
+        self.status.save()
+        tasks.update_whatsapp_template_send_status(self.status.message_id, "SMS")
+
+        self.status.refresh_from_db()
+
+        self.assertEqual(
+            self.status.status, WhatsAppTemplateSendStatus.Status.ACTION_COMPLETED
+        )
+        self.assertEqual(self.status.preferred_channel, "WhatsApp")
+        self.assertIsNone(self.status.event_received_at)
+        mock_flow_start.assert_not_called()
+
 
 class ProcessWhatsAppTemplateSendStatusTests(TestCase):
     def setUp(self):
