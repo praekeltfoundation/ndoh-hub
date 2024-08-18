@@ -833,6 +833,10 @@ def update_whatsapp_template_send_status(message_id, preferred_channel=None):
         status = WhatsAppTemplateSendStatus.objects.get(
             message_id=message_id, event_received_at__isnull=True
         )
+
+        if status.status == WhatsAppTemplateSendStatus.Status.ACTION_COMPLETED:
+            return
+
         status.event_received_at = timezone.now()
         status.status = WhatsAppTemplateSendStatus.Status.EVENT_RECEIVED
 
