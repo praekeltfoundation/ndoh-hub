@@ -1,5 +1,6 @@
 import datetime
 import json
+import uuid
 from unittest import mock
 
 import requests
@@ -955,18 +956,20 @@ class UpdateWhatsappTemplateSendStatus(TestCase):
         If the event is received and it has a flow to start, the status record needs to
         be updated and the async_create_flow_start task needs to be called
         """
-        self.status.flow_uuid = "flow-uuid"
+        self.status.flow_uuid = uuid.uuid4()
+        self.status.save()
         tasks.update_whatsapp_template_send_status(self.status.message_id)
 
         self.status.refresh_from_db()
 
         self.assertEqual(
-            self.status.status, WhatsAppTemplateSendStatus.Status.EVENT_RECEIVED
+            self.status.status, WhatsAppTemplateSendStatus.Status.ACTION_COMPLETED
         )
         self.assertEqual(self.status.preferred_channel, "WhatsApp")
         self.assertIsNotNone(self.status.event_received_at)
+        self.assertIsNotNone(self.status.action_completed_at)
 
-        mock_flow_start.assert_not_called()
+        mock_flow_start.assert_called()
 
     @mock.patch("eventstore.tasks.async_create_flow_start")
     def test_update_status_sms(self, mock_flow_start):
@@ -1046,4 +1049,15 @@ class ProcessWhatsAppTemplateSendStatusTests(TestCase):
                     contacts=[self.status_expired.contact_uuid],
                 ),
             ],
+        )
+
+        self.status_ready.refresh_from_db()
+        self.status_expired.refresh_from_db()
+
+        self.assertEqual(
+            self.status_ready.status, WhatsAppTemplateSendStatus.Status.ACTION_COMPLETED
+        )
+        self.assertEqual(
+            self.status_expired.status,
+            WhatsAppTemplateSendStatus.Status.ACTION_COMPLETED,
         )

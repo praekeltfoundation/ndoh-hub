@@ -843,8 +843,6 @@ def update_whatsapp_template_send_status(message_id, preferred_channel=None):
         if preferred_channel:
             status.preferred_channel = preferred_channel
 
-        status.save()
-
         if status.flow_uuid:
             extra = status.data
             extra["preferred_channel"] = status.preferred_channel
@@ -853,6 +851,10 @@ def update_whatsapp_template_send_status(message_id, preferred_channel=None):
                 flow=str(status.flow_uuid),
                 contacts=[str(status.contact_uuid)],
             )
+            status.status = WhatsAppTemplateSendStatus.Status.ACTION_COMPLETED
+            status.action_completed_at = timezone.now()
+
+        status.save()
     except WhatsAppTemplateSendStatus.DoesNotExist:
         pass
 
@@ -881,3 +883,6 @@ def process_whatsapp_template_send_status():
             flow=str(status.flow_uuid),
             contacts=[str(status.contact_uuid)],
         )
+        status.status = WhatsAppTemplateSendStatus.Status.ACTION_COMPLETED
+        status.action_completed_at = timezone.now()
+        status.save()
