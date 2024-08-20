@@ -1,5 +1,11 @@
 # Changelog
 
+# 0.10.22
+1. Ignore events after action is completed
+   ([#619](https://github.com/praekeltfoundation/ndoh-hub/pull/619))
+2. Mark status as completed when flow is started
+   ([#620](https://github.com/praekeltfoundation/ndoh-hub/pull/620))
+
 # 0.10.21
 1. AAQ v2 endpoints
    ([#613](https://github.com/praekeltfoundation/ndoh-hub/pull/613))
