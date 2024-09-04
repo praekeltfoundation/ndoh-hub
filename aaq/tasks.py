@@ -62,7 +62,7 @@ def send_feedback_task_v2(feedback_secret_key, query_id, content_id=None, **kwar
 
     url = urljoin(settings.AAQ_V2_API_URL, path)
     headers = {
-        "Authorization": settings.AAQ_V2_AUTH,
+        "Authorization": f"Bearer {settings.AAQ_V2_AUTH}",
         "Content-Type": "application/json",
     }
     response = requests.post(url, json=data, headers=headers)
