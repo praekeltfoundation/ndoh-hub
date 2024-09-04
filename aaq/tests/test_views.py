@@ -293,7 +293,7 @@ class ResponseFeedbackViewTests(APITestCase):
         request = responses.calls[0]
 
         assert response.status_code == 200
-        self.assertIn("Bearer", request.request.headers['Authorization'])
+        self.assertIn("Bearer", request.request.headers["Authorization"])
 
     def test_response_feedback_invalid_view(self):
         """Test that we can submit response feedback"""
@@ -494,7 +494,7 @@ class ContentFeedbackViewTests(APITestCase):
         request = responses.calls[0]
 
         assert response.status_code == 200
-        self.assertIn("Bearer", request.request.headers['Authorization'])
+        self.assertIn("Bearer", request.request.headers["Authorization"])
 
     def test_content_feedback_invalid_view(self):
         """Test that we can submit content feedback"""
