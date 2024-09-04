@@ -76,7 +76,7 @@ class ResponseFeedbackTaskTest(TestCase):
 
         responses.add(
             responses.POST,
-            "http://aaq_v2/response-feedback",
+            "http://aaq_v2/api/response-feedback",
             json={},
             status=200,
         )
@@ -92,5 +92,5 @@ class ResponseFeedbackTaskTest(TestCase):
 
         [request] = responses.calls
 
-        self.assertEqual(request.request.url, "http://aaq_v2/response-feedback")
+        self.assertEqual(request.request.url, "http://aaq_v2/api/response-feedback")
         self.assertEqual(json.loads(request.request.body), data)
