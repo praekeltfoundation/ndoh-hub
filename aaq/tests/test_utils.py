@@ -51,6 +51,7 @@ class SearchFunctionTest(APITestCase):
         self.assertIn("query_id", response)
         self.assertEqual(response["query_id"], 1)
         self.assertEqual(json.loads(search_request.request.body), payload)
+        self.assertIn("Bearer", search_request.request.headers['Authorization'])
         assert response == {
             "message": "*0* - Example content title\n"
             "*1* - Another example content title",
@@ -94,6 +95,7 @@ class SearchFunctionTest(APITestCase):
         self.assertIn("is_urgent", response)
         self.assertIn("matched_rules", response)
         self.assertEqual(json.loads(request.request.body), message_text)
+        self.assertIn("Bearer", request.request.headers['Authorization'])
 
         assert response == {
             "details": {
