@@ -7,7 +7,7 @@ from rest_framework.response import Response
 
 
 def check_urgency_v2(message_text):
-    url = urllib.parse.urljoin(settings.AAQ_V2_API_URL, "check-urgency")
+    url = urllib.parse.urljoin(settings.AAQ_V2_API_URL, "api/check-urgency")
     headers = {
         "Authorization": f"Bearer {settings.AAQ_V2_AUTH}",
         "Content-Type": "application/json",
@@ -20,7 +20,7 @@ def check_urgency_v2(message_text):
 
 
 def search(query_text, generate_llm_response, query_metadata):
-    url = urllib.parse.urljoin(settings.AAQ_V2_API_URL, "search")
+    url = urllib.parse.urljoin(settings.AAQ_V2_API_URL, "api/search")
     payload = {
         "query_text": query_text,
         "generate_llm_response": generate_llm_response,
