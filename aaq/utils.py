@@ -7,7 +7,7 @@ from rest_framework.response import Response
 
 
 def check_urgency_v2(message_text):
-    url = urllib.parse.urljoin(settings.AAQ_V2_API_URL, "api/check-urgency")
+    url = urllib.parse.urljoin(settings.AAQ_V2_API_URL, "api/urgency-detect")
     headers = {
         "Authorization": f"Bearer {settings.AAQ_V2_AUTH}",
         "Content-Type": "application/json",

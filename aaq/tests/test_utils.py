@@ -26,7 +26,7 @@ class SearchFunctionTest(APITestCase):
         fakeAaqUdV2Api = FakeAaqUdV2Api()
         responses.add_callback(
             responses.POST,
-            "http://aaq_v2/api/check-urgency",
+            "http://aaq_v2/api/urgency-detect",
             callback=fakeAaqUdV2Api.post_urgency_detect_return_true,
             content_type="application/json",
         )
@@ -80,7 +80,7 @@ class SearchFunctionTest(APITestCase):
         fakeAaqUdV2Api = FakeAaqUdV2Api()
         responses.add_callback(
             responses.POST,
-            "http://aaq_v2/api/check-urgency",
+            "http://aaq_v2/api/urgency-detect",
             callback=fakeAaqUdV2Api.post_urgency_detect_return_true,
             content_type="application/json",
         )
