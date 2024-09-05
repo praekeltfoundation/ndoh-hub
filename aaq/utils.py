@@ -53,7 +53,7 @@ def search(query_text, generate_llm_response, query_metadata):
     body_content = {}
     message_titles = []
 
-    for key, value in search_results.items():
+    for key, value in enumerate(search_results.values(), start=1):
         text = value["text"]
         id = value["id"]
         title = value["title"]
