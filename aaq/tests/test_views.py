@@ -396,17 +396,17 @@ class SearchViewTests(APITestCase):
         self.assertIn("matched_rules", response.json())
 
         assert response.json() == {
-            "message": "*0* - Example content title\n"
-            "*1* - Another example content title",
+            "message": "*1* - Example content title\n"
+            "*2* - Another example content title",
             "body": {
-                "0": {"text": "Example content text", "id": 23},
-                "1": {"text": "Another example content text", "id": 12},
+                "1": {"text": "Example content text", "id": 23},
+                "2": {"text": "Another example content text", "id": 12},
             },
             "feedback_secret_key": "secret-key-12345-abcde",
             "query_id": 1,
             "details": {
-                "0": {"distance": 0.1, "urgency_rule": "Blurry vision and dizziness"},
-                "1": {"distance": 0.2, "urgency_rule": "Nausea that lasts for 3 days"},
+                "1": {"distance": 0.1, "urgency_rule": "Blurry vision and dizziness"},
+                "2": {"distance": 0.2, "urgency_rule": "Nausea that lasts for 3 days"},
             },
             "is_urgent": True,
             "matched_rules": [

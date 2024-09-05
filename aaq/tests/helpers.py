@@ -89,13 +89,13 @@ class FakeAaqApi:
             "llm_response": None,
             "query_id": 1,
             "search_results": {
-                "0": {
+                "1": {
                     "distance": 0.1,
                     "id": 23,
                     "text": "Example content text",
                     "title": "Example content title",
                 },
-                "1": {
+                "2": {
                     "distance": 0.2,
                     "id": 12,
                     "text": "Another example content text",
@@ -124,8 +124,8 @@ class FakeAaqUdV2Api:
     def post_urgency_detect_return_true(self, request):
         resp_body = {
             "details": {
-                "0": {"distance": 0.1, "urgency_rule": "Blurry vision and dizziness"},
-                "1": {"distance": 0.2, "urgency_rule": "Nausea that lasts for 3 days"},
+                "1": {"distance": 0.1, "urgency_rule": "Blurry vision and dizziness"},
+                "2": {"distance": 0.2, "urgency_rule": "Nausea that lasts for 3 days"},
             },
             "is_urgent": True,
             "matched_rules": [
