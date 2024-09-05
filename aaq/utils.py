@@ -13,7 +13,9 @@ def check_urgency_v2(message_text):
         "Content-Type": "application/json",
     }
 
-    response = requests.request("POST", url, json=message_text, headers=headers)
+    response = requests.request(
+        "POST", url, json={"message_text": message_text}, headers=headers
+    )
     response.raise_for_status()
 
     return response.json()
