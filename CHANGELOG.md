@@ -1,4 +1,18 @@
 # Changelog
+# 0.10.23
+1. start search results from 1
+([#626](https://github.com/praekeltfoundation/ndoh-hub/pull/626))
+2. fix urgency detect payload
+([#625](https://github.com/praekeltfoundation/ndoh-hub/pull/625))
+3. use the correct endpoint for urgency detect
+([#624](https://github.com/praekeltfoundation/ndoh-hub/pull/624))
+4. update new aaq urls
+([#623](https://github.com/praekeltfoundation/ndoh-hub/pull/623))
+5. add assert for bearer token
+([#622](https://github.com/praekeltfoundation/ndoh-hub/pull/622))
+6. Adding postgres v16 to application tests
+([#621](https://github.com/praekeltfoundation/ndoh-hub/pull/621))
+
 
 # 0.10.22
 1. Ignore events after action is completed
