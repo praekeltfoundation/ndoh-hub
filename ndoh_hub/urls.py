@@ -8,7 +8,6 @@ from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.documentation import include_docs_urls
 
 from eventstore.views import (
-    AdaAssessmentNotificationViewSet,
     BabyDobSwitchViewSet,
     BabySwitchViewSet,
     CDUAddressUpdateViewSet,
@@ -68,11 +67,6 @@ v2router.register("feedback", FeedbackViewSet)
 v2router.register("cduaddressupdate", CDUAddressUpdateViewSet)
 v2router.register("healthcheckuserprofile", HealthCheckUserProfileViewSet)
 v2router.register("dbeonbehalfofprofile", DBEOnBehalfOfProfileViewSet)
-v2router.register(
-    "adaassessmentnotification",
-    AdaAssessmentNotificationViewSet,
-    basename="adaassessmentnotification",
-)
 v2router.register("deliveryfailure", DeliveryFailureViewSet)
 v2router.register("events", WhatsAppEventsViewSet)
 v2router.register("whatsapptemplatesendstatus", WhatsAppTemplateSendStatusViewSet)
@@ -94,7 +88,6 @@ urlpatterns = [
     re_path(r"^", include("mqr.urls")),
     re_path(r"^", include("aaq.urls")),
     re_path(r"^", include("registrations.urls")),
-    path("", include("ada.urls")),
     re_path(
         r"^api/v1/forgetcontact/", ForgetContactView.as_view(), name="forgetcontact"
     ),

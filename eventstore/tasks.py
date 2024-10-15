@@ -20,7 +20,6 @@ from eventstore.models import (
     BabySwitch,
     ChannelSwitch,
     CHWRegistration,
-    Covid19Triage,
     DeliveryFailure,
     EddSwitch,
     Event,
@@ -40,14 +39,8 @@ from eventstore.models import (
     WhatsAppTemplateSendStatus,
 )
 from ndoh_hub.celery import app
-from ndoh_hub.utils import (
-    get_mom_age,
-    get_random_date,
-    get_today,
-    rapidpro,
-    send_slack_message,
-)
-from registrations.models import ClinicCode, JembiSubmission
+from ndoh_hub.utils import get_random_date, get_today, rapidpro, send_slack_message
+from registrations.models import JembiSubmission
 
 
 @app.task
@@ -503,88 +496,6 @@ def upload_momconnect_import(mcimport_id):
 
     mcimport.status = MomConnectImport.Status.COMPLETE
     mcimport.save()
-
-
-@app.task(
-    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
-    retry_backoff=True,
-    max_retries=20,
-    acks_late=True,
-    soft_time_limit=10,
-    time_limit=15,
-)
-def process_ada_assessment_notification(
-    username, id, patient_id, patient_dob, observations, timestamp
-):
-    contact = rapidpro.get_contacts(uuid=patient_id).first(retry_on_rate_exceed=True)
-    if not contact or not contact.urns or not contact.fields.get("facility_code"):
-        # Contact doesn't exist, or we don't have a full clinic registration, so ignore
-        # the notification
-        logger.info(f"Cannot find contact with UUID {patient_id}, skipping processing")
-        return
-
-    try:
-        cliniccode = ClinicCode.objects.get(value=contact.fields["facility_code"])
-    except ClinicCode.DoesNotExist:
-        # We don't recognise this contact's clinic code, so ignore notification
-        logger.info(
-            f"Cannot find clinic code {contact.fields['facility_code']}, skipping "
-            "processing"
-        )
-        return
-
-    rapidpro.update_contact(contact, fields={"date_of_birth": patient_dob})
-
-    _, msisdn = contact.urns[0].split(":")
-    msisdn = f"+{msisdn.lstrip('+')}"
-
-    age_years = get_mom_age(get_today(), patient_dob)
-    if age_years < 18:
-        age = Covid19Triage.AGE_U18
-    elif age_years < 40:
-        age = Covid19Triage.AGE_18T40
-    elif age_years <= 65:
-        age = Covid19Triage.AGE_40T65
-    else:
-        age = Covid19Triage.AGE_O65
-
-    exposure = observations.get("possible contact with 2019 novel coronavirus")
-    if exposure is True:
-        exposure = Covid19Triage.EXPOSURE_YES
-    elif exposure is False:
-        exposure = Covid19Triage.EXPOSURE_NO
-    else:
-        exposure = Covid19Triage.EXPOSURE_NOT_SURE
-
-    triage = Covid19Triage(
-        deduplication_id=id,
-        msisdn=msisdn,
-        source="Ada",
-        age=age,
-        date_of_birth=patient_dob,
-        province=cliniccode.province,
-        city=cliniccode.name,
-        city_location=cliniccode.location,
-        fever=observations["fever"],
-        cough=observations["cough"],
-        sore_throat=observations["sore throat"],
-        smell=observations.get("diminished sense of taste")
-        or observations.get("reduced sense of smell"),
-        muscle_pain=observations.get("generalized muscle pain"),
-        difficulty_breathing=observations.get("difficulty breathing"),
-        exposure=exposure,
-        tracing=False,
-        gender=Covid19Triage.GENDER_FEMALE,
-        completed_timestamp=timestamp,
-        created_by=username,
-        data={
-            "age": age_years,
-            "pregnant": bool(contact.fields.get("prebirth_messaging")),
-        },
-    )
-    triage.risk = triage.calculate_risk()
-    triage.full_clean()
-    triage.save()
 
 
 @app.task(
