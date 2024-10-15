@@ -29,8 +29,3 @@ MQR_SEND_AIRTIME_FLOW_ID = "mqr-send-airtime-flow-uuid"
 AAQ_CORE_API_URL = "http://aaqcore"
 AAQ_UD_API_URL = "http://aaqud"
 AAQ_V2_API_URL = "http://aaq_v2"
-
-
-ADA_EDC_STUDY_URL = "http://castor"
-ADA_EDC_STUDY_ID = "test-study-id"
-ADA_EDC_INSTITUTE_ID = "test-institute-id"
