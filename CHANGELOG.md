@@ -1,4 +1,9 @@
 # Changelog
+# 0.10.24
+1. Remove ada from hub
+([#629](https://github.com/praekeltfoundation/ndoh-hub/pull/629))
+2. Remove ada test config from hub
+([#630](https://github.com/praekeltfoundation/ndoh-hub/pull/630))
 # 0.10.23
 1. start search results from 1
 ([#626](https://github.com/praekeltfoundation/ndoh-hub/pull/626))
