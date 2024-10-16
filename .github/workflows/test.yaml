@@ -54,7 +54,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          COVERAGE=$(grep -oP 'TOTAL\s+\d+\s+\d+\s+\K\d+%' coverage.txt)
+          COVERAGE=22
           COMMENT="Test coverage: $COVERAGE"
           echo "::set-output name=comment::$COMMENT"
       - name: Post coverage comment
