@@ -510,25 +510,6 @@ def post_random_mc_contacts_to_slack_channel():
     return post_random_contacts_to_slack_channel()
 
 
-@app.task(
-    autoretry_for=(RequestException, SoftTimeLimitExceeded, TembaHttpError),
-    retry_backoff=True,
-    max_retries=15,
-    acks_late=True,
-    soft_time_limit=10,
-    time_limit=15,
-)
-def post_random_mqr_contacts_to_slack_channel():
-    if not settings.MQR_STUDY_ACTIVE:
-        return
-    study_start_date = datetime.strptime(
-        settings.MQR_STUDY_START_DATE, "%Y-%m-%d"
-    ).date()
-    return post_random_contacts_to_slack_channel(
-        "MQR", study_start_date, "MQR active contacts"
-    )
-
-
 def post_random_contacts_to_slack_channel(
     contact_type="MomConnect", start_date=None, group=None
 ):
