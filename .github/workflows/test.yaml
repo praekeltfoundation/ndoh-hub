@@ -54,13 +54,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          COVERAGE=22
+          COVERAGE=$(grep -oP 'TOTAL\s+\d+\s+\d+\s+\d+\s+\d+\s+\K\d+%' coverage.txt)
           COMMENT="Test coverage: $COVERAGE"
           echo "::set-output name=comment::$COMMENT"
-      - name: Post coverage comment
-        run: |
-          curl -H "Authorization: token $GITHUB_TOKEN" \
-               -X POST \
-               -d "{\"body\":\"${{ steps.comment.outputs.comment }}\"}" \
-               "https://api.github.com/repos/${{ github.repository }} \
-               /issues/${{ github.event.issue.number }}/comments"
+      # - name: Post coverage comment
+      #   run: |
+      #     curl -H "Authorization: token $GITHUB_TOKEN" \
+      #          -X POST \
+      #          -d "{\"body\":\"${{ steps.comment.outputs.comment }}\"}" \
+      #          "https://api.github.com/repos/${{ github.repository }} \
+      #          /issues/${{ github.event.issue.number }}/comments"
