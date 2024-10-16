@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        postgres_version: ['14','16']
+        postgres_version: ['14', '16']
     services:
       postgres:
         image: postgres:${{ matrix.postgres_version }}
@@ -42,9 +42,25 @@ jobs:
       - name: Lint
         run: |
           flake8
-          python manage.py makemigrations registrations changes eventstore --dry-run | grep 'No changes detected' || (echo 'There are changes which require migrations.' && exit 1)
+          python manage.py makemigrations registrations changes eventstore mqr \
+          --dry-run | grep 'No changes detected' || \
+          (echo 'There are changes which require migrations.' && exit 1)
           black --check .
           isort -c -rc .
-      - name: Test
+      - name: Test coverage
         run: |
-          py.test
+          py.test --cov --cov-report=term-missing | tee coverage.txt
+      - name: Comment on PR with coverage
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COVERAGE=$(grep -oP 'TOTAL\s+\d+\s+\d+\s+\K\d+%' coverage.txt)
+          COMMENT="Test coverage: $COVERAGE"
+          echo "::set-output name=comment::$COMMENT"
+      - name: Post coverage comment
+        run: |
+          curl -H "Authorization: token $GITHUB_TOKEN" \
+               -X POST \
+               -d "{\"body\":\"${{ steps.comment.outputs.comment }}\"}" \
+               "https://api.github.com/repos/${{ github.repository }} \
+               /issues/${{ github.event.issue.number }}/comments"
