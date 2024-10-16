@@ -50,38 +50,20 @@ jobs:
       - name: Run tests and generate coverage report
         run: |
           py.test --cov --cov-report=term-missing | tee coverage.txt
-      - name: Get changed lines in the PR
-        id: get_diff
+      - name: Extract coverage percentage
+        id: extract_coverage
         run: |
-          git fetch origin main
-          git diff origin/main --unified=0 > diff.txt
-          grep '^@@' diff.txt | awk '{print $2}' > changed_lines.txt
-      - name: Extract untested new lines
-        id: untested_new_code
-        run: |
-          COVERAGE_FILE=coverage.txt
-          DIFF_FILE=changed_lines.txt
-          UNTTESTED_LINES=""
-          
-          # Loop through the changed lines to find untested lines
-          while IFS= read -r LINE; do
-              LINE_NUM=$(echo "$LINE" | grep -oP '\d+')
-              UNTTESTED_LINE=$(grep -E "^ *$LINE_NUM " $COVERAGE_FILE | grep 'missed')
-              if [ -n "$UNTTESTED_LINE" ]; then
-                  UNTTESTED_LINES="$UNTTESTED_LINES\n$UNTTESTED_LINE"
-              fi
-          done < $DIFF_FILE
-          
-          echo "UNTTESTED_LINES=$UNTTESTED_LINES" >> $GITHUB_ENV
+          COVERAGE=$(grep -oP 'TOTAL\s+\d+\s+\d+\s+\d+\s+\d+\s+\K\d+%' coverage.txt)
+          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
 
       - name: Post coverage comment on PR
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const untested = process.env.UNTTESTED_LINES;
+            const coverage = process.env.COVERAGE;
             const prNumber = context.payload.pull_request.number;
-            const commentBody = `Untested new code:\n${untested || "No untested new code found"}`;
+            const commentBody = `Test coverage: ${coverage}`;
 
             await github.rest.issues.createComment({
               issue_number: prNumber,
