@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="ndoh-hub",
-    version="0.10.24",
+    version="0.10.25",
     url="http://github.com/praekeltfoundation/ndoh-hub",
     license="BSD",
     author="Praekelt Foundation",

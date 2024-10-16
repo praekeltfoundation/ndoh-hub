@@ -1,4 +1,7 @@
 # Changelog
+# 0.10.25
+1. Remove mqr from hub
+([#633](https://github.com/praekeltfoundation/ndoh-hub/pull/633))
 # 0.10.24
 1. Remove ada from hub
 ([#629](https://github.com/praekeltfoundation/ndoh-hub/pull/629))
