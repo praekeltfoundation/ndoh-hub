@@ -85,7 +85,6 @@ urlpatterns = [
     re_path(r"^api/auth/", include("rest_framework.urls", namespace="rest_framework")),
     re_path(r"^api/token-auth/", obtain_auth_token),
     re_path(r"^docs/", include_docs_urls(title="NDOH Hub")),
-    re_path(r"^", include("mqr.urls")),
     re_path(r"^", include("aaq.urls")),
     re_path(r"^", include("registrations.urls")),
     re_path(

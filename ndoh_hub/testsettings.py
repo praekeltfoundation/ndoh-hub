@@ -23,9 +23,6 @@ HCS_STUDY_C_ACTIVE = True
 
 HANDLE_EXPIRED_HELPDESK_CONTACTS_ENABLED = True
 
-MQR_CONTENTREPO_URL = "http://contentrepo"
-MQR_SEND_AIRTIME_FLOW_ID = "mqr-send-airtime-flow-uuid"
-
 AAQ_CORE_API_URL = "http://aaqcore"
 AAQ_UD_API_URL = "http://aaqud"
 AAQ_V2_API_URL = "http://aaq_v2"
