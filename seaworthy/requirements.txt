@@ -1,2 +1,0 @@
-seaworthy[pytest] >= 0.3.0
-attrs >=17.4.0,<= 19.1.0
