@@ -47,14 +47,15 @@ jobs:
           (echo 'There are changes which require migrations.' && exit 1)
           black --check .
           isort -c -rc .
-      - name: Test coverage
+      - name: Run tests and generate coverage report
         run: |
           py.test --cov --cov-report=term-missing | tee coverage.txt
-      - name: Exteact coverage
+      - name: Extract coverage percentage
+        id: extract_coverage
         run: |
           COVERAGE=$(grep -oP 'TOTAL\s+\d+\s+\d+\s+\d+\s+\d+\s+\K\d+%' coverage.txt)
-          # COMMENT="Test coverage: $COVERAGE"
-          # echo "::set-output name=comment::$COMMENT"
+          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+
       - name: Post coverage comment on PR
         uses: actions/github-script@v6
         with:
@@ -64,9 +65,9 @@ jobs:
             const prNumber = context.payload.pull_request.number;
             const commentBody = `Test coverage: ${coverage}`;
 
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
+            await github.rest.issues.createComment({
+              issue_number: prNumber,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: commentBody
-            })
+            });
