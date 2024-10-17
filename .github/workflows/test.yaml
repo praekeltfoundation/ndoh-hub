@@ -62,42 +62,15 @@ jobs:
           git diff origin/develop --unified=0 > diff.txt
           grep '^@@' diff.txt | awk '{print $2}' > changed_lines.txt
 
-      # - name: Check for untested lines
-      #   id: check_coverage
-      #   run: |
-      #     UNTTESTED_LINES=""
-      #     while IFS= read -r line; do
-      #         line_number=$(echo $line | grep -oP '\d+')
-      #         coverage_info=$(grep -E "^ *$line_number " coverage.txt)
-      #         if [[ $coverage_info == *"missed"* ]]; then
-      #             UNTTESTED_LINES="$UNTTESTED_LINES\nLine $line_number is not covered by tests."
-      #         fi
-      #     done < changed_lines.txt
-      #     echo "UNTTESTED_LINES=$UNTTESTED_LINES" >> $GITHUB_ENV
-
       - name: Check for untested lines
         id: check_coverage
         run: |
-          # Initialize the variable to capture untested lines
           UNTTESTED_LINES=""
-
-          # Loop through changed lines from the diff
           while IFS= read -r line; do
-              # Extract the line number from the diff
-              line_number=$(echo "$line" | grep -oP '\d+')
-              
-              # Get the coverage info for the line number
+              line_number=$(echo $line | grep -oP '\d+')
               coverage_info=$(grep -E "^ *$line_number " coverage.txt)
-              
-              # Check if the line is missing coverage
-              if [[ $coverage_info == *"missed"* ]]; then
-                  UNTTESTED_LINES="$UNTTESTED_LINES\nLine $line_number is not covered by tests."
-              fi
           done < changed_lines.txt
 
-          # Output the result to GitHub environment
-          echo "UNTTESTED_LINES=$UNTTESTED_LINES"
-          echo "UNTTESTED_LINES=$UNTTESTED_LINES" >> $GITHUB_ENV
       - name: Post coverage comment on PR
         uses: actions/github-script@v6
         with:
