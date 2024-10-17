@@ -87,7 +87,7 @@ jobs:
             const coverage = process.env.COVERAGE;
             const prNumber = context.payload.pull_request.number;
             const untestedLines = process.env.UNTTESTED_LINES || "None";
-            const commentBody = `Test coverage: ${coverage}\n\n\nFeature Untested lines:${untestedLines}`;
+            const commentBody = `PR Untested Lines: ${untestedLines}\n\n\nOverall Test coverage: ${coverage}`;
 
             await github.rest.issues.createComment({
               issue_number: prNumber,
