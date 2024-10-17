@@ -5,6 +5,9 @@ on: [pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
     strategy:
       matrix:
         postgres_version: ['14','16']
@@ -45,7 +48,7 @@ jobs:
           python manage.py makemigrations registrations changes eventstore --dry-run | grep 'No changes detected' || (echo 'There are changes which require migrations.' && exit 1)
           black --check .
           isort -c -rc .
-      - name: Run tests and display coverage
+      - name: Test
         run: |
           py.test
       - name: Coverage comment
