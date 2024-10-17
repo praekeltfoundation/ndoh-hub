@@ -77,7 +77,7 @@ jobs:
                   echo "File: $current_file, Changed lines: $line_numbers" >> changed_lines.txt
               fi
           done < diff.txt
-          changed_lines=$(cat changed_lines.txt)
+          CONTENT=$(cat changed_lines.txt)
           echo "changed_lines=$changed_lines" >> $GITHUB_ENV
 
           cat changed_lines.txt
