@@ -64,15 +64,20 @@ jobs:
           echo "Changes in files:" > changed_lines.txt
 
           while IFS= read -r line; do
+              # Check if the line indicates a new file (diff line)
               if [[ $line == diff* ]]; then
+                  # Extract the filename from the diff line
                   current_file=$(echo "$line" | awk '{print $3}' | sed 's|^b/||')
               fi
 
+              # Check if the line indicates changes (hunk header)
               if [[ $line == @@* ]]; then
+                  # Extract line numbers from the hunk header
                   line_numbers=$(echo "$line" | grep -oP '\d+(?=\s)' | xargs | tr ' ' ',')
                   echo "File: $current_file, Changed lines: $line_numbers" >> changed_lines.txt
               fi
           done < diff.txt
+
           cat changed_lines.txt
 
 
