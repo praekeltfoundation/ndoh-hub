@@ -60,7 +60,11 @@ jobs:
         run: |
           git fetch origin develop
           git diff origin/develop --unified=0 > diff.txt
-          grep '^@@' diff.txt | awk '{print $2}' > changed_lines.txt
+          awk '/^@@/ {print $0}' diff.txt | while IFS= read -r line; do
+              # Extract the file name and line numbers
+              line_number=$(echo "$line" | grep -oP '\d+(?=\s)' | xargs)
+              echo "Changed lines: $line_number"
+          done > changed_lines.txt
           cat changed_lines.txt
 
       - name: Check for untested lines
