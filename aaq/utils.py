@@ -73,3 +73,8 @@ def search(query_text, generate_llm_response, query_metadata):
     json_msg.update(check_urgency_response)
 
     return json_msg
+
+
+def test_untested_lines(num_one, num_two):
+    total_s = num_one + num_two
+    return total_s
