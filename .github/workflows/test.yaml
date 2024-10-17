@@ -68,7 +68,7 @@ jobs:
           UNTTESTED_LINES=""
           while IFS= read -r line; do
               line_number=$(echo "$line" | grep -oP '\d+')
-              coverage_info=$(grep -E "^ *$line_number " coverage.txt || true)
+              coverage_info=$(grep -E "^ *$line_number " changed_lines.txt || true)
               
               echo "Processing line: $line_number"
               echo "Coverage info: $coverage_info"
