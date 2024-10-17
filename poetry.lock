@@ -738,13 +738,13 @@ files = [
 
 [[package]]
 name = "iso8601"
-version = "0.1.16"
+version = "2.1.0"
 description = "Simple module to parse ISO 8601 dates"
 optional = false
-python-versions = "*"
+python-versions = ">=3.7,<4.0"
 files = [
-    {file = "iso8601-0.1.16-py2.py3-none-any.whl", hash = "sha256:906714829fedbc89955d52806c903f2332e3948ed94e31e85037f9e0226b8376"},
-    {file = "iso8601-0.1.16.tar.gz", hash = "sha256:36532f77cc800594e8f16641edae7f1baf7932f05d8e508545b95fc53c6dc85b"},
+    {file = "iso8601-2.1.0-py3-none-any.whl", hash = "sha256:aac4145c4dcb66ad8b648a02830f5e2ff6c24af20f4f482689be402db2429242"},
+    {file = "iso8601-2.1.0.tar.gz", hash = "sha256:6b1d3829ee8921c4301998c909f7829fa9ed3cbdac0d3b16af2d743aed1ba8df"},
 ]
 
 [[package]]
@@ -1283,18 +1283,19 @@ files = [
 
 [[package]]
 name = "rapidpro-python"
-version = "2.15.0"
-description = "Python client library for the RapidPro API"
+version = "2.6.1"
+description = "Python client library for the RapidPro"
 optional = false
-python-versions = "<4.0,>=3.9"
+python-versions = "*"
 files = [
-    {file = "rapidpro_python-2.15.0-py3-none-any.whl", hash = "sha256:3bdd1d0777d18c18a7851d8837a8c62ef844bc443a6d41ab3eb89f485afdb918"},
-    {file = "rapidpro_python-2.15.0.tar.gz", hash = "sha256:4bd6298d24c929b37ae1f51632beaf028c4d566f803848c57e28a54cf20cbbb4"},
+    {file = "rapidpro-python-2.6.1.tar.gz", hash = "sha256:9dfa15fe9345553433f8a9f8ed9c0c53fdd60382b08a780cf95a317525f0be6f"},
+    {file = "rapidpro_python-2.6.1-py2.py3-none-any.whl", hash = "sha256:5ca7174d68faa569f50c0d98858d31af4496cf413c146cd6c8b0f190e9f333d0"},
 ]
 
 [package.dependencies]
-iso8601 = ">=0.1.13,<0.2.0"
-requests = ">=2.25.0,<3.0.0"
+iso8601 = "*"
+pytz = "*"
+requests = "*"
 
 [[package]]
 name = "raven"
@@ -1578,4 +1579,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "02a19101de08b0b2182dedb222de9f3ffc23622fc7fea9b78b01d7fdee5b50e1"
+content-hash = "d55bbd5f0387736ec6d927f267f4f41f40271e802dec11f930d900fa1480be87"
