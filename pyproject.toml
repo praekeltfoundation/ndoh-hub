@@ -1,0 +1,46 @@
+[tool.poetry]
+name = "ndoh-hub"
+version = "0.10.25"
+description = "NDOH Registration and Change service for MomConnect and NurseConnect"
+authors = ["Fritz Brand <fritz@reachdigitalhealth.org>"]
+repository = "https://github.com/praekeltfoundation/ndoh-hub"
+license = "BSD"
+readme = "README.md"
+
+packages = [
+    { include = "aaq" },
+    { include = "ada" },
+    { include = "changes" },
+    { include = "eventstore" },
+    { include = "mqr" },
+    { include = "ndoh-hub" },
+    { include = "registrations" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+Django = "4.2.15"
+djangorestframework = "3.15.2"
+coreapi = "2.3.3"
+Markdown = "3.1.1"
+dj-database-url = "1.2.0"
+django-environ = "0.10.0"
+psycopg2-binary = "2.8.6"
+raven = "6.9.0"
+django-filter = "2.4.0"
+celery = "5.2.3"
+six = "1.11.0"
+requests = "2.32.0"
+demands = "3.0.0"
+structlog = "18.2.0"
+phonenumberslite = "8.9.15"
+django-simple-history = "3.3.0"
+openpyxl = "2.5.9"
+iso-639 = "0.4.5"
+django-prometheus = "2.2.0"
+rapidpro-python = "2.6.1"
+pycountry = "19.8.18"
+
+
+
+
