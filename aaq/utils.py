@@ -76,5 +76,5 @@ def search(query_text, generate_llm_response, query_metadata):
 
 
 def test_untested_lines(num_one, num_two):
-    total_sum = num_one+num_two
+    total_sum = num_one + num_two
     return total_sum
