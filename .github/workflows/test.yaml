@@ -72,13 +72,17 @@ jobs:
 
               # Check if the line indicates changes (hunk header)
               if [[ $line == @@* ]]; then
-                  # Extract line numbers from the hunk header
-                  line_numbers=$(echo "$line" | grep -oP '\d+(?=\s)' | xargs | tr ' ' ',')
-                  echo "File: $current_file, Changed lines: $line_numbers" >> changed_lines.txt
+                  # Extract old and new line numbers
+                  old_line=$(echo "$line" | grep -oP '(?<=-)\d+(?=,)')
+                  new_line=$(echo "$line" | grep -oP '(?<=+)\d+(?=,)')
+
+                  # Output the line numbers in the desired format
+                  echo "File: $current_file, Changed lines: $old_line-$((old_line + 2)) (new line: $new_line-$((new_line + 2)))" >> changed_lines.txt
               fi
           done < diff.txt
 
           cat changed_lines.txt
+
 
 
       - name: Check for untested lines
