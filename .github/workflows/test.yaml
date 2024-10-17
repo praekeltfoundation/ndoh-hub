@@ -70,8 +70,8 @@ jobs:
               line_number=$(echo "$line" | grep -oP '\d+')
               coverage_info=$(grep -E "^ *$line_number " coverage.txt || true)
               
-              echo "Processing line: $line_number"
-              echo "Coverage info: $coverage_info"
+              # echo "Processing line: $line_number"
+              # echo "Coverage info: $coverage_info"
               
               if [[ $coverage_info == *"missed"* ]]; then
                   UNTTESTED_LINES="$UNTTESTED_LINES\nLine $line_number is not covered by tests."
