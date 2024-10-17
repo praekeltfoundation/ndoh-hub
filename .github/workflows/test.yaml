@@ -61,6 +61,7 @@ jobs:
           git fetch origin develop
           git diff origin/develop --unified=0 > diff.txt
           grep '^@@' diff.txt | awk '{print $2}' > changed_lines.txt
+          cat changed_lines.txt
 
       - name: Check for untested lines
         id: check_coverage
