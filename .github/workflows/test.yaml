@@ -5,9 +5,6 @@ on: [pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      contents: write
     strategy:
       matrix:
         postgres_version: ['14','16']
@@ -45,7 +42,7 @@ jobs:
       - name: Lint
         run: |
           flake8
-          python manage.py makemigrations registrations changes eventstore --dry-run | grep 'No changes detected' || (echo 'There are changes which require migrations.' && exit 1)
+          python manage.py makemigrations registrations changes eventstore mqr --dry-run | grep 'No changes detected' || (echo 'There are changes which require migrations.' && exit 1)
           black --check .
           isort -c -rc .
       - name: Test
@@ -56,9 +53,4 @@ jobs:
         uses: py-cov-action/python-coverage-comment-action@v3
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Store Pull Request comment to be posted
-        uses: actions/upload-artifact@v4
-        if: steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true'
-        with:
-          name: python-coverage-comment-action
-          path: python-coverage-comment-action.txt
+
