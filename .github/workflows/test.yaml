@@ -57,7 +57,11 @@ jobs:
           echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
       - name: Get changed lines in the PR
         id: get_diff
-        run: echo ${{ steps.changed_lines.outputs.changed_lines }}
+        run: |
+          git fetch origin develop
+          git diff origin/develop --unified=0 > diff.txt
+          grep '^@@' diff.txt | awk '{print $2}' > changed_lines.txt
+          cat changed_lines.txt
 
       - name: Check for untested lines
         id: check_coverage
