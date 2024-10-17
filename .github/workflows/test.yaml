@@ -64,39 +64,48 @@ jobs:
           echo "Changes in files:" > changed_lines.txt
 
           while IFS= read -r line; do
-              # Check if the line indicates a new file (diff line)
               if [[ $line == diff* ]]; then
-                  # Extract the filename from the diff line
                   current_file=$(echo "$line" | awk '{print $3}' | sed 's|^b/||')
               fi
 
-              # Check if the line indicates changes (hunk header)
               if [[ $line == @@* ]]; then
-                  # Extract line numbers from the hunk header
+                  # Get line numbers from the hunk header
                   line_numbers=$(echo "$line" | grep -oP '\d+(?=\s)' | xargs | tr ' ' ',')
                   echo "File: $current_file, Changed lines: $line_numbers" >> changed_lines.txt
               fi
           done < diff.txt
 
-          cat changed_lines.txt
+          CONTENT=$(cat changed_lines.txt)
+          echo "changed_lines=$CONTENT" >> $GITHUB_ENV
 
+          cat changed_lines.txt
 
       - name: Check for untested lines
         id: check_coverage
         run: |
           UNTTESTED_LINES=""
+          
+          # Assuming you have a way to get coverage data, replace 'coverage.txt' with your actual coverage file
           while IFS= read -r line; do
               line_number=$(echo "$line" | grep -oP '\d+')
-              coverage_info=$(grep -E "^ *$line_number " changed_lines.txt || true)
               
+              # Check the coverage file for coverage info for this line number
+              coverage_info=$(grep -E "^ *$line_number " coverage.txt || true)
+
               echo "Processing line: $line_number"
               echo "Coverage info: $coverage_info"
-              
+
+              # Check if the coverage info indicates the line is missed
               if [[ $coverage_info == *"missed"* ]]; then
                   UNTTESTED_LINES="$UNTTESTED_LINES\nLine $line_number is not covered by tests."
               fi
           done < changed_lines.txt
-          echo "UNTTESTED_LINES=$UNTTESTED_LINES" >> $GITHUB_ENV
+
+          # Save untested lines to the environment variable
+          echo -e "UNTTESTED_LINES=$UNTTESTED_LINES" >> $GITHUB_ENV
+
+          # Optional: Print untested lines for debugging
+          echo "Untested lines: $UNTTESTED_LINES"
 
       - name: Post coverage comment on PR
         uses: actions/github-script@v6
