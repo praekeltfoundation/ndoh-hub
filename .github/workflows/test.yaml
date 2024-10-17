@@ -60,12 +60,21 @@ jobs:
         run: |
           git fetch origin develop
           git diff origin/develop --unified=0 > diff.txt
-          awk '/^@@/ {print $0}' diff.txt | while IFS= read -r line; do
-              # Extract the file name and line numbers
-              line_number=$(echo "$line" | grep -oP '\d+(?=\s)' | xargs)
-              echo "Changed lines: $line_number"
-          done > changed_lines.txt
+          current_file=""
+          echo "Changes in files:" > changed_lines.txt
+
+          while IFS= read -r line; do
+              if [[ $line == diff* ]]; then
+                  current_file=$(echo "$line" | awk '{print $3}' | sed 's|^b/||')
+              fi
+
+              if [[ $line == @@* ]]; then
+                  line_numbers=$(echo "$line" | grep -oP '\d+(?=\s)' | xargs | tr ' ' ',')
+                  echo "File: $current_file, Changed lines: $line_numbers" >> changed_lines.txt
+              fi
+          done < diff.txt
           cat changed_lines.txt
+
 
       - name: Check for untested lines
         id: check_coverage
