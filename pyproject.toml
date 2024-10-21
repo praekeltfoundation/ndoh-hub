@@ -94,7 +94,6 @@ ignore = [
     "S501", #TODO: Probable use of 'requests' call with 'verify=False' disabling SSL certificate checks
     "B007", # TODO: Loop control variable 'status_code' not used within loop body
     "SIM115", # TODO: Use a context manager for opening files
-    "S106", # TODO: Possible hardcoded password assigned to argument
     #Ignores below this line needs to be checked out
     "S101", # TODO: Use of 'assert' detected - FWB: Looks like this is only used in migration files
     "S608", # TODO: Possible SQL injection vector through string-based query construction

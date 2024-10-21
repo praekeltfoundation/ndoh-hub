@@ -78,7 +78,7 @@ def fields_from_contact(field_mapping, contact):
 
 
 if __name__ == "__main__":
-    conn = psycopg2.connect(dbname="temba", user="temba", password="temba")
+    conn = psycopg2.connect(dbname="temba", user="temba", password="temba")  # noqa: S106 - Probably OK here
     cursor = conn.cursor()
     cursor.execute(
         """
