@@ -40,11 +40,7 @@ async def get_rapidpro_contact(session, contact_id):
 
 
 def in_postbirth_group(contact):
-    for group in contact["groups"]:
-        if "post" in group["name"].lower():
-            return True
-
-    return False
+    return any("post" in group["name"].lower() for group in contact["groups"])
 
 
 def get_contact_msisdn(contact):

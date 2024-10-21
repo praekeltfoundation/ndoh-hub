@@ -97,7 +97,6 @@ ignore = [
     "S106", # TODO: Possible hardcoded password assigned to argument
     "S110", # TODO: 'try'-'except'-'pass' detected, consider logging the exception
     "S608", # TODO: Possible SQL injection vector through string-based query construction
-    "SIM110", # TODO: Use 'return any("post" in group["name"].lower() for group in contact["groups"])' instead of 'for' loop
     #Ignores below this line needs to be checked out
     "S101", # TODO: Use of 'assert' detected - FWB: Looks like this is only used in migration files
  
