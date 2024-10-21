@@ -28,7 +28,7 @@ class Source(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return "%s" % self.name
+        return "{}".format(self.name)
 
 
 class Registration(models.Model):

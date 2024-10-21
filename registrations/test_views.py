@@ -127,7 +127,9 @@ class FacilityCheckViewTests(APITestCase):
 class WhatsAppContactCheckViewTests(AuthenticatedAPITestCase):
     def setUp(self):
         super().setUp()
-        self.normalclient.credentials(HTTP_AUTHORIZATION="Bearer %s" % self.normaltoken)
+        self.normalclient.credentials(
+            HTTP_AUTHORIZATION="Bearer {}".format(self.normaltoken)
+        )
 
     def test_authentication_required(self):
         """

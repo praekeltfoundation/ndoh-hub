@@ -190,7 +190,7 @@ def get_random_date(start_date=None):
     time_between_dates = end_date - start_date
     days_between_dates = time_between_dates.days
 
-    random_number_of_days = random.randrange(days_between_dates) # noqa: S311 - Not being used for crypto purposes
+    random_number_of_days = random.randrange(days_between_dates)  # noqa: S311 - Not being used for crypto purposes
 
     return start_date + datetime.timedelta(days=random_number_of_days)
 
