@@ -111,7 +111,6 @@ ignore = [
     "UP010", # TODO: Unnecessary '__future__' imports 'absolute_import', 'division' for target Python version
     "S105", # TODO: Possible hardcoded password assigned
     "B018", # TODO: Found useless expression. Either assign it to a variable or remove it.
-    "B006", # TODO: Do not use mutable data structures for argument defaults
  
 ]
 

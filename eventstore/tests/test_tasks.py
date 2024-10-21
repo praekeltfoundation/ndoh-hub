@@ -29,8 +29,10 @@ class HandleOldWaitingForHelpdeskContactsTests(TestCase):
         tasks.rapidpro = TembaClient("textit.in", "test-token")
 
     def add_rapidpro_contact_list_response(
-        self, contact_id, fields, urns=["whatsapp:27820001001"]
+        self, contact_id, fields, urns=None
     ):
+        if urns is None:
+            urns = ["whatsapp:27820001001"]
         responses.add(
             responses.GET,
             "https://textit.in/api/v2/contacts.json?group=Waiting+for+helpdesk",
@@ -54,8 +56,10 @@ class HandleOldWaitingForHelpdeskContactsTests(TestCase):
         )
 
     def add_rapidpro_contact_update_response(
-        self, contact_id, fields, urns=["whatsapp:27820001001"]
+        self, contact_id, fields, urns=None
     ):
+        if urns is None:
+            urns = ["whatsapp:27820001001"]
         responses.add(
             responses.POST,
             f"https://textit.in/api/v2/contacts.json?uuid={contact_id}",
