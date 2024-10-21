@@ -36,7 +36,7 @@ class Command(BaseCommand):
     def execute_with_progress(self, func, iterator):
         total = 0
         start, d_print = time.time(), time.time()
-        for arg in iterator:
+        for total, arg in enumerate(iterator):
             func(arg)
             if time.time() - d_print > 1:
                 self.stdout.write(
@@ -44,7 +44,6 @@ class Command(BaseCommand):
                     ending="",
                 )
                 d_print = time.time()
-            total += 1
         self.stdout.write("")
 
     def handle_public_registration(self, reg):

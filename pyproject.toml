@@ -84,51 +84,51 @@ ignore = [
     "E501",  # TODO: Something about these long lines.
     "S113",  # TODO: Add request timeouts.
     "PTH118", # TODO: Switch to pathlib
-    "PTH100", # TODO: `os.path.abspath()` should be replaced by `Path.resolve()` maybe use pathlib?
-    "PTH120", # TODO: `os.path.dirname()` should be replaced by `Path.parent` maybe use pathlib?
-    "UP032", # TODO: Use f-string instead of `format` call
-    "PTH123", # TODO: `open()` should be replaced by `Path.open()`
+    "PTH100", # TODO: 'os.path.abspath()' should be replaced by 'Path.resolve()' maybe use pathlib?
+    "PTH120", # TODO: 'os.path.dirname()' should be replaced by 'Path.parent' maybe use pathlib?
+    "UP032", # TODO: Use f-string instead of 'format' call
+    "PTH123", # TODO: 'open()' should be replaced by 'Path.open()'
     "UP030", # TODO: Use implicit references for positional format fields
-    "C416", # TODO: Unnecessary `list` comprehension (rewrite using `list()`)
-    "UP004", # TODO: Class `Template` inherits from `object`
-    "S501", #TODO: Probable use of `requests` call with `verify=False` disabling SSL certificate checks
-    "B007", # TODO: Loop control variable `status_code` not used within loop body
+    "C416", # TODO: Unnecessary 'list' comprehension (rewrite using 'list()')
+    "UP004", # TODO: Class 'Template' inherits from 'object'
+    "S501", #TODO: Probable use of 'requests' call with 'verify=False' disabling SSL certificate checks
+    "B007", # TODO: Loop control variable 'status_code' not used within loop body
     "SIM115", # TODO: Use a context manager for opening files
     "S106", # TODO: Possible hardcoded password assigned to argument
-    "S110", # TODO: `try`-`except`-`pass` detected, consider logging the exception
+    "S110", # TODO: 'try'-'except'-'pass' detected, consider logging the exception
     "S608", # TODO: Possible SQL injection vector through string-based query construction
-    "SIM110", # TODO: Use `return any("post" in group["name"].lower() for group in contact["groups"])` instead of `for` loop
-    "E721", # TODO: Use `is` and `is not` for type comparisons, or `isinstance()` for isinstance checks
-    "SIM102", # TODO: Use a single `if` statement instead of nested `if` statements
-    "SIM105", # TODO: Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
-    "S112", # TODO: `try`-`except`-`continue` detected, consider logging the exception
-    "S101", # TODO: Use of `assert` detected
+    "SIM110", # TODO: Use 'return any("post" in group["name"].lower() for group in contact["groups"])' instead of 'for' loop
+    "E721", # TODO: Use 'is' and 'is not' for type comparisons, or 'isinstance()' for isinstance checks
+    "SIM102", # TODO: Use a single 'if' statement instead of nested 'if' statements
+    "SIM105", # TODO: Use 'contextlib.suppress(Exception)' instead of 'try'-'except'-'pass'
+    "S112", # TODO: 'try'-'except'-'continue' detected, consider logging the exception
+    "S101", # TODO: Use of 'assert' detected
     "UP031", # TODO: Use format specifiers instead of percent format
-    "UP008", # TODO: Use `super()` instead of `super(__class__, self)`
+    "UP008", # TODO: Use 'super()' instead of 'super(__class__, self)'
     "UP031", # TODO: Use format specifiers instead of percent format
     "S311", # TODO: Standard pseudo-random generators are not suitable for cryptographic purposes
-    "B904", # TODO: Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None`
-    "UP010", # TODO: Unnecessary `__future__` imports `absolute_import`, `division` for target Python version
+    "B904", # TODO: Within an 'except' clause, raise exceptions with 'raise ... from err' or 'raise ... from None'
+    "UP010", # TODO: Unnecessary '__future__' imports 'absolute_import', 'division' for target Python version
     "S105", # TODO: Possible hardcoded password assigned
     "B018", # TODO: Found useless expression. Either assign it to a variable or remove it.
     "B006", # TODO: Do not use mutable data structures for argument defaults
-    "C417", # TODO: Unnecessary `map` usage (rewrite using a generator expression)
-    "UP019", # TODO: `typing.Text` is deprecated, use `str`
-    "SIM103", # TODO: Return the condition `label in labels` directly
-    "SIM108", # TODO: Use ternary operator instead of `if`-`else`-block
-    "SIM113", # TODO: Use `enumerate()` for index variable `total` in `for` loop
+    "C417", # TODO: Unnecessary 'map' usage (rewrite using a generator expression)
+    "UP019", # TODO: 'typing.Text' is deprecated, use 'str'
+    "SIM103", # TODO: Return the condition 'label in labels' directly
+    "SIM108", # TODO: Use ternary operator instead of 'if'-'else'-block
+
 
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = [
-    "S101",  # It's okay to use `assert` in tests.
+    "S101",  # It's okay to use 'assert' in tests.
     "S106", # TODO: Possible hardcoded password assigned to argument: "TURN_AUTH_TOKEN"
 ]
 
 # TODO: Move this somewhere sensible?
 "**/tests.py" = [
-    "S101",  # It's okay to use `assert` in tests.
+    "S101",  # It's okay to use 'assert' in tests.
     "S106", # TODO: Possible hardcoded password assigned to argument: "TURN_AUTH_TOKEN"
 ]
 
