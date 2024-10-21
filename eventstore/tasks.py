@@ -705,8 +705,8 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
     inbound_address = inbounds[0]["from"]
     inbound_text = map(get_text_or_caption_from_turn_message, inbounds)
     inbound_text = " | ".join(list(inbound_text)[::-1])
-    labels = map(lambda m: m["_vnd"]["v1"]["labels"], inbounds)
-    labels = map(lambda label: label["value"], ichain.from_iterable(labels))
+    labels = (m["_vnd"]["v1"]["labels"] for m in inbounds)
+    labels = (label["value"] for label in ichain.from_iterable(labels))
 
     return {
         "inbound_text": inbound_text or "No Question",
