@@ -29,7 +29,7 @@ with open(fn) as csv_file, open("output.csv", "w") as out_file:
     reader = csv.reader(csv_file, delimiter=";")
     writer = csv.writer(out_file, delimiter=";")
     for row in reader:
-        msisdn = "+{0}".format(row[1])
+        msisdn = "+{}".format(row[1])
         res = con.execute(select([tbl.c.id]).where(tbl.c.msisdn == msisdn)).fetchone()
         new_row = list(row)
         if res:
