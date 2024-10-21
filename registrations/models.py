@@ -28,7 +28,7 @@ class Source(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return "{}".format(self.name)
+        return f"{self.name}"
 
 
 class Registration(models.Model):
@@ -212,7 +212,7 @@ class PositionTracker(models.Model):
         return self.history.first().history_date
 
     def __str__(self):
-        return "{}: {}".format(self.label, self.position)
+        return f"{self.label}: {self.position}"
 
 
 class WhatsAppContact(models.Model):

@@ -265,7 +265,7 @@ forget_contact = (
 )
 def archive_turn_conversation(urn, message_id, reason):
     headers = {
-        "Authorization": "Bearer {}".format(settings.TURN_TOKEN),
+        "Authorization": f"Bearer {settings.TURN_TOKEN}",
         "Accept": "application/vnd.v1+json",
         "Content-Type": "application/json",
     }
@@ -545,7 +545,7 @@ def post_random_contacts_to_slack_channel(
 def get_turn_profile_link(contact_number):
     if settings.TURN_URL and settings.TURN_TOKEN:
         turn_header = {
-            "Authorization": "Bearer {}".format(settings.TURN_TOKEN),
+            "Authorization": f"Bearer {settings.TURN_TOKEN}",
             "Accept": "application/vnd.v1+json",
         }
 
@@ -606,7 +606,7 @@ def get_text_or_caption_from_turn_message(message: dict) -> str:
         pass
     for message_type in ("image", "document", "audio", "video", "voice", "sticker"):
         try:
-            return message[message_type].get("caption", "<{}>".format(message_type))
+            return message[message_type].get("caption", f"<{message_type}>")
         except KeyError:
             pass
 
@@ -665,9 +665,9 @@ def get_engage_inbound_and_reply(wa_contact_id, message_id):
     """
 
     response = requests.get(
-        urljoin(settings.ENGAGE_URL, "v1/contacts/{}/messages".format(wa_contact_id)),
+        urljoin(settings.ENGAGE_URL, f"v1/contacts/{wa_contact_id}/messages"),
         headers={
-            "Authorization": "Bearer {}".format(settings.ENGAGE_TOKEN),
+            "Authorization": f"Bearer {settings.ENGAGE_TOKEN}",
             "Accept": "application/vnd.v1+json",
         },
     )

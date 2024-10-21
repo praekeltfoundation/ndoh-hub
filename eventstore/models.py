@@ -84,9 +84,7 @@ class OptOut(models.Model):
     data = models.JSONField(default=dict, blank=True, null=True)
 
     def __str__(self):
-        return "{} opt out: {} <{}>".format(
-            self.get_optout_type_display(), self.get_reason_display(), self.contact_id
-        )
+        return f"{self.get_optout_type_display()} opt out: {self.get_reason_display()} <{self.contact_id}>"
 
 
 class BabySwitch(models.Model):

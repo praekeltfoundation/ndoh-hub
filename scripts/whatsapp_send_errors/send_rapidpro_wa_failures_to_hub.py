@@ -38,7 +38,7 @@ def get_send_errors(error_date):
 
 def send_error_to_hub(contact_id, timestamp):
     headers = {
-        "Authorization": "Token {}".format(HUB_TOKEN),
+        "Authorization": f"Token {HUB_TOKEN}",
         "Content-Type": "application/json",
     }
     response = requests.post(

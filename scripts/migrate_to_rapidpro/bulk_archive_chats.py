@@ -22,12 +22,12 @@ client = TembaClient(RAPIDPRO_URL, RAPIDPRO_TOKEN)
 
 def get_whatsapp_messages(wa_id):
     headers = {
-        "Authorization": "Bearer {}".format(TURN_TOKEN),
+        "Authorization": f"Bearer {TURN_TOKEN}",
         "Content-Type": "application/json",
         "Accept": "application/vnd.v1+json",
     }
     response = requests.get(
-        urllib_parse.urljoin(TURN_URL, "/v1/contacts/{}/messages".format(wa_id)),
+        urllib_parse.urljoin(TURN_URL, f"/v1/contacts/{wa_id}/messages"),
         headers=headers,
     )
     return response.json()
@@ -35,7 +35,7 @@ def get_whatsapp_messages(wa_id):
 
 def archive_turn_conversation(wa_id, message_id, reason):
     headers = {
-        "Authorization": "Bearer {}".format(TURN_TOKEN),
+        "Authorization": f"Bearer {TURN_TOKEN}",
         "Accept": "application/vnd.v1+json",
         "Content-Type": "application/json",
     }

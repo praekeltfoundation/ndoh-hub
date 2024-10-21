@@ -92,7 +92,7 @@ def CursorPaginationFactory(field):
     class CustomCursorPagination(CursorPagination):
         ordering = field
 
-    name = "{}CursorPagination".format(field.capitalize())
+    name = f"{field.capitalize()}CursorPagination"
     CustomCursorPagination.__name__ = name
     CustomCursorPagination.__qualname__ = name
 

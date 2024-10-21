@@ -215,7 +215,7 @@ def update_turn_contact_details(wa_id, fields):
         "Accept": "application/vnd.v1+json",
     }
     response = requests.patch(
-        urljoin(settings.TURN_URL, "/v1/contacts/{}".format(wa_id)),
+        urljoin(settings.TURN_URL, f"/v1/contacts/{wa_id}"),
         json=fields,
         headers=headers,
     )
