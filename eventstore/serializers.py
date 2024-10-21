@@ -129,7 +129,7 @@ class MSISDNField(serializers.CharField):
 
     def __init__(self, *args, **kwargs):
         self.country = kwargs.pop("country", None)
-        return super(MSISDNField, self).__init__(*args, **kwargs)
+        return super().__init__(*args, **kwargs)
 
     def to_representation(self, obj):
         number = phonenumbers.parse(obj, self.country)

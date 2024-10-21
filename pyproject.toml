@@ -104,8 +104,6 @@ ignore = [
     "S112", # TODO: 'try'-'except'-'continue' detected, consider logging the exception
     "S101", # TODO: Use of 'assert' detected
     "UP031", # TODO: Use format specifiers instead of percent format
-    "UP008", # TODO: Use 'super()' instead of 'super(__class__, self)'
-    "UP031", # TODO: Use format specifiers instead of percent format
  
 ]
 
