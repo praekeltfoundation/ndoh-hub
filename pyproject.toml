@@ -114,8 +114,7 @@ ignore = [
     "B006", # TODO: Do not use mutable data structures for argument defaults
     "C417", # TODO: Unnecessary 'map' usage (rewrite using a generator expression)
     "UP019", # TODO: 'typing.Text' is deprecated, use 'str'
-    "SIM103", # TODO: Return the condition 'label in labels' directly
-
+ 
 ]
 
 [tool.ruff.lint.per-file-ignores]

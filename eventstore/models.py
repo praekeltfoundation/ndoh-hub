@@ -348,10 +348,7 @@ class Message(models.Model):
             .get("labels", [])
         ]
 
-        if label in labels:
-            return True
-
-        return False
+        return label in labels
 
 
 class Event(models.Model):
