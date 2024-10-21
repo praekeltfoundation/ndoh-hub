@@ -117,11 +117,6 @@ ignore = [
     "SIM103", # TODO: Return the condition `label in labels` directly
     "SIM108", # TODO: Use ternary operator instead of `if`-`else`-block
     "SIM113", # TODO: Use `enumerate()` for index variable `total` in `for` loop
-    "F811", # TODO: Redefinition of unused `cursor`
-
-
-
-
 
 ]
 
