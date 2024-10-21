@@ -168,7 +168,7 @@ def process_subscription(identities, id, name, created_at):
 
 def merge_dicts(d1, d2):
     for k, v in d2.items():
-        if type(v) == list:
+        if isinstance(v, list):
             d1[k] = d1.get(k, []) + v
         else:
             d1[k] = v
