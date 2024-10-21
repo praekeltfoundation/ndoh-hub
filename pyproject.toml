@@ -115,8 +115,6 @@ ignore = [
     "C417", # TODO: Unnecessary 'map' usage (rewrite using a generator expression)
     "UP019", # TODO: 'typing.Text' is deprecated, use 'str'
     "SIM103", # TODO: Return the condition 'label in labels' directly
-    "SIM108", # TODO: Use ternary operator instead of 'if'-'else'-block
-
 
 ]
 

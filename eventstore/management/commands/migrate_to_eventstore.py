@@ -48,18 +48,12 @@ class Command(BaseCommand):
 
     def handle_public_registration(self, reg):
         data = reg.data or {}
-        if "whatsapp" in reg.reg_type:
-            channel = "WhatsApp"
-        else:
-            channel = "SMS"
+        channel = "WhatsApp" if "whatsapp" in reg.reg_type else "SMS"
         uuid_registrant = data.pop("uuid_registrant", None)
         operator_id = data.pop("operator_id", None)
         uuid_device = data.pop("uuid_device", None)
         language = data.pop("language", "")
-        if language in LANGUAGES:
-            language = language.rstrip("_ZA")
-        else:
-            language = ""
+        language = language.rstrip("_ZA") if language in LANGUAGES else ""
 
         PublicRegistration.objects.update_or_create(
             id=reg.id,
@@ -77,10 +71,7 @@ class Command(BaseCommand):
 
     def handle_CHW_registration(self, reg):
         data = reg.data or {}
-        if "whatsapp" in reg.reg_type:
-            channel = "WhatsApp"
-        else:
-            channel = "SMS"
+        channel = "WhatsApp" if "whatsapp" in reg.reg_type else "SMS"
         uuid_registrant = data.pop("uuid_registrant", None)
         operator_id = data.pop("operator_id", None)
         uuid_device = data.pop("uuid_device", None)
@@ -90,10 +81,7 @@ class Command(BaseCommand):
         passport_number = data.pop("passport_no", "")
         date_of_birth = data.pop("mom_dob", None)
         language = data.pop("language", "")
-        if language in LANGUAGES:
-            language = language.rstrip("_ZA")
-        else:
-            language = ""
+        language = language.rstrip("_ZA") if language in LANGUAGES else ""
 
         CHWRegistration.objects.update_or_create(
             id=reg.id,
@@ -116,10 +104,7 @@ class Command(BaseCommand):
 
     def handle_prebirth_registration(self, reg):
         data = reg.data or {}
-        if "whatsapp" in reg.reg_type:
-            channel = "WhatsApp"
-        else:
-            channel = "SMS"
+        channel = "WhatsApp" if "whatsapp" in reg.reg_type else "SMS"
         uuid_registrant = data.pop("uuid_registrant", None)
         contact_id = reg.registrant_id or uuid_registrant
         uuid_device = data.pop("uuid_device", None)
@@ -132,10 +117,7 @@ class Command(BaseCommand):
         facility_code = data.pop("faccode", "")
         edd = data.pop("edd", None)
         language = data.pop("language", "")
-        if language in LANGUAGES:
-            language = language.rstrip("_ZA")
-        else:
-            language = ""
+        language = language.rstrip("_ZA") if language in LANGUAGES else ""
 
         PrebirthRegistration.objects.update_or_create(
             id=reg.id,
