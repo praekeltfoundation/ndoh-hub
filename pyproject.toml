@@ -99,7 +99,6 @@ ignore = [
     "S608", # TODO: Possible SQL injection vector through string-based query construction
     "SIM110", # TODO: Use 'return any("post" in group["name"].lower() for group in contact["groups"])' instead of 'for' loop
     "E721", # TODO: Use 'is' and 'is not' for type comparisons, or 'isinstance()' for isinstance checks
-    "SIM102", # TODO: Use a single 'if' statement instead of nested 'if' statements
     #Ignores below this line needs to be checked out
     "S101", # TODO: Use of 'assert' detected - FWB: Looks like this is only used in migration files
  

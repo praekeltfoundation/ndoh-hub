@@ -588,9 +588,11 @@ class HCSStudyBRandomization(models.Model):
     )
 
     def process_study_b(self):
-        if self.msisdn not in settings.HCS_STUDY_B_WHITELIST:
-            if not settings.HCS_STUDY_B_ACTIVE:
-                return
+        if (
+            self.msisdn not in settings.HCS_STUDY_B_WHITELIST
+            and not settings.HCS_STUDY_B_ACTIVE
+        ):
+            return
         if self.created_by in settings.HCS_STUDY_B_CREATED_BY and not self.study_b_arm:
             self.study_b_arm = self.get_random_study_b_arm()
 
@@ -754,9 +756,11 @@ class HealthCheckUserProfile(models.Model):
         self.process_study_c(risk, created_by)
 
     def process_study_a(self, created_by):
-        if self.msisdn not in settings.HCS_STUDY_A_WHITELIST:
-            if not settings.HCS_STUDY_A_ACTIVE:
-                return
+        if (
+            self.msisdn not in settings.HCS_STUDY_A_WHITELIST
+            and not settings.HCS_STUDY_A_ACTIVE
+        ):
+            return
 
         if created_by == settings.HCS_STUDY_A_CREATED_BY and not self.hcs_study_a_arm:
             self.hcs_study_a_arm = self.get_random_study_arm()
@@ -1077,9 +1081,10 @@ class ImportRow(models.Model):
             raise ValidationError("Passport country required for passport ID type")
         if self.id_type == self.IDType.PASSPORT and not self.passport_number:
             raise ValidationError("Passport number required for passport ID type")
-        if self.id_type == self.IDType.NONE:
-            if self.dob_year is None or self.dob_month is None or self.dob_year is None:
-                raise ValidationError("Date of birth required for none ID type")
+        if self.id_type == self.IDType.NONE and (
+            self.dob_year is None or self.dob_month is None or self.dob_year is None
+        ):
+            raise ValidationError("Date of birth required for none ID type")
 
         if (
             self.dob_year is not None

@@ -95,9 +95,8 @@ def process_registration(identities, id, data):
         "sa_id_no",
         "consent",
     ]:
-        if data.get(k):
-            if not identities[id].get(k):
-                identities[id][k] = data[k]
+        if data.get(k) and not identities[id].get(k):
+            identities[id][k] = data[k]
     if data.get("baby_dob"):
         if not identities[id].get("baby_dobs"):
             identities[id]["baby_dobs"] = [data["baby_dob"]]
@@ -107,9 +106,12 @@ def process_registration(identities, id, data):
     if uuid_device and not identities[id].get("msisdn_device"):
         with contextlib.suppress(Exception):
             identities[id]["msisdn_device"] = identities[uuid_device]["msisdns"][0]
-    if data.get("language") and not identities[id].get("language"):
-        if data["language"] in LANGUAGES:
-            identities[id]["language"] = data["language"].rstrip("_ZA")
+    if (
+        data.get("language")
+        and not identities[id].get("language")
+        and data["language"] in LANGUAGES
+    ):
+        identities[id]["language"] = data["language"].rstrip("_ZA")
 
 
 def process_change(identities, id, action, data, created):
