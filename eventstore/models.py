@@ -1,7 +1,6 @@
 import random
 import uuid
 from datetime import date
-from typing import Text
 
 import pycountry
 from django.conf import settings
@@ -633,7 +632,7 @@ class HCSStudyBRandomization(models.Model):
 
 
 class HealthCheckUserProfileManager(models.Manager):
-    def get_or_prefill(self, msisdn: Text) -> "HealthCheckUserProfile":
+    def get_or_prefill(self, msisdn: str) -> "HealthCheckUserProfile":
         """
         Either gets the existing user profile, or creates one using data in the
         historical healthchecks
