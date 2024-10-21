@@ -4,7 +4,7 @@ import json
 from ndoh_hub.constants import WHATSAPP_LANGUAGE_MAP
 
 
-class BaseMigration(object):
+class BaseMigration:
     TEMPLATE_NAME = ""
 
     def get_template_variables(self, message):

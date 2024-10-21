@@ -90,9 +90,8 @@ ignore = [
     "PTH123", # TODO: 'open()' should be replaced by 'Path.open()'
     "UP030", # TODO: Use implicit references for positional format fields
     "C416", # TODO: Unnecessary 'list' comprehension (rewrite using 'list()')
-    "UP004", # TODO: Class 'Template' inherits from 'object'
+    # Ignores below this line needs to be checked out by someone with more knowledge of the project
     "S501", #TODO: Probable use of 'requests' call with 'verify=False' disabling SSL certificate checks
-    #Ignores below this line needs to be checked out
     "SIM115", # TODO: Use a context manager for opening files - FWB: Tried fixing these, but ran into errors on tests
     "S101", # TODO: Use of 'assert' detected - FWB: Looks like this is only used in migration files
     "S608", # TODO: Possible SQL injection vector through string-based query construction

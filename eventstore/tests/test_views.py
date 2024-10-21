@@ -58,7 +58,7 @@ from eventstore.serializers import (
 )
 
 
-class BaseEventTestCase(object):
+class BaseEventTestCase:
     def test_authentication_required(self):
         """
         There must be an authenticated user to make the request
