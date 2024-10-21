@@ -1,3 +1,4 @@
+import contextlib
 import json
 import logging
 import os
@@ -104,10 +105,8 @@ def process_registration(identities, id, data):
             identities[id]["baby_dobs"].append(data["baby_dob"])
     uuid_device = data.get("uuid_device") or data.get("operator_id")
     if uuid_device and not identities[id].get("msisdn_device"):
-        try:
+        with contextlib.suppress(Exception):
             identities[id]["msisdn_device"] = identities[uuid_device]["msisdns"][0]
-        except Exception:
-            pass
     if data.get("language") and not identities[id].get("language"):
         if data["language"] in LANGUAGES:
             identities[id]["language"] = data["language"].rstrip("_ZA")
