@@ -106,7 +106,6 @@ ignore = [
     "UP031", # TODO: Use format specifiers instead of percent format
     "UP008", # TODO: Use 'super()' instead of 'super(__class__, self)'
     "UP031", # TODO: Use format specifiers instead of percent format
-    "S311", # TODO: Standard pseudo-random generators are not suitable for cryptographic purposes
  
 ]
 

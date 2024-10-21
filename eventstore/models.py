@@ -608,7 +608,7 @@ class HCSStudyBRandomization(models.Model):
         actual_total, actual_percentage = self.get_study_totals_per_province()
 
         if actual_total < target_total or actual_percentage < target_percentage:
-            return random.choice(self.STUDY_ARM_B_CHOICES)[0]
+            return random.choice(self.STUDY_ARM_B_CHOICES)[0] # noqa: S311 - Not being used for crypto purposes
 
     def get_study_totals_per_province(self):
         all_provinces = HCSStudyBRandomization.objects.filter(
@@ -815,10 +815,10 @@ class HealthCheckUserProfile(models.Model):
         actual_total, actual_percentage = self.get_study_totals_per_province()
 
         if actual_total < target_total or actual_percentage < target_percentage:
-            return random.choice(self.STUDY_ARM_CHOICES)[0]
+            return random.choice(self.STUDY_ARM_CHOICES)[0] # noqa: S311 - Not being used for crypto purposes
 
     def get_random_study_quarantine_arm(self):
-        return random.choice(self.STUDY_ARM_QUARANTINE_CHOICES)[0]
+        return random.choice(self.STUDY_ARM_QUARANTINE_CHOICES)[0] # noqa: S311 - Not being used for crypto purposes
 
 
 class CDUAddressUpdate(models.Model):
