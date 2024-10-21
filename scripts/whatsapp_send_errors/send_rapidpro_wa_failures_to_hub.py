@@ -33,7 +33,7 @@ def get_send_errors(error_date):
         """,
         (error_date, CHANNEL_ID),
     )
-    return [(urn, error_timestamp) for urn, error_timestamp in cursor]
+    return list(cursor)
 
 
 def send_error_to_hub(contact_id, timestamp):
