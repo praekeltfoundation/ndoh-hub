@@ -110,7 +110,6 @@ ignore = [
     "B904", # TODO: Within an 'except' clause, raise exceptions with 'raise ... from err' or 'raise ... from None'
     "UP010", # TODO: Unnecessary '__future__' imports 'absolute_import', 'division' for target Python version
     "S105", # TODO: Possible hardcoded password assigned
-    "B018", # TODO: Found useless expression. Either assign it to a variable or remove it.
  
 ]
 
