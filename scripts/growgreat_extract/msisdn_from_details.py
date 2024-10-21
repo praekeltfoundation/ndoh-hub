@@ -4,7 +4,7 @@ import sys
 
 def get_msisdn(details):
     last = None
-    for addr, addr_dets in details.get("addresses", {}).get("msisdn", {}).items():
+    for addr, _addr_dets in details.get("addresses", {}).get("msisdn", {}).items():
         if details.get("default") is True:
             return addr
         if details.get("optedout") is not True:

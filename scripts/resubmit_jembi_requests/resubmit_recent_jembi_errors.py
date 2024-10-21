@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     webhook_calls = []
     failed_again = []
-    for request_id, url, request, status_code, contact_id, day in cursor:
+    for request_id, url, request, _status_code, contact_id, day in cursor:
         day = str(day).split(" ")[0]
         key = f"{url}_{contact_id}_{day}"
 
