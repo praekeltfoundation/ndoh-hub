@@ -35,8 +35,8 @@ def validate_signature(request):
     secret = settings.TURN_HMAC_SECRET
     try:
         signature = request.META["HTTP_X_TURN_HOOK_SIGNATURE"]
-    except KeyError:
-        raise AuthenticationFailed("X-Turn-Hook-Signature header required")
+    except KeyError as ke:
+        raise AuthenticationFailed("X-Turn-Hook-Signature header required") from ke
 
     h = hmac.new(secret.encode(), request.body, sha256)
 

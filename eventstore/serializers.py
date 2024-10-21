@@ -139,7 +139,7 @@ class MSISDNField(serializers.CharField):
         try:
             number = phonenumbers.parse(data, self.country)
         except phonenumbers.NumberParseException as e:
-            raise serializers.ValidationError(str(e))
+            raise serializers.ValidationError(str(e)) from e
         if not phonenumbers.is_possible_number(number):
             raise serializers.ValidationError("Not a possible phone number")
         if not phonenumbers.is_valid_number(number):

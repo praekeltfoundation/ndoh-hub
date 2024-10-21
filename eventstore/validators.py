@@ -41,7 +41,7 @@ def validate_sa_id_number(value):
     try:
         date(year, int(match.group("month")), int(match.group("day")))
     except ValueError as e:
-        raise ValidationError(f"Invalid ID number date: {str(e)}")
+        raise ValidationError(f"Invalid ID number date: {str(e)}") from e
     if int(match.group("gender")) >= 5000:
         raise ValidationError("Invalid ID number: for male")
     if not luhn_verify(value):
@@ -56,22 +56,22 @@ def validate_facility_code(value):
 def posix_timestamp(value):
     try:
         datetime.fromtimestamp(int(value))
-    except ValueError:
-        raise ValidationError("Invalid POSIX timestamp.")
+    except ValueError as ve:
+        raise ValidationError("Invalid POSIX timestamp.") from ve
 
 
 def geographic_coordinate(value):
     try:
         Location(value)
-    except AttributeError:
-        raise ValidationError("Invalid ISO6709 geographic coordinate")
+    except AttributeError as ae:
+        raise ValidationError("Invalid ISO6709 geographic coordinate") from ae
 
 
 def _phone_number(value, country):
     try:
         number = phonenumbers.parse(value, country)
     except phonenumbers.NumberParseException as e:
-        raise ValidationError(str(e))
+        raise ValidationError(str(e)) from e
     if not phonenumbers.is_possible_number(number):
         raise ValidationError("Not a possible phone number")
     if not phonenumbers.is_valid_number(number):

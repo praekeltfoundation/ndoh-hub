@@ -1048,7 +1048,7 @@ class ImportRow(models.Model):
             if not is_valid_edd_date(edd):
                 raise ValidationError("EDD must be between now and 9 months")
         except ValueError as e:
-            raise ValidationError(f"Invalid EDD date, {str(e)}")
+            raise ValidationError(f"Invalid EDD date, {str(e)}") from e
         except TypeError:
             # Should be handled by the individual field validator
             pass
@@ -1056,7 +1056,7 @@ class ImportRow(models.Model):
         try:
             date(self.baby_dob_year, self.baby_dob_month, self.baby_dob_day)
         except ValueError as e:
-            raise ValidationError(f"Invalid Baby DOB date, {str(e)}")
+            raise ValidationError(f"Invalid Baby DOB date, {str(e)}") from e
         except TypeError:
             # Should be handled by the individual field validator
             pass
@@ -1089,7 +1089,7 @@ class ImportRow(models.Model):
             try:
                 date(self.dob_year, self.dob_month, self.dob_day)
             except ValueError as e:
-                raise ValidationError(f"Invalid date of birth date, {str(e)}")
+                raise ValidationError(f"Invalid date of birth date, {str(e)}") from e
 
 
 class OpenHIMQueue(models.Model):
