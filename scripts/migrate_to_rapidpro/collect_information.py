@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import time
 
@@ -17,7 +18,8 @@ def get_addresses(addresses):
             assert phonenumbers.is_possible_number(p)
             assert phonenumbers.is_valid_number(p)
             p = phonenumbers.format_number(p, phonenumbers.PhoneNumberFormat.E164)
-        except Exception:
+        except Exception as _e:
+            logging.exception("Error occurred")
             continue
         if details.get("default"):
             return [p]

@@ -101,9 +101,7 @@ ignore = [
     "E721", # TODO: Use 'is' and 'is not' for type comparisons, or 'isinstance()' for isinstance checks
     "SIM102", # TODO: Use a single 'if' statement instead of nested 'if' statements
     "SIM105", # TODO: Use 'contextlib.suppress(Exception)' instead of 'try'-'except'-'pass'
-    "S112", # TODO: 'try'-'except'-'continue' detected, consider logging the exception
-    "S101", # TODO: Use of 'assert' detected
-    "UP031", # TODO: Use format specifiers instead of percent format
+    "S101", # TODO: Use of 'assert' detected - FWB: Looks like this is only used in migration files
  
 ]
 
