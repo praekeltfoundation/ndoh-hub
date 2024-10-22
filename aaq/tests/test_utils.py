@@ -133,7 +133,7 @@ class SearchFunctionTest(APITestCase):
 
         search_request = responses.calls[0]
 
-        assert search_request.response.status_code == 200
+        assert search_request.response.status_code == 400
         assert response.data == {
             "message": "Gibberish Detected",
         }
