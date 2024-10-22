@@ -35,7 +35,7 @@ def search(query_text, generate_llm_response, query_metadata):
 
     response = requests.request("POST", url, json=payload, headers=headers)
 
-    if "detail" in response.json():
+    if response.status_code == 400 and "detail" in response.json():
         error_detail = response.json().get("detail", "")
         if "Gibberish text detected" in error_detail:
             json_msg = {
