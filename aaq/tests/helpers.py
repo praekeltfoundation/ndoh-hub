@@ -113,7 +113,10 @@ class FakeAaqApi:
             "feedback_secret_key": "secret-key-12345-abcde",
             "llm_response": None,
             "query_id": 1,
-            "search_results": {},
+            "search_results": {
+                "status": 400,
+                "error": {"detail": "Gibberish text detected: gyugsywgshfsthg"},
+            },
             "state": "final",
         }
 
