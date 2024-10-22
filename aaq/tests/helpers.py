@@ -109,15 +109,8 @@ class FakeAaqApi:
 
     def post_search_return_empty(self, request):
         resp_body = {
-            "debug_info": {"example": "debug-info"},
-            "feedback_secret_key": "secret-key-12345-abcde",
-            "llm_response": None,
-            "query_id": 1,
-            "search_results": {
-                "status": 400,
-                "error": {"detail": "Gibberish text detected: gyugsywgshfsthg"},
-            },
-            "state": "final",
+            "status": 400,
+            "error": {"detail": "Gibberish text detected: vyjhftgdfdgt"},
         }
 
         return (200, {}, json.dumps(resp_body))

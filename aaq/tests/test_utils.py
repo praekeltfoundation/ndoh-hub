@@ -133,7 +133,4 @@ class SearchFunctionTest(APITestCase):
 
         assert response.data == {
             "message": "Gibberish Detected",
-            "body": {},
-            "feedback_secret_key": "secret-key-12345-abcde",
-            "query_id": 1,
         }
