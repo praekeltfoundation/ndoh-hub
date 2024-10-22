@@ -34,7 +34,6 @@ def search(query_text, generate_llm_response, query_metadata):
     }
 
     response = requests.request("POST", url, json=payload, headers=headers)
-    response.raise_for_status()
 
     if "error" in response.json():
         error_detail = response.json()["error"].get("detail", "")
@@ -43,6 +42,8 @@ def search(query_text, generate_llm_response, query_metadata):
                 "message": "Gibberish Detected",
             }
             return Response(json_msg, status=status.HTTP_200_OK)
+
+    response.raise_for_status()
 
     query_id = response.json()["query_id"]
     feedback_secret_key = response.json()["feedback_secret_key"]
