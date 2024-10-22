@@ -41,7 +41,7 @@ def search(query_text, generate_llm_response, query_metadata):
             json_msg = {
                 "message": "Gibberish Detected",
             }
-            return Response(json_msg, status=status.HTTP_400_BAD_REQUEST)
+            return Response(json_msg, status=status.HTTP_200_OK)
 
     response.raise_for_status()
 

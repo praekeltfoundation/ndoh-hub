@@ -110,7 +110,7 @@ class FakeAaqApi:
     def post_search_return_empty(self, request):
         resp_body = {"detail": "Gibberish text detected: vyjhftgdfdgt"}
 
-        return (400, {}, json.dumps(resp_body))
+        return (200, {}, json.dumps(resp_body))
 
 
 class FakeAaqUdV2Api:
