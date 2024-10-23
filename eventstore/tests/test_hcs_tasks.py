@@ -8,7 +8,7 @@ from eventstore.hcs_tasks import update_turn_contact
 
 class UpdateTurnContactTaskTest(TestCase):
     @responses.activate
-    @override_settings(HC_TURN_URL="https://turn", HC_TURN_TOKEN="token")
+    @override_settings(HC_TURN_URL="https://turn", HC_TURN_TOKEN="token")  # noqa: S106 - Its OK to hardcode passwords in tests
     def test_update_turn_contact_task(self):
         responses.add(
             responses.PATCH,
