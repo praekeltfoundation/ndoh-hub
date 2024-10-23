@@ -3,7 +3,6 @@ import urllib
 import requests
 from django.conf import settings
 from rest_framework import status
-from rest_framework.response import Response
 
 
 def check_urgency_v2(message_text):
@@ -41,10 +40,7 @@ def search(query_text, generate_llm_response, query_metadata):
     ):
         error_detail = response.json().get("detail", "")
         if "Gibberish text detected" in error_detail:
-            json_msg = {
-                "message": "Gibberish Detected",
-            }
-            return Response(json_msg, status=status.HTTP_200_OK)
+            return {"message": "Gibberish Detected"}
 
     response.raise_for_status()
 
