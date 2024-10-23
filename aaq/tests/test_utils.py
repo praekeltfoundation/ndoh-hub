@@ -130,9 +130,9 @@ class SearchFunctionTest(APITestCase):
         query_metadata = {}
         response = search(query_text, generate_llm_response, query_metadata)
 
+        search_request = responses.calls[0]
+
+        assert search_request.response.status_code == 400
         assert response.data == {
             "message": "Gibberish Detected",
-            "body": {},
-            "feedback_secret_key": "secret-key-12345-abcde",
-            "query_id": 1,
         }

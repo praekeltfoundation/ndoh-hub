@@ -34,21 +34,23 @@ def search(query_text, generate_llm_response, query_metadata):
     }
 
     response = requests.request("POST", url, json=payload, headers=headers)
+
+    if (
+        response.status_code == status.HTTP_400_BAD_REQUEST
+        and "detail" in response.json()
+    ):
+        error_detail = response.json().get("detail", "")
+        if "Gibberish text detected" in error_detail:
+            json_msg = {
+                "message": "Gibberish Detected",
+            }
+            return Response(json_msg, status=status.HTTP_200_OK)
+
     response.raise_for_status()
 
     query_id = response.json()["query_id"]
     feedback_secret_key = response.json()["feedback_secret_key"]
     search_results = response.json()["search_results"]
-
-    if search_results == {}:
-        json_msg = {
-            "message": "Gibberish Detected",
-            "body": {},
-            "feedback_secret_key": feedback_secret_key,
-            "query_id": query_id,
-        }
-        return Response(json_msg, status=status.HTTP_200_OK)
-
     json_msg = {}
     body_content = {}
     message_titles = []
