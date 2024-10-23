@@ -66,7 +66,7 @@ if __name__ == "__main__":
             failed_again.append(request_id)
 
         if time.time() - d_print > 1:
-            print(  # noqa
+            print(
                 f"\rProcessed {total}"
                 f" webhooks at {total/(time.time() - start):.0f}/s",
                 end="",
@@ -75,6 +75,6 @@ if __name__ == "__main__":
 
         total += 1
 
-    print("")  # noqa
-    print(f"Processed: {total}")  # noqa
-    print(f"Failed again: {failed_again}")  # noqa
+    print("")
+    print(f"Processed: {total}")
+    print(f"Failed again: {failed_again}")

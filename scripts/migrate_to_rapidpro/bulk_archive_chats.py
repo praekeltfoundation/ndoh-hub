@@ -148,7 +148,7 @@ for urn in urns:
         )
 
     if time.time() - d_print > 1:
-        print(  # noqa
+        print(
             f"\rProcessed {archived}/{total} contacts at "
             f"{total/(time.time() - start):.0f}/s",
             end="",
@@ -157,7 +157,7 @@ for urn in urns:
 
     total += 1
 
-print(  # noqa
+print(
     f"\rProcessed {archived}/{total} contacts at "
     f"{total/(time.time() - start):.0f}/s"
 )

@@ -77,7 +77,7 @@ select = [
     # "PT",          # flake8-pytest-style
     "SIM",         # flake8-simplify
     "PTH",         # flake8-use-pathlib
-    # "RUF",         # ruff-specific rules
+    "RUF",         # ruff-specific rules
 ]
 
 ignore = [
@@ -92,6 +92,7 @@ ignore = [
     "SIM115", # TODO: Use a context manager for opening files - FWB: Tried fixing these, but ran into errors on tests
     "S101", # TODO: Use of 'assert' detected - FWB: Looks like this is only used in migration files
     "S608", # TODO: Possible SQL injection vector through string-based query construction
+    "RUF012", # We usually want immutable instance attributes
  
 ]
 

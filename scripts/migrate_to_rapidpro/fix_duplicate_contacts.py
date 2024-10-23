@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
         return contact_fields
 
-    print("Processing contacts...")  # noqa
+    print("Processing contacts...")
     cursor.execute(
         """
         SELECT
@@ -161,7 +161,7 @@ if __name__ == "__main__":
             update_conn.commit()
 
             if time.time() - d_print > 1:
-                print(  # noqa
+                print(
                     f"\rProcessed {total} ({empty_duplicate}/{no_duplicate_found})"
                     f" contacts at {total/(time.time() - start):.0f}/s",
                     end="",
@@ -174,6 +174,6 @@ if __name__ == "__main__":
             # This means correct urn is already linked
             update_conn.commit()
 
-    print("")  # noqa
-    print(f"Processed: {total} ({empty_duplicate}/{no_duplicate_found})")  # noqa
-    print(f"Total records: {total_total}")  # noqa
+    print("")
+    print(f"Processed: {total} ({empty_duplicate}/{no_duplicate_found})")
+    print(f"Total records: {total_total}")

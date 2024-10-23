@@ -14,7 +14,7 @@ if __name__ == "__main__":
     cursor = conn.cursor("contact_urns")
     update_cursor = update_conn.cursor()
 
-    print("Processing contact urns...")  # noqa
+    print("Processing contact urns...")
     cursor.execute(
         """
         SELECT contacts_contacturn.id
@@ -39,7 +39,7 @@ if __name__ == "__main__":
             update_conn.commit()
 
             if time.time() - d_print > 1:
-                print(  # noqa
+                print(
                     f"\rProcessed {total} identities at "
                     f"{total/(time.time() - start):.0f}/s",
                     end="",
@@ -51,10 +51,10 @@ if __name__ == "__main__":
             error += 1
             update_conn.rollback()
 
-    print(f"\nProcessed {total} contacts in {time.time() - start:.0f}s")  # noqa
+    print(f"\nProcessed {total} contacts in {time.time() - start:.0f}s")
 
     start = time.time()
     update_conn.commit()
 
-    print(f"Committed changes in {time.time() - start:.0f}s")  # noqa
-    print(f"Failed with IntegrityError: {error}")  # noqa
+    print(f"Committed changes in {time.time() - start:.0f}s")
+    print(f"Failed with IntegrityError: {error}")

@@ -1989,7 +1989,7 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         )
         response = self.client.get(
             f"{self.url}?"
-            f"{urlencode({'timestamp_gt': triage_old.timestamp.isoformat(), 'msisdn': '+27820001001'})}"  # noqa
+            f"{urlencode({'timestamp_gt': triage_old.timestamp.isoformat(), 'msisdn': '+27820001001'})}"
         )
         self.assertEqual(
             response.data["results"],

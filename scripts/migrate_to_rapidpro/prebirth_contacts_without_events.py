@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     now = datetime.date.today()
 
-    print("Processing contacts...")  # noqa
+    print("Processing contacts...")
     cursor.execute(
         """
         SELECT
@@ -85,7 +85,7 @@ if __name__ == "__main__":
             rapidpro_client.update_contact(contact_uuid, fields=fields_to_update)
 
         if time.time() - d_print > 1:
-            print(  # noqa
+            print(
                 f"\rProcessed {updated}/{total} contacts at "
                 f"{total/(time.time() - start):.0f}/s - ({contact_id})",
                 end="",
@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
         total += 1
 
-    print(  # noqa
+    print(
         f"\rProcessed {updated}/{total} contacts at "
         f"{total/(time.time() - start):.0f}/s - ({contact_id})"
     )

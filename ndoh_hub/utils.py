@@ -18,7 +18,7 @@ from temba_client.v2 import TembaClient
 
 from eventstore import models
 from ndoh_hub.auth import CachedTokenAuthentication
-from ndoh_hub.constants import ID_TYPES, LANGUAGES, PASSPORT_ORIGINS  # noqa:F401
+from ndoh_hub.constants import ID_TYPES, LANGUAGES, PASSPORT_ORIGINS
 
 rapidpro = None
 if settings.EXTERNAL_REGISTRATIONS_V2:

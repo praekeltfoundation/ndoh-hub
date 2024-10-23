@@ -13,7 +13,7 @@ class FakeAaqCoreApi:
                 [
                     "26",
                     "Fainting in pregnancy",
-                    "*Fainting could mean anemia – visit the clinic to find out",
+                    "*Fainting could mean anemia - visit the clinic to find out",
                 ],
                 [
                     "114",

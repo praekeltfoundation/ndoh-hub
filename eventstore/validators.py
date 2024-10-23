@@ -41,7 +41,7 @@ def validate_sa_id_number(value):
     try:
         date(year, int(match.group("month")), int(match.group("day")))
     except ValueError as e:
-        raise ValidationError(f"Invalid ID number date: {str(e)}") from e
+        raise ValidationError(f"Invalid ID number date: {e!s}") from e
     if int(match.group("gender")) >= 5000:
         raise ValidationError("Invalid ID number: for male")
     if not luhn_verify(value):

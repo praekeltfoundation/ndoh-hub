@@ -49,7 +49,7 @@ class GetFirstPageViewTests(APITestCase):
             "body": {
                 "1": {"text": "*Yes, pregnancy can affect your breathing", "id": "21"},
                 "2": {
-                    "text": "*Fainting could mean anemia – visit the clinic to "
+                    "text": "*Fainting could mean anemia - visit the clinic to "
                     "find out",
                     "id": "26",
                 },
