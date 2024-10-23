@@ -132,7 +132,13 @@ async def archive_turn_chats(source):
     with open(OUTPUT_FILE, "w", newline="") as target:
         writer = csv.DictWriter(
             target,
-            fieldnames=[*reader.fieldnames, "last_message_id", "wait_for_helpdesk", "helpdesk_timeout", "action"],
+            fieldnames=[
+                *reader.fieldnames,
+                "last_message_id",
+                "wait_for_helpdesk",
+                "helpdesk_timeout",
+                "action",
+            ],
         )
         writer.writeheader()
 
