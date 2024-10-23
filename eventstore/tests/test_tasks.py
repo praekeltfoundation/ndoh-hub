@@ -596,13 +596,13 @@ class PostRandomContactsToSlackTests(TestCase):
     @responses.activate
     @override_settings(
         TURN_URL="https://turn/",
-        TURN_TOKEN="token",  # noqa: S106 - Its OK to hardcode passwords in tests
+        TURN_TOKEN="token",  # noqa: S106 - Fake password/token for test purposes
         EXTERNAL_REGISTRATIONS_V2=True,
         SLACK_CHANNEL="test-slack",
         SLACK_URL="http://slack.com",
         RAPIDPRO_URL="rapidpro",
-        RAPIDPRO_TOKEN="rapidpro-token",  # noqa: S106 - Its OK to hardcode passwords in tests
-        SLACK_TOKEN="slack-token",  # noqa: S106 - Its OK to hardcode passwords in tests
+        RAPIDPRO_TOKEN="rapidpro-token",  # noqa: S106 - Fake password/token for test purposes
+        SLACK_TOKEN="slack-token",  # noqa: S106 - Fake password/token for test purposes
     )
     def test_post_random_contacts_to_slack_channel(self):
         responses.add(
@@ -678,7 +678,7 @@ class PostRandomContactsToSlackTests(TestCase):
         )
 
     @responses.activate
-    @override_settings(TURN_URL="https://turn/", TURN_TOKEN="token")  # noqa: S106 - Its OK to hardcode passwords in tests
+    @override_settings(TURN_URL="https://turn/", TURN_TOKEN="token")  # noqa: S106 - Fake password/token for test purposes
     def test_get_random_contact(self):
         responses.add(
             responses.GET,
@@ -711,7 +711,7 @@ class GetTurnContactProfileTests(TestCase):
         tasks.rapidpro = TembaClient("textit.in", "test-token")
 
     @responses.activate
-    @override_settings(TURN_URL="http://turn/", TURN_TOKEN="token")  # noqa: S106 - Its OK to hardcode passwords in tests
+    @override_settings(TURN_URL="http://turn/", TURN_TOKEN="token")  # noqa: S106 - Fake password/token for test purposes
     def test_get_turn_profile_link(self):
         responses.add(
             responses.GET,
@@ -772,7 +772,7 @@ class SendSlackMessageTests(TestCase):
         ]
 
     @responses.activate
-    @override_settings(SLACK_URL="http://slack.com", SLACK_TOKEN="slack_token")  # noqa: S106 - Its OK to hardcode passwords in tests
+    @override_settings(SLACK_URL="http://slack.com", SLACK_TOKEN="slack_token")  # noqa: S106 - Fake password/token for test purposes
     def test_send_slack_message(self):
         responses.add(
             responses.POST,
