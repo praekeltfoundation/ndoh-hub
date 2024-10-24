@@ -1,0 +1,115 @@
+[tool.poetry]
+name = "ndoh-hub"
+version = "0.10.25"
+description = "NDOH Registration and Change service for MomConnect and NurseConnect"
+authors = ["Fritz Brand <fritz@reachdigitalhealth.org>"]
+repository = "https://github.com/praekeltfoundation/ndoh-hub"
+license = "BSD"
+readme = "README.md"
+
+packages = [
+    { include = "aaq" },
+    { include = "changes" },
+    { include = "eventstore" },
+    { include = "registrations" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+Django = "^4.2.15"
+djangorestframework = "^3.15.2"
+coreapi = "^2.3.3"
+Markdown = "^3.1.1"
+dj-database-url = "^1.2.0"
+django-environ = "^0.10.0"
+psycopg2-binary = "^2.8.6"
+raven = "^6.9.0"
+django-filter = "^2.4.0"
+celery = "^5.2.3"
+six = "^1.11.0"
+requests = "^2.32.0"
+demands = "^3.0.0"
+structlog = "^18.2.0"
+phonenumberslite = "^8.9.15"
+django-simple-history = "^3.3.0"
+openpyxl = "^2.5.9"
+django-prometheus = "^2.2.0"
+rapidpro-python = "2.6.1" #V2.7.0 removed the V1 API support, which we use
+pycountry = "^19.8.18"
+attrs = "^24.2.0"
+iso6709 = "^0.1.5"
+redis = "^4.5.4"
+django-redis = "^5.2.0"
+celery_batches = "^0.7"
+python-dateutil = "^2.8.2"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.6.9"
+pytest = "^7.2.1"
+pytest-cov = "^4.0.0"
+pytest-django = "^4.5.2"
+pytest-asyncio = "^0.21.0"
+responses = "^0.23.1"
+pre-commit = "^3.2.0"
+freezegun = "^1.2.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+extend-exclude = [
+    "*/migrations/*.py",
+    "docs/conf.py",
+
+]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W", # pycodestyle + pyflakes == flake8 - mccabe
+    "I",           # isort
+    "UP",          # pyupgrade
+    "S",           # flake8-bandit
+    "B",           # flake8-bugbear
+    "C4",          # flake8-comprehensions
+    # "DJ",          # flake8-django
+    "PIE",         # flake8-pie
+    # "PT",          # flake8-pytest-style
+    "SIM",         # flake8-simplify
+    "PTH",         # flake8-use-pathlib
+    "RUF",         # ruff-specific rules
+]
+
+ignore = [
+    "E501",  # TODO: Something about these long lines.
+    "S113",  # TODO: Add request timeouts.
+    "PTH118", # TODO: Switch to pathlib
+    "PTH100", # TODO: 'os.path.abspath()' should be replaced by 'Path.resolve()' maybe use pathlib?
+    "PTH120", # TODO: 'os.path.dirname()' should be replaced by 'Path.parent' maybe use pathlib?
+    "PTH123", # TODO: 'open()' should be replaced by 'Path.open()' maybe use pathlib?
+    # Ignores below this line needs to be checked out by someone with more knowledge of the project
+    "S501", #TODO: Probable use of 'requests' call with 'verify=False' disabling SSL certificate checks
+    "SIM115", # TODO: Use a context manager for opening files - FWB: Tried fixing these, but ran into errors on tests
+    "S101", # TODO: Use of 'assert' detected - FWB: Looks like this is only used in migration files
+    "S608", # TODO: Possible SQL injection vector through string-based query construction
+    "RUF012", # We usually want immutable instance attributes
+ 
+]
+
+# Do not add S106 or S105 global ignores.  Rather use inline ignores (noqa) 
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = [
+    "S101",  # It's okay to use 'assert' in tests.
+]
+
+# TODO: Move this somewhere sensible?
+"**/tests.py" = [
+    "S101",  # It's okay to use 'assert' in tests.
+]
+
+"**/config/settings/{test,dev}.py" = [
+    "S104",  # It's okay to bind to all interfaces in tests
+    "F405", # Its okay to import * in settings
+    "S105", # Its okay to have hardcoded secrets in test config
+    
+]

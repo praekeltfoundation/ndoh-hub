@@ -1,4 +1,6 @@
+import contextlib
 import json
+import logging
 import os
 import time
 
@@ -17,7 +19,8 @@ def get_addresses(addresses):
             assert phonenumbers.is_possible_number(p)
             assert phonenumbers.is_valid_number(p)
             p = phonenumbers.format_number(p, phonenumbers.PhoneNumberFormat.E164)
-        except Exception:
+        except Exception as _e:
+            logging.exception("Error occurred")
             continue
         if details.get("default"):
             return [p]
@@ -92,9 +95,8 @@ def process_registration(identities, id, data):
         "sa_id_no",
         "consent",
     ]:
-        if data.get(k):
-            if not identities[id].get(k):
-                identities[id][k] = data[k]
+        if data.get(k) and not identities[id].get(k):
+            identities[id][k] = data[k]
     if data.get("baby_dob"):
         if not identities[id].get("baby_dobs"):
             identities[id]["baby_dobs"] = [data["baby_dob"]]
@@ -102,13 +104,14 @@ def process_registration(identities, id, data):
             identities[id]["baby_dobs"].append(data["baby_dob"])
     uuid_device = data.get("uuid_device") or data.get("operator_id")
     if uuid_device and not identities[id].get("msisdn_device"):
-        try:
+        with contextlib.suppress(Exception):
             identities[id]["msisdn_device"] = identities[uuid_device]["msisdns"][0]
-        except Exception:
-            pass
-    if data.get("language") and not identities[id].get("language"):
-        if data["language"] in LANGUAGES:
-            identities[id]["language"] = data["language"].rstrip("_ZA")
+    if (
+        data.get("language")
+        and not identities[id].get("language")
+        and data["language"] in LANGUAGES
+    ):
+        identities[id]["language"] = data["language"].rstrip("_ZA")
 
 
 def process_change(identities, id, action, data, created):
@@ -165,7 +168,7 @@ def process_subscription(identities, id, name, created_at):
 
 def merge_dicts(d1, d2):
     for k, v in d2.items():
-        if type(v) == list:
+        if isinstance(v, list):
             d1[k] = d1.get(k, []) + v
         else:
             d1[k] = v

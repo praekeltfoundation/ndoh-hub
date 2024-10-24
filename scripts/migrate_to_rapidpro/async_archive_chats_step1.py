@@ -111,7 +111,7 @@ async def process_conversation(session, row, writer):
         eligible_update += 1
 
     if time.time() - d_print > 1:
-        print(  # noqa
+        print(
             f"\rProcessed {processed} ({eligible_archive} & {eligible_update}"
             f" contacts at {processed/(time.time() - start):.0f}/s",
             end="",
@@ -132,8 +132,13 @@ async def archive_turn_chats(source):
     with open(OUTPUT_FILE, "w", newline="") as target:
         writer = csv.DictWriter(
             target,
-            fieldnames=reader.fieldnames
-            + ["last_message_id", "wait_for_helpdesk", "helpdesk_timeout", "action"],
+            fieldnames=[
+                *reader.fieldnames,
+                "last_message_id",
+                "wait_for_helpdesk",
+                "helpdesk_timeout",
+                "action",
+            ],
         )
         writer.writeheader()
 

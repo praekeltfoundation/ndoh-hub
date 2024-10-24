@@ -12,5 +12,5 @@ class CachedTokenAuthentication(TokenAuthentication):
         Does a cached lookup for a user for the given token
         """
         return locmem_cache.get_or_set(
-            "authtoken:{}".format(key), partial(super().authenticate_credentials, key)
+            f"authtoken:{key}", partial(super().authenticate_credentials, key)
         )

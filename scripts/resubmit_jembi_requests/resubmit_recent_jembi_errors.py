@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     webhook_calls = []
     failed_again = []
-    for request_id, url, request, status_code, contact_id, day in cursor:
+    for request_id, url, request, _status_code, contact_id, day in cursor:
         day = str(day).split(" ")[0]
         key = f"{url}_{contact_id}_{day}"
 
@@ -66,7 +66,7 @@ if __name__ == "__main__":
             failed_again.append(request_id)
 
         if time.time() - d_print > 1:
-            print(  # noqa
+            print(
                 f"\rProcessed {total}"
                 f" webhooks at {total/(time.time() - start):.0f}/s",
                 end="",
@@ -75,6 +75,6 @@ if __name__ == "__main__":
 
         total += 1
 
-    print("")  # noqa
-    print(f"Processed: {total}")  # noqa
-    print(f"Failed again: {failed_again}")  # noqa
+    print("")
+    print(f"Processed: {total}")
+    print(f"Failed again: {failed_again}")

@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 from datetime import datetime
 
@@ -26,14 +27,14 @@ def fields_from_contact(field_mapping, contact):
     def normalize_timestamp(value):
         try:
             return parse_datetime(value).isoformat()
-        except Exception:
-            pass
+        except Exception as _e:
+            logging.exception("Exception occurred")
         try:
             value = parse_date(value)
             value = datetime.combine(value, datetime.min.time())
             return value.replace(tzinfo=utc).isoformat()
-        except Exception:
-            pass
+        except Exception as _e:
+            logging.exception("Exception occurred")
 
     def datetime_field(field, value):
         value = normalize_timestamp(value)
@@ -77,7 +78,7 @@ def fields_from_contact(field_mapping, contact):
 
 
 if __name__ == "__main__":
-    conn = psycopg2.connect(dbname="temba", user="temba", password="temba")
+    conn = psycopg2.connect(dbname="temba", user="temba", password="temba")  # noqa: S106 - Probably OK here
     cursor = conn.cursor()
     cursor.execute(
         """

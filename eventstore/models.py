@@ -1,7 +1,6 @@
 import random
 import uuid
 from datetime import date
-from typing import Text
 
 import pycountry
 from django.conf import settings
@@ -85,9 +84,7 @@ class OptOut(models.Model):
     data = models.JSONField(default=dict, blank=True, null=True)
 
     def __str__(self):
-        return "{} opt out: {} <{}>".format(
-            self.get_optout_type_display(), self.get_reason_display(), self.contact_id
-        )
+        return f"{self.get_optout_type_display()} opt out: {self.get_reason_display()} <{self.contact_id}>"
 
 
 class BabySwitch(models.Model):
@@ -348,10 +345,7 @@ class Message(models.Model):
             .get("labels", [])
         ]
 
-        if label in labels:
-            return True
-
-        return False
+        return label in labels
 
 
 class Event(models.Model):
@@ -592,9 +586,11 @@ class HCSStudyBRandomization(models.Model):
     )
 
     def process_study_b(self):
-        if self.msisdn not in settings.HCS_STUDY_B_WHITELIST:
-            if not settings.HCS_STUDY_B_ACTIVE:
-                return
+        if (
+            self.msisdn not in settings.HCS_STUDY_B_WHITELIST
+            and not settings.HCS_STUDY_B_ACTIVE
+        ):
+            return
         if self.created_by in settings.HCS_STUDY_B_CREATED_BY and not self.study_b_arm:
             self.study_b_arm = self.get_random_study_b_arm()
 
@@ -612,7 +608,7 @@ class HCSStudyBRandomization(models.Model):
         actual_total, actual_percentage = self.get_study_totals_per_province()
 
         if actual_total < target_total or actual_percentage < target_percentage:
-            return random.choice(self.STUDY_ARM_B_CHOICES)[0]
+            return random.choice(self.STUDY_ARM_B_CHOICES)[0]  # noqa: S311 - Not being used for crypto purposes
 
     def get_study_totals_per_province(self):
         all_provinces = HCSStudyBRandomization.objects.filter(
@@ -636,7 +632,7 @@ class HCSStudyBRandomization(models.Model):
 
 
 class HealthCheckUserProfileManager(models.Manager):
-    def get_or_prefill(self, msisdn: Text) -> "HealthCheckUserProfile":
+    def get_or_prefill(self, msisdn: str) -> "HealthCheckUserProfile":
         """
         Either gets the existing user profile, or creates one using data in the
         historical healthchecks
@@ -758,9 +754,11 @@ class HealthCheckUserProfile(models.Model):
         self.process_study_c(risk, created_by)
 
     def process_study_a(self, created_by):
-        if self.msisdn not in settings.HCS_STUDY_A_WHITELIST:
-            if not settings.HCS_STUDY_A_ACTIVE:
-                return
+        if (
+            self.msisdn not in settings.HCS_STUDY_A_WHITELIST
+            and not settings.HCS_STUDY_A_ACTIVE
+        ):
+            return
 
         if created_by == settings.HCS_STUDY_A_CREATED_BY and not self.hcs_study_a_arm:
             self.hcs_study_a_arm = self.get_random_study_arm()
@@ -819,10 +817,10 @@ class HealthCheckUserProfile(models.Model):
         actual_total, actual_percentage = self.get_study_totals_per_province()
 
         if actual_total < target_total or actual_percentage < target_percentage:
-            return random.choice(self.STUDY_ARM_CHOICES)[0]
+            return random.choice(self.STUDY_ARM_CHOICES)[0]  # noqa: S311 - Not being used for crypto purposes
 
     def get_random_study_quarantine_arm(self):
-        return random.choice(self.STUDY_ARM_QUARANTINE_CHOICES)[0]
+        return random.choice(self.STUDY_ARM_QUARANTINE_CHOICES)[0]  # noqa: S311 - Not being used for crypto purposes
 
 
 class CDUAddressUpdate(models.Model):
@@ -1052,7 +1050,7 @@ class ImportRow(models.Model):
             if not is_valid_edd_date(edd):
                 raise ValidationError("EDD must be between now and 9 months")
         except ValueError as e:
-            raise ValidationError(f"Invalid EDD date, {str(e)}")
+            raise ValidationError(f"Invalid EDD date, {e!s}") from e
         except TypeError:
             # Should be handled by the individual field validator
             pass
@@ -1060,7 +1058,7 @@ class ImportRow(models.Model):
         try:
             date(self.baby_dob_year, self.baby_dob_month, self.baby_dob_day)
         except ValueError as e:
-            raise ValidationError(f"Invalid Baby DOB date, {str(e)}")
+            raise ValidationError(f"Invalid Baby DOB date, {e!s}") from e
         except TypeError:
             # Should be handled by the individual field validator
             pass
@@ -1081,9 +1079,10 @@ class ImportRow(models.Model):
             raise ValidationError("Passport country required for passport ID type")
         if self.id_type == self.IDType.PASSPORT and not self.passport_number:
             raise ValidationError("Passport number required for passport ID type")
-        if self.id_type == self.IDType.NONE:
-            if self.dob_year is None or self.dob_month is None or self.dob_year is None:
-                raise ValidationError("Date of birth required for none ID type")
+        if self.id_type == self.IDType.NONE and (
+            self.dob_year is None or self.dob_month is None or self.dob_year is None
+        ):
+            raise ValidationError("Date of birth required for none ID type")
 
         if (
             self.dob_year is not None
@@ -1093,7 +1092,7 @@ class ImportRow(models.Model):
             try:
                 date(self.dob_year, self.dob_month, self.dob_day)
             except ValueError as e:
-                raise ValidationError(f"Invalid date of birth date, {str(e)}")
+                raise ValidationError(f"Invalid date of birth date, {e!s}") from e
 
 
 class OpenHIMQueue(models.Model):

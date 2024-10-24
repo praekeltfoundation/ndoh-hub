@@ -9,7 +9,6 @@ from .helpers import FakeAaqApi, FakeAaqUdV2Api
 
 
 class SearchFunctionTest(APITestCase):
-
     @responses.activate
     def test_search_function(self):
         user = get_user_model().objects.create_user("test")
