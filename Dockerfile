@@ -1,9 +1,10 @@
 FROM ghcr.io/praekeltfoundation/docker-django-bootstrap-nw:py3.9-bullseye
 
-RUN pip install poetry==1.8.3
 ENV DJANGO_SETTINGS_MODULE "ndoh_hub.settings"
 
 COPY . /app
+
+RUN pip install poetry
 RUN poetry config virtualenvs.create false \
     && poetry install --no-dev --no-interaction --no-ansi --no-cache
     

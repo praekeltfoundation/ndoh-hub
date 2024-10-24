@@ -1289,9 +1289,9 @@ class MessagesViewSetTests(APITestCase):
                 datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC),
             ),
         )
-        (self.assertEqual(messages.id, "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"),)
-        (self.assertEqual(messages.type, "image"),)
-        (self.assertEqual(messages.message_direction, Message.INBOUND),)
+        self.assertEqual(messages.id, "9e12d04c-af25-40b6-aa4f-57c72e8e3f91")
+        self.assertEqual(messages.type, "image")
+        self.assertEqual(messages.message_direction, Message.INBOUND)
         (
             self.assertEqual(
                 messages.data,
@@ -1395,9 +1395,9 @@ class MessagesViewSetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         [messages] = Message.objects.all()
         self.assertEqual(str(messages.contact_id), "whatsapp-id")
-        (self.assertEqual(messages.id, "message-id"),)
-        (self.assertEqual(messages.type, "text"),)
-        (self.assertEqual(messages.message_direction, Message.OUTBOUND),)
+        self.assertEqual(messages.id, "message-id")
+        self.assertEqual(messages.type, "text")
+        self.assertEqual(messages.message_direction, Message.OUTBOUND)
         (
             self.assertEqual(
                 messages.data,
