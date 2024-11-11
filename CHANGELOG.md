@@ -1,4 +1,8 @@
 # Changelog
+# 0.10.26
+1. Remove seaworthy from hub
+([#635](https://github.com/praekeltfoundation/ndoh-hub/pull/635))
+([#634](https://github.com/praekeltfoundation/ndoh-hub/pull/634))
 # 0.10.25
 1. Remove mqr from hub
 ([#633](https://github.com/praekeltfoundation/ndoh-hub/pull/633))
