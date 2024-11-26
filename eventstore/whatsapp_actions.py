@@ -4,7 +4,9 @@ from django.conf import settings
 from eventstore.models import SMS_CHANNELTYPE, DeliveryFailure, Event, OptOut
 from eventstore.tasks import (
     async_create_flow_start,
+    get_inbound_intent,
     get_rapidpro_contact_by_msisdn,
+    label_whatsapp_message,
     send_helpdesk_response_to_dhis2,
     update_rapidpro_contact,
 )
@@ -56,6 +58,14 @@ def handle_inbound(message):
 
     if not settings.DISABLE_EDD_LABEL_FLOW and message.has_label("EDD ISSUE"):
         handle_edd_message(message)
+
+    if settings.INTENT_CLASSIFIER_URL and message.type == "text":
+        text = message.data["text"]["body"]
+        if text.lower() != "yes":
+            chain(
+                get_inbound_intent.s(),
+                label_whatsapp_message.s(message.id),
+            ).delay(text)
 
 
 def update_rapidpro_alert_optout(message):
