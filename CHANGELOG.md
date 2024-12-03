@@ -1,4 +1,9 @@
 # Changelog
+
+# 0.10.28
+1. Add intent label tasks
+   ([#646](https://github.com/praekeltfoundation/ndoh-hub/pull/646))
+
 # 0.10.27
 1. Bump django from 4.2.15 to 4.2.16
 ([#628](https://github.com/praekeltfoundation/ndoh-hub/pull/628))
