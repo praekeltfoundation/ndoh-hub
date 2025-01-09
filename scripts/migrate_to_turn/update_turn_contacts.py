@@ -1,13 +1,12 @@
-import os
 import asyncio
 import csv
+import os
 import sys
 from urllib.parse import urljoin
 
 import aiohttp
 
 from scripts.migrate_to_rapidpro.retry_requests import request
-
 
 CONCURRENCY = 20
 
