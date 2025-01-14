@@ -33,18 +33,18 @@ async def worker(name, queue):
 
 
 async def main(filename, target):
-    queue = asyncio.Queue()
+    queue = asyncio.Queue(WORKER_COUNT)
 
     reader = csv.DictReader(open(filename))
     async with aiohttp.ClientSession() as session:
-        for row in reader:
-            update = (session, row, target)
-            queue.put_nowait(update)
-
         tasks = []
         for i in range(WORKER_COUNT):
             task = asyncio.create_task(worker(f"worker-{i}", queue))
             tasks.append(task)
+
+        for row in reader:
+            update = (session, row, target)
+            await queue.put(update)
 
         await queue.join()
         for task in tasks:
