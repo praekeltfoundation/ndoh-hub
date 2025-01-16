@@ -14,7 +14,7 @@ TURN_URL = "https://whatsapp-praekelt-cloud.turn.io"
 
 
 async def update_turn_contact_details(session, row, target):
-    wa_id = row.pop("wa_id")
+    wa_id = row.pop("urn")
 
     url = urljoin(TURN_URL, f"/v1/contacts/{wa_id}/profile")
     headers = {

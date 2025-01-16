@@ -63,7 +63,7 @@ def get_rapidpro_contacts(start_date=None, end_date=None):
 
             if wa_id:
                 data = get_field_data(contact)
-                data["wa_id"] = wa_id
+                data["urn"] = wa_id
                 contacts.append(data)
 
                 modified_on = contact.modified_on.astimezone(pytz.utc)
