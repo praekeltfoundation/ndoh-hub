@@ -17,7 +17,7 @@ def bulk_update_turn_contacts(filename):
     response = requests.post(url, data=data, headers=headers)
 
     print(response.status_code)
-    
+
     f = open(f"result_{filename}", "wb")
     f.write(response.content)
     f.close()
