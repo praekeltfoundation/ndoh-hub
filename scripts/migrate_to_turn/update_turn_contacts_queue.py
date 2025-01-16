@@ -82,7 +82,7 @@ async def main(filename, target):
             tasks.append(task)
 
         for row in reader:
-            wa_id = row.pop("wa_id")
+            wa_id = row.pop("urn")
             update = (session, wa_id, row, target)
             await queue.put(update)
 
