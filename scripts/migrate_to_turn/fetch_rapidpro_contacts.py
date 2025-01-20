@@ -8,14 +8,15 @@ from temba_client.v2 import TembaClient
 
 RAPIDPRO_URL = "https://rapidpro.qa.momconnect.co.za"
 
-START_DATE = "2024-01-01 14:13:06"
-END_DATE = "2025-01-07 19:13:06"
+START_DATE = "2025-01-20 01:13:06"
+END_DATE = "2025-01-20 19:13:06"
 LIMIT = 1000
 
 # TODO: add all the fields here: <rapidpro-field-name>: <details>
 FIELD_MAPPING = {
     "edd": {"turn_name": "test", "process": process_datetime, "type": "custom"},
     "name": {"turn_name": "name", "type": "default"},
+    "language": {"turn_name": "language", "type": "default"},
 }
 
 client = TembaClient(RAPIDPRO_URL, os.environ["RAPIDPRO_TOKEN"])
