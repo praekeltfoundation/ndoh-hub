@@ -16,7 +16,7 @@ LIMIT = 1000
 FIELD_MAPPING = {
     "edd": {"turn_name": "test", "process": process_datetime, "type": "custom"},
     "name": {"turn_name": "name", "type": "default"},
-    "language": {"turn_name": "language", "type": "default"}
+    "language": {"turn_name": "language", "type": "default"},
 }
 
 client = TembaClient(RAPIDPRO_URL, os.environ["RAPIDPRO_TOKEN"])
