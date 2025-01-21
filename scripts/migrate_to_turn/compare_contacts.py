@@ -65,5 +65,6 @@ def compare_contacts():
         writer.writeheader()
         writer.writerows(rows)
 
+
 if __name__ == "__main__":
-    compare_contacts()    
+    compare_contacts()
