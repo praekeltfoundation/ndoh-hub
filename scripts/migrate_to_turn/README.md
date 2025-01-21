@@ -54,6 +54,17 @@ This script takes the csv provided and sends it directly yto the Turn API. It wi
 Command to run:
 `python scripts/migrate_to_turn/update_turn_contacts_bulk.py contacts-2024-01-01-2025-01-07.csv`
 
+### compare_contacts.py
+
+This script can be used to compare specific contacts.
+
+Add the WhatsApp IDs of the contacts you want to compare to the WA_IDS list in the script.
+
+The script will get their Rapidpro and Turn contact details and output everything to a `compare.csv` file.
+
+Command to run:
+`python scripts/migrate_to_turn/compare_contacts.py`
+
 ## FIELD_MAPPING
 
 This is a dictionary the script uses to figure out where to get the data, how to process it and where it should go.
