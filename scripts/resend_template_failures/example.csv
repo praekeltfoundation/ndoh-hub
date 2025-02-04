@@ -1,0 +1,2 @@
+contact_id,template,message_rank
+2783123,"{u'language': {u'policy': u'deterministic', u'code': u'en'}, u'namespace': u'test-namespace', u'name': u'baby_switch_confirmation_v3', u'components': [{u'type': u'body', u'parameters': null}]}",1
