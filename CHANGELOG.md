@@ -1,4 +1,30 @@
 # Changelog
+
+# 0.10.28
+1. Add intent label tasks
+   ([#646](https://github.com/praekeltfoundation/ndoh-hub/pull/646))
+
+# 0.10.27
+1. Bump django from 4.2.15 to 4.2.16
+([#628](https://github.com/praekeltfoundation/ndoh-hub/pull/628))
+2. Update CHANGELOG
+([#636](https://github.com/praekeltfoundation/ndoh-hub/pull/636))
+3. add test coverage to PR comment using py-cov-action
+([#638](https://github.com/praekeltfoundation/ndoh-hub/pull/638))
+4. update gibberish detection function
+([#640](https://github.com/praekeltfoundation/ndoh-hub/pull/640))
+5. update gibberish response
+([#641](https://github.com/praekeltfoundation/ndoh-hub/pull/641))
+6. update gibberish response
+([#642](https://github.com/praekeltfoundation/ndoh-hub/pull/642))
+7. update gibberish response dict
+([#643](https://github.com/praekeltfoundation/ndoh-hub/pull/643))
+8. return a dict in utils when gibberish detected
+([#644](https://github.com/praekeltfoundation/ndoh-hub/pull/644))
+# 0.10.26
+1. Remove seaworthy from hub
+([#635](https://github.com/praekeltfoundation/ndoh-hub/pull/635))
+([#634](https://github.com/praekeltfoundation/ndoh-hub/pull/634))
 # 0.10.25
 1. Remove mqr from hub
 ([#633](https://github.com/praekeltfoundation/ndoh-hub/pull/633))

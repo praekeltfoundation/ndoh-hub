@@ -12,6 +12,7 @@ import requests
 from celery.exceptions import SoftTimeLimitExceeded
 from django.conf import settings
 from django.utils import dateparse, timezone
+from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 from temba_client.exceptions import TembaHttpError
 
@@ -778,3 +779,46 @@ def process_whatsapp_template_send_status():
         status.status = WhatsAppTemplateSendStatus.Status.ACTION_COMPLETED
         status.action_completed_at = timezone.now()
         status.save()
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def get_inbound_intent(text):
+    params = {"question": text}
+    response = requests.get(
+        urljoin(settings.INTENT_CLASSIFIER_URL, "/nlu/"),
+        params=params,
+        auth=HTTPBasicAuth(
+            settings.INTENT_CLASSIFIER_USER, settings.INTENT_CLASSIFIER_PASS
+        ),
+    )
+    response.raise_for_status()
+    return response.json()["intent"]
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def label_whatsapp_message(label, message_id):
+    headers = {
+        "Authorization": "Bearer {}".format(settings.TURN_TOKEN),
+        "content-type": "application/json",
+        "Accept": "application/vnd.v1+json",
+    }
+    response = requests.post(
+        urljoin(settings.TURN_URL, f"/v1/messages/{message_id}/labels"),
+        json={"labels": [label]},
+        headers=headers,
+    )
+    response.raise_for_status()

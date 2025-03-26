@@ -1,3 +1,4 @@
+import json
 from datetime import timedelta
 from unittest.mock import Mock, patch
 
@@ -202,6 +203,76 @@ class HandleInboundTests(DjangoTestCase):
         with patch("eventstore.whatsapp_actions.handle_edd_message") as handle:
             handle_inbound(message)
             handle.assert_not_called()
+
+    @responses.activate
+    def test_intent_classification(self):
+        inbound_text = "The test inbound message body"
+        responses.add(
+            responses.GET,
+            "http://intent-classifier/nlu/",
+            json={
+                "question": "The test inbound message body",
+                "intent": "Test Label",
+                "confidence": 90,
+            },
+        )
+
+        responses.add(
+            responses.POST, "http://turn/v1/messages/msg-id-1/labels", json={}
+        )
+
+        message = Mock()
+        message.has_label.return_value = False
+        message.id = "msg-id-1"
+        message.type = "text"
+        message.data = {"text": {"body": inbound_text}}
+
+        handle_inbound(message)
+
+        [intent_call, label_call] = responses.calls
+
+        self.assertEqual(intent_call.request.params, {"question": inbound_text})
+        self.assertEqual(
+            intent_call.request.headers["Authorization"],
+            "Basic bmx1X3VzZXI6bmx1X3Bhc3M=",
+        )
+
+        self.assertEqual(
+            json.loads(label_call.request.body), {"labels": ["Test Label"]}
+        )
+        self.assertEqual(
+            label_call.request.headers["Authorization"],
+            "Bearer turn-token",
+        )
+
+    @responses.activate
+    @override_settings(INTENT_CLASSIFIER_URL=None)
+    def test_intent_classification_disabled(self):
+        inbound_text = "The test inbound message body"
+
+        message = Mock()
+        message.has_label.return_value = False
+        message.id = "msg-id-1"
+        message.type = "text"
+        message.data = {"text": {"body": inbound_text}}
+
+        handle_inbound(message)
+
+        self.assertEqual(len(responses.calls), 0)
+
+    @responses.activate
+    def test_intent_classification_yes(self):
+        inbound_text = "YES"
+
+        message = Mock()
+        message.has_label.return_value = False
+        message.id = "msg-id-1"
+        message.type = "text"
+        message.data = {"text": {"body": inbound_text}}
+
+        handle_inbound(message)
+
+        self.assertEqual(len(responses.calls), 0)
 
 
 class UpdateRapidproAlertOptoutTests(DjangoTestCase):
