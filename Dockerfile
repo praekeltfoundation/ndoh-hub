@@ -1,12 +1,10 @@
-FROM ghcr.io/praekeltfoundation/docker-django-bootstrap-nw:py3.9-bullseye
+FROM ghcr.io/praekeltfoundation/docker-django-bootstrap-nw:py3.10-bullseye
 
 ENV DJANGO_SETTINGS_MODULE "ndoh_hub.settings"
 
 COPY . /app
 
-RUN pip install poetry
-RUN poetry config virtualenvs.create false \
-    && poetry install --no-dev --no-interaction --no-ansi --no-cache
+RUN pip install -e .
     
 RUN apt-get-install.sh gettext; \
     django-admin compilemessages; \

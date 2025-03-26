@@ -812,7 +812,7 @@ def get_inbound_intent(text):
 )
 def label_whatsapp_message(label, message_id):
     headers = {
-        "Authorization": "Bearer {}".format(settings.TURN_TOKEN),
+        "Authorization": f"Bearer {settings.TURN_TOKEN}",
         "content-type": "application/json",
         "Accept": "application/vnd.v1+json",
     }
