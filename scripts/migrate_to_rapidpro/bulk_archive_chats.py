@@ -150,7 +150,7 @@ for urn in urns:
     if time.time() - d_print > 1:
         print(
             f"\rProcessed {archived}/{total} contacts at "
-            f"{total/(time.time() - start):.0f}/s",
+            f"{total / (time.time() - start):.0f}/s",
             end="",
         )
         d_print = time.time()
@@ -158,6 +158,5 @@ for urn in urns:
     total += 1
 
 print(
-    f"\rProcessed {archived}/{total} contacts at "
-    f"{total/(time.time() - start):.0f}/s"
+    f"\rProcessed {archived}/{total} contacts at {total / (time.time() - start):.0f}/s"
 )

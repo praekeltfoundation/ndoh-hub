@@ -88,7 +88,7 @@ if __name__ == "__main__":
         if time.time() - d_print > 1:
             print(
                 f"\rProcessed {updated}/{total} contacts at "
-                f"{total/(time.time() - start):.0f}/s - ({contact_id})",
+                f"{total / (time.time() - start):.0f}/s - ({contact_id})",
                 end="",
             )
             d_print = time.time()
@@ -97,5 +97,5 @@ if __name__ == "__main__":
 
     print(
         f"\rProcessed {updated}/{total} contacts at "
-        f"{total/(time.time() - start):.0f}/s - ({contact_id})"
+        f"{total / (time.time() - start):.0f}/s - ({contact_id})"
     )

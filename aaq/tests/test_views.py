@@ -54,7 +54,7 @@ class GetFirstPageViewTests(APITestCase):
                     "id": "26",
                 },
                 "3": {
-                    "text": "*Bleeding during pregnancy*\r\n \r\n*Early " "pregnancy",
+                    "text": "*Bleeding during pregnancy*\r\n \r\n*Early pregnancy",
                     "id": "114",
                 },
                 "4": {
@@ -63,8 +63,7 @@ class GetFirstPageViewTests(APITestCase):
                     "id": "111",
                 },
                 "5": {
-                    "text": "*Sometimes breast pain needs to be checked at "
-                    "the clinic",
+                    "text": "*Sometimes breast pain needs to be checked at the clinic",
                     "id": "150",
                 },
             },

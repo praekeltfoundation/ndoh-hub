@@ -1701,8 +1701,7 @@ class WhatsappEventsViewSetTests(APITestCase, BaseEventTestCase):
         event.save()
 
         response = self.client.get(
-            f"{self.url}?"
-            f"{urlencode({'timestamp_gt': event_old.timestamp.isoformat()})}"
+            f"{self.url}?{urlencode({'timestamp_gt': event_old.timestamp.isoformat()})}"
         )
         self.assertEqual(
             response.data["results"],
@@ -2531,8 +2530,7 @@ class Covid19TriageStartViewSetTests(APITestCase, BaseEventTestCase):
             msisdn="+27820001001", source="USSD"
         )
         response = self.client.get(
-            f"{self.url}?"
-            f"{urlencode({'timestamp_gt': start_old.timestamp.isoformat()})}"
+            f"{self.url}?{urlencode({'timestamp_gt': start_old.timestamp.isoformat()})}"
         )
         self.assertEqual(
             response.data["results"],

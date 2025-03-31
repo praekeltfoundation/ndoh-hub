@@ -113,7 +113,7 @@ async def process_conversation(session, row, writer):
     if time.time() - d_print > 1:
         print(
             f"\rProcessed {processed} ({eligible_archive} & {eligible_update}"
-            f" contacts at {processed/(time.time() - start):.0f}/s",
+            f" contacts at {processed / (time.time() - start):.0f}/s",
             end="",
         )
         d_print = time.time()

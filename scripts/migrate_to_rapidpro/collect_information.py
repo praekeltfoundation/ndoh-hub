@@ -187,7 +187,7 @@ def deduplicate_msisdns(identities):
             )
         if time.time() - d_print > 1:
             print(
-                f"\rProcessed {total} msisdns at {total/(time.time() - start):.0f}/s",
+                f"\rProcessed {total} msisdns at {total / (time.time() - start):.0f}/s",
                 end="",
             )
             d_print = time.time()
@@ -224,7 +224,7 @@ if __name__ == "__main__":
         if time.time() - d_print > 1:
             print(
                 f"\rProcessed {total} identities at "
-                f"{total/(time.time() - start):.0f}/s",
+                f"{total / (time.time() - start):.0f}/s",
                 end="",
             )
             d_print = time.time()
@@ -247,7 +247,7 @@ if __name__ == "__main__":
         process_optout(identities, id, created, reason)
         if time.time() - d_print > 1:
             print(
-                f"\rProcessed {total} optouts at {total/(time.time() - start):.0f}/s",
+                f"\rProcessed {total} optouts at {total / (time.time() - start):.0f}/s",
                 end="",
             )
             d_print = time.time()
@@ -282,7 +282,7 @@ if __name__ == "__main__":
         if time.time() - d_print > 1:
             print(
                 f"\rProcessed {total} registrations at "
-                f"{total/(time.time() - start):.0f}/s",
+                f"{total / (time.time() - start):.0f}/s",
                 end="",
             )
             d_print = time.time()
@@ -309,7 +309,7 @@ if __name__ == "__main__":
         process_change(identities, id, action, data, created)
         if time.time() - d_print > 1:
             print(
-                f"\rProcessed {total} changes at {total/(time.time() - start):.0f}/s",
+                f"\rProcessed {total} changes at {total / (time.time() - start):.0f}/s",
                 end="",
             )
             d_print = time.time()
@@ -348,7 +348,7 @@ if __name__ == "__main__":
         if time.time() - d_print > 1:
             print(
                 f"\rProcessed {total} subscriptions at "
-                f"{total/(time.time() - start):.0f}/s",
+                f"{total / (time.time() - start):.0f}/s",
                 end="",
             )
             d_print = time.time()

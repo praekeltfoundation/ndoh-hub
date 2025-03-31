@@ -40,7 +40,7 @@ class Command(BaseCommand):
             func(arg)
             if time.time() - d_print > 1:
                 self.stdout.write(
-                    f"\rProcessed {total} at {total/(time.time() - start):.0f}/s",
+                    f"\rProcessed {total} at {total / (time.time() - start):.0f}/s",
                     ending="",
                 )
                 d_print = time.time()

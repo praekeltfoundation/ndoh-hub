@@ -163,7 +163,7 @@ if __name__ == "__main__":
             if time.time() - d_print > 1:
                 print(
                     f"\rProcessed {total} ({empty_duplicate}/{no_duplicate_found})"
-                    f" contacts at {total/(time.time() - start):.0f}/s",
+                    f" contacts at {total / (time.time() - start):.0f}/s",
                     end="",
                 )
                 d_print = time.time()

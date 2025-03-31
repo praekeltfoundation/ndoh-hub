@@ -68,7 +68,7 @@ if __name__ == "__main__":
         if time.time() - d_print > 1:
             print(
                 f"\rProcessed {total}"
-                f" webhooks at {total/(time.time() - start):.0f}/s",
+                f" webhooks at {total / (time.time() - start):.0f}/s",
                 end="",
             )
             d_print = time.time()
