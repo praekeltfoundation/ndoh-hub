@@ -47,7 +47,7 @@ jobs:
       - name: Run migrations
         if: success() || failure() && steps.install-deps.outcome == 'success'
         run: |
-          uv run ./manage.py makemigrations registrations changes eventstore --dry-run | grep 'No changes detected' || (echo 'There are changes which require migrations.' && exit 1)
+          uv run ./manage.py makemigrations --dry-run | grep 'No changes detected' || (echo 'There are changes which require migrations.' && exit 1)
       - name: Run tests
         if: success() || failure() && steps.install-deps.outcome == 'success'
         run: |
