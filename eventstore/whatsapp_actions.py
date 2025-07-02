@@ -95,6 +95,12 @@ def handle_event(event):
     """
     Triggers all the actions that are required for this event
     """
+
+    included_error_codes = [
+        131026,  # Not a WhatsApp number, outdated app or unaccepted terms
+        131050,  # User has stopped receipt of marketing messages
+    ]
+
     if event.status == Event.FAILED:
         reason = OptOut.WHATSAPP_FAILURE_REASON
         if event.fallback_channel is True:
@@ -103,11 +109,12 @@ def handle_event(event):
             if settings.DISABLE_SMS_FAILURE_OPTOUTS:
                 return
 
-        increment_failure_count(event.recipient_id, event.timestamp, reason)
-
         errors = event.data.get("errors", [])
         for error in errors:
-            if error.get("code") == 131026:
+            error_code = error.get("code")
+            if error_code in included_error_codes:
+                increment_failure_count(event.recipient_id, event.timestamp, reason)
+            if error_code == 131026:
                 update_whatsapp_template_send_status.delay(
                     event.message_id, SMS_CHANNELTYPE
                 )
