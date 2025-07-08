@@ -340,6 +340,19 @@ class HandleEventTests(DjangoTestCase):
         event.status = Event.FAILED
         event.recipient_id = "27820001001"
         event.timestamp = str(timezone.now() + timedelta(days=2))
+        event.data = {
+            "errors": [
+                {
+                    "code": 131026,
+                    "error_data": {
+                        "details": "Message failed to send because more than "
+                        "24 hours have passed since the customer "
+                        "last replied to this number."
+                    },
+                    "title": "Re-engagement message",
+                }
+            ]
+        }
         event.save()
 
         event.refresh_from_db()
@@ -436,6 +449,19 @@ class HandleEventTests(DjangoTestCase):
         event.status = Event.FAILED
         event.recipient_id = "27820001001"
         event.timestamp = timezone.now() + timedelta(days=2)
+        event.data = {
+            "errors": [
+                {
+                    "code": 131026,
+                    "error_data": {
+                        "details": "Message failed to send because more "
+                        "than 24 hours have passed since the customer "
+                        "last replied to this number."
+                    },
+                    "title": "Re-engagement message",
+                }
+            ]
+        }
         event.save()
 
         DeliveryFailure.objects.create(number_of_failures=4, contact_id="27820001001")
@@ -490,6 +516,19 @@ class HandleEventTests(DjangoTestCase):
         event.status = Event.FAILED
         event.recipient_id = "27820001001"
         event.timestamp = timezone.now() + timedelta(days=2)
+        event.data = {
+            "errors": [
+                {
+                    "code": 131026,
+                    "error_data": {
+                        "details": "Message failed to send because "
+                        "more than 24 hours have passed since the "
+                        "customer last replied to this number."
+                    },
+                    "title": "Re-engagement message",
+                }
+            ]
+        }
         event.save()
 
         DeliveryFailure.objects.create(number_of_failures=5, contact_id="27820001001")
@@ -512,12 +551,58 @@ class HandleEventTests(DjangoTestCase):
         event.status = Event.FAILED
         event.recipient_id = "27820001001"
         event.timestamp = timezone.now() + timedelta(days=2)
+        event.data = {
+            "errors": [
+                {
+                    "code": 131026,
+                    "error_data": {
+                        "details": "Message failed to send because more "
+                        "than 24 hours have passed since the customer "
+                        "last replied to this number."
+                    },
+                    "title": "Re-engagement message",
+                }
+            ]
+        }
         event.save()
 
         with patch("eventstore.tasks.rapidpro") as p:
             handle_event(event)
 
         p.create_flow_start.assert_not_called()
+        df = DeliveryFailure.objects.get(contact_id="27820001001")
+        self.assertEqual(df.number_of_failures, 1)
+
+    def test_whatsapp_delivery_failure_excluded_error_code(self):
+        """
+        If it's a failed event and the error code is not in the
+        included_error_codes list, it should not increment
+        the failure count.
+        """
+        event = Event.objects.create()
+        event.fallback_channel = False
+        event.status = Event.FAILED
+        event.recipient_id = "27820001001"
+        event.timestamp = timezone.now() + timedelta(days=2)
+        event.data = {
+            "errors": [
+                {
+                    "code": 131000,
+                    "error_data": {
+                        "details": "Message failed to send due " "to an unknown error."
+                    },
+                    "title": "Something went wrong",
+                }
+            ]
+        }
+        event.save()
+
+        DeliveryFailure.objects.create(number_of_failures=1, contact_id="27820001001")
+
+        with patch("eventstore.whatsapp_actions.increment_failure_count") as p:
+            handle_event(event)
+            p.assert_not_called()
+
         df = DeliveryFailure.objects.get(contact_id="27820001001")
         self.assertEqual(df.number_of_failures, 1)
 
