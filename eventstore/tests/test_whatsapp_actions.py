@@ -589,7 +589,7 @@ class HandleEventTests(DjangoTestCase):
                 {
                     "code": 131000,
                     "error_data": {
-                        "details": "Message failed to send due " "to an unknown error."
+                        "details": "Message failed to send due to an unknown error."
                     },
                     "title": "Something went wrong",
                 }
