@@ -202,7 +202,7 @@ class HandleInboundTests(DjangoTestCase):
 
         with patch("eventstore.whatsapp_actions.handle_edd_message") as handle:
             handle_inbound(message)
-            handle.assert_not_called
+            handle.assert_not_called()
 
     @responses.activate
     def test_intent_classification(self):
@@ -589,7 +589,7 @@ class HandleEventTests(DjangoTestCase):
                 {
                     "code": 131000,
                     "error_data": {
-                        "details": "Message failed to send due " "to an unknown error."
+                        "details": "Message failed to send due to an unknown error."
                     },
                     "title": "Something went wrong",
                 }

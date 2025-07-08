@@ -42,7 +42,6 @@ class ApproximatePaginator(Paginator):
 
     @cached_property
     def count(self):
-        cursor = connection.cursor()
         with transaction.atomic(), connection.cursor() as cursor:
             cursor.execute("SET LOCAL statement_timeout TO 50")
             try:

@@ -40,11 +40,7 @@ async def get_rapidpro_contact(session, contact_id):
 
 
 def in_postbirth_group(contact):
-    for group in contact["groups"]:
-        if "post" in group["name"].lower():
-            return True
-
-    return False
+    return any("post" in group["name"].lower() for group in contact["groups"])
 
 
 def get_contact_msisdn(contact):
@@ -80,7 +76,7 @@ def get_babyswitches(conn):
         if time.time() - d_print > 1:
             print(
                 f"\rFetched {total} babyswitches at "
-                f"{total/(time.time() - start):.0f}/s",
+                f"{total / (time.time() - start):.0f}/s",
                 end="",
             )
             d_print = time.time()
@@ -110,7 +106,7 @@ def get_optouts(conn):
 
         if time.time() - d_print > 1:
             print(
-                f"\rFetched {total} optouts at " f"{total/(time.time() - start):.0f}/s",
+                f"\rFetched {total} optouts at {total / (time.time() - start):.0f}/s",
                 end="",
             )
             d_print = time.time()
@@ -146,7 +142,7 @@ def get_registrations(conn, babyswitches, optouts):
         if time.time() - d_print > 1:
             print(
                 f"\rFetched {total} registrations at "
-                f"{total/(time.time() - start):.0f}/s",
+                f"{total / (time.time() - start):.0f}/s",
                 end="",
             )
             d_print = time.time()
@@ -205,7 +201,7 @@ async def process_registration(session, contact_id, hub_writer, rp_writer):
     if time.time() - d_print > 1:
         print(
             f"\rProcessed {total}({excluded}) registrations at "
-            f"{total/(time.time() - start):.0f}/s",
+            f"{total / (time.time() - start):.0f}/s",
             end="",
         )
         d_print = time.time()
@@ -223,9 +219,10 @@ async def process_registrations(registrations):
     sema = asyncio.Semaphore(CONCURRENCY)
 
     print("Processing Registrations...")
-    with open(HUB_OUTPUT_FILE, "w", newline="") as hub_target, open(
-        RAPIDPRO_OUTPUT_FILE, "w", newline=""
-    ) as rp_target:
+    with (
+        open(HUB_OUTPUT_FILE, "w", newline="") as hub_target,
+        open(RAPIDPRO_OUTPUT_FILE, "w", newline="") as rp_target,
+    ):
         hub_writer = csv.DictWriter(
             hub_target, fieldnames=["contact_id", "msisdn", "timestamp"]
         )

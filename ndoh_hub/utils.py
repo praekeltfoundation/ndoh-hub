@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division
-
 import base64
 import datetime
 import hmac
@@ -20,7 +18,7 @@ from temba_client.v2 import TembaClient
 
 from eventstore import models
 from ndoh_hub.auth import CachedTokenAuthentication
-from ndoh_hub.constants import ID_TYPES, LANGUAGES, PASSPORT_ORIGINS  # noqa:F401
+from ndoh_hub.constants import ID_TYPES, LANGUAGES, PASSPORT_ORIGINS
 
 rapidpro = None
 if settings.EXTERNAL_REGISTRATIONS_V2:
@@ -37,8 +35,8 @@ def validate_signature(request):
     secret = settings.TURN_HMAC_SECRET
     try:
         signature = request.META["HTTP_X_TURN_HOOK_SIGNATURE"]
-    except KeyError:
-        raise AuthenticationFailed("X-Turn-Hook-Signature header required")
+    except KeyError as ke:
+        raise AuthenticationFailed("X-Turn-Hook-Signature header required") from ke
 
     h = hmac.new(secret.encode(), request.body, sha256)
 
@@ -192,7 +190,7 @@ def get_random_date(start_date=None):
     time_between_dates = end_date - start_date
     days_between_dates = time_between_dates.days
 
-    random_number_of_days = random.randrange(days_between_dates)
+    random_number_of_days = random.randrange(days_between_dates)  # noqa: S311 - Not being used for crypto purposes
 
     return start_date + datetime.timedelta(days=random_number_of_days)
 
@@ -217,7 +215,7 @@ def update_turn_contact_details(wa_id, fields):
         "Accept": "application/vnd.v1+json",
     }
     response = requests.patch(
-        urljoin(settings.TURN_URL, "/v1/contacts/{}".format(wa_id)),
+        urljoin(settings.TURN_URL, f"/v1/contacts/{wa_id}"),
         json=fields,
         headers=headers,
     )

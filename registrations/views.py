@@ -22,7 +22,6 @@ class BearerTokenAuthentication(TokenAuthentication):
 
 
 class FacilityDetailsView(generics.RetrieveAPIView):
-
     def get(self, request):
         try:
             facility_code = request.query_params["facility_code"]

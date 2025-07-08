@@ -28,9 +28,9 @@ class HandleOldWaitingForHelpdeskContactsTests(TestCase):
         tasks.get_today = override_get_today
         tasks.rapidpro = TembaClient("textit.in", "test-token")
 
-    def add_rapidpro_contact_list_response(
-        self, contact_id, fields, urns=["whatsapp:27820001001"]
-    ):
+    def add_rapidpro_contact_list_response(self, contact_id, fields, urns=None):
+        if urns is None:
+            urns = ["whatsapp:27820001001"]
         responses.add(
             responses.GET,
             "https://textit.in/api/v2/contacts.json?group=Waiting+for+helpdesk",
@@ -53,9 +53,9 @@ class HandleOldWaitingForHelpdeskContactsTests(TestCase):
             },
         )
 
-    def add_rapidpro_contact_update_response(
-        self, contact_id, fields, urns=["whatsapp:27820001001"]
-    ):
+    def add_rapidpro_contact_update_response(self, contact_id, fields, urns=None):
+        if urns is None:
+            urns = ["whatsapp:27820001001"]
         responses.add(
             responses.POST,
             f"https://textit.in/api/v2/contacts.json?uuid={contact_id}",
@@ -596,13 +596,13 @@ class PostRandomContactsToSlackTests(TestCase):
     @responses.activate
     @override_settings(
         TURN_URL="https://turn/",
-        TURN_TOKEN="token",
+        TURN_TOKEN="token",  # noqa: S106 - Fake password/token for test purposes
         EXTERNAL_REGISTRATIONS_V2=True,
         SLACK_CHANNEL="test-slack",
         SLACK_URL="http://slack.com",
         RAPIDPRO_URL="rapidpro",
-        RAPIDPRO_TOKEN="rapidpro-token",
-        SLACK_TOKEN="slack-token",
+        RAPIDPRO_TOKEN="rapidpro-token",  # noqa: S106 - Fake password/token for test purposes
+        SLACK_TOKEN="slack-token",  # noqa: S106 - Fake password/token for test purposes
     )
     def test_post_random_contacts_to_slack_channel(self):
         responses.add(
@@ -678,7 +678,7 @@ class PostRandomContactsToSlackTests(TestCase):
         )
 
     @responses.activate
-    @override_settings(TURN_URL="https://turn/", TURN_TOKEN="token")
+    @override_settings(TURN_URL="https://turn/", TURN_TOKEN="token")  # noqa: S106 - Fake password/token for test purposes
     def test_get_random_contact(self):
         responses.add(
             responses.GET,
@@ -711,7 +711,7 @@ class GetTurnContactProfileTests(TestCase):
         tasks.rapidpro = TembaClient("textit.in", "test-token")
 
     @responses.activate
-    @override_settings(TURN_URL="http://turn/", TURN_TOKEN="token")
+    @override_settings(TURN_URL="http://turn/", TURN_TOKEN="token")  # noqa: S106 - Fake password/token for test purposes
     def test_get_turn_profile_link(self):
         responses.add(
             responses.GET,
@@ -772,7 +772,7 @@ class SendSlackMessageTests(TestCase):
         ]
 
     @responses.activate
-    @override_settings(SLACK_URL="http://slack.com", SLACK_TOKEN="slack_token")
+    @override_settings(SLACK_URL="http://slack.com", SLACK_TOKEN="slack_token")  # noqa: S106 - Fake password/token for test purposes
     def test_send_slack_message(self):
         responses.add(
             responses.POST,

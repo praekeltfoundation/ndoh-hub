@@ -1,11 +1,10 @@
 import json
 from collections import defaultdict
-from typing import Tuple
 from uuid import uuid4
 
 import psycopg2
 
-PREBIRTH: Tuple[Tuple[str, str, Tuple[int, ...], int], ...] = (
+PREBIRTH: tuple[tuple[str, str, tuple[int, ...], int], ...] = (
     ("pmtct_prebirth.patient.1", "PMTCT 1 SMS", (0,), 5),
     ("pmtct_prebirth.patient.2", "PMTCT 2 SMS", (0, 3), 30),
     ("pmtct_prebirth.patient.3", "PMTCT 3 SMS", (0, 2, 4), 35),
@@ -17,24 +16,24 @@ PREBIRTH: Tuple[Tuple[str, str, Tuple[int, ...], int], ...] = (
     ("momconnect_prebirth.hw_full.6", "Prebirth 6 SMS", (0, 1, 2, 3, 4, 5, 6), 39),
 )
 
-POSTBIRTH: Tuple[Tuple[str, str, Tuple[int, ...], int], ...] = (
+POSTBIRTH: tuple[tuple[str, str, tuple[int, ...], int], ...] = (
     ("momconnect_postbirth.hw_full.1", "Postbirth SMS", (0, 3), 0),
     ("momconnect_postbirth.hw_full.2", "Postbirth SMS", (0,), 15),
     ("pmtct_postbirth.patient.1", "PMTCT Postbirth SMS", (0, 3), 0),
     ("pmtct_postbirth.patient.2", "PMTCT Postbirth SMS", (0,), 2),
 )
 
-LOSS: Tuple[Tuple[str, str, Tuple[int, ...]], ...] = (
+LOSS: tuple[tuple[str, str, tuple[int, ...]], ...] = (
     ("loss_babyloss.patient.1", "Babyloss SMS", (0, 3)),
     ("loss_stillbirth.patient.1", "Stillbirth SMS", (0,)),
     ("loss_miscarriage.patient.1", "Miscarriage SMS", (0, 3)),
 )
 
-PUBLIC: Tuple[Tuple[str, str, Tuple[int, ...]], ...] = (
+PUBLIC: tuple[tuple[str, str, tuple[int, ...]], ...] = (
     ("momconnect_prebirth.patient.1", "Public SMS", (0, 3)),
 )
 
-POPI: Tuple[str, str] = ("popi.hw_full.1", "POPI SMS")
+POPI: tuple[str, str] = ("popi.hw_full.1", "POPI SMS")
 
 
 def create_campaign(name: str, group: str) -> dict:

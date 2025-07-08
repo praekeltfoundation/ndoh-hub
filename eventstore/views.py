@@ -92,7 +92,7 @@ def CursorPaginationFactory(field):
     class CustomCursorPagination(CursorPagination):
         ordering = field
 
-    name = "{}CursorPagination".format(field.capitalize())
+    name = f"{field.capitalize()}CursorPagination"
     CustomCursorPagination.__name__ = name
     CustomCursorPagination.__qualname__ = name
 
@@ -573,8 +573,8 @@ class DeliveryFailureViewSet(GenericViewSet, CreateModelMixin, RetrieveModelMixi
     def get_object(self):
         try:
             obj = DeliveryFailure.objects.get(contact_id=self.kwargs["pk"])
-        except DeliveryFailure.DoesNotExist:
-            raise Http404()
+        except DeliveryFailure.DoesNotExist as df:
+            raise Http404() from df
         self.check_object_permissions(self.request, obj)
         return obj
 

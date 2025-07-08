@@ -53,7 +53,7 @@ if __name__ == "__main__":
     )
     field_mapping = dict(mapping_cursor)
 
-    print("Processing contacts...")  # noqa
+    print("Processing contacts...")
     cursor.execute(
         """
         SELECT
@@ -103,16 +103,16 @@ if __name__ == "__main__":
                 updated += 1
 
         if time.time() - d_print > 1:
-            print(  # noqa
+            print(
                 f"\rProcessed {total}/{updated} contacts at "
-                f"{total/(time.time() - start):.0f}/s - ({contact_id})",
+                f"{total / (time.time() - start):.0f}/s - ({contact_id})",
                 end="",
             )
             d_print = time.time()
 
         total += 1
 
-    print(  # noqa
+    print(
         f"\rProcessed {total}/{updated} contacts at "
-        f"{total/(time.time() - start):.0f}/s - ({contact_id})"
+        f"{total / (time.time() - start):.0f}/s - ({contact_id})"
     )

@@ -18,7 +18,7 @@ def length_limit(limit):
 
 
 @attr.s
-class Template(object):
+class Template:
     category = attr.ib(
         validator=attr.validators.in_(
             (

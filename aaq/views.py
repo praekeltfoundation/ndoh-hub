@@ -172,7 +172,6 @@ def response_feedback(request, *args, **kwargs):
 @api_view(("POST",))
 @renderer_classes((JSONRenderer,))
 def aaq_search(request):
-
     serializer = SearchSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     query_text = serializer.validated_data["query_text"]

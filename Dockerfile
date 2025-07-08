@@ -1,10 +1,11 @@
-FROM ghcr.io/praekeltfoundation/docker-django-bootstrap-nw:py3.9-bullseye
+FROM ghcr.io/praekeltfoundation/docker-django-bootstrap-nw:py3.10-bullseye
 
-COPY setup.py /app
-RUN pip install --no-cache-dir -e .
 ENV DJANGO_SETTINGS_MODULE "ndoh_hub.settings"
 
 COPY . /app
+
+RUN pip install -e .
+    
 RUN apt-get-install.sh gettext; \
     django-admin compilemessages; \
     apt-get-purge.sh gettext

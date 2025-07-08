@@ -34,23 +34,32 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.9
+      - name: Install pipx
+        run: python -m pip install pipx
+
+      - name: Ensure pipx path
+        run: python -m pipx ensurepath
+
+      - name: Install uv with pipx
+        run: python -m pipx install uv
       - name: Install dependancies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt
-          django-admin compilemessages
+          uv sync --dev
+      - name: Check formatting
+        # Lints/tests should always run, even if other lints/tests have failed.
+        if: success() || failure() && steps.install-deps.outcome == 'success'
+        run: |
+          uv run ruff format --check
       - name: Lint
+        if: success() || failure() && steps.install-deps.outcome == 'success'
         run: |
-          flake8
-          python manage.py makemigrations registrations changes eventstore --dry-run | grep 'No changes detected' || (echo 'There are changes which require migrations.' && exit 1)
-          black --check .
-          isort -c -rc .
-      - name: Test
+          uv run ruff check
+      - name: Run migrations
+        if: success() || failure() && steps.install-deps.outcome == 'success'
         run: |
-          py.test
-      - name: Coverage comment
-        id: coverage_comment
-        uses: py-cov-action/python-coverage-comment-action@v3
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          uv run ./manage.py makemigrations --dry-run | grep 'No changes detected' || (echo 'There are changes which require migrations.' && exit 1)
+      - name: Run tests
+        if: success() || failure() && steps.install-deps.outcome == 'success'
+        run: |
+          uv run pytest -vv
 

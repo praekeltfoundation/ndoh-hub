@@ -18,7 +18,7 @@ class HUBAPITestCase(TestCase):
 
 class AuthenticatedAPITestCase(HUBAPITestCase):
     def setUp(self):
-        super(AuthenticatedAPITestCase, self).setUp()
+        super().setUp()
 
         # Normal User setup
         self.normalusername = "testnormaluser"
@@ -127,7 +127,7 @@ class FacilityCheckViewTests(APITestCase):
 class WhatsAppContactCheckViewTests(AuthenticatedAPITestCase):
     def setUp(self):
         super().setUp()
-        self.normalclient.credentials(HTTP_AUTHORIZATION="Bearer %s" % self.normaltoken)
+        self.normalclient.credentials(HTTP_AUTHORIZATION=f"Bearer {self.normaltoken}")
 
     def test_authentication_required(self):
         """

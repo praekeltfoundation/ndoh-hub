@@ -58,7 +58,7 @@ from eventstore.serializers import (
 )
 
 
-class BaseEventTestCase(object):
+class BaseEventTestCase:
     def test_authentication_required(self):
         """
         There must be an authenticated user to make the request
@@ -1283,38 +1283,43 @@ class MessagesViewSetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         [messages] = Message.objects.all()
         self.assertEqual(str(messages.contact_id), "sender-wa-id")
-        self.assertEqual(
-            messages.timestamp, datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC)
-        ),
-        self.assertEqual(messages.id, "9e12d04c-af25-40b6-aa4f-57c72e8e3f91"),
-        self.assertEqual(messages.type, "image"),
-        self.assertEqual(messages.message_direction, Message.INBOUND),
-        self.assertEqual(
-            messages.data,
-            {
-                "context": {
-                    "from": "sender-wa-id-of-context-message",
-                    "group_id": "group-id-of-context-message",
-                    "id": "message-id-of-context-message",
-                    "mentions": ["wa-id1", "wa-id2"],
+        (
+            self.assertEqual(
+                messages.timestamp,
+                datetime.datetime(2018, 2, 15, 11, 38, 20, tzinfo=UTC),
+            ),
+        )
+        self.assertEqual(messages.id, "9e12d04c-af25-40b6-aa4f-57c72e8e3f91")
+        self.assertEqual(messages.type, "image")
+        self.assertEqual(messages.message_direction, Message.INBOUND)
+        (
+            self.assertEqual(
+                messages.data,
+                {
+                    "context": {
+                        "from": "sender-wa-id-of-context-message",
+                        "group_id": "group-id-of-context-message",
+                        "id": "message-id-of-context-message",
+                        "mentions": ["wa-id1", "wa-id2"],
+                    },
+                    "image": {
+                        "file": "absolute-filepath-on-coreapp",
+                        "id": "media-id",
+                        "link": "link-to-image-file",
+                        "mime_type": "media-mime-type",
+                        "sha256": "checksum",
+                        "caption": "image-caption",
+                    },
+                    "location": {
+                        "address": "1 Hacker Way, Menlo Park, CA, 94025",
+                        "name": "location-name",
+                    },
+                    "system": {"body": "system-message-content"},
+                    "text": {"body": "text-message-content"},
+                    "random": "data",
                 },
-                "image": {
-                    "file": "absolute-filepath-on-coreapp",
-                    "id": "media-id",
-                    "link": "link-to-image-file",
-                    "mime_type": "media-mime-type",
-                    "sha256": "checksum",
-                    "caption": "image-caption",
-                },
-                "location": {
-                    "address": "1 Hacker Way, Menlo Park, CA, 94025",
-                    "name": "location-name",
-                },
-                "system": {"body": "system-message-content"},
-                "text": {"body": "text-message-content"},
-                "random": "data",
-            },
-        ),
+            ),
+        )
         self.assertEqual(messages.created_by, user.username)
 
         mock_handle_inbound.assert_called_with(messages)
@@ -1390,19 +1395,21 @@ class MessagesViewSetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         [messages] = Message.objects.all()
         self.assertEqual(str(messages.contact_id), "whatsapp-id")
-        self.assertEqual(messages.id, "message-id"),
-        self.assertEqual(messages.type, "text"),
-        self.assertEqual(messages.message_direction, Message.OUTBOUND),
-        self.assertEqual(
-            messages.data,
-            {
-                "text": {"body": "your-text-message-content"},
-                "render_mentions": True,
-                "preview_url": True,
-                "random": "data",
-                "recipient_type": "individual",
-            },
-        ),
+        self.assertEqual(messages.id, "message-id")
+        self.assertEqual(messages.type, "text")
+        self.assertEqual(messages.message_direction, Message.OUTBOUND)
+        (
+            self.assertEqual(
+                messages.data,
+                {
+                    "text": {"body": "your-text-message-content"},
+                    "render_mentions": True,
+                    "preview_url": True,
+                    "random": "data",
+                    "recipient_type": "individual",
+                },
+            ),
+        )
         self.assertEqual(messages.created_by, user.username)
         self.assertFalse(messages.fallback_channel)
 
@@ -1694,8 +1701,7 @@ class WhatsappEventsViewSetTests(APITestCase, BaseEventTestCase):
         event.save()
 
         response = self.client.get(
-            f"{self.url}?"
-            f"{urlencode({'timestamp_gt': event_old.timestamp.isoformat()})}"
+            f"{self.url}?{urlencode({'timestamp_gt': event_old.timestamp.isoformat()})}"
         )
         self.assertEqual(
             response.data["results"],
@@ -1982,7 +1988,7 @@ class Covid19TriageViewSetTests(APITestCase, BaseEventTestCase):
         )
         response = self.client.get(
             f"{self.url}?"
-            f"{urlencode({'timestamp_gt': triage_old.timestamp.isoformat(), 'msisdn': '+27820001001'})}"  # noqa
+            f"{urlencode({'timestamp_gt': triage_old.timestamp.isoformat(), 'msisdn': '+27820001001'})}"
         )
         self.assertEqual(
             response.data["results"],
@@ -2524,8 +2530,7 @@ class Covid19TriageStartViewSetTests(APITestCase, BaseEventTestCase):
             msisdn="+27820001001", source="USSD"
         )
         response = self.client.get(
-            f"{self.url}?"
-            f"{urlencode({'timestamp_gt': start_old.timestamp.isoformat()})}"
+            f"{self.url}?{urlencode({'timestamp_gt': start_old.timestamp.isoformat()})}"
         )
         self.assertEqual(
             response.data["results"],

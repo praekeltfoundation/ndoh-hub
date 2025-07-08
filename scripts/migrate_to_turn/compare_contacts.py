@@ -35,7 +35,7 @@ def get_turn_contact(wa_id):
         "Accept": "application/vnd.v1+json",
     }
     response = requests.get(
-        urljoin(TURN_URL, "/v1/contacts/{}/profile".format(wa_id)),
+        urljoin(TURN_URL, f"/v1/contacts/{wa_id}/profile"),
         headers=headers,
     )
     contact = response.json()["fields"]
@@ -53,7 +53,7 @@ def compare_contacts():
         turn_data = get_turn_contact(wa_id)
 
         row = {"wa_id": wa_id}
-        for rapidpro_field in FIELD_MAPPING.keys():
+        for rapidpro_field in FIELD_MAPPING:
             row[f"RP {rapidpro_field}"] = rapidpro_data[rapidpro_field]
             row[f"TURN {rapidpro_field}"] = turn_data[rapidpro_field]
 
