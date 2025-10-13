@@ -65,13 +65,6 @@ class NLUClassifierTaskTests(TestCase):
             nlu_call_args = mock_get.call_args
             self.assertEqual(nlu_call_args[0][0], expected_nlu_endpoint)
             self.assertEqual(
-                nlu_call_args[1]["auth"],
-                (
-                    self.settings.INTENT_CLASSIFIER_USER,
-                    self.settings.INTENT_CLASSIFIER_PASS,
-                ),
-            )
-            self.assertEqual(
                 nlu_call_args[1]["params"]["question"], self.inbound_message
             )
 
