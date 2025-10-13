@@ -12,7 +12,7 @@ class NLUWebhookTests(APITestCase):
         self.url = reverse("label_feedback")
 
         self.username = "testuser"
-        self.password = "password"
+        self.password = "password"  # noqa: S105
         self.user = User.objects.create_user(
             self.username, password=self.password)
 
