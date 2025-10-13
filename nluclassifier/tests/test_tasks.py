@@ -120,6 +120,47 @@ class NLUClassifierTaskTests(TestCase):
                 )
             )
 
+    def test_turn_api_failure_raises_exception_for_retry(self):
+        """
+        Tests that if NLU succeeds but the Turn API fails,
+        a RequestException is rraised to trigger a retry.
+        """
+        nlu_success_mock = mock.Mock(status_code=200)
+        nlu_success_mock.json.return_value = {
+            "intent": self.expected_intent,
+            "model_version": "2025-09-29-v1",
+            "parent_label": "FEEDBACK",
+            "probability": 0.3805,
+            "review_status": "NEEDS_REVIEW",
+        }
+        nlu_success_mock.raise_for_status.return_value = None
+
+        turn_fail_mock = mock.Mock(status_code=500)
+        error = requests.exceptions.HTTPError("500 Server Error")
+        turn_fail_mock.raise_for_status.side_effect = error
+
+        with (
+            mock.patch("requests.get") as mock_get,
+            mock.patch("requests.post") as mock_post,
+            self.assertLogs(
+                "nluclassifier.tasks", level="WARNING") as log_context,
+        ):
+            mock_get.return_value = nlu_success_mock
+            mock_post.return_value = turn_fail_mock
+
+            with self.assertRaises(requests.exceptions.HTTPError):
+                process_feedback_for_labeling(
+                    self.message_id, self.inbound_message)
+
+            self.assertEqual(mock_get.call_count, 1)
+
+            self.assertEqual(mock_post.call_count, 1)
+
+            self.assertTrue(
+                any("Turn API failed to label message" in output
+                    for output in log_context.output)
+            )
+
     def test_no_label_applied_on_unhandled_intent(self):
         """
         Tests that if NLU returns an intent that is not
