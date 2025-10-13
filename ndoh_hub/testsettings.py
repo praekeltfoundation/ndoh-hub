@@ -30,3 +30,6 @@ AAQ_V2_API_URL = "http://aaq_v2"
 INTENT_CLASSIFIER_URL = "http://intent-classifier"
 INTENT_CLASSIFIER_USER = "nlu_user"
 INTENT_CLASSIFIER_PASS = "nlu_pass"
+
+TURN_URL = "http://turn-test/v1/messages"
+TURN_TOKEN = "test-turn-token"
