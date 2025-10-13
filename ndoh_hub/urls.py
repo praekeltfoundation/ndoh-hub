@@ -94,6 +94,7 @@ urlpatterns = [
     path("api/v3/", include(v3router.urls)),
     path("api/v4/", include(v4router.urls)),
     path("api/v5/", include(v5router.urls)),
+    path("nluclassifier/", include("nluclassifier.urls")),
     path(
         "metrics", internal_only(django_prometheus.ExportToDjangoView), name="metrics"
     ),

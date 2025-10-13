@@ -61,6 +61,7 @@ INSTALLED_APPS = (
     "changes",
     "eventstore",
     "aaq",
+    "nluclassifier",
 )
 
 
@@ -108,6 +109,11 @@ LOGGING = {
         "django.db.backends": {
             "level": "ERROR",
             "handlers": ["console"],
+            "propagate": False,
+        },
+        "nluclassifier": {
+            "handlers": ["console"],
+            "level": "INFO",
             "propagate": False,
         },
     },
