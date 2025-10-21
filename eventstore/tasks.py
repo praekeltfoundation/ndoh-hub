@@ -840,7 +840,6 @@ def route_nlu_result(
     time_limit=15,
 )
 def label_whatsapp_message(label, message_id):
-
     headers = {
         "Authorization": f"Bearer {settings.TURN_TOKEN}",
         "content-type": "application/json",
