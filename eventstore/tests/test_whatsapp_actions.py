@@ -205,45 +205,116 @@ class HandleInboundTests(DjangoTestCase):
             handle.assert_not_called()
 
     @responses.activate
-    def test_intent_classification(self):
-        inbound_text = "The test inbound message body"
+    def test_babyloss_intent_is_true_wa(self):
+        inbound_text = "The test babyloss message"
+        message_id = "msg-id-babyloss"
+
         responses.add(
             responses.GET,
-            "http://intent-classifier/nlu/",
+            "http://intent-classifier/nlu/babyloss/",
             json={
-                "question": "The test inbound message body",
-                "intent": "Test Label",
-                "confidence": 90,
+                "babyloss": True,
             },
         )
 
         responses.add(
-            responses.POST, "http://turn/v1/messages/msg-id-1/labels", json={}
+            responses.POST, f"http://turn/v1/messages/{message_id}/labels", json={}
         )
 
         message = Mock()
         message.has_label.return_value = False
-        message.id = "msg-id-1"
+        message.id = message_id
         message.type = "text"
+        message.fallback_channel = False
         message.data = {"text": {"body": inbound_text}}
 
         handle_inbound(message)
 
-        [intent_call, label_call] = responses.calls
-
+        intent_call = next(
+            c for c in responses.calls if "/nlu/babyloss/" in c.request.url
+        )
         self.assertEqual(intent_call.request.params, {"question": inbound_text})
+
+        label_call = next(c for c in responses.calls if "labels" in c.request.url)
         self.assertEqual(
-            intent_call.request.headers["Authorization"],
-            "Basic bmx1X3VzZXI6bmx1X3Bhc3M=",
+            json.loads(label_call.request.body),
+            {"labels": ["BABYLOSS"]},
+            "The message should be labeled 'BABYLOSS' when intent is True.",
+        )
+        self.assertEqual(len(responses.calls), 3)
+
+    @responses.activate
+    def test_not_babyloss_sms_channel(self):
+        inbound_text = "The test complaint message"
+        message_id = "msg-id-sms-feedback"
+        contact_id = "27820001002"
+
+        responses.add(
+            responses.GET,
+            "http://intent-classifier/nlu/babyloss/",
+            json={"babyloss": False},
         )
 
-        self.assertEqual(
-            json.loads(label_call.request.body), {"labels": ["Test Label"]}
+        responses.add(
+            responses.GET,
+            "http://intent-classifier/nlu/feedback/",
+            json={"intent": "Complaint", "confidence": 95},
         )
-        self.assertEqual(
-            label_call.request.headers["Authorization"],
-            "Bearer turn-token",
+
+        responses.add(
+            responses.POST, f"http://turn/v1/messages/{message_id}/labels", json={}
         )
+
+        message = Mock()
+        message.has_label.return_value = False
+        message.id = message_id
+        message.type = "text"
+        message.contact_id = contact_id
+        message.fallback_channel = True
+        message.data = {"text": {"body": inbound_text}}
+
+        handle_inbound(message)
+
+        self.assertEqual(len(responses.calls), 3)
+
+        feedback_call = next(
+            c for c in responses.calls if "/nlu/feedback/" in c.request.url
+        )
+        self.assertEqual(feedback_call.request.params, {"question": inbound_text})
+
+        label_call = next(c for c in responses.calls if "labels" in c.request.url)
+        self.assertEqual(
+            json.loads(label_call.request.body),
+            {"labels": ["complaint"]},
+            "The message should be labeled 'complaint'",
+        )
+
+    @responses.activate
+    def test_not_babyloss_whatsapp_channel_do_nothing(self):
+        inbound_text = "The test compliment message"
+        message_id = "msg-id-wa-feedback"
+        contact_id = "27820001002"
+
+        responses.add(
+            responses.GET,
+            "http://intent-classifier/nlu/babyloss/",
+            json={"babyloss": False},
+        )
+
+        message = Mock()
+        message.has_label.return_value = False
+        message.id = message_id
+        message.type = "text"
+        message.contact_id = contact_id
+        message.fallback_channel = False
+        message.data = {"text": {"body": inbound_text}}
+
+        handle_inbound(message)
+
+        self.assertEqual(len(responses.calls), 2)
+
+        nlu_call = next(c for c in responses.calls if "/nlu/babyloss/" in c.request.url)
+        self.assertEqual(nlu_call.request.params, {"question": inbound_text})
 
     @responses.activate
     @override_settings(INTENT_CLASSIFIER_URL=None)
