@@ -820,13 +820,10 @@ def route_nlu_result(
     If the message is SMS, it processes feedback for labeling.
     """
     if is_babyloss_intent is True:
-        label_whatsapp_message.s("BABYLOSS", message_id).delay()
+        label_whatsapp_message.delay("BABYLOSS", message_id)
         return
 
-    if is_sms is False:
-        return
-
-    if is_sms is True:
+    elif is_sms is True:
         process_feedback_for_labeling.delay(message_id, inbound_message)
         return
 
