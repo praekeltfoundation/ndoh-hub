@@ -6,7 +6,7 @@ from eventstore.tasks import (
     async_create_flow_start,
     get_inbound_intent,
     get_rapidpro_contact_by_msisdn,
-    label_whatsapp_message,
+    route_nlu_result,
     send_helpdesk_response_to_dhis2,
     update_rapidpro_contact,
 )
@@ -62,9 +62,10 @@ def handle_inbound(message):
     if settings.INTENT_CLASSIFIER_URL and message.type == "text":
         text = message.data["text"]["body"]
         if text.lower() != "yes":
+            is_sms = message.fallback_channel
             chain(
                 get_inbound_intent.s(),
-                label_whatsapp_message.s(message.id),
+                route_nlu_result.s(message.id, is_sms, text),
             ).delay(text)
 
 

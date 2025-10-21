@@ -41,6 +41,7 @@ from eventstore.models import (
 )
 from ndoh_hub.celery import app
 from ndoh_hub.utils import get_random_date, get_today, rapidpro, send_slack_message
+from nluclassifier.tasks import process_feedback_for_labeling
 from registrations.models import JembiSubmission
 
 
@@ -792,14 +793,39 @@ def process_whatsapp_template_send_status():
 def get_inbound_intent(text):
     params = {"question": text}
     response = requests.get(
-        urljoin(settings.INTENT_CLASSIFIER_URL, "/nlu/"),
+        urljoin(settings.INTENT_CLASSIFIER_URL, "/nlu/babyloss/"),
         params=params,
         auth=HTTPBasicAuth(
             settings.INTENT_CLASSIFIER_USER, settings.INTENT_CLASSIFIER_PASS
         ),
     )
     response.raise_for_status()
-    return response.json()["intent"]
+    return response.json()["babyloss"]
+
+
+@app.task(
+    autoretry_for=(RequestException, SoftTimeLimitExceeded),
+    retry_backoff=True,
+    max_retries=15,
+    acks_late=True,
+    soft_time_limit=10,
+    time_limit=15,
+)
+def route_nlu_result(
+    is_babyloss_intent: bool, message_id: str, is_sms: bool, inbound_message: str
+):
+    """
+    Receives the boolean result from the babyloss NLU endpoint and routes to the next step.
+    If babyloss intent is True, it labels the message as BABYLOSS.
+    If the message is SMS, it processes feedback for labeling.
+    """
+    if is_babyloss_intent is True:
+        label_whatsapp_message.delay("BABYLOSS", message_id)
+        return
+
+    elif is_sms is True:
+        process_feedback_for_labeling.delay(message_id, inbound_message)
+        return
 
 
 @app.task(
