@@ -1,5 +1,29 @@
 # Changelog
 
+# 0.10.29
+1. babyloss nlu
+([#666](https://github.com/praekeltfoundation/ndoh-hub/pull/666))
+2. Nluclassifier for feedback labelling
+([#665](https://github.com/praekeltfoundation/ndoh-hub/pull/665)
+3. Increment failure count for specific error codes
+([#662](https://github.com/praekeltfoundation/ndoh-hub/pull/662))
+4. Resend failed template script
+([#657](https://github.com/praekeltfoundation/ndoh-hub/pull/657))
+5. Add compare contacts script
+([#656](https://github.com/praekeltfoundation/ndoh-hub/pull/656))
+6. Add language to test
+([#655](https://github.com/praekeltfoundation/ndoh-hub/pull/655))
+7. Add bulk update turn contacts script
+([#654](https://github.com/praekeltfoundation/ndoh-hub/pull/654))
+8. Handle turn rate limits
+([#651](https://github.com/praekeltfoundation/ndoh-hub/pull/651))
+9. Add update turn contacts script with asyncio queue
+([#650](https://github.com/praekeltfoundation/ndoh-hub/pull/650))
+10. Clean datetime string
+([#649](https://github.com/praekeltfoundation/ndoh-hub/pull/649))
+11. Scripts to migrate contacts from Rapidpro to Turn
+([#648](https://github.com/praekeltfoundation/ndoh-hub/pull/648))
+
 # 0.10.28
 1. Add intent label tasks
    ([#646](https://github.com/praekeltfoundation/ndoh-hub/pull/646))
