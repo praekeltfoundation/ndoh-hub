@@ -35,15 +35,17 @@
 ([#636](https://github.com/praekeltfoundation/ndoh-hub/pull/636))
 3. add test coverage to PR comment using py-cov-action
 ([#638](https://github.com/praekeltfoundation/ndoh-hub/pull/638))
-4. update gibberish detection function
+4. Repo consistency
+([#639](https://github.com/praekeltfoundation/ndoh-hub/pull/639))
+5. update gibberish detection function
 ([#640](https://github.com/praekeltfoundation/ndoh-hub/pull/640))
-5. update gibberish response
-([#641](https://github.com/praekeltfoundation/ndoh-hub/pull/641))
 6. update gibberish response
+([#641](https://github.com/praekeltfoundation/ndoh-hub/pull/641))
+7. update gibberish response
 ([#642](https://github.com/praekeltfoundation/ndoh-hub/pull/642))
-7. update gibberish response dict
+8. update gibberish response dict
 ([#643](https://github.com/praekeltfoundation/ndoh-hub/pull/643))
-8. return a dict in utils when gibberish detected
+9. return a dict in utils when gibberish detected
 ([#644](https://github.com/praekeltfoundation/ndoh-hub/pull/644))
 # 0.10.26
 1. Remove seaworthy from hub
