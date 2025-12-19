@@ -3,7 +3,12 @@ import os
 from datetime import datetime
 
 import pytz
-from process_fields import process_datetime
+from process_fields import (
+    process_datetime,
+    get_user_tier,
+    get_user_type,
+    get_user_babies,
+)
 from temba_client.v2 import TembaClient
 
 RAPIDPRO_URL = "https://rapidpro.qa.momconnect.co.za"
@@ -14,9 +19,19 @@ LIMIT = 1000
 
 # TODO: add all the fields here: <rapidpro-field-name>: <details>
 FIELD_MAPPING = {
-    "edd": {"turn_name": "test", "process": process_datetime, "type": "custom"},
+    "edd": {
+        "turn_name": "pregnancy_expected_due_date",
+        "process": process_datetime,
+        "type": "custom",
+    },
     "name": {"turn_name": "name", "type": "default"},
     "language": {"turn_name": "language", "type": "default"},
+}
+
+NEW_TURN_FIELD_MAPPING = {
+    "user_tier": {"process": get_user_tier},
+    "user_type": {"process": get_user_type},
+    "babies": {"process": get_user_babies},
 }
 
 client = TembaClient(RAPIDPRO_URL, os.environ["RAPIDPRO_TOKEN"])
@@ -34,6 +49,9 @@ def get_field_data(contact):
 
         if "process" in turn_details:
             data[turn_field] = turn_details["process"](data[turn_field])
+
+    for new_field, details in NEW_TURN_FIELD_MAPPING.items():
+        data[new_field] = details["process"](contact)
 
     return data
 
