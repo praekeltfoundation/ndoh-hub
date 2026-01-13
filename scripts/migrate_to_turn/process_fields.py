@@ -11,6 +11,12 @@ def is_datetime(date):
     return True
 
 
+def to_lowercase(value):
+    if isinstance(value, str):
+        return value.lower()
+    return value
+
+
 def process_datetime(value):
     if not value:
         return
@@ -62,5 +68,4 @@ def get_user_babies(contact):
         )
 
     if babies:
-        print(str(babies))
         return str(babies)
