@@ -27,7 +27,11 @@ FIELD_MAPPING = {
     },
     "name": {"turn_name": "name", "type": "default"},
     "language": {"turn_name": "language", "type": "default"},
-    "research_consent": {"turn_name": "research_consent", "process": to_lowercase, "type": "custom"},
+    "research_consent": {
+        "turn_name": "research_consent",
+        "process": to_lowercase,
+        "type": "custom",
+    },
     "clinic_code": {"turn_name": "clinic_code", "type": "custom"},
 }
 
