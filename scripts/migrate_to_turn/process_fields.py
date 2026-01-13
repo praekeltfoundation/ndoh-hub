@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 
 import pytz
 
@@ -68,4 +69,4 @@ def get_user_babies(contact):
         )
 
     if babies:
-        return str(babies)
+        return json.dumps(babies)
