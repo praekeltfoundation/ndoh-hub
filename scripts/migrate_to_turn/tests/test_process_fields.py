@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from unittest import TestCase
 
@@ -99,4 +100,4 @@ class GetUserBabiesTests(TestCase):
             }
         ]
 
-        self.assertEqual(get_user_babies(contact), str(baby_list))
+        self.assertEqual(get_user_babies(contact), json.dumps(baby_list))
