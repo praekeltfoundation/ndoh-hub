@@ -17,7 +17,7 @@ The `FIELD_MAPPING` variable should be updated with all the fields we want to mo
 
 The script will write all the contacts to a file with the start and end date in the name.
 
-It will also output the latest modified on date in the batch, this can then be used as a start date to get the next batch.
+It will also output the oldest modified on date in the batch, this can then be used as an end date to get the next batch when syncing new to old.
 
 ### update_turn_contacts.py
 
@@ -82,9 +82,9 @@ The key is the field name in Rapidpro, the value determinues the rest:
 1. Make sure the `FIELD_MAPPING` is configured
 1. Set the required environment variables: `TURN_TOKEN` and `RAPIDPRO_TOKEN`.
 1. Update the start date, end date, limit and field mapping in `fetch_rapidpro_contacts.py` script
-1. Run `python scripts/migrate_to_turn/fetch_rapidpro_contacts.py` and take note of the last modified date and the filename.
+1. Run `python scripts/migrate_to_turn/fetch_rapidpro_contacts.py` and take note of the oldest modified date and the filename.
 1. Run `python scripts/migrate_to_turn/update_turn_contacts.py contacts-2025-01-01-2025-01-07.csv > update_turn_contacts.json`
 1. Use jq to check if there were any errors `jq .response.status update_turn_contacts.json | sort | uniq -c`
 1. To retry errors, run `cat update_turn_contacts.json | python scripts/migrate_to_rapidpro/retry_requests.py > update_turn_contacts2.json`
 1. Repeat previous two steps until all contacts successfully completed.
-1. Update the start and end date in `fetch_rapidpro_contacts.py` script. Repeat from step 3.
+1. Update the end date in `fetch_rapidpro_contacts.py` script to the oldest modified date from the previous batch. Repeat from step 3.
