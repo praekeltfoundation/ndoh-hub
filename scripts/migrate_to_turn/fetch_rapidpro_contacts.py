@@ -3,14 +3,19 @@ import os
 from datetime import datetime
 
 import pytz
-from process_fields import (
+from temba_client.v2 import TembaClient
+
+from scripts.migrate_to_turn.process_fields import (
     get_user_babies,
     get_user_tier,
     get_user_type,
+    process_baby_loss_status,
     process_datetime,
+    process_opted_in,
+    process_pregnancy_loss_status,
+    process_truthy,
     to_lowercase,
 )
-from temba_client.v2 import TembaClient
 
 RAPIDPRO_URL = "https://rapidpro.qa.momconnect.co.za"
 
@@ -18,7 +23,6 @@ START_DATE = "2025-11-01 01:13:06"
 END_DATE = "2026-01-12 19:13:06"
 LIMIT = 1000
 
-# TODO: add all the fields here: <rapidpro-field-name>: <details>
 FIELD_MAPPING = {
     "edd": {
         "turn_name": "pregnancy_expected_due_date",
@@ -33,15 +37,47 @@ FIELD_MAPPING = {
         "type": "custom",
     },
     "clinic_code": {"turn_name": "clinic_code", "type": "custom"},
+    "registered_by": {"turn_name": "referred_number", "type": "custom"},
+    "education": {"turn_name": "education", "type": "custom"},
+    "opted_out": {
+        "turn_name": "opted_in",
+        "process": process_opted_in,
+        "type": "custom",
+    },
+    "prebirth_messaging": {
+        "turn_name": "pregnancy_message_status",
+        "process": process_truthy,
+        "type": "custom",
+    },
+    "postbirth_messaging": {
+        "turn_name": "baby_message_status",
+        "process": process_truthy,
+        "type": "custom",
+    },
+    "underage_mother": {
+        "turn_name": "minor_healthcare_consent",
+        "type": "custom",
+        "process": process_truthy,
+    },
+    "optout_reason": {"turn_name": "opt_out_reason", "type": "custom"},
+    "preferred_channel": {
+        "turn_name": "active_channel",
+        "type": "custom",
+        "process": to_lowercase,
+    },
+    # user_dob_year: we have age so we could do a rough calculation
+    # province: we don't have the field but can derive it from clinic code later
+    # area: we don't have the field but can derive it from clinic code later
 }
 
 NEW_TURN_FIELD_MAPPING = {
     "user_tier": {"process": get_user_tier},
     "user_type": {"process": get_user_type},
     "babies": {"process": get_user_babies},
+    "baby_loss_status": {"process": process_baby_loss_status},
+    "pregnancy_loss_status": {"process": process_pregnancy_loss_status},
+    "is_new_user": {"process": lambda contact: "no"},
 }
-
-client = TembaClient(RAPIDPRO_URL, os.environ["RAPIDPRO_TOKEN"])
 
 
 def get_field_data(contact):
@@ -74,7 +110,7 @@ def is_opted_out(contact):
     return opted_out.upper() == "TRUE"
 
 
-def get_rapidpro_contacts(start_date=None, end_date=None):
+def get_rapidpro_contacts(client, start_date=None, end_date=None):
     print(f"> Getting rapidpro contacts from {start_date} to {end_date}")
     contacts = []
     oldest_date = end_date.replace(tzinfo=pytz.utc)
@@ -102,11 +138,11 @@ def get_rapidpro_contacts(start_date=None, end_date=None):
     return contacts, oldest_date
 
 
-if __name__ == "__main__":
+def fetch_rapidpro_contacts(client):
     start_date = datetime.strptime(START_DATE, "%Y-%m-%d %H:%M:%S")
     end_date = datetime.strptime(END_DATE, "%Y-%m-%d %H:%M:%S")
 
-    contacts, oldest_date = get_rapidpro_contacts(start_date, end_date)
+    contacts, oldest_date = get_rapidpro_contacts(client, start_date, end_date)
 
     print(f"Found: {len(contacts)}")
     print(f"Oldest modified on date: {oldest_date}")
@@ -124,3 +160,8 @@ if __name__ == "__main__":
             dict_writer = csv.DictWriter(output_file, keys)
             dict_writer.writeheader()
             dict_writer.writerows(contacts)
+
+
+if __name__ == "__main__":
+    client = TembaClient(RAPIDPRO_URL, os.environ["RAPIDPRO_TOKEN"])
+    fetch_rapidpro_contacts(client)
