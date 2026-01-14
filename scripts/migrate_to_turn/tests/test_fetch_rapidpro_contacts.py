@@ -124,7 +124,7 @@ class FetchRapidproContactsTests(TestCase):
             "minor_healthcare_consent": "true",
             "opt_out_reason": "baby_loss",
             "active_channel": "whatsapp",
-            "user_tier": "",
+            "user_tier": fetch_rapidpro_contacts.get_user_tier(contact) or "",
             "user_type": "",
             "baby_loss_status": "true",
             "pregnancy_loss_status": "",

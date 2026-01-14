@@ -49,9 +49,48 @@ def process_truthy(value):
     return "true"
 
 
+def has_active_baby(contact):
+    now = datetime.now(pytz.utc)
+    fields = getattr(contact, "fields", {}) or {}
+    for index in range(1, 4):
+        dob = fields.get(f"baby_dob{index}")
+        if not dob:
+            continue
+        value = dob.replace("Z", "").split("+")[0]
+        if not is_datetime(value):
+            continue
+        birth_date = datetime.fromisoformat(value)
+        if birth_date.tzinfo is None:
+            birth_date = birth_date.replace(tzinfo=pytz.utc)
+        age_days = (now - birth_date).days
+        if 0 <= age_days <= 365:
+            return True
+    return False
+
+
 def get_user_tier(contact):
-    # TODO: figure out user tier based on rapidpro fields
-    return None
+    # Ineligible: We don't save anything on rapidpro to identify ineligible users
+    # Push Basic User: Clinic code is required in rapdidpro so these don't exist
+
+    def get_truthy_field(field_name):
+        return process_truthy(contact.fields.get(field_name)) == "true"
+
+    opted_out = get_truthy_field("opted_out")
+    prebirth_messaging = get_truthy_field("prebirth_messaging")
+    postbirth_messaging = get_truthy_field("postbirth_messaging")
+
+    user_tier = "lead"
+
+    if opted_out:
+        user_tier = "deregistered_user"
+    elif prebirth_messaging or postbirth_messaging:
+        user_tier = "push_comprehensive_user"
+
+        if not prebirth_messaging and postbirth_messaging:
+            if not has_active_baby(contact):
+                user_tier = "alumni_user"
+
+    return user_tier
 
 
 def get_user_type(contact):
