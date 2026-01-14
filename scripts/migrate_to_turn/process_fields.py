@@ -86,9 +86,12 @@ def get_user_tier(contact):
     elif prebirth_messaging or postbirth_messaging:
         user_tier = "push_comprehensive_user"
 
-        if not prebirth_messaging and postbirth_messaging:
-            if not has_active_baby(contact):
-                user_tier = "alumni_user"
+        if (
+            not prebirth_messaging
+            and postbirth_messaging
+            and not has_active_baby(contact)
+        ):
+            user_tier = "alumni_user"
 
     return user_tier
 

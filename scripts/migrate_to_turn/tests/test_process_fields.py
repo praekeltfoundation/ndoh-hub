@@ -224,7 +224,6 @@ class GetUserTierTests(TestCase):
             self.assertEqual(get_user_tier(contact), "alumni_user")
 
 
-
 class HasActiveBabyTests(TestCase):
     def setUp(self):
         self.fixed_now = datetime(2026, 1, 1, tzinfo=pytz.utc)
@@ -237,39 +236,32 @@ class HasActiveBabyTests(TestCase):
         self.assertTrue(has_active_baby(contact))
 
     @mock.patch("scripts.migrate_to_turn.process_fields.datetime")
-    def test_returns_true_for_baby_under_one(self, datetime_mock):
-        contact = type("Contact", (), {"fields": {"baby_dob1": "2025-06-01"}})()
+    def test_returns_true_for_baby_3_under_one(self, datetime_mock):
+        contact = type("Contact", (), {"fields": {"baby_dob3": "2025-06-01"}})()
         datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
         datetime_mock.now.return_value = self.fixed_now
         self.assertTrue(has_active_baby(contact))
 
-    def test_returns_true_for_baby_3_under_one(self):
-        contact = type("Contact", (), {"fields": {"baby_dob3": "2025-06-01"}})()
-        with mock.patch("scripts.migrate_to_turn.process_fields.datetime") as datetime_mock:
-            datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
-            datetime_mock.now.return_value = self.fixed_now
-            self.assertTrue(has_active_baby(contact))
-
-    def test_returns_false_for_baby_over_one(self):
+    @mock.patch("scripts.migrate_to_turn.process_fields.datetime")
+    def test_returns_false_for_baby_over_one(self, datetime_mock):
         contact = type("Contact", (), {"fields": {"baby_dob1": "2024-01-01"}})()
-        with mock.patch("scripts.migrate_to_turn.process_fields.datetime") as datetime_mock:
-            datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
-            datetime_mock.now.return_value = self.fixed_now
-            self.assertFalse(has_active_baby(contact))
+        datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
+        datetime_mock.now.return_value = self.fixed_now
+        self.assertFalse(has_active_baby(contact))
 
-    def test_returns_false_for_future_birth(self):
+    @mock.patch("scripts.migrate_to_turn.process_fields.datetime")
+    def test_returns_false_for_future_birth(self, datetime_mock):
         contact = type("Contact", (), {"fields": {"baby_dob1": "2026-02-01"}})()
-        with mock.patch("scripts.migrate_to_turn.process_fields.datetime") as datetime_mock:
-            datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
-            datetime_mock.now.return_value = self.fixed_now
-            self.assertFalse(has_active_baby(contact))
+        datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
+        datetime_mock.now.return_value = self.fixed_now
+        self.assertFalse(has_active_baby(contact))
 
-    def test_returns_false_for_invalid_date(self):
+    @mock.patch("scripts.migrate_to_turn.process_fields.datetime")
+    def test_returns_false_for_invalid_date(self, datetime_mock):
         contact = type("Contact", (), {"fields": {"baby_dob1": "not-a-date"}})()
-        with mock.patch("scripts.migrate_to_turn.process_fields.datetime") as datetime_mock:
-            datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
-            datetime_mock.now.return_value = self.fixed_now
-            self.assertFalse(has_active_baby(contact))
+        datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
+        datetime_mock.now.return_value = self.fixed_now
+        self.assertFalse(has_active_baby(contact))
 
 
 class GetUserTypeTests(TestCase):
