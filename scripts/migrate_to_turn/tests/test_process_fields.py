@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from unittest import TestCase
+from unittest import TestCase, mock
 
 import pytz
 
@@ -8,6 +8,7 @@ from scripts.migrate_to_turn.process_fields import (
     get_user_babies,
     get_user_tier,
     get_user_type,
+    has_active_baby,
     is_datetime,
     process_baby_loss_status,
     process_datetime,
@@ -181,11 +182,86 @@ class ProcessPregnancyLossStatusTests(TestCase):
 
 
 class GetUserTierTests(TestCase):
-    def test_default(self):
+    def test_defaults_to_lead(self):
         """
-        Default behavior returns None
+        Defaults to lead when no flags are set
         """
-        self.assertIsNone(get_user_tier(object()))
+        contact = type("Contact", (), {"fields": {}})()
+        self.assertEqual(get_user_tier(contact), "lead")
+
+    def test_opted_out_is_deregistered(self):
+        """
+        Opted out users are deregistered
+        """
+        contact = type("Contact", (), {"fields": {"opted_out": "TRUE"}})()
+        self.assertEqual(get_user_tier(contact), "deregistered_user")
+
+    def test_prebirth_messaging_is_push_comprehensive(self):
+        """
+        Prebirth messaging users are push comprehensive
+        """
+        contact = type("Contact", (), {"fields": {"prebirth_messaging": "TRUE"}})()
+        self.assertEqual(get_user_tier(contact), "push_comprehensive_user")
+
+    def test_postbirth_with_active_baby_is_push_comprehensive(self):
+        """
+        Postbirth users with active baby are push comprehensive
+        """
+        contact = type("Contact", (), {"fields": {"postbirth_messaging": "TRUE"}})()
+        with mock.patch(
+            "scripts.migrate_to_turn.process_fields.has_active_baby", return_value=True
+        ):
+            self.assertEqual(get_user_tier(contact), "push_comprehensive_user")
+
+    def test_postbirth_without_active_baby_is_alumni(self):
+        """
+        Postbirth users without active baby are alumni
+        """
+        contact = type("Contact", (), {"fields": {"postbirth_messaging": "TRUE"}})()
+        with mock.patch(
+            "scripts.migrate_to_turn.process_fields.has_active_baby", return_value=False
+        ):
+            self.assertEqual(get_user_tier(contact), "alumni_user")
+
+
+class HasActiveBabyTests(TestCase):
+    def setUp(self):
+        self.fixed_now = datetime(2026, 1, 1, tzinfo=pytz.utc)
+
+    @mock.patch("scripts.migrate_to_turn.process_fields.datetime")
+    def test_returns_true_for_baby_under_one(self, datetime_mock):
+        contact = type("Contact", (), {"fields": {"baby_dob1": "2025-06-01"}})()
+        datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
+        datetime_mock.now.return_value = self.fixed_now
+        self.assertTrue(has_active_baby(contact))
+
+    @mock.patch("scripts.migrate_to_turn.process_fields.datetime")
+    def test_returns_true_for_baby_3_under_one(self, datetime_mock):
+        contact = type("Contact", (), {"fields": {"baby_dob3": "2025-06-01"}})()
+        datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
+        datetime_mock.now.return_value = self.fixed_now
+        self.assertTrue(has_active_baby(contact))
+
+    @mock.patch("scripts.migrate_to_turn.process_fields.datetime")
+    def test_returns_false_for_baby_over_one(self, datetime_mock):
+        contact = type("Contact", (), {"fields": {"baby_dob1": "2024-01-01"}})()
+        datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
+        datetime_mock.now.return_value = self.fixed_now
+        self.assertFalse(has_active_baby(contact))
+
+    @mock.patch("scripts.migrate_to_turn.process_fields.datetime")
+    def test_returns_false_for_future_birth(self, datetime_mock):
+        contact = type("Contact", (), {"fields": {"baby_dob1": "2026-02-01"}})()
+        datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
+        datetime_mock.now.return_value = self.fixed_now
+        self.assertFalse(has_active_baby(contact))
+
+    @mock.patch("scripts.migrate_to_turn.process_fields.datetime")
+    def test_returns_false_for_invalid_date(self, datetime_mock):
+        contact = type("Contact", (), {"fields": {"baby_dob1": "not-a-date"}})()
+        datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
+        datetime_mock.now.return_value = self.fixed_now
+        self.assertFalse(has_active_baby(contact))
 
 
 class GetUserTypeTests(TestCase):
