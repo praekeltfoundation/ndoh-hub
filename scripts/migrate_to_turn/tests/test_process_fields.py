@@ -6,7 +6,6 @@ import pytz
 
 from scripts.migrate_to_turn.process_fields import (
     get_user_babies,
-    get_user_tier,
     get_user_type,
     has_active_baby,
     is_datetime,
@@ -181,27 +180,27 @@ class ProcessPregnancyLossStatusTests(TestCase):
         self.assertIsNone(process_pregnancy_loss_status(contact))
 
 
-class GetUserTierTests(TestCase):
+class GetUserTypeTests(TestCase):
     def test_defaults_to_lead(self):
         """
         Defaults to lead when no flags are set
         """
         contact = type("Contact", (), {"fields": {}})()
-        self.assertEqual(get_user_tier(contact), "lead")
+        self.assertEqual(get_user_type(contact), "lead")
 
     def test_opted_out_is_deregistered(self):
         """
         Opted out users are deregistered
         """
         contact = type("Contact", (), {"fields": {"opted_out": "TRUE"}})()
-        self.assertEqual(get_user_tier(contact), "deregistered_user")
+        self.assertEqual(get_user_type(contact), "deregistered_user")
 
     def test_prebirth_messaging_is_push_comprehensive(self):
         """
         Prebirth messaging users are push comprehensive
         """
         contact = type("Contact", (), {"fields": {"prebirth_messaging": "TRUE"}})()
-        self.assertEqual(get_user_tier(contact), "push_comprehensive_user")
+        self.assertEqual(get_user_type(contact), "push_comprehensive_user")
 
     def test_postbirth_with_active_baby_is_push_comprehensive(self):
         """
@@ -211,7 +210,7 @@ class GetUserTierTests(TestCase):
         with mock.patch(
             "scripts.migrate_to_turn.process_fields.has_active_baby", return_value=True
         ):
-            self.assertEqual(get_user_tier(contact), "push_comprehensive_user")
+            self.assertEqual(get_user_type(contact), "push_comprehensive_user")
 
     def test_postbirth_without_active_baby_is_alumni(self):
         """
@@ -221,7 +220,7 @@ class GetUserTierTests(TestCase):
         with mock.patch(
             "scripts.migrate_to_turn.process_fields.has_active_baby", return_value=False
         ):
-            self.assertEqual(get_user_tier(contact), "alumni_user")
+            self.assertEqual(get_user_type(contact), "alumni_user")
 
 
 class HasActiveBabyTests(TestCase):
@@ -262,14 +261,6 @@ class HasActiveBabyTests(TestCase):
         datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
         datetime_mock.now.return_value = self.fixed_now
         self.assertFalse(has_active_baby(contact))
-
-
-class GetUserTypeTests(TestCase):
-    def test_default(self):
-        """
-        Default behavior returns None
-        """
-        self.assertIsNone(get_user_type(object()))
 
 
 class GetUserBabiesTests(TestCase):
