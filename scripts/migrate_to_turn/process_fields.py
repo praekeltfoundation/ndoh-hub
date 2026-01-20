@@ -68,7 +68,7 @@ def has_active_baby(contact):
     return False
 
 
-def get_user_tier(contact):
+def get_user_type(contact):
     # Ineligible: We don't save anything on rapidpro to identify ineligible users
     # Push Basic User: Clinic code is required in rapdidpro so these don't exist
 
@@ -79,26 +79,21 @@ def get_user_tier(contact):
     prebirth_messaging = get_truthy_field("prebirth_messaging")
     postbirth_messaging = get_truthy_field("postbirth_messaging")
 
-    user_tier = "lead"
+    user_type = "lead"
 
     if opted_out:
-        user_tier = "deregistered_user"
+        user_type = "deregistered_user"
     elif prebirth_messaging or postbirth_messaging:
-        user_tier = "push_comprehensive_user"
+        user_type = "push_comprehensive_user"
 
         if (
             not prebirth_messaging
             and postbirth_messaging
             and not has_active_baby(contact)
         ):
-            user_tier = "alumni_user"
+            user_type = "alumni_user"
 
-    return user_tier
-
-
-def get_user_type(contact):
-    # TODO: figure out user type based on rapidpro fields
-    return None
+    return user_type
 
 
 def get_user_babies(contact):

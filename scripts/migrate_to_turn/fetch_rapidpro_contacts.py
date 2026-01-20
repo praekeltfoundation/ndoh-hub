@@ -7,7 +7,6 @@ from temba_client.v2 import TembaClient
 
 from scripts.migrate_to_turn.process_fields import (
     get_user_babies,
-    get_user_tier,
     get_user_type,
     process_baby_loss_status,
     process_datetime,
@@ -71,7 +70,6 @@ FIELD_MAPPING = {
 }
 
 NEW_TURN_FIELD_MAPPING = {
-    "user_tier": {"process": get_user_tier},
     "user_type": {"process": get_user_type},
     "baby_loss_status": {"process": process_baby_loss_status},
     "pregnancy_loss_status": {"process": process_pregnancy_loss_status},
