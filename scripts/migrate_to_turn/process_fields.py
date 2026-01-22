@@ -84,7 +84,7 @@ def get_user_type(contact):
     if opted_out:
         user_type = "deregistered_user"
     elif prebirth_messaging or postbirth_messaging:
-        user_type = "push_comprehensive_user"
+        user_type = "comprehensive_user"
 
         if (
             not prebirth_messaging

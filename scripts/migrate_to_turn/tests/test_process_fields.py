@@ -195,22 +195,22 @@ class GetUserTypeTests(TestCase):
         contact = type("Contact", (), {"fields": {"opted_out": "TRUE"}})()
         self.assertEqual(get_user_type(contact), "deregistered_user")
 
-    def test_prebirth_messaging_is_push_comprehensive(self):
+    def test_prebirth_messaging_is_comprehensive(self):
         """
-        Prebirth messaging users are push comprehensive
+        Prebirth messaging users are comprehensive
         """
         contact = type("Contact", (), {"fields": {"prebirth_messaging": "TRUE"}})()
-        self.assertEqual(get_user_type(contact), "push_comprehensive_user")
+        self.assertEqual(get_user_type(contact), "comprehensive_user")
 
-    def test_postbirth_with_active_baby_is_push_comprehensive(self):
+    def test_postbirth_with_active_baby_is_comprehensive(self):
         """
-        Postbirth users with active baby are push comprehensive
+        Postbirth users with active baby are comprehensive
         """
         contact = type("Contact", (), {"fields": {"postbirth_messaging": "TRUE"}})()
         with mock.patch(
             "scripts.migrate_to_turn.process_fields.has_active_baby", return_value=True
         ):
-            self.assertEqual(get_user_type(contact), "push_comprehensive_user")
+            self.assertEqual(get_user_type(contact), "comprehensive_user")
 
     def test_postbirth_without_active_baby_is_alumni(self):
         """

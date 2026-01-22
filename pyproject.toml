@@ -63,6 +63,7 @@ dev = [
     "responses>=0.23.1",
     "pre-commit>=3.2.0",
     "freezegun>=1.2.2",
+    "aiohttp (>=3.13.3,<4.0.0)",
 ]
 
 [tool.pytest.ini_options]
