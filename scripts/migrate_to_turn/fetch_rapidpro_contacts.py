@@ -19,8 +19,16 @@ from scripts.migrate_to_turn.process_fields import (
 RAPIDPRO_URL = "https://rapidpro.qa.momconnect.co.za"
 
 START_DATE = "2025-11-01 01:13:06"
-END_DATE = "2026-01-12 19:13:06"
+END_DATE = "2026-01-22 19:13:06"
 LIMIT = 1000
+INCLUDE_OPTED_OUT = False
+
+MSISDN_FILTER = (
+    os.environ.get("MSISDN_FILTER", "").split(",")
+    if os.environ.get("MSISDN_FILTER")
+    else []
+)
+
 
 FIELD_MAPPING = {
     "edd": {
@@ -118,7 +126,11 @@ def get_rapidpro_contacts(client, start_date=None, end_date=None):
         for contact in contact_batch:
             wa_id = get_wa_id(contact)
 
-            if is_opted_out(contact):
+            if is_opted_out(contact) and not INCLUDE_OPTED_OUT:
+                continue
+
+            # TODO: filtering for testing only, remove later()
+            if wa_id and MSISDN_FILTER and wa_id not in MSISDN_FILTER:
                 continue
 
             if wa_id:

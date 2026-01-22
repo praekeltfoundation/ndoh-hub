@@ -132,3 +132,75 @@ class FetchRapidproContactsTests(TestCase):
         }
 
         self.assertEqual(rows[0], expected_row)
+
+    def test_fetch_rapidpro_contacts_skips_opted_out(self):
+        contact = type(
+            "Contact",
+            (),
+            {
+                "fields": {"opted_out": "TRUE"},
+                "urns": ["whatsapp:27820000000"],
+                "modified_on": datetime(2025, 1, 3, 12, 0, 0, tzinfo=pytz.utc),
+            },
+        )()
+
+        client = FakeClient([[contact]])
+        start_date = "2025-01-01 00:00:00"
+        end_date = "2025-01-31 00:00:00"
+
+        with tempfile.TemporaryDirectory() as tmp_dir, chdir(tmp_dir):
+            with (
+                patch.object(fetch_rapidpro_contacts, "START_DATE", start_date),
+                patch.object(fetch_rapidpro_contacts, "END_DATE", end_date),
+            ):
+                fetch_rapidpro_contacts.fetch_rapidpro_contacts(client)
+
+            output_path = Path(tmp_dir) / "contacts-2025-01-01-2025-01-31.csv"
+            self.assertFalse(output_path.exists())
+
+    def test_fetch_rapidpro_contacts_msisdn_filter(self):
+        contact1 = type(
+            "Contact",
+            (),
+            {
+                "fields": {"opted_out": "FALSE"},
+                "urns": ["whatsapp:27820000001"],
+                "modified_on": datetime(2025, 1, 3, 12, 0, 0, tzinfo=pytz.utc),
+            },
+        )()
+
+        contact2 = type(
+            "Contact",
+            (),
+            {
+                "fields": {"opted_out": "FALSE"},
+                "urns": ["whatsapp:27820000002"],
+                "modified_on": datetime(2025, 1, 4, 12, 0, 0, tzinfo=pytz.utc),
+                "name": "Alice",
+                "language": "eng",
+            },
+        )()
+
+        client = FakeClient([[contact1, contact2]])
+        start_date = "2025-01-01 00:00:00"
+        end_date = "2025-01-31 00:00:00"
+
+        with tempfile.TemporaryDirectory() as tmp_dir, chdir(tmp_dir):
+            with (
+                patch.object(fetch_rapidpro_contacts, "START_DATE", start_date),
+                patch.object(fetch_rapidpro_contacts, "END_DATE", end_date),
+                patch.object(
+                    fetch_rapidpro_contacts,
+                    "MSISDN_FILTER",
+                    ["27820000002"],
+                ),
+            ):
+                fetch_rapidpro_contacts.fetch_rapidpro_contacts(client)
+
+            output_path = Path(tmp_dir) / "contacts-2025-01-01-2025-01-31.csv"
+            with output_path.open(newline="") as csv_file:
+                reader = csv.DictReader(csv_file)
+                rows = list(reader)
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["urn"], "27820000002")
