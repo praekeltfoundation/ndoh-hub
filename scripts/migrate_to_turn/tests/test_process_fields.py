@@ -8,6 +8,7 @@ from scripts.migrate_to_turn.process_fields import (
     get_user_babies,
     get_user_type,
     has_active_baby,
+    has_active_baby_between_1_and_2,
     is_datetime,
     process_baby_loss_status,
     process_datetime,
@@ -217,10 +218,56 @@ class GetUserTypeTests(TestCase):
         Postbirth users without active baby are alumni
         """
         contact = type("Contact", (), {"fields": {"postbirth_messaging": "TRUE"}})()
-        with mock.patch(
-            "scripts.migrate_to_turn.process_fields.has_active_baby", return_value=False
+        with (
+            mock.patch(
+                "scripts.migrate_to_turn.process_fields.has_active_baby",
+                return_value=False,
+            ),
+            mock.patch(
+                "scripts.migrate_to_turn.process_fields.has_active_baby_between_1_and_2",
+                return_value=False,
+            ),
         ):
             self.assertEqual(get_user_type(contact), "alumni_user")
+
+    def test_supporter_with_registered_status(self):
+        """
+        Supporters with registered status become supporter users
+        """
+        contact = type(
+            "Contact",
+            (),
+            {"fields": {"supporter": "TRUE", "supp_status": "registered"}},
+        )()
+        self.assertEqual(get_user_type(contact), "supporter")
+
+    def test_supporter_without_registered_status(self):
+        """
+        Supporters without registered status become supporter leads
+        """
+        contact = type(
+            "Contact",
+            (),
+            {"fields": {"supporter": "TRUE", "supp_status": "pending"}},
+        )()
+        self.assertEqual(get_user_type(contact), "supporter_lead")
+
+    def test_postbirth_without_active_baby_between_1_and_2_is_alumni_user_1_year(self):
+        """
+        Postbirth users with a baby between 1 and 2 years are alumni_user_1_year
+        """
+        contact = type("Contact", (), {"fields": {"postbirth_messaging": "TRUE"}})()
+        with (
+            mock.patch(
+                "scripts.migrate_to_turn.process_fields.has_active_baby",
+                return_value=False,
+            ),
+            mock.patch(
+                "scripts.migrate_to_turn.process_fields.has_active_baby_between_1_and_2",
+                return_value=True,
+            ),
+        ):
+            self.assertEqual(get_user_type(contact), "alumni_user_1_year")
 
 
 class HasActiveBabyTests(TestCase):
@@ -261,6 +308,39 @@ class HasActiveBabyTests(TestCase):
         datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
         datetime_mock.now.return_value = self.fixed_now
         self.assertFalse(has_active_baby(contact))
+
+
+class HasActiveBabyBetween1And2Tests(TestCase):
+    def setUp(self):
+        self.fixed_now = datetime(2026, 1, 1, tzinfo=pytz.utc)
+
+    @mock.patch("scripts.migrate_to_turn.process_fields.datetime")
+    def test_returns_true_for_baby_older_than_one(self, datetime_mock):
+        contact = type("Contact", (), {"fields": {"baby_dob1": "2024-06-01"}})()
+        datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
+        datetime_mock.now.return_value = self.fixed_now
+        self.assertTrue(has_active_baby_between_1_and_2(contact))
+
+    @mock.patch("scripts.migrate_to_turn.process_fields.datetime")
+    def test_returns_false_for_baby_under_one(self, datetime_mock):
+        contact = type("Contact", (), {"fields": {"baby_dob1": "2025-06-01"}})()
+        datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
+        datetime_mock.now.return_value = self.fixed_now
+        self.assertFalse(has_active_baby_between_1_and_2(contact))
+
+    @mock.patch("scripts.migrate_to_turn.process_fields.datetime")
+    def test_returns_false_for_baby_older_than_two(self, datetime_mock):
+        contact = type("Contact", (), {"fields": {"baby_dob1": "2023-12-01"}})()
+        datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
+        datetime_mock.now.return_value = self.fixed_now
+        self.assertFalse(has_active_baby_between_1_and_2(contact))
+
+    @mock.patch("scripts.migrate_to_turn.process_fields.datetime")
+    def test_returns_false_for_invalid_date(self, datetime_mock):
+        contact = type("Contact", (), {"fields": {"baby_dob1": "not-a-date"}})()
+        datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
+        datetime_mock.now.return_value = self.fixed_now
+        self.assertFalse(has_active_baby_between_1_and_2(contact))
 
 
 class GetUserBabiesTests(TestCase):
