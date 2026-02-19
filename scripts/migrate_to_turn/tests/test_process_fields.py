@@ -218,11 +218,15 @@ class GetUserTypeTests(TestCase):
         Postbirth users without active baby are alumni
         """
         contact = type("Contact", (), {"fields": {"postbirth_messaging": "TRUE"}})()
-        with mock.patch(
-            "scripts.migrate_to_turn.process_fields.has_active_baby", return_value=False
-        ), mock.patch(
-            "scripts.migrate_to_turn.process_fields.has_active_baby_between_1_and_2",
-            return_value=False,
+        with (
+            mock.patch(
+                "scripts.migrate_to_turn.process_fields.has_active_baby",
+                return_value=False,
+            ),
+            mock.patch(
+                "scripts.migrate_to_turn.process_fields.has_active_baby_between_1_and_2",
+                return_value=False,
+            ),
         ):
             self.assertEqual(get_user_type(contact), "alumni_user")
 
@@ -253,11 +257,15 @@ class GetUserTypeTests(TestCase):
         Postbirth users with a baby between 1 and 2 years are alumni_user_1_year
         """
         contact = type("Contact", (), {"fields": {"postbirth_messaging": "TRUE"}})()
-        with mock.patch(
-            "scripts.migrate_to_turn.process_fields.has_active_baby", return_value=False
-        ), mock.patch(
-            "scripts.migrate_to_turn.process_fields.has_active_baby_between_1_and_2",
-            return_value=True,
+        with (
+            mock.patch(
+                "scripts.migrate_to_turn.process_fields.has_active_baby",
+                return_value=False,
+            ),
+            mock.patch(
+                "scripts.migrate_to_turn.process_fields.has_active_baby_between_1_and_2",
+                return_value=True,
+            ),
         ):
             self.assertEqual(get_user_type(contact), "alumni_user_1_year")
 
