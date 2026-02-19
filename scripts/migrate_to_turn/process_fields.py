@@ -68,6 +68,25 @@ def has_active_baby(contact):
     return False
 
 
+def has_active_baby_between_1_and_2(contact):
+    now = datetime.now(pytz.utc)
+    fields = getattr(contact, "fields", {}) or {}
+    for index in range(1, 4):
+        dob = fields.get(f"baby_dob{index}")
+        if not dob:
+            continue
+        value = dob.replace("Z", "").split("+")[0]
+        if not is_datetime(value):
+            continue
+        birth_date = datetime.fromisoformat(value)
+        if birth_date.tzinfo is None:
+            birth_date = birth_date.replace(tzinfo=pytz.utc)
+        age_days = (now - birth_date).days
+        if 365 < age_days <= 730:
+            return True
+    return False
+
+
 def get_user_type(contact):
     # Ineligible: We don't save anything on rapidpro to identify ineligible users
     # Push Basic User: Clinic code is required in rapdidpro so these don't exist
@@ -79,10 +98,17 @@ def get_user_type(contact):
     prebirth_messaging = get_truthy_field("prebirth_messaging")
     postbirth_messaging = get_truthy_field("postbirth_messaging")
 
+    supporter = get_truthy_field("supporter")
+    supp_status = contact.fields.get("supp_status", "").strip().lower()
+
     user_type = "lead"
 
     if opted_out:
         user_type = "deregistered_user"
+    elif supporter:
+        # We need to update these to send them a message about not getting messages
+        # anymore
+        user_type = "supporter" if supp_status == "registered" else "supporter_lead"
     elif prebirth_messaging or postbirth_messaging:
         user_type = "comprehensive_user"
 
@@ -92,6 +118,11 @@ def get_user_type(contact):
             and not has_active_baby(contact)
         ):
             user_type = "alumni_user"
+
+            if has_active_baby_between_1_and_2(contact):
+                # For these we'll start a journey letting them know they won't be
+                # gettting messages anymore and then updating them to alumnni_user
+                user_type = "alumni_user_1_year"
 
     return user_type
 
