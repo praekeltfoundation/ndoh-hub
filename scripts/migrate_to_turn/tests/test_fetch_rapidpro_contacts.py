@@ -39,6 +39,46 @@ class FakeClient:
 
 
 class FetchRapidproContactsTests(TestCase):
+    def test_get_field_data_uses_opted_out_when_import_override_is_false(self):
+        with patch.object(fetch_rapidpro_contacts, "IMPORT_AS_OPTED_OUT", False):
+            contact_opted_in = type(
+                "Contact",
+                (),
+                {
+                    "fields": {"opted_out": "FALSE"},
+                    "name": "Alice",
+                    "language": "eng",
+                    "urns": ["whatsapp:27820000000"],
+                    "modified_on": datetime(2025, 1, 3, 12, 0, 0, tzinfo=pytz.utc),
+                },
+            )()
+            contact_opted_out = type(
+                "Contact",
+                (),
+                {
+                    "fields": {"opted_out": "TRUE"},
+                    "name": "Bob",
+                    "language": "eng",
+                    "urns": ["whatsapp:27820000001"],
+                    "modified_on": datetime(2025, 1, 3, 12, 0, 0, tzinfo=pytz.utc),
+                },
+            )()
+
+            self.assertEqual(
+                fetch_rapidpro_contacts.get_field_data(contact_opted_in)["opted_in"],
+                "true",
+            )
+            self.assertEqual(
+                fetch_rapidpro_contacts.get_field_data(contact_opted_out)["opted_in"],
+                "false",
+            )
+            self.assertEqual(
+                fetch_rapidpro_contacts.get_field_data(contact_opted_in)[
+                    "migration_key"
+                ],
+                fetch_rapidpro_contacts.MIGRATION_KEY,
+            )
+
     def test_fetch_rapidpro_contacts_writes_csv(self):
         contact = type(
             "Contact",
@@ -74,6 +114,7 @@ class FetchRapidproContactsTests(TestCase):
             with (
                 patch.object(fetch_rapidpro_contacts, "START_DATE", start_date),
                 patch.object(fetch_rapidpro_contacts, "END_DATE", end_date),
+                patch.object(fetch_rapidpro_contacts, "IMPORT_AS_OPTED_OUT", True),
             ):
                 fetch_rapidpro_contacts.fetch_rapidpro_contacts(client)
 
@@ -101,6 +142,7 @@ class FetchRapidproContactsTests(TestCase):
             "pregnancy_loss_status",
             "is_new_user",
             "babies",
+            "migration_key",
             "urn",
         ]
 
@@ -117,7 +159,7 @@ class FetchRapidproContactsTests(TestCase):
             "clinic_code": "123",
             "referred_number": "+27123",
             "education": "secondary",
-            "opted_in": "true",
+            "opted_in": "false",
             "pregnancy_message_status": "true",
             "baby_message_status": "true",
             "minor_healthcare_consent": "true",
@@ -128,6 +170,7 @@ class FetchRapidproContactsTests(TestCase):
             "pregnancy_loss_status": "",
             "is_new_user": "no",
             "babies": fetch_rapidpro_contacts.get_user_babies(contact),
+            "migration_key": fetch_rapidpro_contacts.MIGRATION_KEY,
             "urn": "27820000000",
         }
 

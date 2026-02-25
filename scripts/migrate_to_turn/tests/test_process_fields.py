@@ -96,6 +96,14 @@ class ProcessOptedInTests(TestCase):
         self.assertEqual(process_opted_in(True), "false")
         self.assertEqual(process_opted_in(False), "true")
 
+    def test_import_as_opted_out_forces_false(self):
+        """
+        Import override always sets opted_in to false
+        """
+        for value in (None, "", "FALSE", "TRUE", False, True):
+            with self.subTest(value=value):
+                self.assertEqual(process_opted_in(value, True), "false")
+
 
 class ProcessTruthyTests(TestCase):
     def test_none_returns_false(self):
