@@ -22,6 +22,10 @@ START_DATE = "2025-11-01 01:13:06"
 END_DATE = "2026-01-22 19:13:06"
 LIMIT = 1000
 INCLUDE_OPTED_OUT = False
+# We want to import beta testing users as opted out and give them the chance to opt in.
+IMPORT_AS_OPTED_OUT = True
+# This is to identify invited users and schedule the invite message.
+MIGRATION_KEY = "beta_testing_batch_1"
 
 MSISDN_FILTER = (
     os.environ.get("MSISDN_FILTER", "").split(",")
@@ -48,7 +52,7 @@ FIELD_MAPPING = {
     "education": {"turn_name": "education", "type": "custom"},
     "opted_out": {
         "turn_name": "opted_in",
-        "process": process_opted_in,
+        "process": lambda value: process_opted_in(value, IMPORT_AS_OPTED_OUT),
         "type": "custom",
     },
     "prebirth_messaging": {
@@ -83,6 +87,7 @@ NEW_TURN_FIELD_MAPPING = {
     "pregnancy_loss_status": {"process": process_pregnancy_loss_status},
     "is_new_user": {"process": lambda contact: "no"},
     "babies": {"process": get_user_babies},
+    "migration_key": {"process": lambda contact: MIGRATION_KEY},
 }
 
 

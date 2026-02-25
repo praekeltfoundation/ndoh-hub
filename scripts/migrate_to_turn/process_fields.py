@@ -29,7 +29,10 @@ def process_datetime(value):
         return value
 
 
-def process_opted_in(value):
+def process_opted_in(value, import_as_opted_out=False):
+    if import_as_opted_out:
+        return "false"
+
     if not value:
         return "true"
 
