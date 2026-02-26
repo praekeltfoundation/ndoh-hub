@@ -45,7 +45,11 @@ FIELD_MAPPING = {
     },
     "name": {"turn_name": "name", "type": "default"},
     "language": {"turn_name": "language", "type": "default"},
-    "age": {"turn_name": "user_dob_year", "process": get_user_dob_year, "type": "custom"},
+    "age": {
+        "turn_name": "user_dob_year",
+        "process": get_user_dob_year,
+        "type": "custom",
+    },
     "research_consent": {
         "turn_name": "research_consent",
         "process": to_lowercase,
@@ -98,7 +102,9 @@ NEW_TURN_FIELD_MAPPING = {
     "babies": {"process": get_user_babies},
     "youngest_dob": {"process": get_youngest_dob},
     "migration_key": {"process": lambda contact: MIGRATION_KEY},
-    "next_pnc_appointment_child_index": {"process": get_next_pnc_appointment_child_index},
+    "next_pnc_appointment_child_index": {
+        "process": get_next_pnc_appointment_child_index
+    },
 }
 
 
