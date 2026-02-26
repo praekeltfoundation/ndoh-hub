@@ -6,8 +6,12 @@ import pytz
 from temba_client.v2 import TembaClient
 
 from scripts.migrate_to_turn.process_fields import (
+    get_next_pnc_appointment_child_index,
+    get_pregnancy_in_weeks,
     get_user_babies,
+    get_user_dob_year,
     get_user_type,
+    get_youngest_dob,
     process_baby_loss_status,
     process_datetime,
     process_opted_in,
@@ -18,8 +22,8 @@ from scripts.migrate_to_turn.process_fields import (
 
 RAPIDPRO_URL = "https://rapidpro.qa.momconnect.co.za"
 
-START_DATE = "2025-11-01 01:13:06"
-END_DATE = "2026-01-22 19:13:06"
+START_DATE = "2026-02-24 01:13:06"
+END_DATE = "2026-02-26 19:13:06"
 LIMIT = 1000
 INCLUDE_OPTED_OUT = False
 # We want to import beta testing users as opted out and give them the chance to opt in.
@@ -33,7 +37,6 @@ MSISDN_FILTER = (
     else []
 )
 
-
 FIELD_MAPPING = {
     "edd": {
         "turn_name": "pregnancy_expected_due_date",
@@ -42,12 +45,13 @@ FIELD_MAPPING = {
     },
     "name": {"turn_name": "name", "type": "default"},
     "language": {"turn_name": "language", "type": "default"},
+    "age": {"turn_name": "user_dob_year", "process": get_user_dob_year, "type": "custom"},
     "research_consent": {
         "turn_name": "research_consent",
         "process": to_lowercase,
         "type": "custom",
     },
-    "clinic_code": {"turn_name": "clinic_code", "type": "custom"},
+    "facility_code": {"turn_name": "clinic_code", "type": "custom"},
     "registered_by": {"turn_name": "referred_number", "type": "custom"},
     "education": {"turn_name": "education", "type": "custom"},
     "opted_out": {
@@ -76,18 +80,25 @@ FIELD_MAPPING = {
         "type": "custom",
         "process": to_lowercase,
     },
-    # user_dob_year: we have age so we could do a rough calculation
+    "popi_consent": {
+        "turn_name": "privacy_policy_accepted",
+        "type": "custom",
+        "process": process_truthy,
+    },
     # province: we don't have the field but can derive it from clinic code later
     # area: we don't have the field but can derive it from clinic code later
 }
 
 NEW_TURN_FIELD_MAPPING = {
+    "pregnancy_in_weeks": {"process": get_pregnancy_in_weeks},
     "user_type": {"process": get_user_type},
     "baby_loss_status": {"process": process_baby_loss_status},
     "pregnancy_loss_status": {"process": process_pregnancy_loss_status},
     "is_new_user": {"process": lambda contact: "no"},
     "babies": {"process": get_user_babies},
+    "youngest_dob": {"process": get_youngest_dob},
     "migration_key": {"process": lambda contact: MIGRATION_KEY},
+    "next_pnc_appointment_child_index": {"process": get_next_pnc_appointment_child_index},
 }
 
 

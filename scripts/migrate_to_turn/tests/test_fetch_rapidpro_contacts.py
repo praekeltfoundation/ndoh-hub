@@ -79,6 +79,61 @@ class FetchRapidproContactsTests(TestCase):
                 fetch_rapidpro_contacts.MIGRATION_KEY,
             )
 
+    def test_get_field_data_defaults_next_pnc_child_index_for_postbirth(self):
+        postbirth_contact = type(
+            "Contact",
+            (),
+            {
+                "fields": {"postbirth_messaging": "TRUE"},
+                "name": "Alice",
+                "language": "eng",
+                "urns": ["whatsapp:27820000000"],
+                "modified_on": datetime(2025, 1, 3, 12, 0, 0, tzinfo=pytz.utc),
+            },
+        )()
+        non_postbirth_contact = type(
+            "Contact",
+            (),
+            {
+                "fields": {"postbirth_messaging": "FALSE"},
+                "name": "Bob",
+                "language": "eng",
+                "urns": ["whatsapp:27820000001"],
+                "modified_on": datetime(2025, 1, 3, 12, 0, 0, tzinfo=pytz.utc),
+            },
+        )()
+
+        self.assertEqual(
+            fetch_rapidpro_contacts.get_field_data(postbirth_contact)[
+                "next_pnc_appointment_child_index"
+            ],
+            0,
+        )
+        self.assertEqual(
+            fetch_rapidpro_contacts.get_field_data(non_postbirth_contact)[
+                "next_pnc_appointment_child_index"
+            ],
+            "",
+        )
+
+    def test_get_field_data_maps_user_dob_year_from_age(self):
+        contact = type(
+            "Contact",
+            (),
+            {
+                "fields": {"age": "25"},
+                "name": "Alice",
+                "language": "eng",
+                "urns": ["whatsapp:27820000000"],
+                "modified_on": datetime(2025, 1, 3, 12, 0, 0, tzinfo=pytz.utc),
+            },
+        )()
+
+        self.assertEqual(
+            fetch_rapidpro_contacts.get_field_data(contact)["user_dob_year"],
+            fetch_rapidpro_contacts.get_user_dob_year("25"),
+        )
+
     def test_fetch_rapidpro_contacts_writes_csv(self):
         contact = type(
             "Contact",
@@ -86,8 +141,9 @@ class FetchRapidproContactsTests(TestCase):
             {
                 "fields": {
                     "edd": "2025-01-02T12:00:00",
+                    "age": "25",
                     "research_consent": "TRUE",
-                    "clinic_code": "123",
+                    "facility_code": "123",
                     "registered_by": "+27123",
                     "education": "secondary",
                     "opted_out": "FALSE",
@@ -127,6 +183,7 @@ class FetchRapidproContactsTests(TestCase):
             "pregnancy_expected_due_date",
             "name",
             "language",
+            "user_dob_year",
             "research_consent",
             "clinic_code",
             "referred_number",
@@ -137,12 +194,16 @@ class FetchRapidproContactsTests(TestCase):
             "minor_healthcare_consent",
             "opt_out_reason",
             "active_channel",
+            "privacy_policy_accepted",
+            "pregnancy_in_weeks",
             "user_type",
             "baby_loss_status",
             "pregnancy_loss_status",
             "is_new_user",
             "babies",
+            "youngest_dob",
             "migration_key",
+            "next_pnc_appointment_child_index",
             "urn",
         ]
 
@@ -155,6 +216,9 @@ class FetchRapidproContactsTests(TestCase):
             ),
             "name": "Alice",
             "language": "eng",
+            "user_dob_year": str(
+                fetch_rapidpro_contacts.get_user_dob_year(contact.fields["age"])
+            ),
             "research_consent": "true",
             "clinic_code": "123",
             "referred_number": "+27123",
@@ -165,12 +229,18 @@ class FetchRapidproContactsTests(TestCase):
             "minor_healthcare_consent": "true",
             "opt_out_reason": "baby_loss",
             "active_channel": "whatsapp",
+            "privacy_policy_accepted": "false",
+            "pregnancy_in_weeks": fetch_rapidpro_contacts.get_pregnancy_in_weeks(
+                contact
+            ),
             "user_type": fetch_rapidpro_contacts.get_user_type(contact) or "",
             "baby_loss_status": "true",
             "pregnancy_loss_status": "",
             "is_new_user": "no",
             "babies": fetch_rapidpro_contacts.get_user_babies(contact),
+            "youngest_dob": fetch_rapidpro_contacts.get_youngest_dob(contact),
             "migration_key": fetch_rapidpro_contacts.MIGRATION_KEY,
+            "next_pnc_appointment_child_index": "0",
             "urn": "27820000000",
         }
 
