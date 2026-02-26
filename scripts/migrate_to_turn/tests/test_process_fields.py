@@ -8,8 +8,8 @@ from scripts.migrate_to_turn.process_fields import (
     get_pregnancy_in_weeks,
     get_user_babies,
     get_user_dob_year,
-    get_youngest_dob,
     get_user_type,
+    get_youngest_dob,
     has_active_baby,
     has_active_baby_between_1_and_2,
     is_datetime,
@@ -371,7 +371,7 @@ class HasActiveBabyBetween1And2Tests(TestCase):
         datetime_mock.now.return_value = self.fixed_now
         self.assertFalse(has_active_baby_between_1_and_2(contact))
 
-    @mock.patch("scripts.migrate_to_turn.process_fields.datetime")
+    @mock.patch("scripts.migrate_to_turn.process_fields.datetime")·
     def test_returns_false_for_invalid_date(self, datetime_mock):
         contact = type("Contact", (), {"fields": {"baby_dob1": "not-a-date"}})()
         datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
