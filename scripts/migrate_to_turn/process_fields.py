@@ -132,6 +132,7 @@ def get_user_type(contact):
     opted_out = get_truthy_field("opted_out")
     prebirth_messaging = get_truthy_field("prebirth_messaging")
     postbirth_messaging = get_truthy_field("postbirth_messaging")
+    public_messaging = get_truthy_field("public_messaging")
 
     supporter = get_truthy_field("supporter")
     supp_status = (contact.fields.get("supp_status") or "").strip().lower()
@@ -158,8 +159,8 @@ def get_user_type(contact):
                 # For these we'll start a journey letting them know they won't be
                 # gettting messages anymore and then updating them to alumnni_user
                 user_type = "alumni_user_1_year"
-
-    # TODO: add specific public user type
+    elif public_messaging:
+        user_type = "public_user"
 
     return user_type
 

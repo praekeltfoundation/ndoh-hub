@@ -221,6 +221,26 @@ class GetUserTypeTests(TestCase):
         contact = type("Contact", (), {"fields": {"opted_out": "TRUE"}})()
         self.assertEqual(get_user_type(contact), "deregistered_user")
 
+    def test_opted_out_takes_priority_over_all_other_flags(self):
+        """
+        Opted out should always win regardless of other state
+        """
+        contact = type(
+            "Contact",
+            (),
+            {
+                "fields": {
+                    "opted_out": "TRUE",
+                    "supporter": "TRUE",
+                    "supp_status": "registered",
+                    "prebirth_messaging": "TRUE",
+                    "postbirth_messaging": "TRUE",
+                    "public_messaging": "TRUE",
+                }
+            },
+        )()
+        self.assertEqual(get_user_type(contact), "deregistered_user")
+
     def test_prebirth_messaging_is_comprehensive(self):
         """
         Prebirth messaging users are comprehensive
@@ -288,6 +308,35 @@ class GetUserTypeTests(TestCase):
         )()
         self.assertEqual(get_user_type(contact), "supporter_lead")
 
+    def test_supporter_registered_status_is_normalized(self):
+        """
+        Supporter status should be stripped and case normalized
+        """
+        contact = type(
+            "Contact",
+            (),
+            {"fields": {"supporter": "TRUE", "supp_status": " Registered "}},
+        )()
+        self.assertEqual(get_user_type(contact), "supporter")
+
+    def test_supporter_takes_priority_over_messaging_flags(self):
+        """
+        Supporter classification takes precedence over messaging-based types
+        """
+        contact = type(
+            "Contact",
+            (),
+            {
+                "fields": {
+                    "supporter": "TRUE",
+                    "supp_status": "registered",
+                    "prebirth_messaging": "TRUE",
+                    "public_messaging": "TRUE",
+                }
+            },
+        )()
+        self.assertEqual(get_user_type(contact), "supporter")
+
     def test_postbirth_without_active_baby_between_1_and_2_is_alumni_user_1_year(self):
         """
         Postbirth users with a baby between 1 and 2 years are alumni_user_1_year
@@ -304,6 +353,24 @@ class GetUserTypeTests(TestCase):
             ),
         ):
             self.assertEqual(get_user_type(contact), "alumni_user_1_year")
+
+    def test_public_messaging_is_public_user(self):
+        """
+        Public messaging users are public users when no higher-priority flags exist
+        """
+        contact = type("Contact", (), {"fields": {"public_messaging": "TRUE"}})()
+        self.assertEqual(get_user_type(contact), "public_user")
+
+    def test_comprehensive_takes_priority_over_public_messaging(self):
+        """
+        Prebirth/postbirth messaging should win over public messaging
+        """
+        contact = type(
+            "Contact",
+            (),
+            {"fields": {"prebirth_messaging": "TRUE", "public_messaging": "TRUE"}},
+        )()
+        self.assertEqual(get_user_type(contact), "comprehensive_user")
 
 
 class HasActiveBabyTests(TestCase):
@@ -371,7 +438,7 @@ class HasActiveBabyBetween1And2Tests(TestCase):
         datetime_mock.now.return_value = self.fixed_now
         self.assertFalse(has_active_baby_between_1_and_2(contact))
 
-    @mock.patch("scripts.migrate_to_turn.process_fields.datetime")·
+    @mock.patch("scripts.migrate_to_turn.process_fields.datetime")
     def test_returns_false_for_invalid_date(self, datetime_mock):
         contact = type("Contact", (), {"fields": {"baby_dob1": "not-a-date"}})()
         datetime_mock.fromisoformat.side_effect = datetime.fromisoformat

@@ -27,7 +27,7 @@ END_DATE = "2026-02-26 19:13:06"
 LIMIT = 1000
 INCLUDE_OPTED_OUT = False
 # We want to import beta testing users as opted out and give them the chance to opt in.
-IMPORT_AS_OPTED_OUT = True
+IMPORT_AS_OPTED_OUT = False
 # This is to identify invited users and schedule the invite message.
 MIGRATION_KEY = "beta_testing_batch_1"
 
