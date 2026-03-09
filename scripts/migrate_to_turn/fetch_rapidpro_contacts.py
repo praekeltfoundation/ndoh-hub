@@ -6,6 +6,7 @@ import pytz
 from temba_client.v2 import TembaClient
 
 from scripts.migrate_to_turn.process_fields import (
+    get_next_anc_appointment_fields,
     get_next_pnc_appointment_fields,
     get_pregnancy_in_weeks,
     get_user_babies,
@@ -105,6 +106,7 @@ NEW_TURN_FIELD_MAPPING = {
     "babies": {"process": get_user_babies},
     "youngest_dob": {"process": get_youngest_dob},
     "migration_key": {"process": lambda contact: MIGRATION_KEY},
+    "next_anc_appointment_": {"process": get_next_anc_appointment_fields},
     "next_pnc_appointment_": {"process": get_next_pnc_appointment_fields},
 }
 
