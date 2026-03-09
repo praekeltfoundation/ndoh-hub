@@ -219,11 +219,12 @@ def get_rapidpro_contacts(client, start_date=None, end_date=None):
     log(f"> Getting rapidpro contacts from {start_date} to {end_date}")
     contacts = []
     oldest_date = end_date.replace(tzinfo=pytz.utc)
-    batch_number = 0
-    for contact_batch in client.get_contacts(
-        before=end_date, after=start_date
-    ).iterfetches(retry_on_rate_exceed=True):
-        batch_number += 1
+    for batch_number, contact_batch in enumerate(
+        client.get_contacts(before=end_date, after=start_date).iterfetches(
+            retry_on_rate_exceed=True
+        ),
+        start=1,
+    ):
         log(f"Processing contact_batch #{batch_number}")
         for contact in contact_batch:
             oldest_date, added = process_contact(
