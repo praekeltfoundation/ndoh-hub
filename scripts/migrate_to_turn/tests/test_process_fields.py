@@ -5,6 +5,7 @@ from unittest import TestCase, mock
 import pytz
 
 from scripts.migrate_to_turn.process_fields import (
+    get_next_pnc_appointment_fields,
     get_pregnancy_in_weeks,
     get_user_babies,
     get_user_dob_year,
@@ -500,6 +501,7 @@ class GetUserBabiesTests(TestCase):
                 "name": "",
                 "next_vacc_day": 0,
                 "next_vacc_month": 0,
+                "next_vacc_text": "",
                 "next_vacc_year": 0,
                 "pregnancy_edd": 0,
                 "vaccination_status_at_reg": "",
@@ -507,6 +509,64 @@ class GetUserBabiesTests(TestCase):
         ]
 
         self.assertEqual(get_user_babies(contact), json.dumps(baby_list))
+
+    @mock.patch("scripts.migrate_to_turn.process_fields.datetime")
+    def test_active_baby_includes_next_vacc_schedule(self, datetime_mock):
+        contact = type("Contact", (), {"fields": {"baby_dob1": "2025-12-01"}})()
+        datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
+        datetime_mock.now.return_value = datetime(2026, 1, 1, tzinfo=pytz.utc)
+
+        baby_list = json.loads(get_user_babies(contact))
+        self.assertEqual(baby_list[0]["next_vacc_day"], 12)
+        self.assertEqual(baby_list[0]["next_vacc_month"], 1)
+        self.assertEqual(baby_list[0]["next_vacc_year"], 2026)
+        self.assertEqual(baby_list[0]["next_vacc_text"], "6 week")
+
+
+class GetNextPncAppointmentTests(TestCase):
+    @mock.patch("scripts.migrate_to_turn.process_fields.datetime")
+    def test_returns_earliest_next_appointment_across_active_babies(
+        self, datetime_mock
+    ):
+        contact = type(
+            "Contact",
+            (),
+            {
+                "fields": {
+                    "postbirth_messaging": "TRUE",
+                    "baby_dob1": "2025-12-01",
+                    "baby_dob2": "2025-11-01",
+                }
+            },
+        )()
+        datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
+        datetime_mock.now.return_value = datetime(2026, 1, 1, tzinfo=pytz.utc)
+
+        self.assertEqual(
+            get_next_pnc_appointment_fields(contact),
+            {
+                "next_pnc_appointment_date": "2026-01-10T00:00:00+00:00",
+                "next_pnc_appointment_child_index": 1,
+                "next_pnc_appointment_text": "10 week",
+                "next_pnc_appointment_child_name": "",
+            },
+        )
+
+    def test_returns_empty_details_for_non_postbirth(self):
+        contact = type(
+            "Contact",
+            (),
+            {"fields": {"postbirth_messaging": "FALSE", "baby_dob1": "2025-12-01"}},
+        )()
+        self.assertEqual(
+            get_next_pnc_appointment_fields(contact),
+            {
+                "next_pnc_appointment_date": "",
+                "next_pnc_appointment_child_index": "",
+                "next_pnc_appointment_text": "",
+                "next_pnc_appointment_child_name": "",
+            },
+        )
 
 
 class GetYoungestDobTests(TestCase):
