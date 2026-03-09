@@ -21,7 +21,7 @@ from scripts.migrate_to_turn.process_fields import (
     to_lowercase,
 )
 
-env = "prd"  # qa or prd
+env = "qa"  # qa or prd
 RAPIDPRO_URL = f"https://rapidpro.{env}.momconnect.co.za"
 
 START_DATE = "2022-02-10 00:0:00"
