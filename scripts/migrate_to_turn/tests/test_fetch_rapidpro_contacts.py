@@ -41,9 +41,7 @@ class FakeClient:
         filtered_batches = []
         for batch in self._batches:
             filtered_batch = [
-                contact
-                for contact in batch
-                if urn in getattr(contact, "urns", [])
+                contact for contact in batch if urn in getattr(contact, "urns", [])
             ]
             if filtered_batch:
                 filtered_batches.append(filtered_batch)
