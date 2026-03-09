@@ -13,6 +13,17 @@ VACCINE_SCHEDULE = (
     (12, "M", "12 month"),
 )
 
+ANC_APPOINTMENTS = (
+    ("before week 14", -26),
+    ("20-week", -20),
+    ("26-week", -14),
+    ("30-week", -10),
+    ("34-week", -6),
+    ("36-week", -4),
+    ("38-week", -2),
+    ("40-week", 0),
+)
+
 
 def is_datetime(date):
     try:
@@ -209,6 +220,39 @@ def get_next_pnc_appointment_fields(contact):
         "next_pnc_appointment_text": next_appointment["text"],
         "next_pnc_appointment_child_name": next_appointment["child_name"],
     }
+
+
+def get_next_anc_appointment_fields(contact):
+    prebirth_messaging = (getattr(contact, "fields", {}) or {}).get(
+        "prebirth_messaging"
+    )
+    if process_truthy(prebirth_messaging) != "true":
+        return {"next_anc_appointment_date": "", "next_anc_appointment_text": ""}
+
+    edd = (getattr(contact, "fields", {}) or {}).get("edd")
+    if not edd:
+        return {"next_anc_appointment_date": "", "next_anc_appointment_text": ""}
+
+    try:
+        edd_date = datetime.fromisoformat(edd.replace("Z", "").split("+")[0])
+    except (AttributeError, TypeError, ValueError):
+        return {"next_anc_appointment_date": "", "next_anc_appointment_text": ""}
+
+    if edd_date.tzinfo is None:
+        edd_date = edd_date.replace(tzinfo=pytz.utc)
+    else:
+        edd_date = edd_date.astimezone(pytz.utc)
+
+    now_date = datetime.now(pytz.utc).date()
+    for text, week_offset in ANC_APPOINTMENTS:
+        appointment_date = edd_date + timedelta(weeks=week_offset)
+        if appointment_date.date() >= now_date:
+            return {
+                "next_anc_appointment_date": appointment_date.isoformat(),
+                "next_anc_appointment_text": text,
+            }
+
+    return {"next_anc_appointment_date": "", "next_anc_appointment_text": ""}
 
 
 def get_user_type(contact):

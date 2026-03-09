@@ -5,6 +5,7 @@ from unittest import TestCase, mock
 import pytz
 
 from scripts.migrate_to_turn.process_fields import (
+    get_next_anc_appointment_fields,
     get_next_pnc_appointment_fields,
     get_pregnancy_in_weeks,
     get_user_babies,
@@ -566,6 +567,48 @@ class GetNextPncAppointmentTests(TestCase):
                 "next_pnc_appointment_text": "",
                 "next_pnc_appointment_child_name": "",
             },
+        )
+
+
+class GetNextAncAppointmentTests(TestCase):
+    @mock.patch("scripts.migrate_to_turn.process_fields.datetime")
+    def test_returns_next_anc_appointment_for_active_pregnancy(self, datetime_mock):
+        contact = type(
+            "Contact",
+            (),
+            {"fields": {"prebirth_messaging": "TRUE", "edd": "2026-06-01T00:00:00Z"}},
+        )()
+        datetime_mock.fromisoformat.side_effect = datetime.fromisoformat
+        datetime_mock.now.return_value = datetime(2026, 1, 1, tzinfo=pytz.utc)
+
+        self.assertEqual(
+            get_next_anc_appointment_fields(contact),
+            {
+                "next_anc_appointment_date": "2026-01-12T00:00:00+00:00",
+                "next_anc_appointment_text": "20-week",
+            },
+        )
+
+    def test_returns_empty_details_for_non_prebirth(self):
+        contact = type(
+            "Contact",
+            (),
+            {"fields": {"prebirth_messaging": "FALSE", "edd": "2026-06-01T00:00:00Z"}},
+        )()
+        self.assertEqual(
+            get_next_anc_appointment_fields(contact),
+            {"next_anc_appointment_date": "", "next_anc_appointment_text": ""},
+        )
+
+    def test_returns_empty_details_for_invalid_edd(self):
+        contact = type(
+            "Contact",
+            (),
+            {"fields": {"prebirth_messaging": "TRUE", "edd": "not-a-date"}},
+        )()
+        self.assertEqual(
+            get_next_anc_appointment_fields(contact),
+            {"next_anc_appointment_date": "", "next_anc_appointment_text": ""},
         )
 
 
