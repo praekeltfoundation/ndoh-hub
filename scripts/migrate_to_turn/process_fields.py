@@ -1,7 +1,17 @@
 import json
+from calendar import monthrange
 from datetime import date, datetime, timedelta
 
 import pytz
+
+VACCINE_SCHEDULE = (
+    (6, "W", "6 week"),
+    (10, "W", "10 week"),
+    (14, "W", "14 week"),
+    (6, "M", "6 month"),
+    (9, "M", "9 month"),
+    (12, "M", "12 month"),
+)
 
 
 def is_datetime(date):
@@ -68,58 +78,137 @@ def get_user_dob_year(value):
 
 
 def has_active_baby(contact):
-    now = datetime.now(pytz.utc)
-    fields = getattr(contact, "fields", {}) or {}
-    for index in range(1, 4):
-        dob = fields.get(f"baby_dob{index}")
-        if not dob:
-            continue
-        value = dob.replace("Z", "").split("+")[0]
-        if not is_datetime(value):
-            continue
-        birth_date = datetime.fromisoformat(value)
-        if birth_date.tzinfo is None:
-            birth_date = birth_date.replace(tzinfo=pytz.utc)
-        age_days = (now - birth_date).days
-        if 0 <= age_days <= 365:
-            return True
-    return False
+    return _has_baby_in_age_range(contact, 0, 365)
 
 
 def has_active_baby_between_1_and_2(contact):
+    return _has_baby_in_age_range(contact, 366, 730)
+
+
+def _has_baby_in_age_range(contact, min_age_days, max_age_days):
     now = datetime.now(pytz.utc)
-    fields = getattr(contact, "fields", {}) or {}
-    for index in range(1, 4):
-        dob = fields.get(f"baby_dob{index}")
-        if not dob:
-            continue
-        value = dob.replace("Z", "").split("+")[0]
-        if not is_datetime(value):
-            continue
-        birth_date = datetime.fromisoformat(value)
-        if birth_date.tzinfo is None:
-            birth_date = birth_date.replace(tzinfo=pytz.utc)
+    for baby in _get_valid_babies(contact):
+        birth_date = baby["birth_date"]
         age_days = (now - birth_date).days
-        if 365 < age_days <= 730:
+        if min_age_days <= age_days <= max_age_days:
             return True
     return False
 
 
-def get_valid_baby_dobs(contact):
-    valid_baby_dobs = []
+def _add_months(value, months):
+    year = value.year + (value.month - 1 + months) // 12
+    month = (value.month - 1 + months) % 12 + 1
+    day = min(value.day, monthrange(year, month)[1])
+    return value.replace(year=year, month=month, day=day)
+
+
+def _normalize_birth_date(dob):
+    value = dob.replace("Z", "").split("+")[0]
+    if not is_datetime(value):
+        return
+
+    birth_date = datetime.fromisoformat(value)
+    if birth_date.tzinfo is None:
+        birth_date = birth_date.replace(tzinfo=pytz.utc)
+    else:
+        birth_date = birth_date.astimezone(pytz.utc)
+    return birth_date
+
+
+def _get_next_vaccine(birth_date, now=None):
+    now = now or datetime.now(pytz.utc)
+    now_date = now.date()
+
+    for value, unit, text in VACCINE_SCHEDULE:
+        if unit == "W":
+            due_date = birth_date + timedelta(weeks=value)
+        else:
+            due_date = _add_months(birth_date, value)
+
+        if due_date.date() >= now_date:
+            return {
+                "day": due_date.day,
+                "month": due_date.month,
+                "year": due_date.year,
+                "text": text,
+                "date": due_date,
+            }
+
+    return {"day": 0, "month": 0, "year": 0, "text": "", "date": None}
+
+
+def _get_valid_babies(contact):
+    babies = []
     fields = getattr(contact, "fields", {}) or {}
     for index in range(1, 4):
         dob = fields.get(f"baby_dob{index}")
         if not dob:
             continue
 
-        value = dob.replace("Z", "").split("+")[0]
-        if not is_datetime(value):
+        birth_date = _normalize_birth_date(dob)
+        if not birth_date:
             continue
 
-        valid_baby_dobs.append((dob, datetime.fromisoformat(value)))
+        babies.append(
+            {
+                "field_index": index,
+                "dob": dob,
+                "birth_date": birth_date,
+                "name": "",
+            }
+        )
 
-    return valid_baby_dobs
+    return babies
+
+
+def get_next_pnc_appointment_fields(contact):
+    postbirth_messaging = (getattr(contact, "fields", {}) or {}).get(
+        "postbirth_messaging"
+    )
+    if process_truthy(postbirth_messaging) != "true":
+        return {
+            "next_pnc_appointment_date": "",
+            "next_pnc_appointment_child_index": "",
+            "next_pnc_appointment_text": "",
+            "next_pnc_appointment_child_name": "",
+        }
+
+    now = datetime.now(pytz.utc)
+    candidates = []
+
+    for babies_index, baby in enumerate(_get_valid_babies(contact)):
+        age_days = (now - baby["birth_date"]).days
+        if not (0 <= age_days <= 365):
+            continue
+
+        next_vaccine = _get_next_vaccine(baby["birth_date"], now)
+        if not next_vaccine["date"]:
+            continue
+
+        candidates.append(
+            {
+                "date": next_vaccine["date"],
+                "child_index": babies_index,
+                "text": next_vaccine["text"],
+                "child_name": baby["name"],
+            }
+        )
+
+    if not candidates:
+        return {
+            "next_pnc_appointment_date": "",
+            "next_pnc_appointment_child_index": 0,
+            "next_pnc_appointment_text": "",
+            "next_pnc_appointment_child_name": "",
+        }
+
+    next_appointment = min(candidates, key=lambda appointment: appointment["date"])
+    return {
+        "next_pnc_appointment_date": next_appointment["date"].isoformat(),
+        "next_pnc_appointment_child_index": next_appointment["child_index"],
+        "next_pnc_appointment_text": next_appointment["text"],
+        "next_pnc_appointment_child_name": next_appointment["child_name"],
+    }
 
 
 def get_user_type(contact):
@@ -167,7 +256,14 @@ def get_user_type(contact):
 
 def get_user_babies(contact):
     babies = []
-    for _, birth_date in get_valid_baby_dobs(contact):
+    now = datetime.now(pytz.utc)
+    for baby in _get_valid_babies(contact):
+        birth_date = baby["birth_date"]
+        age_days = (now - birth_date).days
+        next_vaccine = {"day": 0, "month": 0, "year": 0, "text": ""}
+        if 0 <= age_days <= 365:
+            next_vaccine = _get_next_vaccine(birth_date, now)
+
         babies.append(
             {
                 "all_vaccines_received": "",
@@ -175,10 +271,11 @@ def get_user_babies(contact):
                 "baby_birth_day": birth_date.day,
                 "baby_birth_month": birth_date.month,
                 "baby_birth_year": birth_date.year,
-                "name": "",
-                "next_vacc_day": 0,
-                "next_vacc_month": 0,
-                "next_vacc_year": 0,
+                "name": baby["name"],
+                "next_vacc_day": next_vaccine["day"],
+                "next_vacc_month": next_vaccine["month"],
+                "next_vacc_text": next_vaccine["text"],
+                "next_vacc_year": next_vaccine["year"],
                 "pregnancy_edd": 0,
                 "vaccination_status_at_reg": "",
             }
@@ -189,12 +286,12 @@ def get_user_babies(contact):
 
 
 def get_youngest_dob(contact):
-    baby_dobs = get_valid_baby_dobs(contact)
-    if not baby_dobs:
+    babies = _get_valid_babies(contact)
+    if not babies:
         return
 
-    youngest_dob = max(baby_dobs, key=lambda dob: dob[1])[0]
-    return process_datetime(youngest_dob)
+    youngest_birth_date = max(babies, key=lambda baby: baby["birth_date"])["birth_date"]
+    return youngest_birth_date.astimezone(pytz.utc).isoformat()
 
 
 def process_baby_loss_status(contact):
@@ -235,12 +332,3 @@ def get_pregnancy_in_weeks(contact):
         + (now.day - conception_date.day)
     )
     return str(int(days_since_conception / 7))
-
-
-def get_next_pnc_appointment_child_index(contact):
-    postbirth_messaging = (getattr(contact, "fields", {}) or {}).get(
-        "postbirth_messaging"
-    )
-    if process_truthy(postbirth_messaging) == "true":
-        return 0
-    return ""

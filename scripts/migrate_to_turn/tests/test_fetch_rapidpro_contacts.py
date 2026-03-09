@@ -214,7 +214,10 @@ class FetchRapidproContactsTests(TestCase):
             "babies",
             "youngest_dob",
             "migration_key",
+            "next_pnc_appointment_date",
             "next_pnc_appointment_child_index",
+            "next_pnc_appointment_text",
+            "next_pnc_appointment_child_name",
             "urn",
         ]
 
@@ -251,7 +254,16 @@ class FetchRapidproContactsTests(TestCase):
             "babies": fetch_rapidpro_contacts.get_user_babies(contact),
             "youngest_dob": fetch_rapidpro_contacts.get_youngest_dob(contact),
             "migration_key": fetch_rapidpro_contacts.MIGRATION_KEY,
+            "next_pnc_appointment_date": fetch_rapidpro_contacts.get_field_data(
+                contact
+            )["next_pnc_appointment_date"],
             "next_pnc_appointment_child_index": "0",
+            "next_pnc_appointment_text": fetch_rapidpro_contacts.get_field_data(
+                contact
+            )["next_pnc_appointment_text"],
+            "next_pnc_appointment_child_name": fetch_rapidpro_contacts.get_field_data(
+                contact
+            )["next_pnc_appointment_child_name"],
             "urn": "27820000000",
         }
 
