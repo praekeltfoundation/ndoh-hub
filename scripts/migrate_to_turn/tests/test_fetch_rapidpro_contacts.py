@@ -34,8 +34,21 @@ class FakeClient:
     def __init__(self, batches):
         self._batches = batches
 
-    def get_contacts(self, before=None, after=None):
-        return FakeContacts(self._batches)
+    def get_contacts(self, before=None, after=None, urn=None):
+        if urn is None:
+            return FakeContacts(self._batches)
+
+        filtered_batches = []
+        for batch in self._batches:
+            filtered_batch = [
+                contact
+                for contact in batch
+                if urn in getattr(contact, "urns", [])
+            ]
+            if filtered_batch:
+                filtered_batches.append(filtered_batch)
+
+        return FakeContacts(filtered_batches)
 
 
 class FetchRapidproContactsTests(TestCase):
@@ -174,7 +187,7 @@ class FetchRapidproContactsTests(TestCase):
             ):
                 fetch_rapidpro_contacts.fetch_rapidpro_contacts(client)
 
-            output_path = Path(tmp_dir) / "contacts-2025-01-01-2025-01-31.csv"
+            output_path = Path(tmp_dir) / "contacts-qa-2025-01-01-2025-01-31.csv"
             with output_path.open(newline="") as csv_file:
                 reader = csv.DictReader(csv_file)
                 rows = list(reader)
@@ -268,7 +281,7 @@ class FetchRapidproContactsTests(TestCase):
             ):
                 fetch_rapidpro_contacts.fetch_rapidpro_contacts(client)
 
-            output_path = Path(tmp_dir) / "contacts-2025-01-01-2025-01-31.csv"
+            output_path = Path(tmp_dir) / "contacts-qa-2025-01-01-2025-01-31.csv"
             self.assertFalse(output_path.exists())
 
     def test_fetch_rapidpro_contacts_msisdn_filter(self):
@@ -310,7 +323,7 @@ class FetchRapidproContactsTests(TestCase):
             ):
                 fetch_rapidpro_contacts.fetch_rapidpro_contacts(client)
 
-            output_path = Path(tmp_dir) / "contacts-2025-01-01-2025-01-31.csv"
+            output_path = Path(tmp_dir) / "contacts-qa-msisdn-filter.csv"
             with output_path.open(newline="") as csv_file:
                 reader = csv.DictReader(csv_file)
                 rows = list(reader)
