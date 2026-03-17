@@ -185,7 +185,7 @@ class FetchRapidproContactsTests(TestCase):
             ):
                 fetch_rapidpro_contacts.fetch_rapidpro_contacts(client)
 
-            output_path = Path(tmp_dir) / "contacts-qa-2025-01-01-2025-01-31.csv"
+            output_path = Path(tmp_dir) / "contacts-prd-2025-01-01-2025-01-31.csv"
             with output_path.open(newline="") as csv_file:
                 reader = csv.DictReader(csv_file)
                 rows = list(reader)
@@ -296,10 +296,11 @@ class FetchRapidproContactsTests(TestCase):
             with (
                 patch.object(fetch_rapidpro_contacts, "START_DATE", start_date),
                 patch.object(fetch_rapidpro_contacts, "END_DATE", end_date),
+                patch.object(fetch_rapidpro_contacts, "INCLUDE_OPTED_OUT", False),
             ):
                 fetch_rapidpro_contacts.fetch_rapidpro_contacts(client)
 
-            output_path = Path(tmp_dir) / "contacts-qa-2025-01-01-2025-01-31.csv"
+            output_path = Path(tmp_dir) / "contacts-prd-2025-01-01-2025-01-31.csv"
             self.assertFalse(output_path.exists())
 
     def test_fetch_rapidpro_contacts_msisdn_filter(self):
@@ -341,7 +342,7 @@ class FetchRapidproContactsTests(TestCase):
             ):
                 fetch_rapidpro_contacts.fetch_rapidpro_contacts(client)
 
-            output_path = Path(tmp_dir) / "contacts-qa-msisdn-filter.csv"
+            output_path = Path(tmp_dir) / "contacts-prd-msisdn-filter.csv"
             with output_path.open(newline="") as csv_file:
                 reader = csv.DictReader(csv_file)
                 rows = list(reader)

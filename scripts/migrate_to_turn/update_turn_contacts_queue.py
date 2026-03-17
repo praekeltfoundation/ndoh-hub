@@ -14,6 +14,15 @@ WORKER_COUNT = 3
 TURN_URL = "https://whatsapp-praekelt-cloud.turn.io"
 
 
+def log_message(message):
+    print(message, file=sys.stderr, flush=True)
+
+
+def format_reset_time(reset_time):
+    target = datetime.fromtimestamp(int(str(reset_time).split(".")[0]))
+    return target.strftime("%Y-%m-%d %H:%M:%S")
+
+
 async def update_turn_contact_details(session, wa_id, data, target):
     url = urljoin(TURN_URL, f"/v1/contacts/{wa_id}/profile")
     headers = {
@@ -24,6 +33,7 @@ async def update_turn_contact_details(session, wa_id, data, target):
     status, reset_time = await request(session, url, "PATCH", headers, data, target)
 
     if status == 429:
+        log_message(f"Rate limit hit. Waiting until {format_reset_time(reset_time)}")
         sleep_until(reset_time)
         await update_turn_contact_details(session, wa_id, data, target)
 
@@ -73,8 +83,10 @@ async def worker(name, queue):
 
 async def main(filename, target):
     queue = asyncio.Queue(WORKER_COUNT)
+    overall_started_at = time.perf_counter()
 
     reader = csv.DictReader(open(filename))
+    row_count = 0
     async with aiohttp.ClientSession() as session:
         tasks = []
         for i in range(WORKER_COUNT):
@@ -85,12 +97,20 @@ async def main(filename, target):
             wa_id = row.pop("urn")
             update = (session, wa_id, row, target)
             await queue.put(update)
+            row_count += 1
 
+        log_message(
+            f"Queued {row_count} contacts from {filename} with {WORKER_COUNT} workers"
+        )
         await queue.join()
         for task in tasks:
             task.cancel()
 
     await asyncio.gather(*tasks, return_exceptions=True)
+    total_elapsed = time.perf_counter() - overall_started_at
+    log_message(
+        f"Processed {row_count} contacts from {filename} in {total_elapsed:.2f}s"
+    )
 
 
 if __name__ == "__main__":
