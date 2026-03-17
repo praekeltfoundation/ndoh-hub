@@ -104,7 +104,9 @@ def test_ensure_chunks_reuses_existing_manifest_and_marks_stale_in_progress(tmp_
     assert read_manifest(manifest_path)[0]["status"] == FAILED_STATUS
 
 
-def test_bulk_update_turn_contacts_resumes_and_skips_succeeded_chunks(tmp_path, monkeypatch):
+def test_bulk_update_turn_contacts_resumes_and_skips_succeeded_chunks(
+    tmp_path, monkeypatch
+):
     csv_path = tmp_path / "contacts.csv"
     write_csv(
         csv_path,

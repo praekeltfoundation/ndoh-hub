@@ -99,7 +99,9 @@ def load_manifest(manifest_path):
         if chunk["status"] == IN_PROGRESS_STATUS:
             chunk["status"] = FAILED_STATUS
             if not chunk["error"]:
-                chunk["error"] = "Previous run interrupted while this chunk was in progress."
+                chunk["error"] = (
+                    "Previous run interrupted while this chunk was in progress."
+                )
 
     return chunks
 
@@ -187,7 +189,9 @@ def split_csv_file(filename, output_dir=None, max_bytes=DEFAULT_MAX_BYTES):
     return chunks
 
 
-def ensure_chunks(filename, output_dir=None, max_bytes=DEFAULT_MAX_BYTES, rechunk=False):
+def ensure_chunks(
+    filename, output_dir=None, max_bytes=DEFAULT_MAX_BYTES, rechunk=False
+):
     output_dir = get_output_dir(filename, output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     manifest_path = get_manifest_path(output_dir)
@@ -279,9 +283,7 @@ def bulk_update_turn_contacts(
         chunk["status_code"] = result["status_code"]
         chunk["result_path"] = result["result_path"]
         chunk["status"] = (
-            SUCCEEDED_STATUS
-            if result["status_code"] < 400
-            else FAILED_STATUS
+            SUCCEEDED_STATUS if result["status_code"] < 400 else FAILED_STATUS
         )
         chunk["error"] = None if result["status_code"] < 400 else "HTTP error"
         write_manifest(manifest_path, chunks)
