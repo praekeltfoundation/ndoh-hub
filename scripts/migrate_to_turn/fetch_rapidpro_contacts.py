@@ -21,19 +21,17 @@ from scripts.migrate_to_turn.process_fields import (
     to_lowercase,
 )
 
-env = "qa"  # qa or prd
+env = "prd"  # qa or prd
 RAPIDPRO_URL = f"https://rapidpro.{env}.momconnect.co.za"
 
-START_DATE = "2022-02-10 00:0:00"
-# END_DATE = "2026-02-26 19:13:06"
-# START_DATE = "2026-03-04 00:00:00"
-END_DATE = "2026-03-05 00:00:00"
-LIMIT = 1000000
-INCLUDE_OPTED_OUT = False
+START_DATE = "2023-01-01 00:00:00"
+END_DATE = "2023-12-31 23:59:59"
+LIMIT = 10000000
+INCLUDE_OPTED_OUT = True
 # We want to import beta testing users as opted out and give them the chance to opt in.
 IMPORT_AS_OPTED_OUT = False
 # This is to identify invited users and schedule the invite message.
-MIGRATION_KEY = "batch_1"
+MIGRATION_KEY = "test_batch_1"
 
 MSISDN_FILTER = [
     msisdn.strip()
@@ -229,7 +227,7 @@ def get_rapidpro_contacts(client, start_date=None, end_date=None):
         ),
         start=1,
     ):
-        log(f"Processing contact_batch #{batch_number}")
+        log(f"Processing contact_batch #{batch_number}  -  {oldest_date}/{len(contacts)}")
         for contact in contact_batch:
             oldest_date, added = process_contact(
                 contact, contacts, oldest_date, apply_msisdn_filter=True
