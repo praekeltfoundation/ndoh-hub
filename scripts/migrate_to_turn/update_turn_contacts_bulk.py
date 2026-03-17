@@ -4,6 +4,7 @@ import io
 import json
 import os
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urljoin
 
@@ -11,6 +12,15 @@ import requests
 
 TURN_URL = "https://whatsapp-praekelt-cloud.turn.io"
 DEFAULT_MAX_BYTES = 950_000
+MANIFEST_FILENAME = "manifest.jsonl"
+SUCCEEDED_STATUS = "succeeded"
+PENDING_STATUS = "pending"
+FAILED_STATUS = "failed"
+IN_PROGRESS_STATUS = "in_progress"
+
+
+def get_iso_timestamp():
+    return datetime.now(timezone.utc).isoformat()
 
 
 def normalize_urn(value):
@@ -40,16 +50,66 @@ def serialize_csv_line(values):
     return buffer.getvalue()
 
 
+def get_output_dir(filename, output_dir=None):
+    source_path = Path(filename)
+    return Path(output_dir or f"{source_path.stem}_chunks")
+
+
+def get_manifest_path(output_dir):
+    return output_dir / MANIFEST_FILENAME
+
+
 def get_chunk_path(output_dir, source_path, chunk_number):
     return output_dir / f"{source_path.stem}.part{chunk_number:05d}{source_path.suffix}"
 
 
+def build_chunk_record(chunk_number, chunk_path, row_count, chunk_size):
+    return {
+        "chunk_number": chunk_number,
+        "path": str(chunk_path),
+        "rows": row_count,
+        "size_bytes": chunk_size,
+        "status": PENDING_STATUS,
+        "attempt_count": 0,
+        "last_attempted_at": None,
+        "status_code": None,
+        "result_path": None,
+        "error": None,
+    }
+
+
+def write_manifest(manifest_path, chunks):
+    with manifest_path.open("w") as manifest_file:
+        for chunk in chunks:
+            manifest_file.write(json.dumps(chunk))
+            manifest_file.write("\n")
+
+
+def load_manifest(manifest_path):
+    with manifest_path.open() as manifest_file:
+        chunks = [json.loads(line) for line in manifest_file if line.strip()]
+
+    for chunk in chunks:
+        chunk.setdefault("status", PENDING_STATUS)
+        chunk.setdefault("attempt_count", 0)
+        chunk.setdefault("last_attempted_at", None)
+        chunk.setdefault("status_code", None)
+        chunk.setdefault("result_path", None)
+        chunk.setdefault("error", None)
+        if chunk["status"] == IN_PROGRESS_STATUS:
+            chunk["status"] = FAILED_STATUS
+            if not chunk["error"]:
+                chunk["error"] = "Previous run interrupted while this chunk was in progress."
+
+    return chunks
+
+
 def split_csv_file(filename, output_dir=None, max_bytes=DEFAULT_MAX_BYTES):
     source_path = Path(filename)
-    output_dir = Path(output_dir or f"{source_path.stem}_chunks")
+    output_dir = get_output_dir(filename, output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    manifest_path = output_dir / "manifest.jsonl"
+    manifest_path = get_manifest_path(output_dir)
     chunks = []
 
     with source_path.open(newline="") as source_file:
@@ -88,12 +148,12 @@ def split_csv_file(filename, output_dir=None, max_bytes=DEFAULT_MAX_BYTES):
                 chunk_path.unlink(missing_ok=True)
                 return
             chunks.append(
-                {
-                    "chunk_number": len(chunks) + 1,
-                    "path": str(chunk_path),
-                    "rows": chunk_rows,
-                    "size_bytes": chunk_size,
-                }
+                build_chunk_record(
+                    chunk_number=len(chunks) + 1,
+                    chunk_path=chunk_path,
+                    row_count=chunk_rows,
+                    chunk_size=chunk_size,
+                )
             )
 
         start_chunk(1)
@@ -123,11 +183,23 @@ def split_csv_file(filename, output_dir=None, max_bytes=DEFAULT_MAX_BYTES):
 
         finish_chunk()
 
-    with manifest_path.open("w") as manifest_file:
-        for chunk in chunks:
-            manifest_file.write(json.dumps(chunk))
-            manifest_file.write("\n")
+    write_manifest(manifest_path, chunks)
+    return chunks
 
+
+def ensure_chunks(filename, output_dir=None, max_bytes=DEFAULT_MAX_BYTES, rechunk=False):
+    output_dir = get_output_dir(filename, output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = get_manifest_path(output_dir)
+
+    if manifest_path.exists() and not rechunk:
+        chunks = load_manifest(manifest_path)
+        write_manifest(manifest_path, chunks)
+        print(f"Loaded {len(chunks)} chunks from {manifest_path}", flush=True)
+        return chunks
+
+    chunks = split_csv_file(filename, output_dir=output_dir, max_bytes=max_bytes)
+    print(f"Created {len(chunks)} chunks", flush=True)
     return chunks
 
 
@@ -144,10 +216,17 @@ def upload_chunk(chunk_path, results_dir):
     result_path.write_bytes(response.content)
 
     return {
-        "chunk_path": str(chunk_path),
         "status_code": response.status_code,
         "result_path": str(result_path),
     }
+
+
+def should_upload_chunk(chunk, retry_failed=False):
+    if chunk["status"] == SUCCEEDED_STATUS:
+        return False
+    if retry_failed:
+        return chunk["status"] == FAILED_STATUS
+    return chunk["status"] in {PENDING_STATUS, FAILED_STATUS}
 
 
 def bulk_update_turn_contacts(
@@ -156,35 +235,64 @@ def bulk_update_turn_contacts(
     max_bytes=DEFAULT_MAX_BYTES,
     split_only=False,
     stop_on_error=True,
+    retry_failed=False,
+    rechunk=False,
 ):
-    chunks = split_csv_file(filename, output_dir=output_dir, max_bytes=max_bytes)
-    print(f"Created {len(chunks)} chunks", flush=True)
+    output_dir = get_output_dir(filename, output_dir)
+    chunks = ensure_chunks(
+        filename,
+        output_dir=output_dir,
+        max_bytes=max_bytes,
+        rechunk=rechunk,
+    )
 
     if split_only:
-        return chunks
+        return None
 
-    output_dir = Path(output_dir or f"{Path(filename).stem}_chunks")
     results_dir = output_dir / "results"
     results_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = get_manifest_path(output_dir)
 
-    upload_results = []
     for chunk in chunks:
-        result = upload_chunk(chunk["path"], results_dir)
-        upload_results.append(result)
+        if not should_upload_chunk(chunk, retry_failed=retry_failed):
+            continue
+
+        chunk["status"] = IN_PROGRESS_STATUS
+        chunk["attempt_count"] += 1
+        chunk["last_attempted_at"] = get_iso_timestamp()
+        chunk["error"] = None
+        write_manifest(manifest_path, chunks)
+
+        try:
+            result = upload_chunk(Path(chunk["path"]), results_dir)
+        except requests.RequestException as exc:
+            chunk["status"] = FAILED_STATUS
+            chunk["status_code"] = None
+            chunk["result_path"] = None
+            chunk["error"] = str(exc)
+            write_manifest(manifest_path, chunks)
+            print(f"ERROR {chunk['path']} -> {exc}", flush=True)
+            if stop_on_error:
+                break
+            continue
+
+        chunk["status_code"] = result["status_code"]
+        chunk["result_path"] = result["result_path"]
+        chunk["status"] = (
+            SUCCEEDED_STATUS
+            if result["status_code"] < 400
+            else FAILED_STATUS
+        )
+        chunk["error"] = None if result["status_code"] < 400 else "HTTP error"
+        write_manifest(manifest_path, chunks)
+
         print(
-            f"{result['status_code']} {result['chunk_path']} -> {result['result_path']}",
+            f"{chunk['status_code']} {chunk['path']} -> {chunk['result_path']}",
             flush=True,
         )
-        if stop_on_error and result["status_code"] >= 400:
+
+        if stop_on_error and chunk["status"] == FAILED_STATUS:
             break
-
-    upload_manifest_path = output_dir / "upload_results.jsonl"
-    with upload_manifest_path.open("w") as upload_manifest:
-        for result in upload_results:
-            upload_manifest.write(json.dumps(result))
-            upload_manifest.write("\n")
-
-    return upload_results
 
 
 def parse_args():
@@ -195,6 +303,12 @@ def parse_args():
     parser.add_argument("--output-dir")
     parser.add_argument("--max-bytes", type=int, default=DEFAULT_MAX_BYTES)
     parser.add_argument("--split-only", action="store_true")
+    parser.add_argument("--rechunk", action="store_true")
+    parser.add_argument(
+        "--retry-failed-only",
+        action="store_true",
+        help="Upload only chunks marked failed in the manifest.",
+    )
     parser.add_argument(
         "--continue-on-error",
         action="store_true",
@@ -212,6 +326,8 @@ if __name__ == "__main__":
         max_bytes=args.max_bytes,
         split_only=args.split_only,
         stop_on_error=not args.continue_on_error,
+        retry_failed=args.retry_failed_only,
+        rechunk=args.rechunk,
     )
     total_elapsed = time.perf_counter() - started_at
     print(f"Total runtime: {total_elapsed:.2f}s", flush=True)
