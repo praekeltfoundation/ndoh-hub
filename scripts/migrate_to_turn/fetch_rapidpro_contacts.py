@@ -227,7 +227,9 @@ def get_rapidpro_contacts(client, start_date=None, end_date=None):
         ),
         start=1,
     ):
-        log(f"Processing contact_batch #{batch_number}  -  {oldest_date}/{len(contacts)}")
+        log(
+            f"Processing contact_batch #{batch_number}  -  {oldest_date}/{len(contacts)}"
+        )
         for contact in contact_batch:
             oldest_date, added = process_contact(
                 contact, contacts, oldest_date, apply_msisdn_filter=True

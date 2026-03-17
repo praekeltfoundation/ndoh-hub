@@ -33,9 +33,7 @@ async def update_turn_contact_details(session, wa_id, data, target):
     status, reset_time = await request(session, url, "PATCH", headers, data, target)
 
     if status == 429:
-        log_message(
-            f"Rate limit hit. Waiting until {format_reset_time(reset_time)}"
-        )
+        log_message(f"Rate limit hit. Waiting until {format_reset_time(reset_time)}")
         sleep_until(reset_time)
         await update_turn_contact_details(session, wa_id, data, target)
 
