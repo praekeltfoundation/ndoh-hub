@@ -59,8 +59,12 @@ def get_manifest_path(output_dir):
     return output_dir / MANIFEST_FILENAME
 
 
-def get_chunk_path(output_dir, source_path, chunk_number):
-    return output_dir / f"{source_path.stem}.part{chunk_number:05d}{source_path.suffix}"
+def get_chunks_dir(output_dir):
+    return output_dir / "chunks"
+
+
+def get_chunk_path(chunks_dir, source_path, chunk_number):
+    return chunks_dir / f"{source_path.stem}.part{chunk_number:05d}{source_path.suffix}"
 
 
 def build_chunk_record(chunk_number, chunk_path, row_count, chunk_size):
@@ -85,7 +89,7 @@ def write_manifest(manifest_path, chunks):
             manifest_file.write("\n")
 
 
-def load_manifest(manifest_path):
+def load_manifest(manifest_path, output_dir=None):
     with manifest_path.open() as manifest_file:
         chunks = [json.loads(line) for line in manifest_file if line.strip()]
 
@@ -102,14 +106,27 @@ def load_manifest(manifest_path):
                 chunk["error"] = (
                     "Previous run interrupted while this chunk was in progress."
                 )
+        if output_dir is not None:
+            chunk["path"] = str(resolve_chunk_path(output_dir, chunk["path"]))
 
     return chunks
+
+
+def resolve_chunk_path(output_dir, chunk_path):
+    chunk_path = Path(chunk_path)
+    chunks_dir = get_chunks_dir(output_dir)
+    preferred_path = chunks_dir / chunk_path.name
+    if preferred_path.exists() or not chunk_path.exists():
+        return preferred_path
+    return chunk_path
 
 
 def split_csv_file(filename, output_dir=None, max_bytes=DEFAULT_MAX_BYTES):
     source_path = Path(filename)
     output_dir = get_output_dir(filename, output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    chunks_dir = get_chunks_dir(output_dir)
+    chunks_dir.mkdir(parents=True, exist_ok=True)
 
     manifest_path = get_manifest_path(output_dir)
     chunks = []
@@ -135,7 +152,7 @@ def split_csv_file(filename, output_dir=None, max_bytes=DEFAULT_MAX_BYTES):
 
         def start_chunk(chunk_number):
             nonlocal chunk_file, chunk_path, chunk_size, chunk_rows
-            chunk_path = get_chunk_path(output_dir, source_path, chunk_number)
+            chunk_path = get_chunk_path(chunks_dir, source_path, chunk_number)
             chunk_file = chunk_path.open("w", newline="")
             chunk_file.write(header_line)
             chunk_size = header_size
@@ -197,7 +214,7 @@ def ensure_chunks(
     manifest_path = get_manifest_path(output_dir)
 
     if manifest_path.exists() and not rechunk:
-        chunks = load_manifest(manifest_path)
+        chunks = load_manifest(manifest_path, output_dir=output_dir)
         write_manifest(manifest_path, chunks)
         print(f"Loaded {len(chunks)} chunks from {manifest_path}", flush=True)
         return chunks
@@ -233,6 +250,13 @@ def should_upload_chunk(chunk, retry_failed=False):
     return chunk["status"] in {PENDING_STATUS, FAILED_STATUS}
 
 
+def is_chunk_in_range(chunk, from_chunk=None, to_chunk=None):
+    chunk_number = chunk["chunk_number"]
+    if from_chunk is not None and chunk_number < from_chunk:
+        return False
+    return not (to_chunk is not None and chunk_number > to_chunk)
+
+
 def bulk_update_turn_contacts(
     filename,
     output_dir=None,
@@ -241,6 +265,8 @@ def bulk_update_turn_contacts(
     stop_on_error=True,
     retry_failed=False,
     rechunk=False,
+    from_chunk=None,
+    to_chunk=None,
 ):
     output_dir = get_output_dir(filename, output_dir)
     chunks = ensure_chunks(
@@ -258,6 +284,9 @@ def bulk_update_turn_contacts(
     manifest_path = get_manifest_path(output_dir)
 
     for chunk in chunks:
+        if not is_chunk_in_range(chunk, from_chunk=from_chunk, to_chunk=to_chunk):
+            continue
+
         if not should_upload_chunk(chunk, retry_failed=retry_failed):
             continue
 
@@ -304,6 +333,8 @@ def parse_args():
     parser.add_argument("filename")
     parser.add_argument("--output-dir")
     parser.add_argument("--max-bytes", type=int, default=DEFAULT_MAX_BYTES)
+    parser.add_argument("--from-chunk", type=int)
+    parser.add_argument("--to-chunk", type=int)
     parser.add_argument("--split-only", action="store_true")
     parser.add_argument("--rechunk", action="store_true")
     parser.add_argument(
@@ -321,6 +352,13 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
+    if (
+        args.from_chunk is not None
+        and args.to_chunk is not None
+        and args.from_chunk > args.to_chunk
+    ):
+        raise ValueError("--from-chunk cannot be greater than --to-chunk")
+
     started_at = time.perf_counter()
     bulk_update_turn_contacts(
         args.filename,
@@ -330,6 +368,8 @@ if __name__ == "__main__":
         stop_on_error=not args.continue_on_error,
         retry_failed=args.retry_failed_only,
         rechunk=args.rechunk,
+        from_chunk=args.from_chunk,
+        to_chunk=args.to_chunk,
     )
     total_elapsed = time.perf_counter() - started_at
     print(f"Total runtime: {total_elapsed:.2f}s", flush=True)
