@@ -54,6 +54,25 @@ This script takes the csv provided and sends it directly yto the Turn API. It wi
 Command to run:
 `python scripts/migrate_to_turn/update_turn_contacts_bulk.py contacts-2024-01-01-2025-01-07.csv`
 
+## Registration channel migration
+
+`reg_channel` is not stored on RapidPro contacts. It is derived from the most recent
+prebirth, postbirth or CHW registration event in the Hub event store: sources
+containing `WhatsApp` are exported as `whatsapp`; all other sources are `ussd`.
+
+Run the SQL query at the end of `create_registration_channel_file.py` to export
+`contact_id`, `source` and `timestamp`. Change `export_part` to process each of its
+four batches. Then create a RapidPro UUID-to-WhatsApp-ID lookup and use it to build
+the Turn bulk-update CSV:
+
+`python scripts/migrate_to_turn/export_rapidpro_uuid_urns.py --output rapidpro_uuid_urns_prd.csv`
+
+`python scripts/migrate_to_turn/create_registration_channel_file.py registration_part_1.csv --uuid-urn-file rapidpro_uuid_urns_prd.csv --output registration_part_1_turn.csv`
+
+`python scripts/migrate_to_turn/update_turn_contacts_bulk.py registration_part_1_turn.csv`
+
+Contacts without a RapidPro WhatsApp URN, or not present in the lookup file, are skipped.
+
 ### compare_contacts.py
 
 This script can be used to compare specific contacts.

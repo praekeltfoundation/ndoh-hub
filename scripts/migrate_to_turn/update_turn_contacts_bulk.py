@@ -12,6 +12,7 @@ import requests
 
 TURN_URL = "https://whatsapp-praekelt-cloud.turn.io"
 DEFAULT_MAX_BYTES = 950_000
+DEFAULT_MAX_ROWS = 10_000
 MANIFEST_FILENAME = "manifest.jsonl"
 SUCCEEDED_STATUS = "succeeded"
 PENDING_STATUS = "pending"
@@ -121,7 +122,12 @@ def resolve_chunk_path(output_dir, chunk_path):
     return chunk_path
 
 
-def split_csv_file(filename, output_dir=None, max_bytes=DEFAULT_MAX_BYTES):
+def split_csv_file(
+    filename,
+    output_dir=None,
+    max_bytes=DEFAULT_MAX_BYTES,
+    max_rows=DEFAULT_MAX_ROWS,
+):
     source_path = Path(filename)
     output_dir = get_output_dir(filename, output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -192,7 +198,9 @@ def split_csv_file(filename, output_dir=None, max_bytes=DEFAULT_MAX_BYTES):
                     f"{header_size + row_size} bytes required, {max_bytes} allowed"
                 )
 
-            if chunk_rows > 0 and chunk_size + row_size > max_bytes:
+            if chunk_rows > 0 and (
+                chunk_size + row_size > max_bytes or chunk_rows >= max_rows
+            ):
                 finish_chunk()
                 start_chunk(len(chunks) + 1)
 
@@ -207,7 +215,11 @@ def split_csv_file(filename, output_dir=None, max_bytes=DEFAULT_MAX_BYTES):
 
 
 def ensure_chunks(
-    filename, output_dir=None, max_bytes=DEFAULT_MAX_BYTES, rechunk=False
+    filename,
+    output_dir=None,
+    max_bytes=DEFAULT_MAX_BYTES,
+    max_rows=DEFAULT_MAX_ROWS,
+    rechunk=False,
 ):
     output_dir = get_output_dir(filename, output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -219,7 +231,12 @@ def ensure_chunks(
         print(f"Loaded {len(chunks)} chunks from {manifest_path}", flush=True)
         return chunks
 
-    chunks = split_csv_file(filename, output_dir=output_dir, max_bytes=max_bytes)
+    chunks = split_csv_file(
+        filename,
+        output_dir=output_dir,
+        max_bytes=max_bytes,
+        max_rows=max_rows,
+    )
     print(f"Created {len(chunks)} chunks", flush=True)
     return chunks
 
@@ -261,6 +278,7 @@ def bulk_update_turn_contacts(
     filename,
     output_dir=None,
     max_bytes=DEFAULT_MAX_BYTES,
+    max_rows=DEFAULT_MAX_ROWS,
     split_only=False,
     stop_on_error=True,
     retry_failed=False,
@@ -273,6 +291,7 @@ def bulk_update_turn_contacts(
         filename,
         output_dir=output_dir,
         max_bytes=max_bytes,
+        max_rows=max_rows,
         rechunk=rechunk,
     )
 
@@ -296,6 +315,7 @@ def bulk_update_turn_contacts(
         chunk["error"] = None
         write_manifest(manifest_path, chunks)
 
+        chunk_started_at = time.perf_counter()
         try:
             result = upload_chunk(Path(chunk["path"]), results_dir)
         except requests.RequestException as exc:
@@ -316,9 +336,11 @@ def bulk_update_turn_contacts(
         )
         chunk["error"] = None if result["status_code"] < 400 else "HTTP error"
         write_manifest(manifest_path, chunks)
+        chunk_elapsed = time.perf_counter() - chunk_started_at
 
         print(
-            f"{chunk['status_code']} {chunk['path']} -> {chunk['result_path']}",
+            f"{chunk['status_code']} chunk={chunk['chunk_number']} rows={chunk['rows']} "
+            f"elapsed={chunk_elapsed:.2f}s",
             flush=True,
         )
 
@@ -333,6 +355,7 @@ def parse_args():
     parser.add_argument("filename")
     parser.add_argument("--output-dir")
     parser.add_argument("--max-bytes", type=int, default=DEFAULT_MAX_BYTES)
+    parser.add_argument("--max-rows", type=int, default=DEFAULT_MAX_ROWS)
     parser.add_argument("--from-chunk", type=int)
     parser.add_argument("--to-chunk", type=int)
     parser.add_argument("--split-only", action="store_true")
@@ -352,6 +375,8 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
+    if args.max_rows < 1:
+        raise ValueError("--max-rows must be greater than 0")
     if (
         args.from_chunk is not None
         and args.to_chunk is not None
@@ -364,6 +389,7 @@ if __name__ == "__main__":
         args.filename,
         output_dir=args.output_dir,
         max_bytes=args.max_bytes,
+        max_rows=args.max_rows,
         split_only=args.split_only,
         stop_on_error=not args.continue_on_error,
         retry_failed=args.retry_failed_only,
@@ -372,4 +398,7 @@ if __name__ == "__main__":
         to_chunk=args.to_chunk,
     )
     total_elapsed = time.perf_counter() - started_at
-    print(f"Total runtime: {total_elapsed:.2f}s", flush=True)
+    print(
+        f"Total runtime: {total_elapsed:.2f}s ({total_elapsed / 60:.2f}m)",
+        flush=True,
+    )
