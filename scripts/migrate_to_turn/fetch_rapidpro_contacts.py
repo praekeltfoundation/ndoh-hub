@@ -24,14 +24,14 @@ from scripts.migrate_to_turn.process_fields import (
 env = "prd"  # qa or prd
 RAPIDPRO_URL = f"https://rapidpro.{env}.momconnect.co.za"
 
-START_DATE = "2023-01-01 00:00:00"
-END_DATE = "2023-12-31 23:59:59"
+START_DATE = "2026-10-01 00:00:00"
+END_DATE = "2026-10-09 23:59:59"
 LIMIT = 10000000
 INCLUDE_OPTED_OUT = True
 # We want to import beta testing users as opted out and give them the chance to opt in.
 IMPORT_AS_OPTED_OUT = False
 # This is to identify invited users and schedule the invite message.
-MIGRATION_KEY = "test_batch_1"
+MIGRATION_KEY = "migrate_batch_9"
 
 MSISDN_FILTER = [
     msisdn.strip()
@@ -90,6 +90,11 @@ FIELD_MAPPING = {
         "turn_name": "privacy_policy_accepted",
         "type": "custom",
         "process": process_truthy,
+    },
+    "registration_date": {
+        "turn_name": "onboarding_completed_at",
+        "type": "customer",
+        "process": process_datetime,
     },
     # province: we don't have the field but can derive it from clinic code later
     # area: we don't have the field but can derive it from clinic code later
